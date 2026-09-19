@@ -1,6 +1,6 @@
 # OmniTest · 多场景 Agent 测试系统（前端壳与设计系统）
 
-产品名 `OmniTest` 为占位，待拍板。智能体统一叫「测试副驾」，界面短名「副驾」，英文 `Test Copilot`，代码标识 `copilot`。
+产品名 `OmniTest` 为占位，待拍板。智能体统一叫「测试助手」，界面短名「助手」，英文 `Assistant`，代码标识 `copilot`。
 
 本仓只做**应用壳与设计系统**：A/B/C/D 四个大块的骨架、六条流程路由、UI 基础组件、场景包数据契约与扩展注册表。各流程内部的真实功能组件（时序图、工作流画布、知识库树等）由别的 agent 在 `src/features/<name>/` 下实现并注册进来，壳层不需要改动。
 
@@ -55,23 +55,23 @@ src/
 │   ├── LeftPanel.tsx       B 区 · 输入清单 + 分组手风琴 + 确认条
 │   ├── ResourcePanel.tsx   C 区 · 网格 2×2 与画布两种视图 + 放大态
 │   ├── ToolRail.tsx        C 区右侧竖向工具条（四组，按钮带状态点）
-│   ├── AssistantPanel.tsx  D 区 · 副驾对话（四类消息 + 快捷指令 + 输入栏）
+│   ├── AssistantPanel.tsx  D 区 · 助手对话（四类消息 + 快捷指令 + 输入栏）
 │   └── CardArt.tsx         卡片库占位图形（墨绿线条稿，被真实组件替换）
 ├── components/ui/          基础组件集，见第 4 节
 ├── data/
 │   ├── types.ts            场景包数据契约（与《设计规格》同名同构）
 │   ├── flows.ts            六条流程：路由、序号、动作按钮、前置条件
-│   ├── cards.ts            卡片库 15 张卡的标识与卡名
+│   ├── cards.ts            卡片库 21 张卡的标识与卡名
 │   ├── loadScene.ts        场景包加载适配层 + 产品三级目录
 │   └── mock/               临时 mock 场景包（散热风扇）
 ├── features/               功能组件，见第 5 节与第 8 节
-│   ├── index.tsx           装配点：卡片/左栏/副驾的注册与按流程分派表
+│   ├── index.tsx           装配点：卡片/左栏/助手的注册与按流程分派表
 │   ├── scene/pack.ts       场景包原始 JSON 的类型、加载与两包差异归一化
 │   ├── scene/workflows.ts  工作流统一取数口（.wfw 索引 / 包内 JSON 模型两条来源）
 │   ├── scene/kb.ts         知识库流水线产物（public/kb/）的类型与取数
 │   ├── waveforms/          场景包登记时序的加载与指标计算
 │   ├── shared/bits.tsx     卡内复用的小件（分组条、行、标签、占比条）
-│   ├── copilot/            副驾：按流程回放的脚本化适配器 + 六段脚本
+│   ├── copilot/            助手：按流程回放的脚本化适配器 + 六段脚本
 │   ├── flow-kb/ flow-init/ flow-req/ flow-run/ flow-tune/ flow-report/
 │   │                       六条流程各自的左栏与卡片
 │   ├── timeseries/ workflow/ agent-chat/ remote/
@@ -200,7 +200,7 @@ registerPanelCard({
 
 - `id` 用卡片库里已有的标识时，**替换**该流程默认卡片的内容，卡头、摘要、状态由场景包给；用别的流程没有的卡时，追加到卡槽末尾。
 - `render` 画缩略态（卡体定高不滚动，超出请自行截断），`renderExpanded` 画放大态（约 600×430），省略时复用 `render`。
-- 卡片库 15 张卡的标识：`product-view` `schematic` `project-tree` `tools` `bench-live` `remote-device` `interlock` `workflow` `timeseries` `progress` `verdict` `evidence` `history` `artifacts` `report-preview`。
+- 卡片库 21 张卡的标识：`product-view` `schematic` `project-tree` `tools` `bench-live` `remote-device` `interlock` `workflow` `wf-lib` `timeseries` `progress` `pipeline` `candidates` `param-changes` `verdict` `evidence` `history` `experience` `artifacts` `report-preview` `template-fields`。卡名可在卡槽上用 `title` 覆写（同一张卡在不同场景包里指的东西不同时用，例如初始化 hero 图在散热风扇包里是原理图、在玻璃升降器包里是结构示意图）。
 
 ### 5.2 接管某条流程的左栏
 
@@ -230,7 +230,7 @@ import './kb-taxonomy'
 - 场景包：`useAppStore(s => s.scene)`，结构见 `src/data/types.ts`。
 - 参数值：`useAppStore(s => s.overrides[key])`，`key` 用 `paramKey(flow, groupId, subId, itemId)`；写用 `setParam`，写过之后来源标记自动转「人工」。
 - 确认与锁定：`confirmed[flow]`、`confirmFlow`、`unconfirmFlow`。
-- 副驾的执行边界按《设计规格》8.3：可读、可算、可建议、可写草稿；凡是改变被测对象状态或落盘生效的动作必须人点按钮。注册的组件请遵守这条，不要提供「自动执行」入口。
+- 助手的执行边界按《设计规格》8.3：可读、可算、可建议、可写草稿；凡是改变被测对象状态或落盘生效的动作必须人点按钮。注册的组件请遵守这条，不要提供「自动执行」入口。
 
 ### 5.5 场景包接入
 
@@ -269,7 +269,7 @@ python3 scripts/compare.py run            # 两个包同一流程并排拼一张
 | `auto-flow-{kb,init,requirements,run,tune,report}.png` | 场景二 · 汽车 › 车身电机 › 电动玻璃升降器，六条流程 |
 | `zoom-workflow-canvas.png` | 放大态 · 工作流画布（场景一，真实 `.wfw`） |
 | `zoom-timeseries.png` | 放大态 · 时序曲线（场景一，实测 CH1） |
-| `zoom-evidence.png` | 放大态 · 副驾依据抽屉 |
+| `zoom-evidence.png` | 放大态 · 助手依据抽屉 |
 | `auto-zoom-workflow-canvas.png` | 放大态 · 工作流画布（场景二，包内 JSON 模型） |
 | `compare-run.png` | 两个场景包并排对照：同一条流程（启动测试），左电机右汽车，各缩到 800 宽 |
 
@@ -417,7 +417,7 @@ rsync -a --delete \
 | --- | --- | --- | --- |
 | 时序曲线 | `~/lab/timeseries/src/features/timeseries/` | `uplot` | 组件零改动。宿主给 `series.color` 显式取色——组件按 `status` 取色依赖首帧的 CSS 变量，首帧拿不到会退回中性调色板，合格/不合格就分不出来 |
 | 工作流画布 | `~/lab/workflow/src/features/workflow/` | `@xyflow/react`、`dagre` | 组件零改动。它的 `styles/workflow.css` 里 `.wf-root` 是整页演示壳（`100vh` 三栏网格），嵌进卡槽会撑破版面，因此在 `src/features/flow-req/wf-embed.css` 里加了 `.wf-embed` 覆盖，只留色板变量；缩略态另加 `.wf-thumb` 收起小地图与控制条 |
-| 副驾对话 | `~/lab/agent-chat/src/features/agent-chat/` | 无 | 组件零改动。自带的 `mockAdapter` 只有一段固定脚本，不贴六条流程，因此新写了 `src/features/copilot/adapter.ts`（把脚本抽成数据，同一套 `AgentEvent` 协议）与 `scripts.ts`（六段脚本，数值路径全部取自当前场景包）。改动类动作照样走人工确认闸门 |
+| 助手对话 | `~/lab/agent-chat/src/features/agent-chat/` | 无 | 组件零改动。自带的 `mockAdapter` 只有一段固定脚本，不贴六条流程，因此新写了 `src/features/copilot/adapter.ts`（把脚本抽成数据，同一套 `AgentEvent` 协议）与 `scripts.ts`（六段脚本，数值路径全部取自当前场景包）。改动类动作照样走人工确认闸门 |
 | 远程设备 | `~/lab/webssh/src/features/remote/` | `@xterm/xterm`、`@xterm/addon-fit` | 组件零改动。网关未起时 `probeDevice` 失败即置离线态并给出起网关的命令 |
 
 壳层侧改了三处，都是为了让真组件能用：
@@ -426,7 +426,7 @@ rsync -a --delete \
    （画布拖拽、下拉、勾选、输入），按钮里套按钮既不合法也吃掉点击，所以卡体改成普通容器，放大改走
    卡头右上角那个「放大」图标。
 2. `src/registry/index.tsx` + `src/app/AssistantPanel.tsx`：新增 `registerAssistant(flow, 组件)`，
-   D 区可以整块交给真副驾；没注册时仍走壳层的演示对话。
+   D 区可以整块交给真助手；没注册时仍走壳层的演示对话。
 3. `src/data/loadScene.ts`：场景包从「单文件」改成「目录下 10 份 JSON」，并把它压成壳层的
    `ScenePackage`。卡片要的明细不经这层压扁，直接读 `src/features/scene/pack.ts` 的原始结构。
 

@@ -373,12 +373,17 @@ export function ReqLeftPanel() {
           const items = reqs.filter((r) => r.category === c)
           const picked = items.filter((r) => s.ids.has(r.id)).length
           const Icon = catIcon(c)
+          // 默认摊开到累计 14 行为止：分类少的包（26 条判据分 11 类）也能把左栏填满，
+          // 分类多的包不会一次全铺开
+          const before = pack.requirements.categories
+            .slice(0, i)
+            .reduce((n, x) => n + reqs.filter((r) => r.category === x).length, 0)
           return (
             <Collapsible
               key={c}
               icon={<Icon size={14} strokeWidth={1.9} />}
               title={short(c, 6)}
-              defaultOpen={i < 4}
+              defaultOpen={before < 14}
               right={
                 <span className="num text-[12px] text-t3">
                   {picked}
@@ -685,6 +690,19 @@ function CriteriaTable({ full }: { full?: boolean }) {
 
 const fileName = (p: string) => p.split('/').filter(Boolean).at(-1) ?? p
 
+/**
+ * 出处定位收成一枚编号徽标：「第 140-146 行」「第二节」「Customer.h:1-40」「p19」这一类。
+ * 抠不出编号就不发徽标——半截词比没有更糟；整句一律留在 tooltip 里（DESIGN.md §4 文案纪律 2）。
+ */
+function locatorTag(locator: string): string | null {
+  const m =
+    /第\s*[\d〇零一二三四五六七八九十百\-–~至、]+\s*[行页节条款项章]/.exec(locator) ??
+    /[\w.]+:\d+(?:-\d+)?/.exec(locator) ??
+    /[Pp]\.?\s*\d+/.exec(locator) ??
+    /[Ll]ines?\s*[\d-]+/.exec(locator)
+  return m ? m[0].replace(/\s+/g, ' ').trim() : null
+}
+
 function CriteriaEvidence({ full }: { full?: boolean }) {
   const pack = getPack()
   const s = useSel()
@@ -724,10 +742,14 @@ function CriteriaEvidence({ full }: { full?: boolean }) {
           >
             <div className="flex w-full items-start gap-2 border-b border-line-soft py-[6px] last:border-b-0">
               <span className="mt-[5px] h-[6px] w-[6px] shrink-0 rounded-full bg-p600" />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[12.5px] text-t1">{fileName(src.file)}</span>
-                {src.locator ? (
-                  <span className="block truncate text-[12px] text-t3">{src.locator}</span>
+              <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                <span className="min-w-0 flex-1 truncate text-[12.5px] text-t1">
+                  {fileName(src.file)}
+                </span>
+                {src.locator && locatorTag(src.locator) ? (
+                  <Badge tone="neutral" mono className="shrink-0">
+                    {locatorTag(src.locator)}
+                  </Badge>
                 ) : null}
               </span>
             </div>

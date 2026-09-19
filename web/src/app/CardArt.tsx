@@ -239,6 +239,7 @@ const ART: Record<CardId, () => React.ReactElement> = {
   progress: Progress,
   pipeline: Progress,
   candidates: Verdict,
+  'param-changes': Verdict,
   verdict: Verdict,
   evidence: Evidence,
   history: History,

@@ -19,11 +19,37 @@ out.paste(b, (W, BAND))
 dr = ImageDraw.Draw(out)
 dr.line([(W, BAND), (W, h + BAND)], fill='#C8C5BD', width=2)
 dr.line([(0, BAND - 1), (2 * W, BAND - 1)], fill='#C8C5BD', width=1)
-try:
-    f = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 19)
-except OSError:
-    f = None
-dr.text((24, 13), 'motor.cooling-fan.fortior-fu6832  /run', fill='#2E5E45', font=f)
-dr.text((W + 24, 13), 'automotive.body-motor.window-regulator  /run', fill='#2E5E45', font=f)
+# 标题给中文产品名（读者一眼知道是什么被测件），场景包标识降为同行小字
+CJK = [
+    '/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc',
+    '/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc',
+    '/mnt/c/Windows/Fonts/msyhbd.ttc',
+    '/mnt/c/Windows/Fonts/msyh.ttc',
+]
+
+
+def font(size, bold=True):
+    for path in CJK:
+        if Path(path).exists():
+            try:
+                return ImageFont.truetype(path, size)
+            except OSError:
+                continue
+    try:
+        name = 'DejaVuSans-Bold.ttf' if bold else 'DejaVuSans.ttf'
+        return ImageFont.truetype(f'/usr/share/fonts/truetype/dejavu/{name}', size)
+    except OSError:
+        return None
+
+
+FB, FS = font(19), font(13, bold=False)
+PANELS = [
+    (0, '散热风扇驱动板 FU6832', 'motor.cooling-fan.fortior-fu6832 · /run'),
+    (W, '汽车电动玻璃升降器总成', 'automotive.body-motor.window-regulator · /run'),
+]
+for x, name, sub in PANELS:
+    dr.text((24 + x, 9), name, fill='#2E5E45', font=FB)
+    w = dr.textlength(name, font=FB)
+    dr.text((24 + x + w + 12, 15), sub, fill='#9A9A9A', font=FS)
 out.save(D / 'final-compare-run.png')
 print('✓ final-compare-run.png', out.size)

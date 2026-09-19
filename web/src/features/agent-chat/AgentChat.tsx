@@ -17,7 +17,7 @@ import { VerdictCard } from './components/VerdictCard';
 export interface AgentChatProps {
   /** 后端适配器，缺省用脚本化回放 */
   adapter?: AgentAdapter;
-  /** 助手显示名，默认「副驾」 */
+  /** 助手显示名，默认「助手」 */
   assistantName?: string;
   /** 预置消息流（演示或会话恢复用） */
   initialItems?: ChatItem[];
@@ -60,7 +60,7 @@ function draftFromConversation(items: ChatItem[], verdict?: Verdict): Experience
 export function AgentChat(props: AgentChatProps) {
   const {
     adapter = mockAdapter,
-    assistantName = '副驾',
+    assistantName = '助手',
     initialItems = [],
     initialEvidence = [],
     autoStartPrompt,

@@ -43,7 +43,7 @@ export function Modal({
         aria-label={title}
         style={{ width }}
         onClick={(e) => e.stopPropagation()}
-        className="animate-pop flex max-h-full flex-col overflow-hidden rounded-tp border border-line bg-surface shadow-tp2"
+        className="animate-pop flex max-h-[min(80vh,100%)] flex-col overflow-hidden rounded-tp border border-line bg-surface shadow-tp2"
       >
         <header className="flex h-[48px] shrink-0 items-center gap-2.5 border-b border-line-soft px-4">
           <h3 className="text-[16px] font-semibold tracking-tight text-t1">{title}</h3>

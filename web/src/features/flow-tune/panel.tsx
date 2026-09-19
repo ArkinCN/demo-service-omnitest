@@ -5,6 +5,7 @@ import {
   Check,
   CircleDashed,
   FileCode2,
+  GitCompareArrows,
   Layers,
   ListChecks,
   Sparkles,
@@ -34,7 +35,7 @@ import { POWERUP_ANNOTATION, currentThresholds, loadWaves, type Wave } from '../
 
    左栏：未达标与推荐 —— 三个大数字 + 未达标项 + 推荐参数（当前 → 建议 + 采纳）
          + 候选队列口径 + 本轮将写回的宏
-   卡片：波形对照（hero，PASS/FAIL 叠加）/ 候选队列 / 知识依据 / 判定卡 / 时序曲线
+   卡片：波形对照（hero，PASS/FAIL 三条叠加）/ 候选队列 / 知识依据 / 判定卡 / 参数变更
 
    判据真求值的逻辑一条没改：未达标项仍由 flow-run/evaluate.ts 的 evaluateAll
    求出，criterion 判成 false 才算未达标；求不出值的单列「未采集」，既不算通过
@@ -623,6 +624,14 @@ function CandidateQueue({ full }: { full?: boolean }) {
 
 /* ---------------------------------------------------------- 卡片 · 知识依据 */
 
+/**
+ * 现象收成关键词：经验条目的 symptom 写的是整句（「起转起来了，但切闭环瞬间掉速或失步」），
+ * 卡面只留第一个短句并压到 8 字，整句与原因、动作、结果一律在 tooltip 里。
+ */
+function symptomKey(sym: string) {
+  return short(sym.split(/[，,。；;：:]/)[0], 8)
+}
+
 function EvidencePanel({ full }: { full?: boolean }) {
   const cands = useCandidates()
   const picked = useAdopted()
@@ -671,7 +680,7 @@ function EvidencePanel({ full }: { full?: boolean }) {
                 <BookOpen size={13} strokeWidth={1.9} />
               </span>
               <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-t1">
-                {short(c.exp.symptom, 16)}
+                {symptomKey(c.exp.symptom)}
               </span>
               {/* 证据级三格条：序位口径，不是概率 */}
               <span className="flex shrink-0 items-center gap-[3px]" aria-label={c.exp.evidence_level}>
@@ -682,7 +691,9 @@ function EvidencePanel({ full }: { full?: boolean }) {
                   />
                 ))}
               </span>
-              <span className="num shrink-0 text-[12px] text-t3">{c.exp.id}</span>
+              <Badge tone="neutral" mono className="shrink-0">
+                {c.exp.id}
+              </Badge>
             </div>
           </Tooltip>
         )
@@ -893,6 +904,70 @@ function RoundWave({ full }: { full?: boolean }) {
   )
 }
 
+/* ------------------------------------------------------------ 卡片 · 参数变更 */
+
+/**
+ * 本轮要写回固件的宏，逐行给「宏名 · 原值 → 新值」。
+ * 取已勾选采纳的候选；一条都没勾时按队列顺序给前三条待采纳的，并在卡头标明是待采纳。
+ * 写回口径：只改数值外壳里的那个数，量纲与括号写法照抄原值——这张卡显示的就是要改的那一行。
+ */
+function ParamChanges({ full }: { full?: boolean }) {
+  const all = useCandidates()
+  const picked = useAdopted()
+  const numeric = all.filter((c) => typeof c.suggested === 'number')
+  const chosen = numeric.filter((c) => picked.has(c.param.key))
+  const rows = (chosen.length ? chosen : numeric).slice(0, full ? 10 : 3)
+  const pending = chosen.length === 0
+
+  if (!rows.length)
+    return <EmptyState icon={<GitCompareArrows size={24} strokeWidth={1.5} />} title="无可写回的宏" />
+
+  return (
+    <div className="flex h-full min-h-0 w-full flex-col">
+      <div className="flex shrink-0 items-center gap-2 pb-1.5">
+        <span className="num text-[26px] leading-none font-semibold tracking-tight text-t1">
+          {chosen.length}
+        </span>
+        <span className="text-[12px] text-t3">项已采纳 / 候选 {numeric.length}</span>
+        <Tooltip content="写回沿用原数值外壳与量纲，只改括号里的那个数；落盘与重编重烧一律由人点，助手不写回。">
+          <span className="num ml-auto cursor-help text-[12px] text-t3">
+            {pending ? '待采纳' : '待写回'}
+          </span>
+        </Tooltip>
+      </div>
+      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto">
+        {rows.map((c) => (
+          <Tooltip
+            key={c.param.key}
+            className="w-full"
+            content={`${c.param.name}（${c.param.key.toUpperCase()}）· 依据 ${c.exp.id} · ${c.rationale}`}
+          >
+            <div className="flex w-full cursor-help items-center gap-2 border-b border-line-soft py-[7px] last:border-b-0">
+              <span
+                className={cn(
+                  'h-[7px] w-[7px] shrink-0 rounded-full',
+                  picked.has(c.param.key) ? 'bg-p600' : 'bg-p200',
+                )}
+              />
+              <span className="num min-w-0 flex-1 truncate text-[12.5px] font-medium text-t1">
+                {c.param.key.toUpperCase()}
+              </span>
+              <span className="num shrink-0 text-[12px] text-t3">{fmt(c.current)}</span>
+              <ArrowRight size={12} strokeWidth={2} className="shrink-0 text-t3" />
+              <span className="num shrink-0 text-[13px] font-semibold text-t1">
+                {fmt(c.suggested)}
+                {c.param.unit ? (
+                  <span className="ml-0.5 text-[12px] font-normal text-t3">{c.param.unit}</span>
+                ) : null}
+              </span>
+            </div>
+          </Tooltip>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 /* -------------------------------------------------------------- 卡槽登记 */
 
 export const tuneCards = {
@@ -901,4 +976,5 @@ export const tuneCards = {
   verdict: VerdictCard,
   evidence: EvidencePanel,
   timeseries: RoundWave,
+  'param-changes': ParamChanges,
 }

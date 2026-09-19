@@ -103,7 +103,8 @@ export const FLOWS: FlowDef[] = [
       { id: 'gen-report', label: '生成报告', primary: true },
       { id: 'preview', label: '预览' },
       { id: 'export', label: '导出' },
-      { id: 'archive-kb', label: '归档到知识库' },
+      // 「归档到知识库」只留在「产物留档」卡内那一处——它紧贴产物列表，语义完整；
+      // 动作条再放一遍是同一条动作出现两次（DESIGN.md §4 文案纪律 4）。
     ],
   },
 ]

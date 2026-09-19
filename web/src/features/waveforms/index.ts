@@ -139,8 +139,13 @@ export function loadWaves(): Promise<Wave[]> {
   const hit = cache.get(pack.scene.id)
   if (hit) return hit
 
+  // 不合格曲线可能不止一条，同一个浅绿画出来会叠成一条。两档次级绿按出现次序发，
+  // 叠三条时能一眼数出是三条；暗红仍只留给徽标，不画进曲线，避免整屏红。
+  const FAIL_COLORS = ['#6E9A82', '#A8C5B5']
+
   const task = (async () => {
     const out: Wave[] = []
+    let failSeen = 0
     for (const d of pickDatasets(pack)) {
       const rel = d.file_path.split('/assets/')[1]
       if (!rel) continue
@@ -148,6 +153,8 @@ export function loadWaves(): Promise<Wave[]> {
       const picked = pickSeries(d, r.series)
       if (!picked) continue
       const { verdict, text } = verdictOf(d)
+      const failColor = FAIL_COLORS[failSeen % FAIL_COLORS.length]
+      if (verdict === 'fail') failSeen += 1
       const label = d.columns.find((c) => c.key !== 'time_s')?.name ?? d.name
       out.push({
         id: d.id,
@@ -167,9 +174,8 @@ export function loadWaves(): Promise<Wave[]> {
           y: picked.s.y,
           status: verdict === 'pass' ? 'pass' : verdict === 'fail' ? 'fail' : undefined,
           // 组件按 status 取色时依赖首帧的 CSS 变量，首帧拿不到会退回中性调色板，
-          // 这里直接给显式色。双色相口径：合格墨绿实线，不合格用墨绿弱描边档
-          // （#A8C5B5）区分，暗红只留给「不合格」徽标，不画进曲线，避免整屏红。
-          color: verdict === 'pass' ? '#2E5E45' : verdict === 'fail' ? '#A8C5B5' : '#9A9A9A',
+          // 这里直接给显式色：合格墨绿实线，不合格走两档次级绿（见 FAIL_COLORS）。
+          color: verdict === 'pass' ? '#2E5E45' : verdict === 'fail' ? failColor : '#9A9A9A',
         },
         metrics: metricsOf(r.time, picked.s.y),
       })

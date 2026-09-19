@@ -1,5 +1,5 @@
 /* ===========================================================================
-   D 区 · 副驾。外层 Panel 已有白底圆角柔阴影，这里把 agent-chat 组件的
+   D 区 · 助手。外层 Panel 已有白底圆角柔阴影，这里把 agent-chat 组件的
    自带皮肤换成 v2 设计系统：留白更大、气泡更圆、工具调用压成紧凑行、
    人工放行条改用主色（放行是常规动作，不是危险动作，不占暗红名额）。
    =========================================================================== */
@@ -55,9 +55,10 @@
   padding: 3px 10px;
 }
 .copilot-slot .ac-header__state[data-busy='true'] {
-  color: var(--tp-warn);
-  border-color: color-mix(in srgb, var(--tp-warn) 30%, white);
-  background: var(--tp-warn-wash);
+  /* 「执行中」是进行态不是异常态，走中性灰；状态色只留给待放行、离线、判不通过 */
+  color: var(--tp-text-2);
+  border-color: var(--tp-line);
+  background: var(--tp-surface);
 }
 .copilot-slot .ac-iconbtn {
   border-color: transparent;
@@ -345,8 +346,8 @@
   border-color: color-mix(in srgb, var(--tp-warn) 30%, white);
 }
 
-/* ---------- 消息流铺满副驾宽度 ----------
-   agent-chat 默认 .ac-card 宽 82%、气泡 78%，在 1920 下副驾右侧空出一大片。
+/* ---------- 消息流铺满助手宽度 ----------
+   agent-chat 默认 .ac-card 宽 82%、气泡 78%，在 1920 下助手右侧空出一大片。
    这里把工具卡 / 判定卡撑满，气泡放宽到 88%（仍留出左右气泡的错位感），
    输入框本来就是满宽，三者的右边缘现在对齐。 */
 .copilot-slot .ac-card {
@@ -354,4 +355,11 @@
 }
 .copilot-slot .ac-bubble {
   max-width: 88%;
+}
+
+/* 矮视口下消息区会被输入栏与页脚挤扁。外壳是定高的，写死 min-height 会把输入栏
+   顶出视口，所以下限交给右列行比（index.css 的 .right-rows 断点）去争取高度，
+   这里只保证消息区自己能滚、不被内容撑破。 */
+.copilot-slot .ac-stream {
+  min-height: 0;
 }

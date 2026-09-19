@@ -244,12 +244,14 @@ export function RunLeftPanel() {
       <div className="fade-b min-h-0 flex-1 overflow-y-auto pb-2">
         {grouped.map(([g2, items], i) => {
           const Icon = groupIcon(g2)
+          // 默认摊开到累计 8 行为止：左栏填得满，又不会一次铺开全部参数
+          const before = grouped.slice(0, i).reduce((n, [, xs]) => n + xs.length, 0)
           return (
             <Collapsible
               key={g2}
               icon={<Icon size={14} strokeWidth={1.9} />}
               title={short(g2, 8)}
-              defaultOpen={i < 2}
+              defaultOpen={before < 8}
               right={<span className="num text-[12px] text-t3">{items.length}</span>}
             >
               {items.map((p) => (
@@ -294,20 +296,20 @@ export function RunLeftPanel() {
             aria-expanded={gateOpen}
             className={cn(
               'flex h-[44px] w-full items-center gap-2.5 px-4 text-left transition-colors',
-              green ? 'bg-p50' : 'bg-warn-wash/50 hover:bg-warn-wash',
+              green ? 'bg-p50' : 'bg-sunk hover:bg-p50',
             )}
           >
             <ShieldCheck
               size={16}
               strokeWidth={1.9}
-              className={cn('shrink-0', green ? 'text-p700' : 'text-warn')}
+              className={cn('shrink-0', green ? 'text-p700' : 'text-t3')}
             />
             <span className="text-[13px] font-semibold tracking-tight text-t1">安全闸门</span>
             <span className="num ml-auto text-[13px] font-semibold text-t1">
               {g.acked.size}
               <span className="text-t3">/{gateItems.length}</span>
             </span>
-            <Badge tone={green ? 'soft' : 'warn'} dot>
+            <Badge tone={green ? 'soft' : 'neutral'} dot>
               {green ? '全绿' : '未放行'}
             </Badge>
           </button>
@@ -416,16 +418,14 @@ export function WaveformPanel({ full }: { full?: boolean }) {
                   'num inline-flex h-[22px] items-center gap-1.5 rounded-full border px-2 text-[12px] font-medium transition-colors',
                   active
                     ? w.verdict === 'fail'
-                      ? 'border-alert/35 bg-alert-wash text-alert'
+                      ? 'border-p200 bg-white text-t2'
                       : 'border-p200 bg-p50 text-p700'
                     : 'border-line bg-white text-t3',
                 )}
               >
                 <span
-                  className={cn(
-                    'h-[6px] w-[6px] rounded-full',
-                    !active ? 'bg-t3/40' : w.verdict === 'fail' ? 'bg-alert' : 'bg-p600',
-                  )}
+                  className="h-[6px] w-[6px] rounded-full"
+                  style={{ background: active ? w.series.color : 'var(--p-200)' }}
                 />
                 {w.id}
               </button>
@@ -488,7 +488,10 @@ function SchematicCover({ full }: { full?: boolean }) {
           <img
             src={pack.base + src}
             alt={cur.name}
-            className={cn('h-full w-full', full ? 'object-contain' : 'object-cover object-top')}
+            className={cn(
+              'h-full w-full',
+              full ? 'object-contain' : src.endsWith('.svg') ? 'object-cover object-center' : 'object-cover object-top',
+            )}
           />
         ) : (
           <EmptyState icon={<CircuitBoard size={24} strokeWidth={1.5} />} title="未渲染分页图" />
@@ -542,7 +545,7 @@ function VerdictCard({ full }: { full?: boolean }) {
         <span
           className={cn(
             'h-[7px] w-[7px] shrink-0 rounded-full',
-            tone === 'ok' ? 'bg-p600' : tone === 'bad' ? 'bg-alert' : 'bg-t3/40',
+            tone === 'ok' ? 'bg-p600' : tone === 'bad' && n > 0 ? 'bg-alert' : 'bg-t3/40',
           )}
         />
         <span className="text-[12px] text-t3">{label}</span>

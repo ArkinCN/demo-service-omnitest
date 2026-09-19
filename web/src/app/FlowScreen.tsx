@@ -4,7 +4,7 @@ import { AssistantPanel } from './AssistantPanel'
 import { LeftPanel } from './LeftPanel'
 import { ResourcePanel } from './ResourcePanel'
 
-/** 一屏三块：左栏参数 380 · 右上面板（hero）· 右下副驾。块间距 24。 */
+/** 一屏三块：左栏参数 380 · 右上面板（hero）· 右下助手。块间距 24。 */
 export function FlowScreen({ flow }: { flow: FlowId }) {
   const scene = useAppStore((s) => s.scene)
 
@@ -18,11 +18,8 @@ export function FlowScreen({ flow }: { flow: FlowId }) {
     >
       <LeftPanel flow={flow} scene={scene} />
       <div
-        className="grid min-h-0 min-w-0"
-        style={{
-          gridTemplateRows: 'minmax(0, 1.75fr) minmax(0, 1fr)',
-          gap: 'clamp(14px, 1.25vw, 24px)',
-        }}
+        className="right-rows grid min-h-0 min-w-0"
+        style={{ gap: 'clamp(14px, 1.25vw, 24px)' }}
       >
         <ResourcePanel flow={flow} scene={scene} />
         <AssistantPanel flow={flow} scene={scene} />

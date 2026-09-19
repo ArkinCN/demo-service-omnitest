@@ -24,6 +24,7 @@ import {
 } from '../../components/ui'
 import { getPack, fileName, sizeText, type RawHeaderField } from '../scene/pack'
 import { ConfirmFooter, Empty } from '../shared/bits'
+import { simp } from '../shared/zh'
 import { TimeSeriesChart } from '../timeseries'
 import { loadWaves, type Wave } from '../waveforms'
 import { evaluateAll, runtimeMeasures } from '../flow-run/evaluate'
@@ -48,9 +49,12 @@ const FIELD_SHORT: Record<string, string> = {
   inlet_start_addr: 'Inlet',
   outlet_start_addr: 'Outlet',
   bootloader: 'Boot',
-  customer_engineer: '工程師',
+  customer_engineer: '工程师',
 }
-const fieldShort = (f: RawHeaderField) => FIELD_SHORT[f.key] ?? short(f.name)
+/** 左栏与卡面用：模板字段名是繁体（客戶名稱 / 韌體版本…），界面一律归一成简体 */
+const fieldShort = (f: RawHeaderField) => simp(FIELD_SHORT[f.key] ?? short(f.name))
+/** 报告预览纸面用：照抄模板原文，不做简繁归一，纸面上另标「模板原文」 */
+const rawFieldLabel = (f: RawHeaderField) => short(f.name, 6)
 
 /* ------------------------------------------------- 跨卡片共享：表头 / 导出格式 */
 
@@ -235,6 +239,40 @@ export function ReportLeftPanel() {
         >
           {mine.map((f) => (
             <FieldRow key={f.key} f={f} />
+          ))}
+        </Collapsible>
+
+        {/* 模板分节：表头之外的正文由这几节构成，左栏原来到这里就空了半屏 */}
+        <Collapsible
+          icon={<LayoutList size={14} strokeWidth={1.9} />}
+          title="模板分节"
+          right={<span className="num text-[12px] text-t3">{pack.report.spec_sections.length}</span>}
+        >
+          {pack.report.spec_sections.map((sec) => (
+            <Tooltip
+              key={sec.section}
+              className="block w-full"
+              content={
+                <span className="block space-y-1">
+                  <span className="block font-medium">{simp(sec.section)}</span>
+                  <span className="num block opacity-75">
+                    {sec.rows} · 由 {sec.from_flow} 写入
+                  </span>
+                  <span className="block opacity-75">{sec.fields.map(simp).join(' · ')}</span>
+                </span>
+              }
+            >
+              <span className="flex min-h-[40px] w-full cursor-help items-center gap-2 px-4 py-1.5 transition-colors hover:bg-p50/60">
+                <SourceTag source={sec.from_flow.startsWith('F6') ? '建议' : '文档'} />
+                <span className="truncate text-[13px] font-medium text-t1">
+                  {sectionShort(sec.section)}
+                </span>
+                <span className="num ml-auto shrink-0 text-[13px] font-semibold text-t1">
+                  {sec.fields.length}
+                  <span className="ml-1 text-[12px] font-normal text-t3">字段</span>
+                </span>
+              </span>
+            </Tooltip>
           ))}
         </Collapsible>
 
@@ -473,14 +511,19 @@ function ReportPreview({ full }: { full?: boolean }) {
         >
           {/* 表头 */}
           <div className="flex min-h-0 flex-col gap-1.5">
-            <SheetTitle>表頭</SheetTitle>
+            <span className="flex shrink-0 items-baseline gap-1.5">
+              <SheetTitle>表头</SheetTitle>
+              <span className="shrink-0 text-[12px] text-t3" title="这一列的字段名照抄模板原文，模板本身是繁体，界面其余各处一律用简体">
+                模板原文
+              </span>
+            </span>
             <ul className="no-scrollbar min-h-0 flex-1 overflow-hidden" style={mask}>
               {fields.map((f) => (
                 <li
                   key={f.key}
                   className="flex items-baseline gap-2 border-b border-line-soft py-[3px] last:border-b-0"
                 >
-                  <span className="shrink-0 text-[12px] text-t3">{fieldShort(f)}</span>
+                  <span className="shrink-0 text-[12px] text-t3">{rawFieldLabel(f)}</span>
                   <span
                     className={cn(
                       'num ml-auto truncate text-[12px]',
@@ -501,7 +544,7 @@ function ReportPreview({ full }: { full?: boolean }) {
               compact ? 'pl-3' : 'pl-5',
             )}
           >
-            <SheetTitle>波形圖位</SheetTitle>
+            <SheetTitle>波形图位</SheetTitle>
             <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden" style={mask}>
               {waves.slice(0, 2).map((w) => (
                 <figure key={w.id} className="m-0 shrink-0">
@@ -1030,7 +1073,7 @@ function ReportHistory({ full }: { full?: boolean }) {
 /** 节名取「、」之后的中文段，英文副名进 tooltip */
 function sectionShort(s: string) {
   const body = s.includes('、') ? s.split('、')[1] : s
-  return short(body.replace(/[A-Za-z][A-Za-z /]*$/, '').trim(), 6)
+  return simp(short(body.replace(/[A-Za-z][A-Za-z /]*$/, '').trim(), 6))
 }
 
 function TemplateFields({ full }: { full?: boolean }) {
@@ -1084,7 +1127,7 @@ function TemplateFields({ full }: { full?: boolean }) {
                   full ? 'w-[210px]' : 'w-[76px]',
                 )}
               >
-                {full ? s.section : sectionShort(s.section)}
+                {full ? simp(s.section) : sectionShort(s.section)}
               </span>
               <span className="min-w-0 flex-1">
                 <StackBar

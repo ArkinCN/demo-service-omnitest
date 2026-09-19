@@ -35,7 +35,7 @@ export function FlowCopilot({ flow }: { flow: FlowId }) {
       <AgentChat
         key={flow}
         adapter={adapter}
-        assistantName="副驾"
+        assistantName="助手"
         operator="张工"
         defaultPermission="readonly"
         autoStartPrompt={PROMPT[flow]}

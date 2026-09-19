@@ -18,6 +18,7 @@ export const CARD_LIB: Record<
   progress: { title: '执行进度与日志', group: '过程与数据' },
   pipeline: { title: '转化流水线', group: '过程与数据' },
   candidates: { title: '候选队列', group: '过程与数据' },
+  'param-changes': { title: '参数变更', group: '过程与数据' },
   verdict: { title: '判定卡', group: '过程与数据' },
   evidence: { title: '知识库依据', group: '知识与记录' },
   history: { title: '历史对比', group: '知识与记录' },

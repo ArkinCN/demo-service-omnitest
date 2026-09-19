@@ -216,6 +216,23 @@ const card = (id: CardInstance['id'], summary: string, extra: Partial<CardInstan
   ...extra,
 })
 
+/**
+ * 初始化 hero 卡的卡名。
+ * 取 scene.json 第一张图自己登记的性质（`kind`）；没登记就按标题里的关键词判。
+ * 判不出来才退回「图纸」——不拿「产品示意图」当兜底，那会把线稿说成实物。
+ */
+function heroImageTitle(pack: RawPack): string {
+  const im = pack.scene.images?.[0] as { kind?: string; title?: string } | undefined
+  if (!im) return '图纸'
+  if (im.kind === '结构示意') return '结构示意图'
+  if (im.kind === '实物照片') return '产品照片'
+  const t = im.title ?? ''
+  if (/原理图|schematic/i.test(t)) return '原理图'
+  if (/结构|简图|示意/.test(t)) return '结构示意图'
+  if (/照片|photo/i.test(t)) return '产品照片'
+  return '图纸'
+}
+
 /** 三级分类的一行短名，例如「电机 › 散热风扇 › FU6832 散热风扇驱动板」 */
 function taxonomyLine(pack: RawPack) {
   const t = pack.scene.taxonomy
@@ -348,9 +365,17 @@ function initFlow(pack: RawPack): FlowContent {
     checklist,
     groups,
     cards: [
-      // 首卡即 hero：场景包里唯一一张真图（标准方案原理图首页）铺满，带变体切换与芯片徽标
-      card('product-view', pack.scene.images[0]?.title ?? '产品示意图', { active: true }),
-      card('schematic', `数据手册 / 参数配置 / ${pack.scene.schematic_variants.length} 套图纸`),
+      // 首卡即 hero：场景包登记的图纸铺满，带变体切换与芯片徽标。
+      // 卡名随图的性质走：散热风扇包是电路原理图，玻璃升降器包是手绘结构示意图，
+      // 不再一律叫「产品示意图」——图里画的不是产品实物。
+      card('product-view', pack.scene.images[0]?.title ?? '图纸', {
+        active: true,
+        title: heroImageTitle(pack),
+      }),
+      // 槽 2 是三份关键源文件的读取入口，卡里是文件列表不是图，卡名按内容叫「文档读取」
+      card('schematic', `数据手册 / 参数配置 / ${pack.scene.schematic_variants.length} 套图纸`, {
+        title: '文档读取',
+      }),
       card('project-tree', '客户工程目录与源材料'),
       card('interlock', `安全联锁 ${pack.interlocks.interlocks.length} 条 · 人员项 ${human.length}`),
       card('bench-live', '台架与仪器接入状态'),
@@ -435,7 +460,9 @@ function runFlow(pack: RawPack): FlowContent {
       ),
       // 卡槽顺序即视觉权重：首卡是 hero（横跨两格），第 2 槽占右上角，
       // 其余三张铺第二行。执行进度是纯文字，退到「换卡」下拉里。
-      card('schematic', '原理图 · 标准应用'),
+      card('schematic', `图纸 · ${pack.scene.schematic_variants.length} 套`, {
+        title: heroImageTitle(pack),
+      }),
       card('verdict', '按判据表逐条判定'),
       card('interlock', `联锁 ${pack.interlocks.interlocks.length} 条`),
       card('remote-device', '台架工控机 · 单机设备会话'),
@@ -472,15 +499,17 @@ function tuneFlow(pack: RawPack): FlowContent {
     // 卡槽顺序即视觉权重：首卡是 hero（波形对照，横跨两格），第 2 槽占右上角，
     // 其余三张铺第二行（候选队列 · 知识库依据 · 判定卡）。
     cards: [
-      card('history', 'PASS / FAIL 两轮波形叠加对照', { active: true }),
+      card('history', `${pack.datasets.datasets.filter((d) => d.mode.includes('into_pack')).length} 条历次波形叠加对照`, { active: true }),
       card('candidates', '盲试候选队列 · 上限 10 个'),
       card('evidence', `依据：经验库 ${exps.length} 条中匹配到的条目`),
       card('verdict', '判据逐条判定结果'),
-      card('timeseries', '本轮回放的那一条曲线读数'),
+      // 第 5 槽原来是「时序曲线」，与 hero 的波形对照是同一批数据、同一种图，
+      // 一页两张曲线卡是重复；换成本轮要写回固件的宏。单条曲线读数从卡头「换卡」进得来。
+      card('param-changes', '本轮写回的宏 · 原值 → 新值'),
     ],
     greeting: `推荐这几项，是因为经验库 ${exps.length} 条里有 ${tuneExp.length} 条属调优流程，其中能在本包 ${pack.controls.parameters.length} 个控制参数里按宏名对上的才进候选，对不上的一律不推。写回沿用原数值外壳，只改括号内数字。`,
     quick: ['为什么是这几项', '这条建议的依据', '改动的影响面', '采纳并回到启动测试'],
-    verifyLine: `候选 ${Math.min(4, tuneExp.length)} 项待人工采纳 · 副驾不写回`,
+    verifyLine: `候选 ${Math.min(4, tuneExp.length)} 项待人工采纳 · 助手不写回`,
   }
 }
 

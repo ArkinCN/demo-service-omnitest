@@ -4,8 +4,8 @@ import type { FlowId, ScenePackage } from '../data/types'
 import { hasAssistant, renderAssistant, useRegistryVersion } from '../registry'
 import { useAppStore } from '../state/useAppStore'
 
-/** D 区 · 对话（规格 8）：测试副驾，界面短名"副驾"。
- *  副驾可读、可算、可建议、可写草稿；落盘与控设备一律人点。 */
+/** D 区 · 对话（规格 8）：测试助手，界面短名"助手"。
+ *  助手可读、可算、可建议、可写草稿；落盘与控设备一律人点。 */
 
 type Msg =
   | { id: string; role: 'assistant' | 'user'; type: 'text'; text: string }
@@ -183,7 +183,7 @@ function SuggestCard({ m }: { m: Extract<Msg, { type: 'suggest' }> }) {
   )
 }
 
-/** 注册了真实副驾组件时，D 区整块交给它；否则走壳层的演示对话。 */
+/** 注册了真实助手组件时，D 区整块交给它；否则走壳层的演示对话。 */
 export function AssistantPanel(props: { flow: FlowId; scene: ScenePackage }) {
   useRegistryVersion()
   if (hasAssistant(props.flow)) {
@@ -222,7 +222,7 @@ function ShellAssistantPanel({ flow, scene }: { flow: FlowId; scene: ScenePackag
         id: `a${m.length}`,
         role: 'assistant',
         type: 'text',
-        text: '壳层演示版未接模型，真实回答由后端副驾服务给出；本轮不改任何参数。',
+        text: '壳层演示版未接模型，真实回答由后端助手服务给出；本轮不改任何参数。',
       },
     ])
     setDraft('')
@@ -232,14 +232,14 @@ function ShellAssistantPanel({ flow, scene }: { flow: FlowId; scene: ScenePackag
     <Panel>
       <PanelHeader
         title="对话"
-        meta="测试副驾 · 落盘与控设备一律由人点"
+        meta="测试助手 · 落盘与控设备一律由人点"
         right={
           <span className="flex items-center gap-1.5 rounded-tps border border-line-soft px-1.5 py-0.5">
             <span
               className="h-[6px] w-[6px] rounded-full bg-ink"
               style={{ animation: 'pulse-dot 2.4s ease-in-out infinite' }}
             />
-            <span className="text-[11px] text-t2">副驾在线</span>
+            <span className="text-[11px] text-t2">助手在线</span>
           </span>
         }
       />
@@ -298,7 +298,7 @@ function ShellAssistantPanel({ flow, scene }: { flow: FlowId; scene: ScenePackag
                 send(draft)
               }
             }}
-            placeholder="问副驾…（Enter 发送，Shift+Enter 换行）"
+            placeholder="问助手…（Enter 发送，Shift+Enter 换行）"
             aria-label="对话输入"
             className="border-0 bg-transparent focus:bg-transparent"
           />
@@ -315,7 +315,7 @@ function ShellAssistantPanel({ flow, scene }: { flow: FlowId; scene: ScenePackag
               value={model}
               onChange={setModel}
             />
-            <span className="text-[11px] text-t3">副驾不执行落盘与控设备动作</span>
+            <span className="text-[11px] text-t3">助手不执行落盘与控设备动作</span>
             <Button size="sm" variant="default" aria-label="按住说话" className="ml-auto px-2">
               <span aria-hidden className="num mr-1 text-[11px]">
                 ◉

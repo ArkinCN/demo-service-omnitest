@@ -63,7 +63,7 @@ export function registerLeftPanel(
   bump()
 }
 
-/** 注册某条流程的 D 区副驾对话（整块替换默认演示对话） */
+/** 注册某条流程的 D 区助手对话（整块替换默认演示对话） */
 export function registerAssistant(
   flow: FlowId,
   component: LeftPanelRegistration['component'],

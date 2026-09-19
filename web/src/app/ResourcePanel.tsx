@@ -192,7 +192,7 @@ export function ResourcePanel({ flow, scene }: { flow: FlowId; scene: ScenePacka
                 <PanelCard
                   key={c.id}
                   icon={cardIcon(c.id, i === 0 ? 14 : 13)}
-                  title={CARD_LIB[c.id]?.title ?? regById.get(c.id)?.label ?? c.id}
+                  title={c.title ?? CARD_LIB[c.id]?.title ?? regById.get(c.id)?.label ?? c.id}
                   stamp={c.stamp}
                   active={c.active}
                   hero={i === 0}
@@ -220,7 +220,7 @@ export function ResourcePanel({ flow, scene }: { flow: FlowId; scene: ScenePacka
         open={!!open}
         onClose={() => setOpen(null)}
         width={1220}
-        title={open ? (CARD_LIB[open.id]?.title ?? open.id) : ''}
+        title={open ? (open.title ?? CARD_LIB[open.id]?.title ?? open.id) : ''}
         meta={open?.summary}
         footer={
           <>
@@ -236,12 +236,12 @@ export function ResourcePanel({ flow, scene }: { flow: FlowId; scene: ScenePacka
           </>
         }
       >
-        <div className={cn('flex h-[470px] items-center justify-center rounded-tp2 bg-p50 p-2')}>
+        <div className={cn('flex h-[min(64vh,470px)] items-center justify-center rounded-tp2 bg-p50 p-2')}>
           {open ? (
             regById.get(open.id) ? (
               (regById.get(open.id)!.renderExpanded ?? regById.get(open.id)!.render)({ flow, scene })
             ) : (
-              <div className="h-[400px] w-[620px]">
+              <div className="h-[min(56vh,400px)] w-[620px]">
                 <CardArt id={open.id} />
               </div>
             )

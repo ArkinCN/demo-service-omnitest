@@ -128,6 +128,30 @@
     -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
   }
 
+  /* 两端渐隐：给会超出、且上下都可能被切的滚动区（右侧工具条） */
+  .fade-tb {
+    mask-image: linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 16px,
+      #000 calc(100% - 16px),
+      transparent 100%
+    );
+  }
+
+  /* 右列两行（面板 : 助手）。1440×810 这类矮视口下面板占比收一档，
+     让助手的消息区不被压到只剩输入框。 */
+  .right-rows {
+    grid-template-rows: minmax(0, 1.75fr) minmax(0, 1fr);
+  }
+
+  @media (max-height: 859px) {
+    .right-rows {
+      grid-template-rows: minmax(0, 1.45fr) minmax(0, 1fr);
+    }
+  }
+
   .no-scrollbar::-webkit-scrollbar {
     width: 0;
     height: 0;

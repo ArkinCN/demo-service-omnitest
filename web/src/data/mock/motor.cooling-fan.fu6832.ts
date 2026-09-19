@@ -659,7 +659,7 @@ export const MOCK_SCENE: ScenePackage = {
               items: [
                 { id: 'ch1', name: '异常说明章节', value: '纳入', kind: 'switch', options: ['纳入', '不纳入'], source: '人工', status: 'done' },
                 { id: 'ch2', name: '附录：联锁豁免记录', value: '纳入', kind: 'switch', options: ['纳入', '不纳入'], source: '人工', status: 'done' },
-                { id: 'ch3', name: '结论生成方式', value: '副驾撰写', kind: 'select', options: ['模板套话', '副驾撰写', '人工撰写'], source: '人工', status: 'done', note: '副驾稿强制人工复核' },
+                { id: 'ch3', name: '结论生成方式', value: '助手撰写', kind: 'select', options: ['模板套话', '助手撰写', '人工撰写'], source: '人工', status: 'done', note: '助手稿强制人工复核' },
               ],
             },
           ],

@@ -10,6 +10,7 @@ import {
   FileText,
   Folder,
   Gauge,
+  Image as ImageIcon,
   Lock,
   Monitor,
   Radar,
@@ -48,6 +49,7 @@ import {
   type RawPack,
 } from '../scene/pack'
 import { ConfirmFooter, Empty } from '../shared/bits'
+import { simp } from '../shared/zh'
 import { probeDevice, type ConnState } from '../remote'
 
 /* ===========================================================================
@@ -256,7 +258,9 @@ export function InitLeftPanel() {
 function shortVariant(name: string) {
   if (/VSP/i.test(name)) return 'VSP'
   if (/非|无|無/.test(name)) return '无二极管'
-  return short(name.replace(/方案/g, ''), 4)
+  if (/结构|結構|示意|简图|簡圖/.test(name)) return '结构图'
+  if (/原理图|原理圖/.test(name)) return '原理图'
+  return simp(short(name.replace(/方案/g, ''), 4))
 }
 
 /** 变体登记的是 PDF 原始路径；包内渲出来的分页图挂在 scene.images 上，按 _source.file 对号。 */
@@ -285,7 +289,12 @@ function ProductHero({ full }: { full?: boolean }) {
   const cur = vs[i]
   const src = srcOf(cur)
   const img = src ? pack.scene.images?.find((im) => im.path === src) : undefined
-  const chip = /([A-Z]{1,3}\d{3,5}[A-Z]?)/.exec(pack.scene.product.chip)?.[1] ?? '主控'
+  // 场景包的 chip 字段有两种写法：单一型号（FU6832N…），或「不锁定主控 + 几家参考设计」
+  // 的整段说明。后者里抠一个型号出来当徽标是把参考设计说成被测件，这里退回「未锁定主控」。
+  const chipText = pack.scene.product.chip
+  const chip = /不锁定|未锁定|参考设计/.test(chipText)
+    ? '未锁定主控'
+    : (/([A-Z]{1,3}\d{3,5}[A-Z]?)/.exec(chipText)?.[1] ?? '主控')
 
   return (
     <div className={cn(full ? 'relative h-full w-full' : 'absolute inset-0')}>
@@ -307,7 +316,7 @@ function ProductHero({ full }: { full?: boolean }) {
 
       {/* 芯片徽标 */}
       <Tooltip
-        content={`${pack.scene.product.chip}；图为${img?.title ?? cur.name}${img?.render ? `（${img.render}）` : ''}，场景包未登记产品实物照片，不拿渲染图冒充实物。`}
+        content={`${chipText}；图为${img?.title ?? cur.name}${img?.render ? `（${img.render}）` : ''}，场景包未登记产品实物照片，不拿渲染图冒充实物。`}
       >
         <span className="absolute top-2.5 left-2.5 inline-flex h-[26px] cursor-help items-center gap-1.5 rounded-full border border-white/70 bg-white/85 px-2.5 shadow-[0_1px_6px_rgba(31,42,36,.12)] backdrop-blur">
           <Cpu size={14} strokeWidth={1.9} className="text-p700" />
@@ -357,8 +366,15 @@ function keyDocs(pack: RawPack): KeyDoc[] {
   if (src) out.push({ doc: src, icon: FileCode2, label: short(fileName(src.path), 10) })
   const sch = pickBy(/原理图/)
   if (sch.length) out.push({ doc: sch[0], icon: CircuitBoard, label: '原理图', extra: sch.length })
-  if (out.length) return out
-  return all.slice(0, 3).map((d) => ({ doc: d, icon: FileText, label: short(d.title, 8) }))
+  // 三类没配齐的包（玻璃升降器包只有法规与报告类文档）按体积补到三份，卡里不留空行
+  const has = new Set(out.map((x) => x.doc.id))
+  for (const d of [...all].sort((a, b) => (b.size_bytes ?? 0) - (a.size_bytes ?? 0))) {
+    if (out.length >= 3) break
+    if (has.has(d.id)) continue
+    has.add(d.id)
+    out.push({ doc: d, icon: FileText, label: short(simp(d.title), 10) })
+  }
+  return out
 }
 
 function DocIntake({ full }: { full?: boolean }) {
@@ -372,7 +388,13 @@ function DocIntake({ full }: { full?: boolean }) {
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
-      <div className="flex min-h-0 flex-1 flex-col justify-center">
+      <div
+        className="no-scrollbar flex min-h-0 flex-1 flex-col justify-center overflow-y-auto"
+        style={{
+          maskImage: 'linear-gradient(to bottom, #000 calc(100% - 12px), transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, #000 calc(100% - 12px), transparent 100%)',
+        }}
+      >
         {docs.map((d) => (
           <Tooltip
             key={d.doc.id}
@@ -400,11 +422,25 @@ function DocIntake({ full }: { full?: boolean }) {
           </p>
         ) : null}
       </div>
+      {/* 回填进度：让这张卡除了文件名之外还有一条可读的量 */}
+      <div className="flex shrink-0 items-center gap-2 pt-1.5">
+        <span className="text-[12px] text-t3">回填</span>
+        <span className="h-[5px] min-w-0 flex-1 overflow-hidden rounded-full bg-p100">
+          <span
+            className="block h-full rounded-full bg-p600 transition-[width] duration-500"
+            style={{ width: `${Math.round((filled / (attrs.length || 1)) * 100)}%` }}
+          />
+        </span>
+        <span className="num shrink-0 text-[12px] font-semibold text-t1">
+          {filled}
+          <span className="font-normal text-t3">/{attrs.length}</span>
+        </span>
+      </div>
       <div className="shrink-0 pt-2">
         <Tooltip content={`已从源文件填得 ${filled} / ${attrs.length} 项；其余项源材料确实没给。`}>
           <span className="block">
             <Button block size="sm" variant="secondary" icon={<Wand2 size={13} strokeWidth={1.9} />}>
-              读取并填充
+              按这三份回填
             </Button>
           </span>
         </Tooltip>
@@ -459,6 +495,11 @@ function projectRootOf(docs: RawDocument[]) {
     }
   }
   return [...hits.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
+}
+
+/** 被测件的中文名：括号里的出处说明进 tooltip，卡头只留产品名本身 */
+function productShort(pack: RawPack) {
+  return pack.scene.product.name.replace(/[（(].*$/, '').trim()
 }
 
 /** 工程树：客户工程按真实目录（Software / Hardware / Document）铺，工程之外的源材料按类型归一堆。 */
@@ -565,12 +606,15 @@ function ProjectTree({ full }: { full?: boolean }) {
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
-      <div className="flex shrink-0 items-center gap-1.5 pb-1">
-        <Tooltip content={tree.prefix ?? '本场景包的源材料不在同一个工程目录下'}>
-          <span className="num cursor-help truncate text-[12px] text-t3">
-            {tree.prefix ? fileName(tree.prefix) : '源文件'}
+      <div className="flex shrink-0 items-baseline gap-1.5 pb-1">
+        <Tooltip
+          content={`${pack.scene.product.name}\n场景包 ${pack.scene.id}\n${tree.prefix ?? '本场景包的源材料不在同一个工程目录下'}`}
+        >
+          <span className="cursor-help truncate text-[12.5px] font-medium text-t1">
+            {productShort(pack)}
           </span>
         </Tooltip>
+        <span className="num min-w-0 truncate text-[12px] text-t3">{pack.scene.id}</span>
         <span className="num ml-auto shrink-0 text-[12px] text-t3">{tree.files}</span>
       </div>
       <div
@@ -670,23 +714,55 @@ function InterlockRing({ full }: { full?: boolean }) {
 
 /* ------------------------------------------------------------- 卡片 · 台架实况 */
 
-/** 仪器从场景包自己的实测量字典推：谁取数就出谁，推不出来就不出这一行。 */
+const INSTRUMENT_RULES: { re: RegExp; icon: LucideIcon; name: string; hint: string }[] = [
+  {
+    re: /示波器|rigol/i,
+    icon: Activity,
+    name: '数字示波器',
+    hint: '实测量字典里由示波器取的量：FG 频率、母线与相电流峰值、三相相位差。',
+  },
+  {
+    re: /红外|CMD7/i,
+    icon: Radar,
+    name: '红外转速计',
+    hint: '机械转速真值由红外转速计 / CMD7 FG2 取，用来校核 FG 换算出的转速。',
+  },
+  {
+    re: /力传感器/,
+    icon: Gauge,
+    name: '力传感器',
+    hint: '防夹力与堵转力由力传感器取，量程按堵转力 ≥212 N 选型。',
+  },
+  {
+    re: /位移传感器/,
+    icon: Ruler,
+    name: '位移传感器',
+    hint: '开口、行程与回缩量由位移传感器取，分辨率 0.05 mm。',
+  },
+  {
+    re: /电流传感器/,
+    icon: Zap,
+    name: '电流传感器',
+    hint: '工作电流与堵转电流由电流传感器取，兼作换向纹波计数源。',
+  },
+  {
+    re: /程控电源/,
+    icon: Zap,
+    name: '程控电源',
+    hint: '试验电压由程控电源给并回读；起动电压试验靠它缓升。',
+  },
+  {
+    re: /声级计/,
+    icon: Waves,
+    name: '声级计',
+    hint: '工作噪音测点在电机出力轴正上方 300 mm，取全过程最大值。',
+  },
+]
+
+/** 仪器从场景包自己的实测量字典推：谁取数就出谁，推不出来就不出这一行，不硬凑。 */
 function instrumentsOf(pack: RawPack) {
   const hows = Object.values(pack.requirements.runtime_measures ?? {}).map((m) => m.obtained_by ?? '')
-  const out: { icon: LucideIcon; name: string; hint: string }[] = []
-  if (hows.some((h) => /示波器|rigol/i.test(h)))
-    out.push({
-      icon: Activity,
-      name: '数字示波器',
-      hint: '实测量字典里由示波器取的量：FG 频率、母线与相电流峰值、三相相位差。',
-    })
-  if (hows.some((h) => /红外|CMD7/i.test(h)))
-    out.push({
-      icon: Radar,
-      name: '红外转速计',
-      hint: '机械转速真值由红外转速计 / CMD7 FG2 取，用来校核 FG 换算出的转速。',
-    })
-  return out.slice(0, 2)
+  return INSTRUMENT_RULES.filter((r) => hows.some((h) => r.re.test(h))).slice(0, 3)
 }
 
 function BenchLive({ full }: { full?: boolean }) {
@@ -715,14 +791,16 @@ function BenchLive({ full }: { full?: boolean }) {
         ? '网关 :8022 在线，可开 SSH 会话与远程取图。'
         : '网关未启动，流程 2 不需要连台架；起法：cd ~/lab/webssh && npm run gateway，端口 8022。',
     },
-    ...instrumentsOf(pack).map((d) => ({
-      icon: d.icon,
-      name: d.name,
-      meta: '待接入',
-      status: 'empty' as const,
-      text: '未接入',
-      hint: `${d.hint} 初始化阶段不建会话，实际接入在流程 4。`,
-    })),
+    ...instrumentsOf(pack)
+      .slice(0, full ? 3 : 2)
+      .map((d) => ({
+        icon: d.icon,
+        name: d.name,
+        meta: '待接入',
+        status: 'empty' as const,
+        text: '未接入',
+        hint: `${d.hint} 初始化阶段不建会话，实际接入在流程 4。`,
+      })),
   ]
 
   return (
@@ -745,6 +823,25 @@ function BenchLive({ full }: { full?: boolean }) {
           </div>
         </Tooltip>
       ))}
+      {/* 最近一次台架截图：网关未起时没有图，给缩略占位而不是留白 */}
+      <Tooltip
+        className="w-full"
+        content={
+          online
+            ? '最近一次取图来自台架工控机 C:\\fc_pull，点开可看全图。'
+            : '网关未启动，本场景包里也没有留档的台架截图，这里是占位框——不拿别处的图冒充台架实况。'
+        }
+      >
+        <div className="mt-1.5 flex w-full shrink-0 cursor-help items-center gap-2.5">
+          <span className="paper-grid flex h-[38px] w-[62px] shrink-0 items-center justify-center rounded-tpx border border-line-soft bg-p50 text-p400">
+            <ImageIcon size={16} strokeWidth={1.75} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[12.5px] font-medium text-t2">最近一次截图</span>
+            <span className="block truncate text-[12px] text-t3">{online ? '待取图' : '无留档'}</span>
+          </span>
+        </div>
+      </Tooltip>
       {full ? (
         <p className="pt-2 text-[12px] leading-5 text-t3">
           浏览器不持有任何凭据；私钥只在网关一侧，devices.json 里写的是环境变量名 FORTIOR_WIN_KEY。

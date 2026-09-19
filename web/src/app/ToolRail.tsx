@@ -63,11 +63,7 @@ export function ToolRail({ groups }: { groups: ToolGroup[] }) {
   return (
     <>
       <aside
-        className="no-scrollbar flex w-[56px] shrink-0 flex-col items-center gap-4 overflow-y-auto border-l border-line-soft bg-p50/50 py-4"
-        style={{
-          maskImage: 'linear-gradient(to bottom, #000 calc(100% - 20px), transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, #000 calc(100% - 20px), transparent 100%)',
-        }}
+        className="fade-tb no-scrollbar flex w-[56px] shrink-0 flex-col items-center gap-4 overflow-y-auto border-l border-line-soft bg-p50/50 py-4"
       >
         {groups.map((g, gi) => (
           <div

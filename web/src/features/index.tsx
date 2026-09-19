@@ -3,7 +3,7 @@
 
    卡片注册表按卡片库标识（CardId）唯一，因此同一张卡在多条流程里要显示不同
    内容时，只能注册一次、在 render 里按 ctx.flow 分派——这里的 CARD_IMPL 就是
-   那张分派表。左栏与副驾按流程各注册一次。
+   那张分派表。左栏与助手按流程各注册一次。
    =========================================================================== */
 import type { CardId, FlowId } from '../data/types'
 import { registerAssistant, registerLeftPanel, registerPanelCard } from '../registry'
@@ -32,6 +32,7 @@ const CARD_IMPL: Partial<Record<CardId, Partial<Record<FlowId, CardImpl>>>> = {
   pipeline: { kb: kbCards.pipeline },
   progress: { run: runCards.progress },
   candidates: { tune: tuneCards.candidates },
+  'param-changes': { tune: tuneCards['param-changes'] },
   tools: { kb: kbCards.tools },
   'product-view': { init: initCards['product-view'] },
   schematic: { init: initCards.schematic, run: runCards.schematic },
@@ -60,6 +61,7 @@ const LABEL: Partial<Record<CardId, string>> = {
   pipeline: '转化流水线',
   progress: '执行进度与日志',
   candidates: '候选队列',
+  'param-changes': '参数变更',
   verdict: '判定卡',
 }
 
@@ -76,7 +78,7 @@ for (const [id, impls] of Object.entries(CARD_IMPL) as [CardId, Record<FlowId, C
     renderExpanded: ({ flow }) => {
       const C = impls[flow]
       return C ? (
-        <div className="h-[430px] w-[1180px] max-w-full bg-surface p-2">
+        <div className="h-[min(60vh,430px)] w-[1180px] max-w-full bg-surface p-2">
           <C full />
         </div>
       ) : null

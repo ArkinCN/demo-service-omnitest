@@ -28,6 +28,7 @@ export const CARD_IDS = [
   'progress',
   'pipeline',
   'candidates',
+  'param-changes',
   'verdict',
   'evidence',
   'history',
@@ -102,6 +103,9 @@ export interface ChecklistItem {
 /** C 区卡片实例 */
 export interface CardInstance {
   id: CardId
+  /** 卡名覆写：同一张卡在不同场景包里指的东西不同时用（例如初始化 hero 图，
+   *  散热风扇包里是原理图、玻璃升降器包里是结构示意图）。缺省用 CARD_LIB 的卡名。 */
+  title?: string
   /** 卡头右侧的灰色时间戳 */
   stamp?: string
   /** 卡内一行摘要 */
