@@ -1,0 +1,486 @@
+# OmniTest · 多场景 Agent 测试系统（前端壳与设计系统）
+
+产品名 `OmniTest` 为占位，待拍板。智能体统一叫「测试副驾」，界面短名「副驾」，英文 `Test Copilot`，代码标识 `copilot`。
+
+本仓只做**应用壳与设计系统**：A/B/C/D 四个大块的骨架、六条流程路由、UI 基础组件、场景包数据契约与扩展注册表。各流程内部的真实功能组件（时序图、工作流画布、知识库树等）由别的 agent 在 `src/features/<name>/` 下实现并注册进来，壳层不需要改动。
+
+实现依据：`/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/01-设计规格-信息架构与页面.md`（下称《设计规格》）。业务逻辑见同目录 `02-业务逻辑说明-六个流程.md`，用户原始要求见 `00-用户需求原话-20260919.md`。
+
+---
+
+## 1. 跑起来
+
+```bash
+cd ~/agent-test-web
+npm install
+npm run dev      # http://localhost:5173
+npm run build    # tsc -b && vite build，必须零错误
+npm run lint     # oxlint
+```
+
+技术栈：Vite 8 + React 19 + TypeScript 6 + Tailwind CSS 4（`@theme` 令牌）+ react-router 7 + zustand。
+
+截图基准 1600×1000，采集脚本 `scripts/shoot.mjs`（playwright + 本机
+`~/.cache/puppeteer/chrome/*/chrome-linux64/chrome`，不额外下载浏览器），产物见 `shots/`：
+
+```bash
+npm run build && npm run preview -- --port 4173
+node scripts/shoot.mjs                    # 默认打 http://localhost:4173
+BASE=http://localhost:5173 node scripts/shoot.mjs
+python3 scripts/compare.py run            # 两包并排对照图
+```
+
+v2 视觉层重做后的验收截图另有一套，基准 1920×1080，见本文第 6.2 节与 `shots2/`。
+
+URL 上的 `?scene=<sceneId>` 直接指定开哪个场景包（截图脚本与分享链接都用它），
+目录里没有这个 id 时忽略，走 `public/scenes/index.json` 的 `default`。
+
+网关（远程设备卡要用，不起也能跑，卡片显示离线态）：
+
+```bash
+cd ~/lab/webssh && npm run gateway        # 监听 8022，token 在该目录 .env
+```
+
+---
+
+## 2. 目录结构
+
+```
+src/
+├── app/                    四个大块的实现
+│   ├── Shell.tsx           页面壳：A 区通栏 + 主体外边距（横 16 纵 12）
+│   ├── TopBar.tsx          A 区 · 流程导航（行1 56 / 行2 44 / 行3 40）
+│   ├── ProductCascader.tsx 三级级联产品选择器（场景 › 子类 › 产品类型）
+│   ├── FlowScreen.tsx      B/C/D 三块的栅格（B 宽 384，右列 496 : 328）
+│   ├── LeftPanel.tsx       B 区 · 输入清单 + 分组手风琴 + 确认条
+│   ├── ResourcePanel.tsx   C 区 · 网格 2×2 与画布两种视图 + 放大态
+│   ├── ToolRail.tsx        C 区右侧竖向工具条（四组，按钮带状态点）
+│   ├── AssistantPanel.tsx  D 区 · 副驾对话（四类消息 + 快捷指令 + 输入栏）
+│   └── CardArt.tsx         卡片库占位图形（墨绿线条稿，被真实组件替换）
+├── components/ui/          基础组件集，见第 4 节
+├── data/
+│   ├── types.ts            场景包数据契约（与《设计规格》同名同构）
+│   ├── flows.ts            六条流程：路由、序号、动作按钮、前置条件
+│   ├── cards.ts            卡片库 15 张卡的标识与卡名
+│   ├── loadScene.ts        场景包加载适配层 + 产品三级目录
+│   └── mock/               临时 mock 场景包（散热风扇）
+├── features/               功能组件，见第 5 节与第 8 节
+│   ├── index.tsx           装配点：卡片/左栏/副驾的注册与按流程分派表
+│   ├── scene/pack.ts       场景包原始 JSON 的类型、加载与两包差异归一化
+│   ├── scene/workflows.ts  工作流统一取数口（.wfw 索引 / 包内 JSON 模型两条来源）
+│   ├── scene/kb.ts         知识库流水线产物（public/kb/）的类型与取数
+│   ├── waveforms/          场景包登记时序的加载与指标计算
+│   ├── shared/bits.tsx     卡内复用的小件（分组条、行、标签、占比条）
+│   ├── copilot/            副驾：按流程回放的脚本化适配器 + 六段脚本
+│   ├── flow-kb/ flow-init/ flow-req/ flow-run/ flow-tune/ flow-report/
+│   │                       六条流程各自的左栏与卡片
+│   ├── timeseries/ workflow/ agent-chat/ remote/
+│   │                       从 ~/lab/ 整目录搬进来的四个组件（本体未改）
+│   └── flow-run/evaluate.ts 判据求值：criterion + variables，缺实测量就标未采集
+├── registry/index.tsx      扩展注册表：registerPanelCard / registerLeftPanel / registerAssistant
+├── state/useAppStore.ts    zustand：当前产品、参数覆盖值、确认与锁定、全局状态
+├── styles/
+│   ├── tokens.css          设计令牌 + Tailwind @theme 映射
+│   └── fonts.css           本地打包字体（离线可用，不依赖 CDN）
+├── router.tsx              六条流程路由
+└── index.css               基础层：重置、滚动条、.num / .tick / .paper-grid
+
+public/
+├── scenes/index.json                          产品三级级联目录，驱动选择器（第 7.1 节）
+├── scenes/motor.cooling-fan.fortior-fu6832/   场景包一：10 份 JSON + assets
+├── scenes/automotive.body-motor.window-regulator/  场景包二：同构，10 份 JSON + assets
+├── kb/                                        知识库流水线产物（第 7.3 节）
+└── data/                                      工作流索引 workflows.json 与 wfw/** 共 68 个 .wfw
+
+scripts/
+├── shoot.mjs               两个场景包 × 六路由 + 四张放大态的截图采集
+├── compare.py              两个场景包同一流程并排拼图（PIL）
+└── buildIndex.mjs          由 .wfw 目录重建 workflows.json（来自 ~/lab/workflow）
+```
+
+---
+
+## 3. 设计 tokens
+
+全部定义在 `src/styles/tokens.css`，同时以 Tailwind 4 `@theme` 暴露成工具类（`bg-ink`、`text-t2`、`border-line-soft`、`rounded-tp` 等）。
+
+### 3.1 色板（双色相，不引入第三色相）
+
+| 角色 | 令牌 | 色值 | 用法 |
+| --- | --- | --- | --- |
+| 页面底 | `--tp-bg` / `bg-page` | `#FAFAF8` | 全局背景 |
+| 面板底 | `--tp-surface` / `bg-surface` | `#FFFFFF` | B/C/D 块与卡片 |
+| 下沉区 | `--tp-surface-sunk` / `bg-sunk` | `#F4F3EF` | 输入框、子组标题条 |
+| 主色 · 墨绿 | `--tp-ink` / `ink` | `#2E5E45` | 描边、主按钮、选中态、进行中 |
+| 主色加深 | `--tp-ink-deep` | `#1F4232` | 实底按钮 hover |
+| 主色弱描边 | `--tp-ink-soft` | `#A8C5B5` | 次级描边、连线 |
+| 主色浅底 | `--tp-ink-wash` | `#EAF2EC` | 当前流程标签底、选中项底 |
+| 强调 · 暗红 | `--tp-alert` / `alert` | `#A6353A` | 不通过、超限、联锁未满足 |
+| 强调浅底 | `--tp-alert-wash` | `#F6ECEC` | 异常行底纹 |
+| 正文 / 次要 / 弱 | `--tp-text` `-2` `-3` | `#2C2C2C` `#555555` `#9A9A9A` | `text-t1` `text-t2` `text-t3` |
+| 分隔线 / 浅分隔线 | `--tp-line` `-soft` | `#C8C5BD` `#E6E3DC` | 块边界 / 卡内行分隔 |
+
+面积约束按《设计规格》3.3：墨绿填充 ≤5%，浅底合计 ≤15%，暗红每屏 ≤3 处。状态语义只三档：未执行灰、进行中与通过墨绿、不通过与风险暗红；「待确认」用暗红描边加白底，不给新色相。
+
+顶部流程标签的异常点只在**当前流程**上出现，其余流程显示「未开始」，就是为了守住暗红的处数上限。
+
+### 3.2 字体
+
+本地打包（`@fontsource`），离线与截图环境都不依赖网络。
+
+| 用途 | 字体栈 | 令牌 |
+| --- | --- | --- |
+| 界面正文 | IBM Plex Sans + 思源黑体 Noto Sans SC | `--tp-font-sans` |
+| 数值与标识符 | IBM Plex Mono（`.num` 类带 `tabular-nums`） | `--tp-font-mono` |
+| 产品字标 | IBM Plex Serif | `--tp-font-display`，只用于 `OmniTest` 字样 |
+
+等宽只给文件名、宏名、参数值、通道号、时间戳，避免整页「终端感」。
+
+### 3.3 形状与节奏
+
+卡片圆角 6（`rounded-tp`），按钮与输入框圆角 4（`rounded-tps`）；边框一律 1px；常态无阴影，只有弹层与放大态用 `0 8px 24px rgba(44,44,44,.12)`。按钮高 32 / 次按钮 28，输入框与步进器 32、加减号各 28 宽。
+
+栅格：A 区通栏贴顶 140（56 + 44 + 40）；主体外边距横 16 纵 12，块间距同值；B 区固定 384 宽；右列 C : D = 496 : 328；C 区工具条 56 宽。
+
+动效只留三处：块内容随流程切换的 `rise`（26ms 起、卡片按 30ms 递增错峰）、浮层 `pop`、状态点 `pulse-dot`。
+
+---
+
+## 4. 组件清单
+
+`src/components/ui/`，全部手写，无第三方 UI 依赖。统一从 `src/components/ui` 导入。
+
+| 组件 | 文件 | 说明 |
+| --- | --- | --- |
+| `Button` | `Button.tsx` | 五档：`primary` 墨绿描边（主动作）/ `default` 灰描边 / `danger` 暗红描边（急停、回滚）/ `ghost` / `solid` 实底（只给当前选中的单个元素） |
+| `Panel` / `PanelHeader` | `Card.tsx` | B/C/D 大块容器与 32 高标题条 |
+| `PanelCard` | `Card.tsx` | C 区卡片：卡头 32（卡名 + 换卡 / 刷新 / 放大三个图标按钮 + 当前使用竖条 + 时间戳），卡体定高不滚动，底部一行摘要 |
+| `Tabs` | `Tabs.tsx` | 下划线式二级标签 |
+| `Badge` / `SourceTag` / `StatusDot` | `Badge.tsx` | 徽标；来源标记三态（文档 / 人工 / 建议）；状态点四态（未填 / 已填 / 异常 / 不适用） |
+| `Input` / `Textarea` | `Input.tsx` | 高 32 输入框 |
+| `Stepper` | `Stepper.tsx` | 数值加减框：左右加减号各 28，中间可直接键入，带单位格与上下限 |
+| `Select` | `Select.tsx` | 轻量下拉：点外部关闭、Esc 关闭、`listbox` 语义 |
+| `Collapsible` | `Collapsible.tsx` | 手风琴分组，左栏参数分组与工具条分组共用 |
+| `Modal` / `Drawer` | `Modal.tsx` | 居中放大态 / 右侧抽屉，均走 portal、Esc 关闭、`aria-modal` |
+| `cn` | `cn.ts` | className 合并 |
+
+**关于 Mantine。** 开源选型调研推荐 UI 用 Mantine 9.x，理由是知识库三级树 `Tree` 与步进器 `NumberInput` 是官方组件。当前壳层的 `Stepper` 已按《设计规格》6.2 的尺寸与交互手写完成（32 高、加减号 28、可键入、带上下限），且壳层本身不含树控件——三级分类树属于 C 区 `project-tree` 卡片的内容，由知识库那一路以 feature 形式注册进来。因此本仓不引入 Mantine，把选择权留给功能组件：
+
+- 谁来做 `project-tree` 卡片，**建议直接用 Mantine `Tree`**，在自己的 feature 目录里 `npm i @mantine/core @mantine/hooks`，用 `MantineProvider` 包住自己的子树，主题按下表映射到本仓令牌，避免全局样式冲突：
+  `primaryColor` → `#2E5E45`，`defaultRadius` → `6px`，`fontFamily` → `var(--tp-font-sans)`，`fontFamilyMonospace` → `var(--tp-font-mono)`，`white` → `#FFFFFF`，`black` → `#2C2C2C`。
+- 若后续决定整仓切 Mantine，替换点只有 `components/ui/Stepper.tsx` 与 `Select.tsx` 两个文件，调用方签名保持不变即可。
+
+图表建议 uPlot（`timeseries` 卡），画布建议 React Flow（`workflow` 卡与 C 区画布视图），均由对应 feature 自带依赖。
+
+---
+
+## 5. 接入约定（给其他 agent）
+
+组件放在 `src/features/<name>/`，自带依赖与样式，通过注册表接入，**不要改 `src/app/` 下的文件**。
+
+### 5.1 注册一张面板卡片
+
+```tsx
+// src/features/timeseries-chart/index.tsx
+import { registerPanelCard } from '../../registry'
+import { LiveChart } from './LiveChart'
+
+registerPanelCard({
+  id: 'timeseries',              // 必须是卡片库标识，见 src/data/cards.ts
+  label: '时序曲线',
+  caption: '两路转速反馈 + 母线电流',
+  flows: ['run', 'tune'],        // 省略或 '*' 表示所有流程
+  order: 10,                     // 越小越靠前，默认 100
+  render: ({ flow, scene }) => <LiveChart mode="thumb" scene={scene} flow={flow} />,
+  renderExpanded: ({ scene }) => <LiveChart mode="full" scene={scene} />,
+})
+```
+
+规则：
+
+- `id` 用卡片库里已有的标识时，**替换**该流程默认卡片的内容，卡头、摘要、状态由场景包给；用别的流程没有的卡时，追加到卡槽末尾。
+- `render` 画缩略态（卡体定高不滚动，超出请自行截断），`renderExpanded` 画放大态（约 600×430），省略时复用 `render`。
+- 卡片库 15 张卡的标识：`product-view` `schematic` `project-tree` `tools` `bench-live` `remote-device` `interlock` `workflow` `timeseries` `progress` `verdict` `evidence` `history` `artifacts` `report-preview`。
+
+### 5.2 接管某条流程的左栏
+
+```tsx
+// src/features/kb-taxonomy/index.tsx
+import { registerLeftPanel } from '../../registry'
+import { TaxonomyPanel } from './TaxonomyPanel'
+
+registerLeftPanel('kb', TaxonomyPanel)   // 组件收到 { flow, scene }
+```
+
+注册后该流程 B 区的输入清单与分组手风琴整块由你的组件负责，壳层仍提供标题条与底部确认条。流程标识六个：`kb` `init` `req` `run` `tune` `report`（路由分别是 `/kb` `/init` `/requirements` `/run` `/tune` `/report`）。
+
+### 5.3 装配
+
+在 `src/features/index.ts` 里加一行 import：
+
+```ts
+import './timeseries-chart'
+import './kb-taxonomy'
+```
+
+注册表用 `useSyncExternalStore` 广播，运行期注册也会触发壳层重渲染。
+
+### 5.4 读数据与写状态
+
+- 场景包：`useAppStore(s => s.scene)`，结构见 `src/data/types.ts`。
+- 参数值：`useAppStore(s => s.overrides[key])`，`key` 用 `paramKey(flow, groupId, subId, itemId)`；写用 `setParam`，写过之后来源标记自动转「人工」。
+- 确认与锁定：`confirmed[flow]`、`confirmFlow`、`unconfirmFlow`。
+- 副驾的执行边界按《设计规格》8.3：可读、可算、可建议、可写草稿；凡是改变被测对象状态或落盘生效的动作必须人点按钮。注册的组件请遵守这条，不要提供「自动执行」入口。
+
+### 5.5 场景包接入
+
+场景包是一个目录下的 10 份 JSON（不是单文件），两个包都已就位，见第 7.1 节。
+
+- `loadScene(sceneId)` → `loadPack()` 读 `public/scenes/<sceneId>/` 下的 10 份 JSON，
+  经 `normalize()` 抹平两个包的字段差异，再由 `adaptScene()` 压成壳层的 `ScenePackage`。
+  任何一份缺失就整体回落到内置 mock，保证任何时候都能渲染。
+- 卡片要的明细不经壳层契约压扁，直接读 `src/features/scene/pack.ts` 的原始结构。
+- **新增第三个场景包时要做的**：把包目录 rsync 进 `public/scenes/<sceneId>/`，
+  在 `public/scenes/index.json` 的 `catalog` 里给对应的三级节点加一个 `sceneId`。
+  如果它的字段与现有两个包又不同型，只改 `normalize()` 一个函数，UI 层不动。
+
+---
+
+## 6. 截图
+
+截图分两套，各有各的脚本与目录，不要混：v1 的 `shots/`（1600×1000，功能验收），
+v2 视觉层重做后的 `shots2/`（1920×1080 基准 + 1440×810 不破版对照，视觉验收）。
+
+### 6.1 v1 · `shots/`
+
+`shots/`，全部 1600×1000，由 `scripts/shoot.mjs` 采集。脚本对**两个场景包各跑一遍
+六条路由**，场景由 URL 上的 `?scene=<sceneId>` 指定（`bootstrap()` 认这个参数）。
+
+```bash
+npm run build && npm run preview -- --port 4173
+node scripts/shoot.mjs                    # 默认打 http://localhost:4173
+BASE=http://localhost:5173 node scripts/shoot.mjs
+python3 scripts/compare.py run            # 两个包同一流程并排拼一张对照图
+```
+
+| 文件 | 内容 |
+| --- | --- |
+| `flow-{kb,init,requirements,run,tune,report}.png` | 场景一 · 电机 › 散热风扇 › FU6832 驱动板，六条流程 |
+| `auto-flow-{kb,init,requirements,run,tune,report}.png` | 场景二 · 汽车 › 车身电机 › 电动玻璃升降器，六条流程 |
+| `zoom-workflow-canvas.png` | 放大态 · 工作流画布（场景一，真实 `.wfw`） |
+| `zoom-timeseries.png` | 放大态 · 时序曲线（场景一，实测 CH1） |
+| `zoom-evidence.png` | 放大态 · 副驾依据抽屉 |
+| `auto-zoom-workflow-canvas.png` | 放大态 · 工作流画布（场景二，包内 JSON 模型） |
+| `compare-run.png` | 两个场景包并排对照：同一条流程（启动测试），左电机右汽车，各缩到 800 宽 |
+
+`scripts/compare.py` 用 PIL 拼图，参数是流程路由名（默认 `run`），产物是
+`shots/compare-<route>.png`。
+
+### 6.2 v2 视觉层 · `shots2/`
+
+视觉层按 `DESIGN.md` 重做后的交付截图。基准画布 1920×1080，另出 1440×810
+一套核对不破版；放大态与两包对照各出几张。
+
+```bash
+npm run build
+npx vite preview --port 4173
+node scripts/shootfinal.mjs               # 六页 ×2 尺寸 + 放大态 3 张 + 汽车包 2 张
+python3 scripts/compare2.py               # 电机／汽车并排对照图
+ONLY=run node scripts/shootfinal.mjs      # 只重出名字里带 run 的那几张
+PREFIX=wip node scripts/shootfinal.mjs    # 改到一半时出一套 wip-*.png 自查，不覆盖交付图
+```
+
+| 文件 | 内容 |
+| --- | --- |
+| `final-{kb,init,req,run,tune,report}.png` | 六条流程，1920×1080，场景一（电机 › 散热风扇 › FU6832 驱动板） |
+| `final-{kb,init,req,run,tune,report}-1440.png` | 同上六页，1440×810，核对窄视口不破版 |
+| `final-zoom-canvas.png` | 放大态 · 工作流画布（流程 3 首卡） |
+| `final-zoom-timeseries.png` | 放大态 · 时序曲线（流程 4 首卡） |
+| `final-zoom-evidence.png` | 放大态 · 知识库依据（流程 1 第 2 槽） |
+| `final-auto-run.png` / `final-auto-init.png` | 场景二（汽车 › 车身电机 › 电动玻璃升降器）的流程 4 与流程 2 |
+| `final-compare-run.png` | 两包同一条流程并排，左电机右汽车，各缩到 960 宽，总宽 1920 |
+
+`shots2/` 里另有几张 `run.png` / `kb.png` 一类无前缀的图，是视觉层铺页过程中
+`scripts/shoot2.mjs` 出的中间稿，留着做前后对照，交付看 `final-*` 那一套。
+
+## 7. 数据来源
+
+### 7.1 场景包（六条流程的全部真实数据）
+
+**两个场景包，同构不同型**。源目录
+`/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/`，
+各是一个目录下的 10 份 JSON 加 `assets/`，整目录复制进 `public/scenes/<sceneId>/`
+（排除 `_build/`）。字段含义见各自目录自带的 `README.md`。
+
+| sceneId | 三级分类 | 规模 | 数据性质 |
+| --- | --- | --- | --- |
+| `motor.cooling-fan.fortior-fu6832` | 电机 › 散热风扇 › FU6832 散热风扇驱动板 | 属性 29 / 控制参数 70 / 判据 26 / 工作流 67 / 文档 61 / 经验 24 | 客户私有材料 + 示波器实测时序 |
+| `automotive.body-motor.window-regulator` | 汽车 › 车身电机 › 电动玻璃升降器（含防夹） | 属性 47 / 控制参数 59 / 判据 34 / 工作流 4 / 文档 83 / 经验 18 | 公开标准条款 + **合成时序**（已标注）+ 示例工作流 |
+
+重新同步：
+
+```bash
+D=/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes
+for s in motor.cooling-fan.fortior-fu6832 automotive.body-motor.window-regulator; do
+  rsync -a --delete "$D/$s/" ~/agent-test-web/public/scenes/$s/ --exclude '_build/'
+done
+```
+
+#### 两个包的字段差异与归一化
+
+两个包按各自源材料建模，有几处字段名与建模方式不同。差异**一次性在加载时抹平**，
+归一化函数是 `src/features/scene/pack.ts` 的 `normalize()`，UI 层只认一套字段：
+
+| 差异 | 散热风扇包 | 玻璃升降器包 | 归一化后 |
+| --- | --- | --- | --- |
+| 报告模板 | Excel `.xlsm`，字段定位是单元格地址 `label_cell` / `value_cell` | PDF 报告样张，字段定位是「节 + 字段」`label_section` / `label_slot` / `value_slot` | 统一成「一个标题位 `label_slot` + 一个取值位 `value_slot`」，可选带 `label_section` |
+| 转化状态 | 英文枚举 + `conversion_status_label` | 中文枚举，没有 label 字段 | 补齐 `conversion_status_label` 与布尔 `converted` |
+| 经验标签 | 英文键 `scene/flow/parameters/topic` | 中文键 `场景/流程/参数/现象` | 统一成前者四个键 |
+| 图纸变体 | `schematic_variants` 三套 PDF | 没有这个字段 | 由 `images` 派生，渲得出的挂 `rendered` |
+| 批次统计 | `package_stats`（101 attempt / PASS 67 / FAIL 30） | 没有批次概念 | `package_stats` 可空，进度卡按登记时序条数算 |
+| 性能表 / 波形图位 | Excel 模板独有 | 没有 | 两者改为可选，产物清单统一成 `artifact_groups` |
+| 工作流 | 68 个真实 `.wfw`，要 `parseWfw` 解析 | `assets/workflows/*.json`，本身已是画布内部模型 | `caps.workflowSource` 两档，取数口统一在 `src/features/scene/workflows.ts` |
+| 节点分组 | 峰岹客户端的 `NodeGroupId` 枚举 | 本包自定义的六类中文抽象分组 | 包声明的分组原样注册进画布分组表（`registerNodeGroups`），**分组名照包自己写的显示**，只借配色 |
+
+#### 场景二带进来的五件前端能力
+
+玻璃升降器包的 README 第 8.3 节列了五件事，本轮都已支持（也回头惠及场景一）：
+
+1. `options` 非空 → 渲染下拉框而不是加减号（左栏 `kind: 'select'`，带 `optionLabels`）
+2. `not_applicable: true` → 显示「不适用」，虚线描边灰字，不给控件，不显示单位
+3. `evaluable: false` → 不渲染判定灯，只标「人工判」，并把 `not_evaluable_reason` 挂出来
+4. `_status` 非空 → 数值旁挂「待核实」角标（弱描边中性标，**不占暗红名额**——
+   「待核实」是来源没定版，不是数据异常，与 `_placeholder` 的「待确认」是两回事）
+5. `synthetic: true` / `_placeholder: true` → 时序卡、判定卡、报告预览、产物清单
+   都挂「合成数据，非实测」，文案取包自己的 `synthetic_banner`
+
+#### 照数据自身口径办的事，不要「优化」掉
+
+- 散热风扇包的波形列名 `voltage_v` 是示波器通道命名，物理量是相电流（安培）；
+  `t < 0` 是人工 0 V 补线，不是实测，不得据此评噪声零漂。
+- `probe_ratio_confirmed: false` → 电流绝对量级在客户给出 mV/A 系数前不对外引用。
+- 玻璃升降器包的三条时序**全部是合成的**，按包自己的流程联锁 SI-PR-05，
+  不得进入任何合规报告——界面上四处都标了。
+- 判据要的量与手里的波形不是同一个量时（例如 `TR-CURR-01` 要母线电流、本轮
+  回放的是相电流），一律判「未采集」，不拿相电流冒充母线电流。
+
+### 7.2 工作流文件
+
+`~/lab/workflow/public/data/` → `public/data/`：`workflows.json`（索引）与 `wfw/**` 共 68 个 `.wfw`
+明文 UTF-8 JSON。场景包登记 67 条（58 主 + 9 子），本地多出的一个是 `SCOPETEST_时序采集_v1.wfw`，
+界面上两个数都标了出处，没有对齐成同一个数。索引重建用 `node scripts/buildIndex.mjs`。
+
+### 7.3 知识库流水线产物（`public/kb/`）
+
+源目录 `/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/kb/`，
+整目录复制进 `public/kb/`，**排除 `figures/` 大图、`content.md` 与 `source.json`**
+（前端只要索引、切片与参数表，780 KB 对 20 MB）：
+
+```bash
+rsync -a --delete \
+  "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/kb/" ~/agent-test-web/public/kb/ \
+  --exclude 'figures/' --exclude '*/figures/**' --exclude 'content.md' --exclude 'source.json'
+```
+
+| 文件 | 内容 | 用在哪 |
+| --- | --- | --- |
+| `documents/index.json` | 13 份文档：类型、用途流程标签、页数、表数、图数、切片数、抽取实体数、转化状态与转化器 | 流程 1 文档库卡、转化流水线卡、左栏摘要 |
+| `documents/<doc-id>/chunks.jsonl` | 374 个切片，带 `heading_path` 与 `page` | 检索结果的章节路径与页码回溯 |
+| `documents/customer-h-fu6832/params.json` | 203 条宏，含上下限、单位、分组 | 备用，当前由场景包的 `product-attributes.json` 顶着 |
+| `search-samples.json` | 5 条查询的 Top 命中，带文档标题、章节路径、页码与片段 | 流程 1「检索样例」卡：点查询 → 出命中段落 → 标页码 |
+| `experience/index.json` | 38 条经验（实验沉淀 30 + 规程沉淀 8）+ `caveats` | 流程 1 经验库卡 |
+| `experience/taxonomy.json` | 三个正交维度：所属流程 / 问题类型 / 沉淀方式 | 经验库卡的筛选维度来源 |
+
+两条口径分开说，不并成一个数：
+
+- **知识库流水线** 登记的是「哪些材料真的过了转化」，13 份、374 片，带页码可回溯；
+- **场景包 `documents.json`** 登记的是「这个产品下有哪些材料」，61 条，含没转化的。
+
+两边的条目标识不同源（`DOC-xxx` 对 `doc_id`），界面上分两段列，不硬并成一张表。
+
+产物挂的三级节点写在 `index.json` 的 `taxonomy` 里，只对得上的场景包才用它
+（`kbAppliesTo()`）。玻璃升降器包没有对应产物，四张卡一律回落到场景包自己的
+`documents.json` / `experience.json`，并在卡面写明「流水线产物未就绪，没有页码」。
+
+`experience/index.json` 的 `caveats` 是**必须显示**的：它说明这批经验成立到什么
+程度（30 条实验沉淀全部来自同一个注入故障 align_weak、正常样本 0 条、
+`result.status` 一律「未验证」）。经验库卡缩略态给第一条、放大态给全部。
+
+代码：类型与取数在 `src/features/scene/kb.ts`，四张卡在 `src/features/flow-kb/panel.tsx`。
+
+## 8. 集成进来的组件
+
+四个组件整目录复制进 `src/features/<name>/`，**组件本体基本没改**；宿主侧的适配都放在
+`src/features/flow-*/` 与 `src/features/scene/`、`src/features/waveforms/` 里。
+
+| 组件 | 来源 | 依赖 | 集成时改了什么 |
+| --- | --- | --- | --- |
+| 时序曲线 | `~/lab/timeseries/src/features/timeseries/` | `uplot` | 组件零改动。宿主给 `series.color` 显式取色——组件按 `status` 取色依赖首帧的 CSS 变量，首帧拿不到会退回中性调色板，合格/不合格就分不出来 |
+| 工作流画布 | `~/lab/workflow/src/features/workflow/` | `@xyflow/react`、`dagre` | 组件零改动。它的 `styles/workflow.css` 里 `.wf-root` 是整页演示壳（`100vh` 三栏网格），嵌进卡槽会撑破版面，因此在 `src/features/flow-req/wf-embed.css` 里加了 `.wf-embed` 覆盖，只留色板变量；缩略态另加 `.wf-thumb` 收起小地图与控制条 |
+| 副驾对话 | `~/lab/agent-chat/src/features/agent-chat/` | 无 | 组件零改动。自带的 `mockAdapter` 只有一段固定脚本，不贴六条流程，因此新写了 `src/features/copilot/adapter.ts`（把脚本抽成数据，同一套 `AgentEvent` 协议）与 `scripts.ts`（六段脚本，数值路径全部取自当前场景包）。改动类动作照样走人工确认闸门 |
+| 远程设备 | `~/lab/webssh/src/features/remote/` | `@xterm/xterm`、`@xterm/addon-fit` | 组件零改动。网关未起时 `probeDevice` 失败即置离线态并给出起网关的命令 |
+
+壳层侧改了三处，都是为了让真组件能用：
+
+1. `src/components/ui/Card.tsx`：卡体原本是一个 `<button>`（整卡点击放大）。真组件要在卡内直接交互
+   （画布拖拽、下拉、勾选、输入），按钮里套按钮既不合法也吃掉点击，所以卡体改成普通容器，放大改走
+   卡头右上角那个「放大」图标。
+2. `src/registry/index.tsx` + `src/app/AssistantPanel.tsx`：新增 `registerAssistant(flow, 组件)`，
+   D 区可以整块交给真副驾；没注册时仍走壳层的演示对话。
+3. `src/data/loadScene.ts`：场景包从「单文件」改成「目录下 10 份 JSON」，并把它压成壳层的
+   `ScenePackage`。卡片要的明细不经这层压扁，直接读 `src/features/scene/pack.ts` 的原始结构。
+
+卡片注册表按卡片库标识唯一，所以同一张卡在多条流程里内容不同时只能注册一次、在 `render` 里按
+`ctx.flow` 分派——分派表在 `src/features/index.tsx` 的 `CARD_IMPL`。
+
+---
+
+## 9. 待拍板与已知占位
+
+壳层本身：
+
+1. 产品名 `OmniTest` 是占位，未定。
+2. C 区画布视图的连线与拖拽仍是壳层占位实现（网格视图才是真组件）。
+3. 响应式只做到 1600 基准与向上放宽；1360 以下的抽屉降级（《设计规格》2.3）尚未实现。
+4. 卡片「刷新」按钮只有按钮位，没有接重新取数。
+
+本轮做掉的原占位（留档，便于对照）：
+
+- **产品选择器由 `public/scenes/index.json` 驱动**，不再写死在代码里。新增场景包只在
+  那份 JSON 里加一行，前端不改代码；取不到时回落到只含默认场景的最小目录。
+- **切换产品弹「未保存内容将丢失」确认框**：有人工改过的参数或已锁定的流程时先问，
+  确认后才换包并清掉覆盖值与锁定态（`hasUnsavedChanges()` + `ProductCascader` 的 Modal）。
+- **流程 4 的第 5 张卡不再被裁**：网格固定两列两行 4 个卡槽，不长第三行；多出来的卡片
+  进每张卡卡头的「换卡」下拉，选一张就换进那个卡槽。启动测试页把「单机设备会话」
+  提到了第 2 槽。
+- **工作流画布放大态不再被 `fitViewOptions.minZoom` 裁切**：`WorkflowCanvas` 新增
+  `fitViewOptions` prop（默认仍是 `{padding:0.12, minZoom:0.6, maxZoom:1.1}`），
+  宿主在放大态传 `{minZoom:0.2}`。`~/lab/workflow` 的原件没动，改的是本仓的副本。
+- **报告表头不再编造机型**：原先 `seed()` 硬写 `FU6832N-Diode-VSP-V1.0`，已删；
+  该格显示「由上游流程带入」，左栏计数如实算 0/10。
+- **未达标项不再写死**：流程 5 改为复用 `flow-run/evaluate.ts` 逐条求值，只有
+  `criterion` 真判成 false 的才进未达标清单，求不出值的单列「本轮未采集，无法判定」。
+
+数据与功能：
+
+5. 两个场景包各自带占位：散热风扇包 13 处 `_placeholder`（风扇外形尺寸、额定母线
+   12 V、额定转速 28000 RPM、`TR-CURR-01` 的峰值/稳态比上限 1.1 等），玻璃升降器包
+   37 处。界面一律标「待确认」，不得当真值用。
+6. 玻璃升降器包另有 188 个对象带 `_status`「待核实」——QC/T 626-2019 正式版全文未
+   取得，用的是征求意见稿，数值相对正式版可能调整。界面上挂中性角标，数值照常可用，
+   引用时要说明。这与「待确认」是两回事，不要混。
+7. 散热风扇包的探头变比未确认（`datasets.probe_ratio_confirmed: false`），电流绝对
+   量级在客户给出 mV/A 系数前不对外引用。
+8. **两个包本轮都判不出结论**：判据要的现场实测量一个都没采到。散热风扇包只回放了
+   CH1 相电流，而判据要的是母线电流、FG 转速一类；玻璃升降器包的时序是合成的，且
+   判据要力、位移、声压级。判定卡整列「未采集」并逐条列出缺哪几个量——这是如实反映，
+   不是功能没做。
+9. 玻璃升降器包的 4 条工作流全部是本包自建的示例骨架（`all_placeholder: true`），
+   没有客户真实文件；跑之前要按现场台架重做。
+10. 历史成绩库尚未建立，`history` 卡只列场景包登记过的批次与数据集。
+11. 远程设备卡在网关未起时显示离线态；台架机 SSH 在 Session 0，远程截图走
+    `C:\fc_pull` 最新一张图的回退路径，不是实时截屏。
+12. 三级分类树里除两个已接场景包之外的节点（吸尘器、吹风筒、水泵、通用规范）是占位，
+    没有条目数。
+13. 知识库流水线产物只覆盖散热风扇那一路；玻璃升降器包的文档与经验仍由场景包顶着，
+    没有切片、没有页码回溯。

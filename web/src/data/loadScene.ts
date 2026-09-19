@@ -1,0 +1,609 @@
+import {
+  loadPack,
+  setPack,
+  byGroup,
+  sourceLine,
+  statusOf,
+  type RawAttribute,
+  type RawPack,
+} from '../features/scene/pack'
+import { MOCK_SCENE } from './mock/motor.cooling-fan.fu6832'
+import type {
+  CardInstance,
+  ChecklistItem,
+  FlowContent,
+  ItemStatus,
+  ParamGroup,
+  ParamItem,
+  ScenePackage,
+  ToolGroup,
+} from './types'
+
+/**
+ * 场景包加载适配层。
+ *
+ * 真实场景包是一个目录下的 10 份 JSON（不是单文件），整目录已复制到
+ * public/scenes/<sceneId>/，源目录见
+ * /mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/motor.cooling-fan.fortior-fu6832/README.md
+ *
+ * 本文件负责把它压成壳层的 ScenePackage（左栏参数、卡槽、清单）。
+ * 卡片内部要用的明细直接读 src/features/scene/pack.ts 的原始结构，不经这里。
+ * 取不到时回落到内置 mock，保证任何时候都能渲染。
+ */
+export async function loadScene(sceneId: string): Promise<ScenePackage> {
+  const pack = await loadPack(sceneId)
+  setPack(pack)
+  if (!pack) return MOCK_SCENE
+  return adaptScene(pack, sceneId)
+}
+
+/* --------------------------------------------------------------- 小工具 */
+
+const st = (ok: boolean, na = false): ItemStatus => (na ? 'na' : ok ? 'done' : 'alert')
+
+function num(v: unknown): number | null {
+  return typeof v === 'number' && Number.isFinite(v) ? v : null
+}
+
+/** 小数位：优先按 step 的量级定，step 是整数时再退回按当前值定（最多 4 位）。 */
+export function decimalsOf(n: number | null | undefined): number {
+  if (n === null || n === undefined || !Number.isFinite(n) || n === 0) return 0
+  const e = n.toExponential()
+  const exp = Number(/e([+-]\d+)$/.exec(e)?.[1] ?? 0)
+  const mant = e.split('e')[0].replace('-', '').replace('.', '').replace(/0+$/, '')
+  return Math.max(0, Math.min(8, mant.length - 1 - exp))
+}
+
+function precisionOf(step: number | null, value: unknown) {
+  const fromStep = decimalsOf(step)
+  if (fromStep > 0) return fromStep
+  return typeof value === 'number' ? Math.min(4, decimalsOf(value)) : 0
+}
+
+/** 场景包的一条参数 → 壳层 ParamItem */
+function toParamItem(a: RawAttribute): ParamItem {
+  const step = num(a.step)
+  const status = statusOf(a)
+  const na = a.not_applicable === true
+  const isNum = typeof a.value === 'number'
+
+  // 取值渲染的三条分支，优先级从高到低：
+  // 1) not_applicable —— 这个量在本产品上不存在，显示「不适用」，不给控件
+  // 2) options 非空 —— 枚举，渲染下拉，min/max/step 一律不适用
+  // 3) 数值且可编辑 —— 渲染加减号步进器
+  const kind: ParamItem['kind'] = na
+    ? 'readonly'
+    : a.options?.length
+      ? 'select'
+      : isNum && a.editable
+        ? 'number'
+        : 'readonly'
+
+  // 「待核实」已经由数值旁的角标表达，说明文字里不再重复前缀，只写原因本身
+  const notes = [
+    a._placeholder ? `待确认 · ${a.note ?? '源材料未给出，为占位值'}` : a.note,
+    status,
+  ].filter(Boolean)
+
+  return {
+    id: a.key,
+    name: a.name,
+    value: na ? '不适用' : ((a.value ?? '—') as number | string),
+    unit: na ? undefined : (a.unit ?? undefined),
+    kind,
+    options: a.options?.map((o) => String(o.value)),
+    optionLabels: a.options?.map((o) => o.label),
+    step: step ?? 1,
+    min: num(a.min) ?? undefined,
+    max: num(a.max) ?? undefined,
+    precision: precisionOf(step, a.value),
+    source: a._placeholder ? '建议' : '文档',
+    status: na ? 'na' : a._placeholder ? 'alert' : a.editable ? 'done' : 'na',
+    // 待核实是「数值可能变」，不是「缺数据」，所以用角标而不是暗红异常态
+    pending: status || undefined,
+    note: notes[0],
+    evidence: sourceLine(a._source),
+  }
+}
+
+/* ------------------------------------------------------------- 工具条 */
+
+/**
+ * C 区工具条四组（规格 7.1）。
+ *
+ * 组名与分组结构是系统能力，两个场景共用；组内具体有哪几件工具、连的是什么设备，
+ * 由场景包自己的数据推出来——散热风扇那边是示波器加程控电源加涵道逆风台架，
+ * 玻璃升降器这边是力传感器加位移传感器加环境箱。推不出来的组就不出这一组，
+ * 不硬凑。
+ */
+function toolGroupsOf(pack: RawPack): ToolGroup[] {
+  const scope = pack.datasets.datasets.find((d) => d.scope)?.scope
+  const ds = pack.datasets.datasets[0]
+  const rate = ds?.sample_rate_sa_per_s
+  const measures = pack.requirements.runtime_measures ?? {}
+
+  /** 现场实测量按取数手段归到工具上：同一个手段只出一件工具，hint 列它测哪几个量 */
+  const byInstrument = new Map<string, string[]>()
+  for (const [, m] of Object.entries(measures)) {
+    const how = (m.obtained_by ?? '').split(/[，,；;]/)[0].trim()
+    if (!how) continue
+    byInstrument.set(how, [...(byInstrument.get(how) ?? []), m.name])
+  }
+  const acquire = [...byInstrument.entries()]
+    .sort((a, b) => b[1].length - a[1].length)
+    .slice(0, 4)
+    .map(([how, names], i) => ({
+      id: `acq-${i}`,
+      label: how.length > 9 ? `${how.slice(0, 8)}…` : how,
+      glyph: ['⎍', '⛁', '⟳', '◎'][i] ?? '◎',
+      state: 'offline' as const,
+      hint: `${how} · 供 ${names.length} 个实测量：${names.slice(0, 3).join('、')}${names.length > 3 ? ' 等' : ''}`,
+    }))
+
+  /** 环境与激励：场景包里可在 F4 现场改的台架与工装类参数 */
+  const stimulus = pack.controls.parameters
+    .filter((p) => /台架|工装|环境|激励|采集/.test(p.group))
+    .slice(0, 4)
+    .map((p, i) => ({
+      id: `stim-${p.key}`,
+      label: p.name.length > 9 ? `${p.name.slice(0, 8)}…` : p.name,
+      glyph: ['⏚', '≋', '◍', '⌁'][i] ?? '◍',
+      state: 'offline' as const,
+      hint: `${p.name}${p.unit ? `（${p.unit}）` : ''} · ${sourceLine(p._source) || '见场景包 control-parameters.json'}`,
+    }))
+
+  const groups: ToolGroup[] = []
+  if (acquire.length)
+    groups.push({
+      id: 'acquire',
+      title: '数据采集',
+      tools: acquire.length
+        ? acquire
+        : [
+            {
+              id: 'scope-capture',
+              label: '时序采集',
+              glyph: '⎍',
+              state: 'offline',
+              hint: scope ?? '场景包未登记采集仪器',
+            },
+          ],
+    })
+  if (stimulus.length) groups.push({ id: 'stimulus', title: '环境与激励', tools: stimulus })
+  groups.push({
+    id: 'device',
+    title: '对象调试',
+    tools: [
+      {
+        id: 'param-write',
+        label: '参数写入',
+        glyph: '✎',
+        state: 'offline',
+        hint: `控制参数 ${pack.controls.parameters.length} 项，写回须沿用原数值外壳`,
+      },
+      {
+        id: 'reg-rw',
+        label: '状态字读写',
+        glyph: '⊞',
+        state: 'offline',
+        hint: `故障位图 ${Object.keys(pack.interlocks.fault_bitmap?.bits ?? {}).length} 位`,
+      },
+    ],
+  })
+  groups.push({
+    id: 'session',
+    title: '设备接入',
+    tools: [
+      { id: 'ssh', label: 'SSH 命令行会话', glyph: '▮', state: 'offline', hint: '台架工控机，网关 :8022' },
+      { id: 'rdp', label: '远程桌面', glyph: '▤', state: 'offline', hint: '需台架机常驻登录会话' },
+      {
+        id: 'open-proj',
+        label: '本地工程打开',
+        glyph: '⌸',
+        state: 'offline',
+        hint: rate ? `本场景时序口径 ${Math.round(rate)} Sa/s` : '本地调试客户端',
+      },
+    ],
+  })
+  return groups
+}
+
+/* ------------------------------------------------------------- 六条流程 */
+
+const card = (id: CardInstance['id'], summary: string, extra: Partial<CardInstance> = {}): CardInstance => ({
+  id,
+  summary,
+  ...extra,
+})
+
+/** 三级分类的一行短名，例如「电机 › 散热风扇 › FU6832 散热风扇驱动板」 */
+function taxonomyLine(pack: RawPack) {
+  const t = pack.scene.taxonomy
+  return `${t.level1_scene.name} › ${t.level2_category.name} › ${t.level3_product_type.name}`
+}
+
+/** 带 _status 的条数说明，两个包都可能有，没有就返回空串 */
+function pendingLine(pack: RawPack) {
+  return pack.caps.statusCount ? ` · 待核实 ${pack.caps.statusCount} 处` : ''
+}
+
+/**
+ * 流程 1 的卡槽摘要。
+ *
+ * 知识库流水线产物（public/kb/，由 loadPack 顺带探测，见 pack.kb）就绪且挂的
+ * 三级节点与当前场景对得上时，摘要报流水线的数；未就绪时报场景包自己的数，
+ * 两个口径不混着说。
+ */
+function kbFlow(pack: RawPack): FlowContent {
+  const docs = pack.documents.documents
+  const converted = docs.filter((d) => d.converted).length
+  const missing = docs.filter((d) => !d.exists).length
+  const types = Object.keys(pack.documents.count_by_type).length
+
+  const kbDocs = pack.kb.documentsIndex as
+    | { taxonomy?: { l1: string; l2: string; l3: string }; summary?: Record<string, number> }
+    | null
+  const kbExp = pack.kb.experienceIndex as
+    | { summary?: { total?: number; by_capture_mode?: Record<string, number> } }
+    | null
+  const kbSamples = pack.kb.searchSamples as { samples?: { query: string }[] } | null
+  const t = kbDocs?.taxonomy
+  const kbOn = !!t && pack.scene.id === `${t.l1}.${t.l2}.${t.l3}`
+  const kbN = kbOn ? (kbDocs?.summary ?? {}) : {}
+  const expN = kbOn ? (kbExp?.summary?.total ?? 0) : 0
+
+  const checklist: ChecklistItem[] = [
+    { id: 'tax', index: '1', name: `三级分类：${taxonomyLine(pack)}`, status: 'done', groupId: 'g-doc' },
+    { id: 'doc', index: '2', name: `文档条目 ${docs.length} 条已登记（${types} 类）`, status: 'done', groupId: 'g-doc' },
+    {
+      id: 'cvt',
+      index: '3',
+      name: kbOn
+        ? `转化流水线 ${kbN.converted_ok ?? 0}/${kbN.documents ?? 0} 份已转化、切片 ${kbN.total_chunks ?? 0} 片`
+        : `文档转化 ${converted}/${docs.length} 已转`,
+      status: st(kbOn ? (kbN.failed ?? 0) === 0 : converted === docs.length),
+      groupId: 'g-doc',
+    },
+    {
+      id: 'exp',
+      index: '4',
+      name: `经验条目 ${kbOn ? expN : pack.experience.count} 条`,
+      status: 'done',
+      groupId: 'g-exp',
+    },
+    {
+      id: 'miss',
+      index: '5',
+      name: missing ? `${missing} 条文档正文本地没有` : '全部文档路径可达',
+      status: st(missing === 0),
+      groupId: 'g-doc',
+    },
+    {
+      id: 'idx',
+      index: '6',
+      name: kbOn ? `检索索引：${kbSamples?.samples?.length ?? 0} 条样例查询带页码回溯` : '检索索引：按参数名 / 主题词',
+      status: 'done',
+      groupId: 'g-exp',
+    },
+  ]
+
+  return {
+    checklist,
+    groups: [],
+    // 卡槽顺序即视觉权重：首卡是 hero（文档库），第 2 槽给检索依据，
+    // 第二行三张是转化流水线 / 经验库 / 工具清单。
+    cards: [
+      card(
+        'project-tree',
+        kbOn
+          ? `流水线 ${kbN.documents ?? 0} 份已转化 · 场景包另登记 ${docs.length - converted} 条未转化`
+          : `${docs.length} 条文档按 ${types} 类分组`,
+        { active: true },
+      ),
+      card(
+        'evidence',
+        kbOn
+          ? `${kbSamples?.samples?.length ?? 0} 条样例查询 · 命中带章节与页码`
+          : '检索样例：按参数名或主题词命中经验',
+      ),
+      card(
+        'pipeline',
+        kbOn ? `切片 ${kbN.total_chunks ?? 0} 片 · 图 ${kbN.total_figures ?? 0} 张` : `转化流水线 ${converted}/${docs.length}`,
+        missing ? { alert: `${missing} 条无正文` } : {},
+      ),
+      card('experience', kbOn ? `经验 ${expN} 条 · 按三个维度筛` : `经验 ${pack.experience.count} 条 · 标签树 / 时间线`),
+      card('tools', kbOn ? 'docling / BM25 / 自研解析' : '转化与检索工具'),
+    ],
+    greeting: kbOn
+      ? `本节点知识库已装载：${kbN.documents ?? 0} 份文档转化完毕，切成 ${kbN.total_chunks ?? 0} 个切片、抽出 ${kbN.total_figures ?? 0} 张图，经验 ${expN} 条按流程 / 问题 / 沉淀方式三维度归类。场景包另登记的 ${docs.length - converted} 条材料还没进流水线，拖进左栏上传区即可入库。`
+      : `已装载 ${taxonomyLine(pack)} 的知识库：文档 ${docs.length} 条（${types} 类）、经验 ${pack.experience.count} 条。${pack.scene.summary.slice(0, 96)}…`,
+    quick: ['这份材料该归哪一类', '把本轮对话沉淀为经验', '按参数名检索经验', '列出未转化的文档'],
+    verifyLine: kbOn
+      ? `流水线 ${kbN.converted_ok ?? 0}/${kbN.documents ?? 0} 份 · 切片 ${kbN.total_chunks ?? 0} 片 · 经验 ${expN} 条`
+      : `转化 ${converted}/${docs.length}${pendingLine(pack)}`,
+  }
+}
+
+function initFlow(pack: RawPack): FlowContent {
+  const attrs = pack.attributes.attributes
+  const holes = attrs.filter((a) => a._placeholder)
+  const na = attrs.filter((a) => a.not_applicable)
+  const grouped = byGroup(attrs, pack.attributes.groups)
+  const groups: ParamGroup[] = grouped.map(([g, items], i) => ({
+    id: `pa-${i}`,
+    index: String(i + 1),
+    title: g,
+    defaultOpen: i < 2,
+    subgroups: [{ id: 'all', title: `${g}（${items.length} 项）`, items: items.map(toParamItem) }],
+  }))
+  const checklist: ChecklistItem[] = grouped.map(([g, items], i) => ({
+    id: `pa-${i}`,
+    index: String(i + 1),
+    name: `${g} ${items.length} 项`,
+    status: st(!items.some((a) => a._placeholder)),
+    groupId: `pa-${i}`,
+  }))
+  const human = pack.interlocks.interlocks.filter((x) => x.type === '人员')
+  return {
+    checklist,
+    groups,
+    cards: [
+      // 首卡即 hero：场景包里唯一一张真图（标准方案原理图首页）铺满，带变体切换与芯片徽标
+      card('product-view', pack.scene.images[0]?.title ?? '产品示意图', { active: true }),
+      card('schematic', `数据手册 / 参数配置 / ${pack.scene.schematic_variants.length} 套图纸`),
+      card('project-tree', '客户工程目录与源材料'),
+      card('interlock', `安全联锁 ${pack.interlocks.interlocks.length} 条 · 人员项 ${human.length}`),
+      card('bench-live', '台架与仪器接入状态'),
+    ],
+    greeting: `本体属性 ${attrs.length} 项已从客户工程读出，其中 ${holes.length} 项源材料没给、标了「待确认」${na.length ? `，${na.length} 项在本产品上不适用` : ''}。点「读取并填充」可从数据手册、Customer.h 与原理图回填，源材料没写的一律留空不编。`,
+    quick: ['哪些是占位', '读取并填充', '核对量测链路', '另存为模板'],
+    verifyLine: `本体属性 ${attrs.length} 项 · 占位 ${holes.length} 项待确认${pendingLine(pack)}`,
+  }
+}
+
+function reqFlow(pack: RawPack): FlowContent {
+  const reqs = pack.requirements.requirements
+  const holes = reqs.filter((r) => r._placeholder)
+  const manual = reqs.filter((r) => r.evaluable === false)
+  const checklist: ChecklistItem[] = pack.requirements.categories.map((c, i) => {
+    const items = reqs.filter((r) => r.category === c)
+    return {
+      id: `tr-${i}`,
+      index: String(i + 1),
+      name: `${c} ${items.length} 条`,
+      status: st(!items.some((r) => r._placeholder)),
+      groupId: `tr-${i}`,
+    }
+  })
+  const wfNote = pack.workflows.all_placeholder
+    ? `工作流库 ${pack.workflows.total} 条全部是本包自建的示例`
+    : `工作流库 ${pack.workflows.total} 条`
+  return {
+    checklist,
+    groups: [],
+    // 卡槽顺序即视觉权重：首卡是 hero（工作流画布，横跨两格），第 2 槽是工作流库，
+    // 第二行铺判定表 / 知识依据 / 历史成绩。
+    cards: [
+      card('workflow', `真画布 · 默认 HV_StaticStart`, { active: true }),
+      card('wf-lib', wfNote),
+      card('verdict', `判据 ${reqs.length} 条，此时只列不判`),
+      card('evidence', '判据出自哪份材料的哪一条'),
+      card('history', '同产品同工作流的历次成绩'),
+    ],
+    greeting: `判据 ${reqs.length} 条按 ${pack.requirements.categories.length} 类列出，可自动求值 ${pack.requirements.evaluable_count} 条、只能人工判 ${manual.length} 条。${wfNote}，画布默认打开一条，勾选框改的是本轮基线。`,
+    quick: ['这条判据出自哪', '推荐本轮工作流', '哪些不能自动判', '冻结需求基线'],
+    verifyLine: `判据 ${reqs.length} 条 · 人工判 ${manual.length} 条${holes.length ? ` · ${holes.length} 条待确认` : ''}`,
+  }
+}
+
+function runFlow(pack: RawPack): FlowContent {
+  const params = pack.controls.parameters
+  const inRun = params.filter((p) => p.adjustable_in_flows?.some((f) => f.startsWith('F4')))
+  const human = pack.interlocks.interlocks.filter((i) => i.type === '人员' || i.type === '流程')
+  const hw = pack.interlocks.interlocks.filter((i) => i.type === '硬件')
+  const groups: ParamGroup[] = byGroup(params, pack.controls.groups).map(([g, items], i) => ({
+    id: `cp-${i}`,
+    index: String(i + 1),
+    title: g,
+    defaultOpen: i < 1,
+    subgroups: [{ id: 'all', title: `${g}（${items.length} 项）`, items: items.map(toParamItem) }],
+  }))
+  const checklist: ChecklistItem[] = [
+    { id: 'cfg', index: '1', name: '流程 2 配置快照已锁定', status: 'done', groupId: 'cp-0' },
+    { id: 'base', index: '2', name: '流程 3 需求基线已冻结', status: 'done', groupId: 'cp-0' },
+    {
+      id: 'ctl',
+      index: '3',
+      name: `控制参数 ${params.length} 项（本流程可调 ${inRun.length}）`,
+      status: 'done',
+      groupId: 'cp-0',
+    },
+    { id: 'hw', index: '4', name: `硬件联锁 ${hw.length} 条由固件阈值保证`, status: 'done', groupId: 'cp-0' },
+    { id: 'gate', index: '5', name: `安全确认闸门 ${human.length} 条待逐条确认`, status: 'alert', groupId: 'cp-0' },
+  ]
+  const synth = pack.caps.syntheticData ? '，时序为合成数据（非实测），卡片上已标' : ''
+  return {
+    checklist,
+    groups,
+    cards: [
+      card(
+        'timeseries',
+        `登记 ${pack.datasets.datasets.length} 条 · 本轮回放 ${
+          pack.datasets.datasets.filter((d) => d.mode.includes('into_pack')).length
+        } 条${pack.caps.syntheticData ? '（合成）' : ''}`,
+        { active: true },
+      ),
+      // 卡槽顺序即视觉权重：首卡是 hero（横跨两格），第 2 槽占右上角，
+      // 其余三张铺第二行。执行进度是纯文字，退到「换卡」下拉里。
+      card('schematic', '原理图 · 标准应用'),
+      card('verdict', '按判据表逐条判定'),
+      card('interlock', `联锁 ${pack.interlocks.interlocks.length} 条`),
+      card('remote-device', '台架工控机 · 单机设备会话'),
+      card('progress', '本轮执行进度与日志'),
+    ],
+    greeting: `控制参数 ${params.length} 项已载入，本流程可调 ${inRun.length} 项${synth}。安全确认闸门 ${human.length} 条未全绿之前，「启动测试」按钮保持置灰。`,
+    quick: ['跑预检自检', '解读这段波形', '为什么判不通过', '把失败案例沉淀进经验库'],
+    verifyLine: `控制参数 ${params.length} 项就绪 · 闸门 ${human.length} 条未确认`,
+  }
+}
+
+function tuneFlow(pack: RawPack): FlowContent {
+  const exps = pack.experience.experiences
+  const tuneExp = exps.filter((e) => e.tags.flow?.startsWith('F5'))
+  const inTune = pack.controls.parameters.filter((p) =>
+    p.adjustable_in_flows?.some((f) => f.startsWith('F5')),
+  )
+  const checklist: ChecklistItem[] = [
+    { id: 'fail', index: '1', name: '未达标项：由流程 4 的判定结果带入', status: 'alert', groupId: 'tn-0' },
+    { id: 'cause', index: '2', name: '归因：按经验库匹配到的参数方向', status: 'done', groupId: 'tn-0' },
+    {
+      id: 'cand',
+      index: '3',
+      name: `候选参数由 ${tuneExp.length} 条 F5 经验匹配得出`,
+      status: st(tuneExp.length > 0),
+      groupId: 'tn-1',
+    },
+    { id: 'impact', index: '4', name: `影响面检查：本流程可调 ${inTune.length} 项`, status: 'done', groupId: 'tn-1' },
+    { id: 'shell', index: '5', name: '写回须沿用原数值外壳与量纲', status: 'alert', groupId: 'tn-1' },
+  ]
+  return {
+    checklist,
+    groups: [],
+    // 卡槽顺序即视觉权重：首卡是 hero（波形对照，横跨两格），第 2 槽占右上角，
+    // 其余三张铺第二行（候选队列 · 知识库依据 · 判定卡）。
+    cards: [
+      card('history', 'PASS / FAIL 两轮波形叠加对照', { active: true }),
+      card('candidates', '盲试候选队列 · 上限 10 个'),
+      card('evidence', `依据：经验库 ${exps.length} 条中匹配到的条目`),
+      card('verdict', '判据逐条判定结果'),
+      card('timeseries', '本轮回放的那一条曲线读数'),
+    ],
+    greeting: `推荐这几项，是因为经验库 ${exps.length} 条里有 ${tuneExp.length} 条属调优流程，其中能在本包 ${pack.controls.parameters.length} 个控制参数里按宏名对上的才进候选，对不上的一律不推。写回沿用原数值外壳，只改括号内数字。`,
+    quick: ['为什么是这几项', '这条建议的依据', '改动的影响面', '采纳并回到启动测试'],
+    verifyLine: `候选 ${Math.min(4, tuneExp.length)} 项待人工采纳 · 副驾不写回`,
+  }
+}
+
+function reportFlow(pack: RawPack): FlowContent {
+  const h = pack.report.header_fields
+  const checklist: ChecklistItem[] = h.map((f, i) => ({
+    id: f.key,
+    index: String(i + 1),
+    name: `${f.name}（${f.value_slot || '—'}）`,
+    status: f.from_flow.startsWith('F6') ? 'alert' : 'done',
+    groupId: 'rp-0',
+  }))
+  const arts = pack.report.artifact_groups.reduce((a, b) => a + b.count, 0)
+  const need = h.filter((f) => f.from_flow.startsWith('F6')).length
+  return {
+    checklist,
+    groups: [],
+    // 卡槽顺序即视觉权重：首卡是 hero（报告预览，横跨两格），第 2 槽是产物留档，
+    // 其余三张铺第二行（判定汇总 · 历史对比 · 模板字段）。
+    cards: [
+      card('report-preview', '按模板节结构渲染，非成稿', { active: true }),
+      card('artifacts', `图位 ${arts} 张待采集`),
+      card('verdict', '口径同流程 4 判定卡'),
+      card('history', '历史报告库未建，对照实验批次'),
+      card('template-fields', `${pack.report.spec_sections.length} 节规格表`),
+    ],
+    greeting: `报告模板已就位，表头 ${h.length} 字段里 ${need} 项要本流程补全${pack.caps.syntheticData ? '，且本场景时序是合成数据、不得进合规报告' : ''}。结论段我按判定结果聚合起草，须人工复核后定稿。`,
+    quick: ['哪些字段还没填上', '生成结论段', '检查数据与结论是否自洽', '归档到知识库'],
+    verifyLine: `表头 ${h.length} 字段 · ${checklist.filter((c) => c.status === 'alert').length} 项需本流程补全`,
+  }
+}
+
+/** 场景包目录 → 本仓数据契约 */
+export function adaptScene(raw: unknown, sceneId: string): ScenePackage {
+  const pack = raw as RawPack
+  if (!pack?.scene?.taxonomy) return MOCK_SCENE
+  const t = pack.scene.taxonomy
+  return {
+    meta: {
+      id: pack.scene.id ?? sceneId,
+      scene: t.level1_scene.name,
+      subclass: t.level2_category.name,
+      productType: t.level3_product_type.name,
+      packName: `${t.level2_category.name} · ${t.level3_product_type.name}`,
+      packVersion: pack.scene.generated_at,
+      bench: pack.caps.syntheticData ? '合成数据回放 · 无实测台架' : '涵道逆风台架 · SK-20251218QPBB',
+    },
+    toolGroups: toolGroupsOf(pack),
+    flows: {
+      kb: kbFlow(pack),
+      init: initFlow(pack),
+      req: reqFlow(pack),
+      run: runFlow(pack),
+      tune: tuneFlow(pack),
+      report: reportFlow(pack),
+    },
+  }
+}
+
+/* --------------------------------------------------------- 产品三级级联目录 */
+
+/** 三级级联的一个节点。第三级挂 sceneId 的才有场景包。 */
+export interface CatalogNode {
+  id: string
+  label: string
+  children?: CatalogNode[]
+  sceneId?: string
+}
+
+interface SceneIndexFile {
+  default?: string
+  catalog: CatalogNode[]
+}
+
+/**
+ * 产品目录由 public/scenes/index.json 驱动，不写死在代码里：
+ * 新增一个场景包时只在那份 JSON 里加一行，前端不用改。
+ * 取不到时回落到只有一个默认场景的最小目录，保证页面仍能渲染。
+ */
+const FALLBACK_CATALOG: CatalogNode[] = [
+  {
+    id: 'motor',
+    label: '电机',
+    children: [
+      {
+        id: 'cooling-fan',
+        label: '散热风扇',
+        children: [
+          {
+            id: 'fortior-fu6832',
+            label: 'FU6832 散热风扇驱动板',
+            sceneId: 'motor.cooling-fan.fortior-fu6832',
+          },
+        ],
+      },
+    ],
+  },
+]
+
+export const DEFAULT_SCENE_ID = 'motor.cooling-fan.fortior-fu6832'
+
+let catalogTask: Promise<{ catalog: CatalogNode[]; defaultScene: string }> | null = null
+
+export function loadCatalog(): Promise<{ catalog: CatalogNode[]; defaultScene: string }> {
+  if (catalogTask) return catalogTask
+  catalogTask = (async () => {
+    try {
+      const r = await fetch('/scenes/index.json', { cache: 'force-cache' })
+      if (!r.ok) throw new Error(String(r.status))
+      const j = (await r.json()) as SceneIndexFile
+      if (!Array.isArray(j.catalog) || !j.catalog.length) throw new Error('empty catalog')
+      return { catalog: j.catalog, defaultScene: j.default ?? DEFAULT_SCENE_ID }
+    } catch {
+      return { catalog: FALLBACK_CATALOG, defaultScene: DEFAULT_SCENE_ID }
+    }
+  })()
+  return catalogTask
+}
+
+/** 在目录里按 sceneId 找出三级路径 */
+export function pathOfScene(catalog: CatalogNode[], sceneId: string): [string, string, string] | null {
+  for (const a of catalog)
+    for (const b of a.children ?? [])
+      for (const c of b.children ?? []) if (c.sceneId === sceneId) return [a.label, b.label, c.label]
+  return null
+}

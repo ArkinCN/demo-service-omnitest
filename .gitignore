@@ -1,0 +1,33 @@
+# 依赖与构建产物
+node_modules/
+dist/
+build/
+.venv/
+__pycache__/
+*.pyc
+
+# 环境与密钥
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+
+# 运行期产物（dsh-plugins/logs/e2e.md 为交付证据，显式保留）
+*.log
+components/*/logs/
+components/webssh/gateway/logs/
+.kb/
+.cache/
+.DS_Store
+
+# 原始客户资料（不入库）
+input/
+kb-pipeline/input/
+kb-pipeline/work/
+
+# 大文件（>50 MB 一律不入库，需要时走外部存储）
+*.zip
+*.7z
+*.mp4

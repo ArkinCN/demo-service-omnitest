@@ -1,0 +1,135 @@
+@import './styles/fonts.css';
+@import 'tailwindcss';
+@import './styles/tokens.css';
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--tp-bg);
+    color: var(--tp-text);
+    font-family: var(--tp-font-sans);
+    font-size: 13px;
+    line-height: 1.55;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+
+  /* 数值：等宽对齐 */
+  .num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1, 'cv05' 1;
+    letter-spacing: -0.005em;
+  }
+
+  .mono {
+    font-family: var(--tp-font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 标签：12px 灰、中等字重、短 */
+  .tick {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--tp-text-3);
+    font-weight: 500;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--p-200);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--p-300);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--tp-ink);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@layer utilities {
+  /* 一级：主表面 */
+  .surface-1 {
+    background: var(--tp-surface);
+    border-radius: var(--tp-radius);
+    box-shadow: var(--tp-shadow-1);
+  }
+  /* 二级：次表面，浅绿底无阴影 */
+  .surface-2 {
+    background: var(--p-50);
+    border-radius: var(--tp-radius-2);
+  }
+  /* 三级：行级，无框，仅分隔线 */
+  .surface-3 {
+    border-bottom: 1px solid var(--tp-line-soft);
+  }
+
+  .grad-ink {
+    background: var(--tp-grad);
+  }
+
+  .paper-grid {
+    background-image:
+      linear-gradient(to right, rgba(46, 94, 69, 0.055) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(46, 94, 69, 0.055) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .hairline {
+    border: 1px solid var(--tp-line);
+  }
+
+  /* 骨架屏扫光 */
+  .skeleton {
+    background:
+      linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.85) 45%, transparent 90%),
+      var(--p-100);
+    background-size: 200% 100%;
+    animation: sweep 1.6s linear infinite;
+  }
+
+  /* 滚动容器底部渐隐：不把半行硬切在容器下沿（DESIGN.md §6 铺页硬约束 3）。
+     六条流程的左栏滚动区与卡内长列表统一用这一条，不各写各的 maskImage。 */
+  .fade-b {
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+}
