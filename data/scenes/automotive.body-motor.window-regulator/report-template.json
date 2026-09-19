@@ -1,5 +1,62 @@
 {
   "schema": "report-template/v1",
+  "group_tiers": [
+    {
+      "id": "rpt-id",
+      "title": "报告标识",
+      "groups": [
+        {
+          "id": "rpt-id-no",
+          "title": "编号",
+          "items": [
+            "report_no",
+            "performing_org_report_no",
+            "gov_accession_no",
+            "recipients_catalog_no"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rpt-body",
+      "title": "报告内容",
+      "groups": [
+        {
+          "id": "rpt-body-all",
+          "title": "标题与周期",
+          "items": [
+            "title_and_subtitle",
+            "report_date",
+            "type_of_report_and_period",
+            "authors"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rpt-org",
+      "title": "机构与合同",
+      "groups": [
+        {
+          "id": "rpt-org-do",
+          "title": "执行机构",
+          "items": [
+            "performing_org_code",
+            "performing_org_name_address"
+          ]
+        },
+        {
+          "id": "rpt-org-pay",
+          "title": "主办与合同",
+          "items": [
+            "sponsoring_agency_name_address",
+            "work_unit_no",
+            "contract_or_grant_no"
+          ]
+        }
+      ]
+    }
+  ],
   "scene_id": "automotive.body-motor.window-regulator",
   "generated_by": "_build/build_scene_pack.py",
   "generated_at": "2026-09-19",

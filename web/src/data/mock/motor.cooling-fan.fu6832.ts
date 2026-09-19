@@ -54,101 +54,9 @@ export const MOCK_SCENE: ScenePackage = {
   ],
 
   flows: {
-    /* ---------------------------------------------------------------- 1 知识库管理 */
-    kb: {
-      greeting:
-        '散热风扇节点下现有文档 42 份、经验条目 52 条。有 6 份文档卡在结构化阶段，置信度低于阈值需要人工校对；要我先把这 6 份按失败原因归类列出来吗？',
-      quick: ['列出待校对文档', '这批文档该归哪一类', '把刚才的对话沉淀为经验'],
-      verifyLine: '待处理文件 6 份，预计产出结构化表 6 张、切片 412 条',
-      checklist: [
-        { id: 'c1', index: '01', name: '分类定位', status: 'done', groupId: 'A' },
-        { id: 'c2', index: '02', name: '上传与导入', status: 'done', groupId: 'B' },
-        { id: 'c3', index: '03', name: '转化流水线', status: 'alert', groupId: 'C' },
-        { id: 'c4', index: '04', name: '检索与筛选', status: 'empty', groupId: 'D' },
-      ],
-      cards: [
-        { id: 'project-tree', active: true, summary: '三级分类树 · 散热风扇节点 42 份文档' },
-        { id: 'evidence', summary: '选中条目原文预览 · FU6832 数据手册 §4.2' },
-        { id: 'progress', alert: '6 份需校对', summary: '转化流水线 · 识别 42 / 抽取 42 / 结构化 36' },
-        { id: 'history', stamp: '10 分钟前', summary: '该分类入库与引用统计' },
-      ],
-      groups: [
-        {
-          id: 'A',
-          index: 'A',
-          title: '分类定位',
-          subgroups: [
-            {
-              id: 'A1',
-              title: '三级体系',
-              items: [
-                { id: 'lv1', name: '一级 · 场景', value: '电机', kind: 'select', options: ['电机', '汽车', '芯片', '通用'], source: '人工', status: 'done' },
-                { id: 'lv2', name: '二级 · 子类', value: '家电电机', kind: 'select', options: ['家电电机', '车用电机', '工业电机'], source: '人工', status: 'done' },
-                { id: 'lv3', name: '三级 · 产品类型', value: '散热风扇', kind: 'select', options: ['散热风扇', '吸尘器', '吹风筒'], source: '人工', status: 'done' },
-                { id: 'cnt', name: '当前节点条目数', value: '文档 42 · 经验 52', kind: 'readonly', status: 'done' },
-              ],
-            },
-          ],
-        },
-        {
-          id: 'B',
-          index: 'B',
-          title: '上传与导入',
-          subgroups: [
-            {
-              id: 'B1',
-              title: '上传方式',
-              items: [
-                { id: 'mode', name: '方式', value: '目录导入', kind: 'select', options: ['单文件', '批量', '目录导入'], source: '人工', status: 'done' },
-                { id: 'type', name: '文档类型', value: '驱动与固件', kind: 'select', options: ['产品描述', '驱动与固件', '功能清单', '原理图', '标准与规范', '测试规程', '报告模板', '历史报告'], source: '人工', status: 'done' },
-                { id: 'dup', name: '同名覆盖', value: '否', kind: 'switch', options: ['是', '否'], source: '人工', status: 'done' },
-              ],
-            },
-          ],
-        },
-        {
-          id: 'C',
-          index: 'C',
-          title: '转化流水线',
-          subgroups: [
-            {
-              id: 'C1',
-              title: '阶段与可调项',
-              items: [
-                { id: 's1', name: '① 识别', value: '开', kind: 'switch', options: ['开', '关'], source: '文档', status: 'done' },
-                { id: 's2', name: '② 抽取', value: '开', kind: 'switch', options: ['开', '关'], source: '文档', status: 'done' },
-                { id: 's3', name: '③ 切片长度', value: 800, unit: '字', kind: 'number', step: 50, min: 200, max: 2000, source: '人工', status: 'done', note: '重叠 120 字' },
-                { id: 's4', name: '④ 结构化置信阈值', value: 0.75, kind: 'number', step: 0.05, precision: 2, min: 0, max: 1, source: '建议', status: 'alert', note: '低于阈值的 6 份进人工校对', evidence: '转化流水线默认配置 · 场景包 v0.3' },
-                { id: 's5', name: '⑤ 索引类型', value: '向量 + 关键词', kind: 'select', options: ['向量', '关键词', '向量 + 关键词'], source: '人工', status: 'done' },
-              ],
-            },
-          ],
-        },
-        {
-          id: 'D',
-          index: 'D',
-          title: '检索与筛选',
-          defaultOpen: false,
-          subgroups: [
-            {
-              id: 'D1',
-              title: '筛选维度',
-              items: [
-                { id: 'f1', name: '流程', value: '全部', kind: 'select', options: ['全部', '初始化配置', '测试需求确认', '启动测试'], status: 'empty' },
-                { id: 'f2', name: '问题类型', value: '启动', kind: 'select', options: ['启动', '转速', '噪声', '保护', '通信', '其他'], status: 'empty' },
-                { id: 'f3', name: '引用次数下限', value: 0, kind: 'number', step: 1, min: 0, max: 100, status: 'empty' },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-
-    /* ---------------------------------------------------------------- 2 初始化配置 */
     init: {
       greeting:
         '已按散热风扇场景包解析三份文档并回填左栏：数据手册给出本体属性，Customer.h 解析出 812 条宏、本次纳入可调清单 14 项。母线电压上限文档里没写，我按联锁模板占位 30 V，这一项需要你拍板。',
-      quick: ['解释极对数怎么影响判据', '哪些字段文档之间不一致', '缺哪些项还没填'],
       verifyLine: '已填 14 / 16，1 项与文档冲突，1 项缺来源',
       checklist: [
         { id: 'c1', index: '01', name: '测试对象标识', status: 'done', groupId: 'A' },
@@ -296,7 +204,6 @@ export const MOCK_SCENE: ScenePackage = {
     req: {
       greeting:
         '从客户质量要求里抽出三条判据，两条致命一条主要。有一处对不上：判据里要判稳态转速偏差，但工作流里没有一步采集稳态段，要我在第 4 步后面补一个采集节点吗？',
-      quick: ['判据出自标准哪一条', '推荐一个工作流模板', '判据和步骤哪里对不上'],
       verifyLine: '判据 3 条已抽取，工作流 6 步，1 处判据无对应采集步骤',
       checklist: [
         { id: 'c1', index: '01', name: '需求来源', status: 'done', groupId: 'A' },
@@ -396,7 +303,6 @@ export const MOCK_SCENE: ScenePackage = {
     run: {
       greeting:
         '预检过了四项里的三项：设备连通、通道有信号、基线快照已存都通过；现场安全总闸还没开。总闸打开后启动按钮才会亮。运行中我会逐步播报，越线先停机再叫你。',
-      quick: ['跑一遍预检', '这段曲线怎么读', '把失败那轮标出来'],
       verifyLine: '闸门 2 / 3 成立：联锁差 1 项、总闸未开',
       checklist: [
         { id: 'c1', index: '01', name: '控制参数', status: 'done', groupId: 'A' },
@@ -404,17 +310,16 @@ export const MOCK_SCENE: ScenePackage = {
         { id: 'c3', index: '03', name: '安全确认闸门', status: 'alert', groupId: 'C' },
       ],
       cards: [
+        // 第三轮删「安全联锁状态盘」：与左栏安全闸门是同一组联锁的第二次呈现（06d 第 3.1 节）
         { id: 'timeseries', active: true, alert: '第 63 轮越线', summary: '两路转速反馈 + 母线电流 · 实时' },
         { id: 'progress', summary: '第 63 / 100 轮 · 已用 26 分钟' },
         { id: 'verdict', summary: '致命 2 条通过 1 条待定 · 主要 1 条' },
-        { id: 'interlock', alert: '总闸未开', summary: '联锁 3 / 4 · 总闸待人工确认' },
       ],
       canvas: {
         nodes: [
           { id: 'timeseries', x: 32, y: 30, w: 420, h: 200 },
           { id: 'progress', x: 490, y: 30, w: 240, h: 130 },
           { id: 'verdict', x: 60, y: 260, w: 300, h: 120 },
-          { id: 'interlock', x: 420, y: 200, w: 280, h: 140 },
         ],
         links: [
           { from: 'timeseries', to: 'verdict', kind: 'signal', label: 'CH1 → 判据 1' },
@@ -513,7 +418,6 @@ export const MOCK_SCENE: ScenePackage = {
     tune: {
       greeting:
         '未达标的是启动成功率，实测 78%、要求 95%，失败集中在逆风档位。候选给了三组，第一组只动启动电流、影响面最小；第三组改环路增益，效果预期最好但要重新烧录。采纳哪一组由你点。',
-      quick: ['为什么是这个原因', '三组候选差在哪', '这次改动影响哪些判据'],
       verifyLine: '候选 3 组已排序，采纳后需重新编译烧录',
       checklist: [
         { id: 'c1', index: '01', name: '未达标项', status: 'alert', groupId: 'A' },
@@ -521,8 +425,8 @@ export const MOCK_SCENE: ScenePackage = {
         { id: 'c3', index: '03', name: '采纳与写回', status: 'empty', groupId: 'C' },
       ],
       cards: [
-        { id: 'verdict', active: true, alert: '1 项未达标', summary: '启动成功率 78% / 要求 95%' },
-        { id: 'history', summary: '历次调参与结果对照 · 5 轮' },
+        // 第三轮删「判定卡」：与左栏未达标 / 已通过 / 未采集是同一件事的第二次呈现
+        { id: 'history', active: true, summary: '历次调参与结果对照 · 5 轮' },
         { id: 'evidence', summary: '候选依据 · 规程 §3.2 与案例 A-118 / A-203' },
         { id: 'timeseries', summary: '本轮与上一轮波形叠加' },
       ],
@@ -595,7 +499,6 @@ export const MOCK_SCENE: ScenePackage = {
     report: {
       greeting:
         '模板 14 个字段填上了 12 个，缺测试负责人与送样批次号。结论段我写好了草稿，标了待复核——里面每个数值都能点回对应轮次，导出前请你过一遍。',
-      quick: ['把结论段读给我', '哪些字段还缺数据', '这个数值出自哪一轮'],
       verifyLine: '字段 12 / 14 已映射，结论段待人工复核',
       checklist: [
         { id: 'c1', index: '01', name: '模板选择', status: 'done', groupId: 'A' },

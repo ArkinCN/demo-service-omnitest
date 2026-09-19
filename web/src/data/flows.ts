@@ -22,23 +22,13 @@ export interface FlowDef {
   actions: FlowAction[]
 }
 
+/* 第三轮：六流程改五流程，编号 1–5 重排。知识库不占流程序号，
+   降级为模块从顶栏右端按钮进入，路由见 src/router.tsx 的 /knowledge。 */
 export const FLOWS: FlowDef[] = [
-  {
-    id: 'kb',
-    path: '/kb',
-    index: '1',
-    label: '知识库管理',
-    actions: [
-      { id: 'upload', label: '上传文档', primary: true },
-      { id: 'new-class', label: '新建分类' },
-      { id: 'to-exp', label: '沉淀为经验' },
-      { id: 'manage-entry', label: '管理条目' },
-    ],
-  },
   {
     id: 'init',
     path: '/init',
-    index: '2',
+    index: '1',
     label: '初始化配置',
     precondition: '需先选定产品类型',
     actions: [
@@ -51,9 +41,9 @@ export const FLOWS: FlowDef[] = [
   {
     id: 'req',
     path: '/requirements',
-    index: '3',
+    index: '2',
     label: '测试需求确认',
-    precondition: '需流程 2 已确认',
+    precondition: '需流程 1 已确认',
     actions: [
       { id: 'baseline', label: '确认需求基线', primary: true },
       { id: 'import-std', label: '导入标准' },
@@ -64,9 +54,9 @@ export const FLOWS: FlowDef[] = [
   {
     id: 'run',
     path: '/run',
-    index: '4',
+    index: '3',
     label: '启动测试及结果分析',
-    precondition: '需流程 3 已确认且安全联锁全绿',
+    precondition: '需流程 2 已确认且安全联锁全绿',
     actions: [
       {
         id: 'start',
@@ -83,9 +73,9 @@ export const FLOWS: FlowDef[] = [
   {
     id: 'tune',
     path: '/tune',
-    index: '5',
+    index: '4',
     label: '调优确认及运行',
-    precondition: '需流程 4 有一轮结果',
+    precondition: '需流程 3 有一轮结果',
     actions: [
       { id: 'adopt-back', label: '采纳并回到启动测试', primary: true },
       { id: 'ignore-all', label: '全部忽略' },
@@ -96,7 +86,7 @@ export const FLOWS: FlowDef[] = [
   {
     id: 'report',
     path: '/report',
-    index: '6',
+    index: '5',
     label: '测试报告及产出',
     precondition: '需流程 4 有明确结论',
     actions: [

@@ -363,3 +363,105 @@
 .copilot-slot .ac-stream {
   min-height: 0;
 }
+
+/* ===========================================================================
+   预置动作按钮条（W5）。
+
+   收尾轮起走 AgentChat 的正经插槽 `actionSlot`：组件把它渲染在 .ac-stream 与
+   .ac-composer 之间的 .ac-slot 里，所以它是 flex 纵向容器的一员，自然落在输入区
+   正上方、与输入框同宽。高度按 8pt 栅格：上下内边距 8，按钮高 24。
+   选择器挂在 .ac-slot 上而不是 .copilot-slot 上，是为了让 /knowledge 这种不套
+   FlowCopilot 的页面也能直接用。
+   =========================================================================== */
+
+.ac-slot .cp-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px 0;
+  overflow: visible;
+}
+.ac-slot .cp-act {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 9px;
+  border: 1px solid var(--tp-line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--tp-text-2);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ac-slot .cp-act:hover:not(:disabled) {
+  border-color: var(--p-700);
+  background: var(--p-50);
+  color: var(--p-700);
+}
+.ac-slot .cp-act:disabled {
+  border-color: var(--tp-line-soft);
+  color: var(--tp-text-3);
+  background: transparent;
+  cursor: not-allowed;
+}
+/* 碰到六个红线动作的按钮：只做「备好等人点」，用左侧一道细标记提示，
+   不占暗红名额（暗红留给判不通过） */
+.ac-slot .cp-act[data-redline='true']:not(:disabled) {
+  border-left-width: 3px;
+  border-left-color: var(--p-300);
+}
+.ac-slot .cp-act--more {
+  color: var(--tp-text-3);
+}
+
+.ac-slot .cp-more {
+  position: relative;
+  margin-left: auto;
+}
+.ac-slot .cp-more__menu {
+  position: absolute;
+  right: 0;
+  bottom: 30px;
+  z-index: 20;
+  min-width: 168px;
+  padding: 4px;
+  border: 1px solid var(--tp-line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(31, 42, 36, 0.14);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ac-slot .cp-more__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--tp-text-2);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.ac-slot .cp-more__item:hover:not(:disabled) {
+  background: var(--p-50);
+  color: var(--p-700);
+}
+.ac-slot .cp-more__item:disabled {
+  color: var(--tp-text-3);
+  cursor: not-allowed;
+}
+.ac-slot .cp-more__type {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--tp-text-3);
+}

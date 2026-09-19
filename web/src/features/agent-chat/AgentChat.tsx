@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import './agent-chat.css';
 import { mockAdapter, type AgentAdapter, type AgentEvent } from './api';
 import {
@@ -35,6 +35,25 @@ export interface AgentChatProps {
   defaultPermission?: PermissionLevel;
   /** 「沉淀为经验」提交回调，缺省只在控制台打印 */
   onSaveExperience?: (draft: ExperienceDraft) => void;
+  /**
+   * 消息流与输入区之间的一行插槽，给宿主挂自己的控件（助手预置动作按钮条走这里）。
+   * 第三轮收尾轮补：在此之前宿主只能往 .ac-root 里 portal 一个节点，依赖内部 class 名。
+   */
+  actionSlot?: ReactNode;
+  /**
+   * 挂载后把命令式接口交给宿主：宿主据此代发一条消息，
+   * 等价于人在输入框里打了这段话——用户气泡里就是这段原文。
+   * 在此之前宿主只能往 .ac-textarea 写值再点 .ac-send。
+   */
+  onReady?: (api: AgentChatApi) => void;
+  /** 忙态变化回调。在此之前宿主只能 MutationObserver 盯 .ac-header__state[data-busy]。 */
+  onBusyChange?: (busy: boolean) => void;
+}
+
+/** 交给宿主的命令式接口 */
+export interface AgentChatApi {
+  /** 代发一条消息；忙态中调用会被忽略，与人点发送按钮同一套闸门 */
+  send: (text: string) => void;
 }
 
 let seq = 0;
@@ -70,6 +89,9 @@ export function AgentChat(props: AgentChatProps) {
     defaultModel = 'deepseek-v4-pro',
     defaultPermission = 'params',
     onSaveExperience,
+    actionSlot,
+    onReady,
+    onBusyChange,
   } = props;
 
   const [items, setItems] = useState<ChatItem[]>(initialItems);
@@ -249,6 +271,18 @@ export function AgentChat(props: AgentChatProps) {
     [adapter, apply, autoRun, busy, model, permission, requestConfirm],
   );
 
+  // 命令式接口：句柄本身一次性给出去，内部始终打到最新那份 run 上，
+  // 免得宿主握着一个闭包过期的 send。
+  const runRef = useRef(run);
+  runRef.current = run;
+  useEffect(() => {
+    onReady?.({ send: (text: string) => void runRef.current(text) });
+  }, [onReady]);
+
+  useEffect(() => {
+    onBusyChange?.(busy);
+  }, [busy, onBusyChange]);
+
   const started = useRef(false);
   useEffect(() => {
     if (!autoStartPrompt || started.current) return;
@@ -323,6 +357,8 @@ export function AgentChat(props: AgentChatProps) {
           );
         })}
       </div>
+
+      {actionSlot ? <div className="ac-slot">{actionSlot}</div> : null}
 
       <Composer
         busy={busy}

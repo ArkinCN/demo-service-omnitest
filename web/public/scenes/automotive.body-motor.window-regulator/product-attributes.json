@@ -14,6 +14,168 @@
     "结构与行程",
     "环境与等级"
   ],
+  "group_tiers": [
+    {
+      "id": "obj",
+      "title": "被测对象",
+      "groups": [
+        {
+          "id": "obj-em",
+          "title": "电机与传动",
+          "members": [
+            "电机本体"
+          ]
+        },
+        {
+          "id": "obj-rated",
+          "title": "额定工况",
+          "members": [
+            "电气额定",
+            "工作电流"
+          ],
+          "subgroups": [
+            {
+              "id": "obj-rated-v",
+              "title": "电压范围",
+              "items": [
+                "system_voltage",
+                "operating_voltage_min",
+                "operating_voltage_max",
+                "start_voltage_max",
+                "voltage_code_iso16750"
+              ]
+            },
+            {
+              "id": "obj-rated-loop",
+              "title": "试验回路",
+              "items": [
+                "test_voltage",
+                "test_voltage_tolerance",
+                "harness_resistance"
+              ]
+            },
+            {
+              "id": "obj-rated-i-run",
+              "title": "工作电流限值",
+              "items": [
+                "working_current_max",
+                "working_current_up_max_80c",
+                "working_current_down_max_80c",
+                "working_current_up_max_m30c",
+                "working_current_down_max_m30c"
+              ]
+            },
+            {
+              "id": "obj-rated-i-stall",
+              "title": "堵转电流限值",
+              "items": [
+                "stall_current_max",
+                "stall_current_max_80c",
+                "stall_current_max_m30c"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "obj-perf",
+          "title": "力与速度",
+          "members": [
+            "机械性能",
+            "运行速度"
+          ],
+          "subgroups": [
+            {
+              "id": "obj-perf-f",
+              "title": "堵转力",
+              "items": [
+                "stall_force_min",
+                "stall_force_min_80c",
+                "stall_force_min_m30c"
+              ]
+            },
+            {
+              "id": "obj-perf-l",
+              "title": "自锁",
+              "items": [
+                "self_lock_load",
+                "self_lock_hold_time",
+                "self_lock_drop_max"
+              ]
+            },
+            {
+              "id": "obj-perf-v",
+              "title": "运行速度",
+              "items": [
+                "rise_speed_min",
+                "rise_speed_max",
+                "down_speed_max",
+                "rise_speed_min_m30c",
+                "down_speed_min_m30c"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "obj-sense",
+          "title": "行程与噪音",
+          "members": [
+            "结构与行程",
+            "声学"
+          ],
+          "subgroups": [
+            {
+              "id": "obj-sense-geo",
+              "title": "行程与负载",
+              "items": [
+                "glass_travel",
+                "rated_load_up",
+                "rated_load_down",
+                "door_position"
+              ]
+            },
+            {
+              "id": "obj-sense-noise",
+              "title": "噪音",
+              "items": [
+                "noise_max",
+                "noise_mic_distance",
+                "noise_background_margin"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "obj-env",
+          "title": "环境与等级",
+          "members": [
+            "环境与等级"
+          ],
+          "subgroups": [
+            {
+              "id": "obj-env-t",
+              "title": "温度与等级",
+              "items": [
+                "ambient_normal",
+                "temp_code_iso16750",
+                "high_temp_soak",
+                "low_temp_soak",
+                "aec_q100_grade"
+              ]
+            },
+            {
+              "id": "obj-env-m",
+              "title": "机械与防护",
+              "items": [
+                "vibration_profile",
+                "shock_count",
+                "ip_rating"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
   "value_source_note": "本文件的数值来自三处：QC/T 626-2019 征求意见稿（整体标待核实）、ISO 16750 与 VW 80000 与 AEC-Q100 的已核实条款、以及本包为让前端有刻度而编的示例值（标 _placeholder）。带 _status 的条目不得直接作为出厂判定阈值。",
   "attributes": [
     {
@@ -891,7 +1053,7 @@
           "label": "后门（耐久 5 000 循环）"
         }
       ],
-      "note": "前门与后门的耐久循环数不同（前门 10 000、后门 5 000），VW 80000 M-06 的机械冲击次数也按门位分档（驾驶员门 100 000 次、副驾及后门 50 000 次）。",
+      "note": "前门与后门的耐久循环数不同（前门 10 000、后门 5 000），VW 80000 M-06 的机械冲击次数也按门位分档（驾驶员门 100 000 次、前排乘客门与后门 50 000 次）。",
       "_source": [
         {
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
@@ -1077,7 +1239,7 @@
       "step": 1000,
       "editable": true,
       "group": "环境与等级",
-      "note": "峰值 300 m/s²、6 ms 半正弦。驾驶员车门 100 000 次、副驾及后门 50 000 次。已核实。",
+      "note": "峰值 300 m/s²、6 ms 半正弦。驾驶员车门 100 000 次、前排乘客门与后门 50 000 次。已核实。",
       "_source": [
         {
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",

@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react'
 import { CheckCircle2 } from 'lucide-react'
-import { Button, Tooltip, cn } from '../../components/ui'
+import { Button, Collapsible, Tooltip, cn } from '../../components/ui'
+import type { FlowId } from '../../data/types'
+import { collapseKey } from '../../state/useAppStore'
+import { tally, type BuiltTier, type Flags } from './tiers'
 
 /** 卡体：定高不滚动是壳层规格，但卡内长列表需要自己滚，这里统一给一个滚动容器。 */
 export function CardBody({ children, className }: { children: ReactNode; className?: string }) {
@@ -169,5 +172,108 @@ export function ConfirmFooter({
         </Button>
       </Tooltip>
     </footer>
+  )
+}
+
+/* ===========================================================================
+   分层折叠树的渲染组件。骨架、取数与演示模式过滤在同目录的 tiers.ts。
+   =========================================================================== */
+
+/** 组头状态汇总的聚合口径：alert 走暗红、pending 走琥珀，两者不互相顶替 */
+function merge(a: ReturnType<typeof tally>, b: ReturnType<typeof tally>) {
+  return {
+    done: a.done + b.done,
+    total: a.total + b.total,
+    alert: a.alert + b.alert,
+    pending: a.pending + b.pending,
+  }
+}
+
+const ZERO = { done: 0, total: 0, alert: 0, pending: 0 }
+
+/**
+ * 分层折叠树的渲染：一级类默认只展开第一个，二级组与三级子组同理各只展开第一个。
+ * 折叠状态按 `collapseKey(flow, id)` 记进 store，切页回来不回弹。
+ */
+export function TierTree<T>({
+  flow,
+  tiers,
+  itemKey,
+  render,
+  flags,
+  lockTier,
+  tierIcon,
+  groupIcon,
+  defaultOpen = 0,
+}: {
+  flow: FlowId
+  tiers: BuiltTier<T>[]
+  itemKey: (t: T) => string
+  render: (t: T) => ReactNode
+  /** 每条给三态：已填 / 异常 / 待核实；不给就只显示条数 */
+  flags?: (t: T) => Flags
+  /** 该一级类强制展开且不给折叠入口（异常态分组） */
+  lockTier?: (t: BuiltTier<T>) => boolean
+  /** 一级类 / 二级组的图标，按标题取 */
+  tierIcon?: (title: string) => ReactNode
+  groupIcon?: (title: string) => ReactNode
+  /** 默认展开第几个一级类（只展开这一个），其余全部折叠 */
+  defaultOpen?: number
+}) {
+  const stat = (items: T[]) => (flags ? tally(items, flags) : { ...ZERO, total: items.length })
+  return (
+    <>
+      {tiers.map((t, i) => {
+        const tStat = t.groups.reduce((acc, g) => merge(acc, stat(g.items)), { ...ZERO })
+        // 二级组默认展开哪一个：优先挑不需要再分三级的那一组，让首屏直接见到值，
+        // 而不是连开三层才看到第一个数。都要分三级时退回第一组。
+        const openGroup = Math.max(
+          0,
+          t.groups.findIndex((x) => x.subs.length === 0),
+        )
+        return (
+          <Collapsible
+            key={t.id}
+            level={1}
+            index={String(i + 1)}
+            icon={tierIcon?.(t.title)}
+            title={t.title}
+            storeKey={collapseKey(flow, t.id)}
+            defaultOpen={i === defaultOpen}
+            lockOpen={lockTier?.(t)}
+            stat={flags ? tStat : { total: t.count }}
+          >
+            {t.groups.map((g, j) => (
+              <Collapsible
+                key={g.id}
+                level={2}
+                icon={groupIcon?.(g.title)}
+                title={g.title}
+                storeKey={collapseKey(flow, g.id)}
+                defaultOpen={j === openGroup}
+                stat={flags ? stat(g.items) : { total: g.items.length }}
+              >
+                {g.subs.length
+                  ? g.subs.map((sub, k) => (
+                      <Collapsible
+                        key={sub.id}
+                        level={3}
+                        title={sub.title}
+                        storeKey={collapseKey(flow, sub.id)}
+                        defaultOpen={k === 0}
+                        stat={flags ? stat(sub.items) : { total: sub.items.length }}
+                      >
+                        {sub.items.map((x) => (
+                          <div key={itemKey(x)}>{render(x)}</div>
+                        ))}
+                      </Collapsible>
+                    ))
+                  : g.items.map((x) => <div key={itemKey(x)}>{render(x)}</div>)}
+              </Collapsible>
+            ))}
+          </Collapsible>
+        )
+      })}
+    </>
   )
 }

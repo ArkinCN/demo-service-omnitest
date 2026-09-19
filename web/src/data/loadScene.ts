@@ -8,10 +8,12 @@ import {
   type RawPack,
 } from '../features/scene/pack'
 import { MOCK_SCENE } from './mock/motor.cooling-fan.fu6832'
+import { FLOW_IDS } from './types'
 import type {
   CardInstance,
   ChecklistItem,
   FlowContent,
+  FlowId,
   ItemStatus,
   ParamGroup,
   ParamItem,
@@ -233,112 +235,9 @@ function heroImageTitle(pack: RawPack): string {
   return '图纸'
 }
 
-/** 三级分类的一行短名，例如「电机 › 散热风扇 › FU6832 散热风扇驱动板」 */
-function taxonomyLine(pack: RawPack) {
-  const t = pack.scene.taxonomy
-  return `${t.level1_scene.name} › ${t.level2_category.name} › ${t.level3_product_type.name}`
-}
-
 /** 带 _status 的条数说明，两个包都可能有，没有就返回空串 */
 function pendingLine(pack: RawPack) {
   return pack.caps.statusCount ? ` · 待核实 ${pack.caps.statusCount} 处` : ''
-}
-
-/**
- * 流程 1 的卡槽摘要。
- *
- * 知识库流水线产物（public/kb/，由 loadPack 顺带探测，见 pack.kb）就绪且挂的
- * 三级节点与当前场景对得上时，摘要报流水线的数；未就绪时报场景包自己的数，
- * 两个口径不混着说。
- */
-function kbFlow(pack: RawPack): FlowContent {
-  const docs = pack.documents.documents
-  const converted = docs.filter((d) => d.converted).length
-  const missing = docs.filter((d) => !d.exists).length
-  const types = Object.keys(pack.documents.count_by_type).length
-
-  const kbDocs = pack.kb.documentsIndex as
-    | { taxonomy?: { l1: string; l2: string; l3: string }; summary?: Record<string, number> }
-    | null
-  const kbExp = pack.kb.experienceIndex as
-    | { summary?: { total?: number; by_capture_mode?: Record<string, number> } }
-    | null
-  const kbSamples = pack.kb.searchSamples as { samples?: { query: string }[] } | null
-  const t = kbDocs?.taxonomy
-  const kbOn = !!t && pack.scene.id === `${t.l1}.${t.l2}.${t.l3}`
-  const kbN = kbOn ? (kbDocs?.summary ?? {}) : {}
-  const expN = kbOn ? (kbExp?.summary?.total ?? 0) : 0
-
-  const checklist: ChecklistItem[] = [
-    { id: 'tax', index: '1', name: `三级分类：${taxonomyLine(pack)}`, status: 'done', groupId: 'g-doc' },
-    { id: 'doc', index: '2', name: `文档条目 ${docs.length} 条已登记（${types} 类）`, status: 'done', groupId: 'g-doc' },
-    {
-      id: 'cvt',
-      index: '3',
-      name: kbOn
-        ? `转化流水线 ${kbN.converted_ok ?? 0}/${kbN.documents ?? 0} 份已转化、切片 ${kbN.total_chunks ?? 0} 片`
-        : `文档转化 ${converted}/${docs.length} 已转`,
-      status: st(kbOn ? (kbN.failed ?? 0) === 0 : converted === docs.length),
-      groupId: 'g-doc',
-    },
-    {
-      id: 'exp',
-      index: '4',
-      name: `经验条目 ${kbOn ? expN : pack.experience.count} 条`,
-      status: 'done',
-      groupId: 'g-exp',
-    },
-    {
-      id: 'miss',
-      index: '5',
-      name: missing ? `${missing} 条文档正文本地没有` : '全部文档路径可达',
-      status: st(missing === 0),
-      groupId: 'g-doc',
-    },
-    {
-      id: 'idx',
-      index: '6',
-      name: kbOn ? `检索索引：${kbSamples?.samples?.length ?? 0} 条样例查询带页码回溯` : '检索索引：按参数名 / 主题词',
-      status: 'done',
-      groupId: 'g-exp',
-    },
-  ]
-
-  return {
-    checklist,
-    groups: [],
-    // 卡槽顺序即视觉权重：首卡是 hero（文档库），第 2 槽给检索依据，
-    // 第二行三张是转化流水线 / 经验库 / 工具清单。
-    cards: [
-      card(
-        'project-tree',
-        kbOn
-          ? `流水线 ${kbN.documents ?? 0} 份已转化 · 场景包另登记 ${docs.length - converted} 条未转化`
-          : `${docs.length} 条文档按 ${types} 类分组`,
-        { active: true },
-      ),
-      card(
-        'evidence',
-        kbOn
-          ? `${kbSamples?.samples?.length ?? 0} 条样例查询 · 命中带章节与页码`
-          : '检索样例：按参数名或主题词命中经验',
-      ),
-      card(
-        'pipeline',
-        kbOn ? `切片 ${kbN.total_chunks ?? 0} 片 · 图 ${kbN.total_figures ?? 0} 张` : `转化流水线 ${converted}/${docs.length}`,
-        missing ? { alert: `${missing} 条无正文` } : {},
-      ),
-      card('experience', kbOn ? `经验 ${expN} 条 · 按三个维度筛` : `经验 ${pack.experience.count} 条 · 标签树 / 时间线`),
-      card('tools', kbOn ? 'docling / BM25 / 自研解析' : '转化与检索工具'),
-    ],
-    greeting: kbOn
-      ? `本节点知识库已装载：${kbN.documents ?? 0} 份文档转化完毕，切成 ${kbN.total_chunks ?? 0} 个切片、抽出 ${kbN.total_figures ?? 0} 张图，经验 ${expN} 条按流程 / 问题 / 沉淀方式三维度归类。场景包另登记的 ${docs.length - converted} 条材料还没进流水线，拖进左栏上传区即可入库。`
-      : `已装载 ${taxonomyLine(pack)} 的知识库：文档 ${docs.length} 条（${types} 类）、经验 ${pack.experience.count} 条。${pack.scene.summary.slice(0, 96)}…`,
-    quick: ['这份材料该归哪一类', '把本轮对话沉淀为经验', '按参数名检索经验', '列出未转化的文档'],
-    verifyLine: kbOn
-      ? `流水线 ${kbN.converted_ok ?? 0}/${kbN.documents ?? 0} 份 · 切片 ${kbN.total_chunks ?? 0} 片 · 经验 ${expN} 条`
-      : `转化 ${converted}/${docs.length}${pendingLine(pack)}`,
-  }
 }
 
 function initFlow(pack: RawPack): FlowContent {
@@ -381,7 +280,6 @@ function initFlow(pack: RawPack): FlowContent {
       card('bench-live', '台架与仪器接入状态'),
     ],
     greeting: `本体属性 ${attrs.length} 项已从客户工程读出，其中 ${holes.length} 项源材料没给、标了「待确认」${na.length ? `，${na.length} 项在本产品上不适用` : ''}。点「读取并填充」可从数据手册、Customer.h 与原理图回填，源材料没写的一律留空不编。`,
-    quick: ['哪些是占位', '读取并填充', '核对量测链路', '另存为模板'],
     verifyLine: `本体属性 ${attrs.length} 项 · 占位 ${holes.length} 项待确认${pendingLine(pack)}`,
   }
 }
@@ -416,7 +314,6 @@ function reqFlow(pack: RawPack): FlowContent {
       card('history', '同产品同工作流的历次成绩'),
     ],
     greeting: `判据 ${reqs.length} 条按 ${pack.requirements.categories.length} 类列出，可自动求值 ${pack.requirements.evaluable_count} 条、只能人工判 ${manual.length} 条。${wfNote}，画布默认打开一条，勾选框改的是本轮基线。`,
-    quick: ['这条判据出自哪', '推荐本轮工作流', '哪些不能自动判', '冻结需求基线'],
     verifyLine: `判据 ${reqs.length} 条 · 人工判 ${manual.length} 条${holes.length ? ` · ${holes.length} 条待确认` : ''}`,
   }
 }
@@ -458,18 +355,17 @@ function runFlow(pack: RawPack): FlowContent {
         } 条${pack.caps.syntheticData ? '（合成）' : ''}`,
         { active: true },
       ),
-      // 卡槽顺序即视觉权重：首卡是 hero（横跨两格），第 2 槽占右上角，
-      // 其余三张铺第二行。执行进度是纯文字，退到「换卡」下拉里。
-      card('schematic', `图纸 · ${pack.scene.schematic_variants.length} 套`, {
-        title: heroImageTitle(pack),
-      }),
+      // 卡槽顺序即视觉权重：首卡是 hero（横跨两格），其余三张按四卡版式铺。
+      // 第三轮删两张（06d 第 3.1 节）：
+      //   「安全联锁状态盘」与左栏安全闸门是同一组 19 条的第二次呈现，删卡留左栏；
+      //   「原理图」演示中不翻页，退回卡库按需拖入（卡库入口在卡头「换卡」里）。
       card('verdict', '按判据表逐条判定'),
-      card('interlock', `联锁 ${pack.interlocks.interlocks.length} 条`),
-      card('remote-device', '台架工控机 · 单机设备会话'),
+      // 「单机设备会话」这张独立卡第三轮撤掉：一台设备在画板上就是一个 MCP 节点
+      // （src/features/remote/DeviceMcpNode.tsx），网格视图不再另开一张卡。
+      // 依据：《第三轮需求变更方案 v0.1》第 2.3 节第 4 条。
       card('progress', '本轮执行进度与日志'),
     ],
     greeting: `控制参数 ${params.length} 项已载入，本流程可调 ${inRun.length} 项${synth}。安全确认闸门 ${human.length} 条未全绿之前，「启动测试」按钮保持置灰。`,
-    quick: ['跑预检自检', '解读这段波形', '为什么判不通过', '把失败案例沉淀进经验库'],
     verifyLine: `控制参数 ${params.length} 项就绪 · 闸门 ${human.length} 条未确认`,
   }
 }
@@ -502,13 +398,12 @@ function tuneFlow(pack: RawPack): FlowContent {
       card('history', `${pack.datasets.datasets.filter((d) => d.mode.includes('into_pack')).length} 条历次波形叠加对照`, { active: true }),
       card('candidates', '盲试候选队列 · 上限 10 个'),
       card('evidence', `依据：经验库 ${exps.length} 条中匹配到的条目`),
-      card('verdict', '判据逐条判定结果'),
+      // 「判定卡」与左栏的未达标 / 已通过 / 未采集是同一件事的第二次呈现，第三轮删卡留左栏
       // 第 5 槽原来是「时序曲线」，与 hero 的波形对照是同一批数据、同一种图，
       // 一页两张曲线卡是重复；换成本轮要写回固件的宏。单条曲线读数从卡头「换卡」进得来。
       card('param-changes', '本轮写回的宏 · 原值 → 新值'),
     ],
     greeting: `推荐这几项，是因为经验库 ${exps.length} 条里有 ${tuneExp.length} 条属调优流程，其中能在本包 ${pack.controls.parameters.length} 个控制参数里按宏名对上的才进候选，对不上的一律不推。写回沿用原数值外壳，只改括号内数字。`,
-    quick: ['为什么是这几项', '这条建议的依据', '改动的影响面', '采纳并回到启动测试'],
     verifyLine: `候选 ${Math.min(4, tuneExp.length)} 项待人工采纳 · 助手不写回`,
   }
 }
@@ -537,7 +432,6 @@ function reportFlow(pack: RawPack): FlowContent {
       card('template-fields', `${pack.report.spec_sections.length} 节规格表`),
     ],
     greeting: `报告模板已就位，表头 ${h.length} 字段里 ${need} 项要本流程补全${pack.caps.syntheticData ? '，且本场景时序是合成数据、不得进合规报告' : ''}。结论段我按判定结果聚合起草，须人工复核后定稿。`,
-    quick: ['哪些字段还没填上', '生成结论段', '检查数据与结论是否自洽', '归档到知识库'],
     verifyLine: `表头 ${h.length} 字段 · ${checklist.filter((c) => c.status === 'alert').length} 项需本流程补全`,
   }
 }
@@ -559,14 +453,31 @@ export function adaptScene(raw: unknown, sceneId: string): ScenePackage {
     },
     toolGroups: toolGroupsOf(pack),
     flows: {
-      kb: kbFlow(pack),
       init: initFlow(pack),
       req: reqFlow(pack),
       run: runFlow(pack),
       tune: tuneFlow(pack),
       report: reportFlow(pack),
     },
+    ui: { defaultView: defaultViewOf(pack) },
   }
+}
+
+/**
+ * scene.json 的 `default_view` 段 → ScenePackage.ui.defaultView。
+ * 只认 'canvas' / 'grid' 两个值，别的一律丢掉交给代码兜底；
+ * 整段缺失时返回空对象，不编造默认值。
+ */
+function defaultViewOf(pack: RawPack): Partial<Record<FlowId, 'canvas' | 'grid'>> {
+  const raw = (pack.scene as { default_view?: unknown }).default_view
+  const out: Partial<Record<FlowId, 'canvas' | 'grid'>> = {}
+  if (raw && typeof raw === 'object') {
+    for (const f of FLOW_IDS) {
+      const v = (raw as Record<string, unknown>)[f]
+      if (v === 'canvas' || v === 'grid') out[f] = v
+    }
+  }
+  return out
 }
 
 /* --------------------------------------------------------- 产品三级级联目录 */

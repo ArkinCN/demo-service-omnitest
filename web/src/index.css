@@ -62,15 +62,29 @@
     width: 8px;
     height: 8px;
   }
+  /* 滚动条要看得见：轨道给浅绿底、滑块加深到 --p-300。
+     原先轨道透明加 --p-200 滑块，在白底上几乎分辨不出来，
+     于是「能滚」这件事在界面上没有任何提示（06b 第 3.1 节查明的两条成因之一）。 */
   ::-webkit-scrollbar-track {
-    background: transparent;
+    background: var(--p-50);
+    border-radius: 99px;
   }
   ::-webkit-scrollbar-thumb {
-    background: var(--p-200);
+    background: var(--p-300);
     border-radius: 99px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--p-300);
+    background: var(--p-400);
+  }
+  /* Firefox 没有 ::-webkit-* 伪元素，用标准属性给同一套配色。
+     必须关在 Firefox 专属的 @supports 里：Chromium 一旦看到 scrollbar-color /
+     scrollbar-width，就整套忽略上面的 ::-webkit-scrollbar 规则、退回默认的
+     覆盖式滚动条——那种滚动条不滚的时候根本不画出来，等于这条改动白做。 */
+  @supports (-moz-appearance: none) {
+    * {
+      scrollbar-color: var(--p-300) var(--p-50);
+      scrollbar-width: thin;
+    }
   }
 
   :focus-visible {
@@ -122,10 +136,29 @@
   }
 
   /* 滚动容器底部渐隐：不把半行硬切在容器下沿（DESIGN.md §6 铺页硬约束 3）。
-     六条流程的左栏滚动区与卡内长列表统一用这一条，不各写各的 maskImage。 */
+     五条流程的左栏滚动区与卡内长列表统一用这一条，不各写各的 maskImage。
+
+     第三轮收尾轮改了实现：原先用 mask-image 遮罩整个滚动容器，遮罩连带把
+     容器自己的滚动条一起淡掉，于是「能滚」这件事在界面上完全看不出来
+     （06b 第 3.1 节查明的两条成因之二）。现在改成一层不跟着内容滚的渐隐
+     覆盖层：::after 用 position: sticky 钉在滚动视口下沿，margin-top 负值
+     让它不占高度；它落在内容盒内，滚动条在内容盒之外，因此不再被盖住。 */
+  /* 给滚动条留出固定水槽：不留的话 Chromium 会用覆盖式滚动条，
+     不滚的时候一个像素都不画，「这里能滚」依旧看不出来。留了水槽就走
+     经典滚动条，上面那套 ::-webkit-scrollbar 配色才真正显示出来。 */
   .fade-b {
-    mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
+    scrollbar-gutter: stable;
+  }
+
+  .fade-b::after {
+    content: '';
+    display: block;
+    position: sticky;
+    bottom: 0;
+    height: 18px;
+    margin-top: -18px;
+    background: linear-gradient(to top, var(--tp-surface) 0%, rgba(255, 255, 255, 0) 100%);
+    pointer-events: none;
   }
 
   /* 两端渐隐：给会超出、且上下都可能被切的滚动区（右侧工具条） */

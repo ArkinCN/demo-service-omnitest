@@ -1,4 +1,4 @@
-import type { CardId } from './types'
+import type { CanvasNodeType, CardId } from './types'
 
 /** 卡片库元数据（规格 7.2）。分四类，卡名与代码标识在此一处定义。 */
 export const CARD_LIB: Record<
@@ -32,3 +32,24 @@ export const CARD_LIST = Object.entries(CARD_LIB).map(([id, v]) => ({
   id: id as CardId,
   ...v,
 }))
+
+/* ---------------------------------------------------------- 卡片 → 画板节点 */
+
+/**
+ * 卡片库标识到画板节点类型的映射，让一张卡可以直接当画板节点用。
+ * 表里没有的卡不上画板，只在网格视图出现。真正的节点渲染由 W3 在
+ * src/features/canvas/ 下用 registerCanvasNode() 注册。
+ */
+export const CARD_CANVAS_NODE: Partial<Record<CardId, CanvasNodeType>> = {
+  'product-view': 'motor',
+  schematic: 'schematic',
+  'bench-live': 'bench',
+  'remote-device': 'device-mcp',
+  interlock: 'interlock',
+  workflow: 'workflow',
+  timeseries: 'curve',
+  verdict: 'verdict',
+  evidence: 'knowledge',
+  experience: 'knowledge',
+  'project-tree': 'knowledge',
+}

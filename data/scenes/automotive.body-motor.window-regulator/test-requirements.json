@@ -12,6 +12,177 @@
     "电气与防护",
     "检验规则"
   ],
+  "demo_profile": {
+    "note": "对照场景不走演示主线；这 6 条是三个一级类各取代表，用来证明骨架换包不换界面。",
+    "requirements": [
+      "TR-BASIC-02",
+      "TR-BASIC-04",
+      "TR-LOCK-01",
+      "TR-PINCH-01",
+      "TR-ENV-01",
+      "TR-ELEC-02"
+    ]
+  },
+  "group_tiers": [
+    {
+      "id": "req-perf",
+      "title": "性能",
+      "groups": [
+        {
+          "id": "req-basic",
+          "title": "基本性能",
+          "members": [
+            "基本性能"
+          ],
+          "subgroups": [
+            {
+              "id": "req-basic-v",
+              "title": "电压",
+              "items": [
+                "TR-BASIC-01",
+                "TR-BASIC-08"
+              ]
+            },
+            {
+              "id": "req-basic-i",
+              "title": "电流与力",
+              "items": [
+                "TR-BASIC-02",
+                "TR-BASIC-03",
+                "TR-BASIC-04"
+              ]
+            },
+            {
+              "id": "req-basic-s",
+              "title": "速度与噪音",
+              "items": [
+                "TR-BASIC-05",
+                "TR-BASIC-06",
+                "TR-BASIC-07"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "req-lock",
+          "title": "自锁",
+          "members": [
+            "自锁"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "req-cond",
+      "title": "工况",
+      "groups": [
+        {
+          "id": "req-pinch",
+          "title": "防夹",
+          "members": [
+            "防夹"
+          ],
+          "subgroups": [
+            {
+              "id": "req-pinch-law",
+              "title": "法规限值",
+              "items": [
+                "TR-PINCH-01",
+                "TR-PINCH-03",
+                "TR-PINCH-04"
+              ]
+            },
+            {
+              "id": "req-pinch-act",
+              "title": "行为与复位",
+              "items": [
+                "TR-PINCH-02",
+                "TR-PINCH-05",
+                "TR-PINCH-06",
+                "TR-PINCH-07"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "req-env",
+          "title": "环境与耐久",
+          "members": [
+            "环境与耐久"
+          ],
+          "subgroups": [
+            {
+              "id": "req-env-e",
+              "title": "环境",
+              "items": [
+                "TR-ENV-01",
+                "TR-ENV-02",
+                "TR-ENV-03",
+                "TR-ENV-04"
+              ]
+            },
+            {
+              "id": "req-env-d",
+              "title": "耐久",
+              "items": [
+                "TR-DUR-01",
+                "TR-DUR-02",
+                "TR-DUR-03"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "req-safe",
+      "title": "安全与自检",
+      "groups": [
+        {
+          "id": "req-elec",
+          "title": "电气与防护",
+          "members": [
+            "电气与防护"
+          ],
+          "subgroups": [
+            {
+              "id": "req-elec-ip",
+              "title": "防护与绝缘",
+              "items": [
+                "TR-ELEC-01",
+                "TR-ELEC-02",
+                "TR-ELEC-03"
+              ]
+            },
+            {
+              "id": "req-elec-emc",
+              "title": "电磁与材料",
+              "items": [
+                "TR-ELEC-04",
+                "TR-ELEC-05"
+              ]
+            },
+            {
+              "id": "req-elec-v",
+              "title": "电源工况",
+              "items": [
+                "TR-ELEC-06",
+                "TR-ELEC-07",
+                "TR-ELEC-08"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "req-rule",
+          "title": "检验规则",
+          "members": [
+            "检验规则"
+          ]
+        }
+      ]
+    }
+  ],
   "criterion_syntax": "JavaScript 表达式（ECMAScript），求值结果为布尔",
   "criterion_expression_note": "每条判据带四个配套字段：evaluable 说明这条能不能真的求值；criterion 是 JS 语法的判据表达式，散文式、无可测量量可取的条目为 null；variables 把表达式里每个自由变量映射到确定的取值来源；criterion_text 是人读版本。variables[].source 四种取值：runtime.measure 指向 runtime_measures 登记表里的运行时测量量；threshold 指向本条自己的 threshold 字段；control-parameters 指向 control-parameters.json 的 parameters[].key；constant 是编译期常量，derived_from 指向 safety-interlocks.json 的 fault_bitmap。evaluable 为 false 时 not_evaluable_reason 写明卡在哪。位运算一律加括号：C/JS 里 & 的优先级低于比较运算符。",
   "criterion_globals": [

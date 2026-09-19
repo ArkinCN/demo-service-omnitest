@@ -217,6 +217,10 @@
 .ac-btn:disabled { opacity: .45; cursor: not-allowed; }
 
 /* ---------- 输入区 ---------- */
+/* 消息流与输入区之间的宿主插槽（actionSlot）。组件本身不给它任何外观，
+   宿主放什么样式由宿主决定；这里只保证它不参与纵向伸缩。 */
+.ac-slot { flex: 0 0 auto; }
+
 .ac-composer { flex: 0 0 auto; border-top: 1px solid var(--ac-rule); padding: 10px 14px 12px; background: var(--ac-bg); }
 .ac-composer__box {
   display: flex;
@@ -390,12 +394,14 @@
 /* 抽屉展开时主列让出宽度，避免正文被遮挡 */
 .ac-root[data-drawer="true"] > .ac-header,
 .ac-root[data-drawer="true"] > .ac-stream,
+.ac-root[data-drawer="true"] > .ac-slot,
 .ac-root[data-drawer="true"] > .ac-composer {
   margin-right: 420px;
 }
 @media (max-width: 900px) {
   .ac-root[data-drawer="true"] > .ac-header,
   .ac-root[data-drawer="true"] > .ac-stream,
+  .ac-root[data-drawer="true"] > .ac-slot,
   .ac-root[data-drawer="true"] > .ac-composer {
     margin-right: 0;
   }

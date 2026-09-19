@@ -129,7 +129,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 64 行：QC/T 626-2019 全名、机构、日期与代替关系"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-STD-002",
@@ -151,7 +153,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 65 行：征求意见稿全名、来源、可用形态与可信度"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-STD-003",
@@ -172,7 +176,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 67 行：GB 11552-2009 全名、机构、日期与可用形态"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-STD-004",
@@ -192,7 +198,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 69 行：49 CFR § 571.118 全名、机构与 URL"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-STD-005",
@@ -211,7 +219,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 70 行：UN ECE R21 全名、机构与 URL"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-STD-006",
@@ -231,7 +241,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 71 行：Federal Register 文件号 E9-21042 与立法理由"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-STD-007",
@@ -250,7 +262,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 68 行：GB 7258-2017 整车级要求，经解读页转述"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-STD-008",
@@ -268,7 +282,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 66 行：QC/T 636-2014 全名、日期与废止状态"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-ENV-001",
@@ -288,7 +304,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 79 行：ISO 16750 系列第 1 至 5 部分，均为 2023 版"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-ENV-002",
@@ -319,7 +337,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
           "locator": "第 157-159 行：长时过电压、跨接启动、瞬态过电压三条"
         }
-      ]
+      ],
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-ENV-003",
@@ -338,7 +358,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 79 行：ISO 16750 系列第 3 部分"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-ENV-004",
@@ -365,7 +387,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
           "locator": "第 238 行：工作温度代码与试验条件"
         }
-      ]
+      ],
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-ENV-005",
@@ -384,7 +408,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 79 行：ISO 16750 系列第 5 部分"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-ENV-006",
@@ -404,7 +430,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 78 行：GB/T 28046 系列第 1 至 5 部分编号与状态"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-ENV-007",
@@ -424,7 +452,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 77 行：QC/T 413-2002 全名、日期与引用关系"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-ENV-008",
@@ -443,7 +473,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 83 行：GB/T 4208-2017 全名与日期"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-ENV-009",
@@ -469,7 +501,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
           "locator": "第 106 行：换版预警表"
         }
-      ]
+      ],
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-ENV-010",
@@ -487,7 +521,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 84 行：GB/T 30038-2026 修改采用 ISO 20653:2023"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-ENV-011",
@@ -512,7 +548,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
           "locator": "第 195 行：耐腐蚀性条款"
         }
-      ]
+      ],
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-ENV-012",
@@ -531,7 +569,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 86 行：GB/T 5171 系列编号与适用性"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-ENV-013",
@@ -548,7 +588,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 462 行：IEC 与 CISPR 检索通道：取得 IEC 60034-1:2026 完整目录"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-ENV-014",
@@ -565,7 +607,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 462 行：取得 IEC 60034-5:2020 完整目录"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-EMC-001",
@@ -585,7 +629,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 82 行：CISPR 25:2021 全名、机构、版次与频率范围"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-EMC-002",
@@ -611,7 +657,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
           "locator": "第 206 行：EMC 条款引用过期"
         }
-      ]
+      ],
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-EMC-003",
@@ -637,7 +685,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
           "locator": "第 206 行：EMC 条款引用过期"
         }
-      ]
+      ],
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-EMC-004",
@@ -656,7 +706,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 461 行：ISO 检索通道：ICS 43.040.10 全目录逐条解析"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-EMC-005",
@@ -674,7 +726,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 461 行：ISO 检索通道"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-EMC-006",
@@ -692,7 +746,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 461 行：ISO 检索通道"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-EMC-007",
@@ -710,7 +766,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 462 行：IEC 与 CISPR 检索通道：取得 CISPR 12:2025 完整目录"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-EMC-008",
@@ -727,7 +785,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 105 行：换版预警表 GB 34660-2026 行"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-OEM-001",
@@ -753,7 +813,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
           "locator": "第 160,164,165 行：E-15 反极性 / E-18 绝缘电阻 / E-17 短路"
         }
-      ]
+      ],
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-OEM-002",
@@ -768,7 +830,7 @@
       ],
       "conversion_status": "PDF 可直接渲染",
       "url": "https://www.etest-emc.com/uploads/soft/250707/VW80000_2022大众汽车零部件电性能标准.pdf",
-      "note": "含 E-01 至 E-24、M-01 至 M-09、K-01 至 K-19、C-01、L-01 至 L-03 全部试验目录与参数。本场景直接用到的有：M-04 谱型 D（簧上质量挂装件的宽带随机振动，车门上的玻璃升降器正属这一类）、M-06 连续机械冲击（驾驶员车门 100 000 次、副驾及后门 50 000 次）。**同为非授权副本。**",
+      "note": "含 E-01 至 E-24、M-01 至 M-09、K-01 至 K-19、C-01、L-01 至 L-03 全部试验目录与参数。本场景直接用到的有：M-04 谱型 D（簧上质量挂装件的宽带随机振动，车门上的玻璃升降器正属这一类）、M-06 连续机械冲击（驾驶员车门 100 000 次、前排乘客门与后门 50 000 次）。**同为非授权副本。**",
       "_status": "已核实；**非授权副本，不具引用资格**",
       "_source": [
         {
@@ -783,7 +845,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
           "locator": "第 242 行：M-06 连续机械冲击"
         }
-      ]
+      ],
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-OEM-003",
@@ -802,7 +866,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 96 行：MBN LV 148 全名、机构与副本状态"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-OEM-004",
@@ -820,7 +886,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 464 行：OEM 规范通道：szilassy.eu 托管的 BMW GS 95024-3-1: 2010-01"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-OEM-005",
@@ -839,7 +907,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 97 行：GMW3172 全名、机构、版本与作者"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-AEC-001",
@@ -865,7 +935,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
           "locator": "第 246-253 行：温度等级表与静电放电目标"
         }
-      ]
+      ],
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-AEC-002",
@@ -882,7 +954,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 93 行：AEC-Q101 Rev E"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-AEC-003",
@@ -899,7 +973,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 93 行：AEC-Q102 Rev A"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-AEC-004",
@@ -916,7 +992,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 93 行：AEC-Q104 Rev A"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-AEC-005",
@@ -934,7 +1012,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 93 行：AEC-Q200 Rev E 与分级表取消"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-FS-001",
@@ -952,7 +1032,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 98 行：ISO 26262 系列版本与修订状态"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-FS-002",
@@ -970,7 +1052,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 99 行：GB/T 34590 系列版本与废止关系"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-ENV-015",
@@ -987,7 +1071,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 461 行：ISO 检索通道"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-SAFE-001",
@@ -1007,7 +1093,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 172 行：GB/T 5226.1-2019 全名、机构与采标关系"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-SAFE-002",
@@ -1027,7 +1115,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 173 行：GB/T 15706-2012 全名与采标关系"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-SAFE-003",
@@ -1047,7 +1137,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 174 行：ISO 13849-1:2023 全名与 PL 分档"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-SAFE-004",
@@ -1067,7 +1159,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 175 行：IEC 62061:2021 全名、版次与适用范围变化"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-SAFE-005",
@@ -1087,7 +1181,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 176 行：ISO 14119:2024 全名与第 5 类新增"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-SAFE-006",
@@ -1107,7 +1203,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 177 行：IEC 61010-1 版次与中国对应标准落后情况"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-SAFE-007",
@@ -1133,7 +1231,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
           "locator": "第 411 行：7.8.2 必含要素清单"
         }
-      ]
+      ],
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-SAFE-008",
@@ -1153,7 +1253,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 412 行：CNAS-EL-13 全名、机构与日期"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-REP-001",
@@ -1179,7 +1281,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
           "locator": "第 397-405 行：章节结构与字段清单"
         }
-      ]
+      ],
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-REP-002",
@@ -1199,7 +1303,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 388 行：同类报告 PDF 清单"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-REP-003",
@@ -1218,7 +1324,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 388 行：同类报告 PDF 清单"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-REP-004",
@@ -1237,7 +1345,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 389 行：同类报告 PDF"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-REP-005",
@@ -1258,7 +1368,10 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 391 行：TP-118-06 全名、机构与日期"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "B1 调试规程与纪律",
+      "usage_review": "待人工复核"
     },
     {
       "id": "DOC-REP-006",
@@ -1277,7 +1390,10 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 390 行：NHTSA 合规测试报告检索数据库"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "C4 报告模板与字段映射",
+      "usage_review": "待人工复核"
     },
     {
       "id": "DOC-REF-001",
@@ -1298,7 +1414,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 140 行：TIDA-01389 全名、编号与可提参数"
-      }
+      },
+      "usage": "产品说明书",
+      "usage_class": "A2 应用方案与用户手册"
     },
     {
       "id": "DOC-REF-002",
@@ -1325,7 +1443,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
           "locator": "第 343 行：官方明示可调项"
         }
-      ]
+      ],
+      "usage": "产品说明书",
+      "usage_class": "A2 应用方案与用户手册"
     },
     {
       "id": "DOC-REF-003",
@@ -1344,7 +1464,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 142 行：TRK-S12VR-WLFT-1 全名与编号"
-      }
+      },
+      "usage": "产品说明书",
+      "usage_class": "A2 应用方案与用户手册"
     },
     {
       "id": "DOC-REF-004",
@@ -1363,7 +1485,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 143 行：APGRD002 全名与编号"
-      }
+      },
+      "usage": "产品说明书",
+      "usage_class": "A2 应用方案与用户手册"
     },
     {
       "id": "DOC-REF-005",
@@ -1382,7 +1506,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 144 行：TLE9855QX 设计指南全名与版本"
-      }
+      },
+      "usage": "产品说明书",
+      "usage_class": "A2 应用方案与用户手册"
     },
     {
       "id": "DOC-REF-006",
@@ -1402,7 +1528,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 145 行：TLE985x 应用页与特征"
-      }
+      },
+      "usage": "产品说明书",
+      "usage_class": "A2 应用方案与用户手册"
     },
     {
       "id": "DOC-REF-007",
@@ -1429,7 +1557,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
           "locator": "第 342 行：可提炼的滤波与迟滞参数"
         }
-      ]
+      ],
+      "usage": "产品说明书",
+      "usage_class": "A2 应用方案与用户手册"
     },
     {
       "id": "DOC-TUNE-001",
@@ -1459,7 +1589,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
           "locator": "第 377 行：整定顺序"
         }
-      ]
+      ],
+      "usage": "工艺",
+      "usage_class": "B2 调试手册与原理说明"
     },
     {
       "id": "DOC-TUNE-002",
@@ -1479,7 +1611,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 361 行：UM3259 全名与可提炼参数"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "B2 调试手册与原理说明"
     },
     {
       "id": "DOC-TUNE-003",
@@ -1499,7 +1633,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 362 行：STM32 FAQ 启动调参口径"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "B2 调试手册与原理说明"
     },
     {
       "id": "DOC-TUNE-004",
@@ -1519,7 +1655,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 363 行：iMOTION 参考手册全名、版本与可提炼参数"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "B2 调试手册与原理说明"
     },
     {
       "id": "DOC-TUNE-005",
@@ -1539,7 +1677,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 364 行：SLLA567 全名与文献号"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "B2 调试手册与原理说明"
     },
     {
       "id": "DOC-TUNE-006",
@@ -1559,7 +1699,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 365 行：ROHM TechWeb 条目 346 全名与内容"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "B2 调试手册与原理说明"
     },
     {
       "id": "DOC-PAP-001",
@@ -1579,7 +1721,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 338 行：IJECE 2018 论文全名、期刊与 URL"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "B2 调试手册与原理说明"
     },
     {
       "id": "DOC-PAP-002",
@@ -1599,7 +1743,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 339 行：IEEE 会议论文全名与判据"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "B2 调试手册与原理说明"
     },
     {
       "id": "DOC-PAP-003",
@@ -1619,7 +1765,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 340 行：ICMSE 2018 论文全名与判据"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "B2 调试手册与原理说明"
     },
     {
       "id": "DOC-PAP-004",
@@ -1639,7 +1787,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 341 行：ResearchGate 2021 条目与内容"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "B2 调试手册与原理说明"
     },
     {
       "id": "DOC-SIM-001",
@@ -1659,7 +1809,10 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 314 行：gym-electric-motor 全名、机构、能力与许可证"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "（仿真工具，06a 总表未收录）",
+      "usage_review": "待人工复核"
     },
     {
       "id": "DOC-SIM-002",
@@ -1679,7 +1832,10 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 315 行：Simscape Electrical EPAS 示例全名与评价"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "（仿真工具，06a 总表未收录）",
+      "usage_review": "待人工复核"
     },
     {
       "id": "DOC-SIM-003",
@@ -1698,7 +1854,10 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 316 行：PyLEECAN 全名、机构与能力"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "（仿真工具，06a 总表未收录）",
+      "usage_review": "待人工复核"
     },
     {
       "id": "DOC-SIM-004",
@@ -1718,7 +1877,10 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 317 行：ITSC 全名、被测件与参数"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "（数据集与脚本，06a 总表未收录）",
+      "usage_review": "待人工复核"
     },
     {
       "id": "DOC-SIM-005",
@@ -1737,7 +1899,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 318 行：C2000Ware MotorControl SDK 全名与能力"
-      }
+      },
+      "usage": "产品说明书",
+      "usage_class": "A4 驱动与参数配置源码"
     },
     {
       "id": "DOC-SIM-006",
@@ -1757,7 +1921,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "第 319 行：X-CUBE-MCSDK 与 Motor Pilot 全名与能力"
-      }
+      },
+      "usage": "产品说明书",
+      "usage_class": "A4 驱动与参数配置源码"
     },
     {
       "id": "DOC-ALT-001",
@@ -1783,7 +1949,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
           "locator": "第 259-281 行：20 项判据表"
         }
-      ]
+      ],
+      "usage": "测试需求",
+      "usage_class": "C1 标准与法规 / C2 客户与 OEM 规范 / C4 报告模板与字段映射"
     },
     {
       "id": "DOC-OURS-001",
@@ -1805,7 +1973,10 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
         "locator": "全文"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "（本项目调研件与构建脚本，06a 总表未收录）",
+      "usage_review": "待人工复核"
     },
     {
       "id": "DOC-OURS-002",
@@ -1822,7 +1993,10 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/automotive.body-motor.window-regulator/_build/build_scene_pack.py",
         "locator": "ORDER 列表"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "（本项目调研件与构建脚本，06a 总表未收录）",
+      "usage_review": "待人工复核"
     }
   ]
 }

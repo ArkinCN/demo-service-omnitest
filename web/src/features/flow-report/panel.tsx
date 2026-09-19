@@ -2,14 +2,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Archive,
   Braces,
+  Cpu,
   Download,
   FileSpreadsheet,
   FileText,
   Images,
   LayoutList,
-  PenLine,
+  Mail,
   Waves as WavesIcon,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import {
   Badge,
   Button,
@@ -22,8 +24,10 @@ import {
   Tooltip,
   cn,
 } from '../../components/ui'
+import { collapseKey } from '../../state/useAppStore'
 import { getPack, fileName, sizeText, type RawHeaderField } from '../scene/pack'
-import { ConfirmFooter, Empty } from '../shared/bits'
+import { ConfirmFooter, Empty, TierTree } from '../shared/bits'
+import { buildTiers, demoFilter, readTiers } from '../shared/tiers'
 import { simp } from '../shared/zh'
 import { TimeSeriesChart } from '../timeseries'
 import { loadWaves, type Wave } from '../waveforms'
@@ -108,6 +112,26 @@ function templateTitle(raw: string) {
 
 /* ------------------------------------------------------------------ 左栏 */
 
+/** 分组图标：按一级类 / 二级组的标题取 */
+const GROUP_ICON: [RegExp, LucideIcon][] = [
+  [/身份|机型|固件$/, Cpu],
+  [/位址|引导|基线/, Braces],
+  [/交付|客户|联系/, Mail],
+  [/标识|编号/, Archive],
+  [/内容|标题|周期/, FileText],
+  [/机构|合同|主办/, Archive],
+]
+const iconOf = (name: string, size = 14) => {
+  let Ic: LucideIcon = LayoutList
+  for (const [re, ic] of GROUP_ICON) {
+    if (re.test(name)) {
+      Ic = ic
+      break
+    }
+  }
+  return <Ic size={size} strokeWidth={1.9} />
+}
+
 function FieldRow({ f }: { f: RawHeaderField }) {
   const h = useShared()
   const up = upstream(f)
@@ -157,11 +181,26 @@ export function ReportLeftPanel() {
   if (!pack) return <Empty text="场景包未加载" />
 
   const fields = pack.report.header_fields
-  const ups = fields.filter(upstream)
   const mine = fields.filter((f) => !upstream(f))
   const left = mine.filter((f) => !h[f.key]).length
   const filled = fields.filter((f) => h[f.key]).length
   const raw = pack.report.template_file
+  // 三层骨架取自场景包 report-template.json 的 group_tiers，不写死在代码里
+  const tiers = buildTiers<RawHeaderField>(readTiers(pack.report), fields, (f) => f.key)
+  // 模板分节 10 节按「由哪条流程写入」再分一层，不十行平铺（平铺规则一）
+  const secGroups = (() => {
+    const order: string[] = []
+    const bag = new Map<string, typeof pack.report.spec_sections>()
+    for (const sec of pack.report.spec_sections) {
+      const k = `由${sec.from_flow.split(' ')[0]} 写入`
+      if (!bag.has(k)) {
+        bag.set(k, [])
+        order.push(k)
+      }
+      bag.get(k)!.push(sec)
+    }
+    return order.map((k) => ({ title: k, items: bag.get(k)! }))
+  })()
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
@@ -172,7 +211,7 @@ export function ReportLeftPanel() {
           {filled}/{fields.length}
         </span>
         {left > 0 ? (
-          <Badge tone="warn" dot className="ml-auto">
+          <Badge tone="neutral" dot className="ml-auto">
             待补 {left}
           </Badge>
         ) : (
@@ -222,33 +261,40 @@ export function ReportLeftPanel() {
           </Tooltip>
         </div>
 
-        <Collapsible
-          icon={<Archive size={14} strokeWidth={1.9} />}
-          title="上游带入"
-          right={<span className="num text-[12px] text-t3">{ups.length}</span>}
-        >
-          {ups.map((f) => (
-            <FieldRow key={f.key} f={f} />
-          ))}
-        </Collapsible>
+        {/* 表头三层（06b 第 2.2 节）：被测件身份 / 固件位址基线 / 交付对象。
+            分组维度是「这一格填错了，谁会先发现、会出什么事」，只展开第一层。 */}
+        <TierTree
+          flow="report"
+          tiers={tiers}
+          // 一级类只展开第一个「被测件身份」，位址基线与交付对象默认折叠
+          defaultOpen={0}
+          itemKey={(f) => f.key}
+          render={(f) => <FieldRow f={f} />}
+          flags={(f) => ({ filled: !!h[f.key], pending: upstream(f) && !h[f.key] })}
+          tierIcon={(t) => iconOf(t, 15)}
+          groupIcon={(t) => iconOf(t)}
+        />
 
+        {/* 模板分节：表头之外的正文由这几节构成 */}
         <Collapsible
-          icon={<PenLine size={14} strokeWidth={1.9} />}
-          title="本流程补全"
-          right={<span className="num text-[12px] text-t3">{mine.length}</span>}
-        >
-          {mine.map((f) => (
-            <FieldRow key={f.key} f={f} />
-          ))}
-        </Collapsible>
-
-        {/* 模板分节：表头之外的正文由这几节构成，左栏原来到这里就空了半屏 */}
-        <Collapsible
-          icon={<LayoutList size={14} strokeWidth={1.9} />}
+          level={1}
+          icon={<LayoutList size={15} strokeWidth={1.9} />}
           title="模板分节"
-          right={<span className="num text-[12px] text-t3">{pack.report.spec_sections.length}</span>}
+          storeKey={collapseKey('report', 'rp-sec')}
+          defaultOpen={false}
+          stat={{ total: pack.report.spec_sections.length }}
         >
-          {pack.report.spec_sections.map((sec) => (
+          {secGroups.map((grp, gi) => (
+            <Collapsible
+              key={grp.title}
+              level={2}
+              icon={<LayoutList size={14} strokeWidth={1.9} />}
+              title={grp.title}
+              storeKey={collapseKey('report', `rp-sec-${gi}`)}
+              defaultOpen={gi === 0}
+              stat={{ total: grp.items.length }}
+            >
+          {grp.items.map((sec) => (
             <Tooltip
               key={sec.section}
               className="block w-full"
@@ -274,11 +320,16 @@ export function ReportLeftPanel() {
               </span>
             </Tooltip>
           ))}
+            </Collapsible>
+          ))}
         </Collapsible>
 
         <Collapsible
-          icon={<Download size={14} strokeWidth={1.9} />}
+          level={1}
+          icon={<Download size={15} strokeWidth={1.9} />}
           title="导出格式"
+          storeKey={collapseKey('report', 'rp-fmt')}
+          defaultOpen={false}
           right={
             <InfoTip
               content={
@@ -332,7 +383,8 @@ function useWaves() {
       alive = false
     }
   }, [pack])
-  return w
+  // 演示主线只回放一失败一成功两条，与流程 3、流程 4 同一口径
+  return pack ? demoFilter(pack.datasets, 'datasets', w, (x) => x.id) : w
 }
 
 const STATE_TEXT: Record<string, string> = {
@@ -343,11 +395,13 @@ const STATE_TEXT: Record<string, string> = {
 }
 
 /** 判定行：走和流程 4 同一套求值，不另写一份口径 */
+/** 判定口径与流程 3、流程 4 同一套；演示模式下同样只统计 demo_profile 点名的判据 */
 function useVerdictRows() {
   const pack = getPack()
   const waves = useWaves()
   if (!pack) return []
-  return evaluateAll(pack, runtimeMeasures(waves))
+  const all = evaluateAll(pack, runtimeMeasures(waves))
+  return demoFilter(pack.requirements, 'requirements', all, (r) => r.req.id)
 }
 
 /** 横向分段条：只用墨绿明度 + 一处暗红，不引第三色相 */

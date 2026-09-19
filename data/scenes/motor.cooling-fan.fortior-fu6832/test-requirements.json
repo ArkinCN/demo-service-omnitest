@@ -16,6 +16,122 @@
     "硬件自检",
     "可靠性"
   ],
+  "demo_profile": {
+    "note": "演示模式只暴露这 6 条判据：主线只在「起动成功率」上出结论，其余五条是同一轮能一起判的邻近项。全量模式下 26 条照旧，不删数据。",
+    "requirements": [
+      "TR-START-01",
+      "TR-START-02",
+      "TR-CURR-01",
+      "TR-TIME-01",
+      "TR-SPEED-02",
+      "TR-PROT-04"
+    ]
+  },
+  "group_tiers": [
+    {
+      "id": "req-perf",
+      "title": "性能",
+      "groups": [
+        {
+          "id": "req-start",
+          "title": "启动可靠性",
+          "members": [
+            "启动可靠性"
+          ]
+        },
+        {
+          "id": "req-speed",
+          "title": "转速一致性与精度",
+          "members": [
+            "转速一致性",
+            "转速精度"
+          ]
+        },
+        {
+          "id": "req-dyn",
+          "title": "动态响应",
+          "members": [
+            "动态响应"
+          ]
+        },
+        {
+          "id": "req-pwm",
+          "title": "调速",
+          "members": [
+            "调速"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "req-cond",
+      "title": "工况",
+      "groups": [
+        {
+          "id": "req-curr",
+          "title": "电流",
+          "members": [
+            "电流"
+          ]
+        },
+        {
+          "id": "req-wind",
+          "title": "顺逆风",
+          "members": [
+            "顺逆风"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "req-safe",
+      "title": "安全与自检",
+      "groups": [
+        {
+          "id": "req-prot",
+          "title": "保护",
+          "members": [
+            "保护"
+          ],
+          "subgroups": [
+            {
+              "id": "req-prot-v",
+              "title": "电压类",
+              "items": [
+                "TR-PROT-01",
+                "TR-PROT-02",
+                "TR-PROT-03"
+              ]
+            },
+            {
+              "id": "req-prot-i",
+              "title": "电流与转速类",
+              "items": [
+                "TR-PROT-04",
+                "TR-PROT-05",
+                "TR-PROT-06",
+                "TR-PROT-07"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "req-hw",
+          "title": "硬件自检",
+          "members": [
+            "硬件自检"
+          ]
+        },
+        {
+          "id": "req-rel",
+          "title": "可靠性",
+          "members": [
+            "可靠性"
+          ]
+        }
+      ]
+    }
+  ],
   "criterion_syntax": "JavaScript 表达式（ECMAScript），求值结果为布尔",
   "criterion_expression_note": "每条判据带三个配套字段：evaluable 说明这条能不能真的求值；criterion 是 JS 语法的判据表达式，散文式、无标志位可取的条目为 null；variables 把表达式里每个自由变量映射到确定的取值来源。variables[].source 四种取值：runtime.measure 指向 runtime_measures 登记表里的运行时测量量；threshold 指向本条自己的 threshold 字段；control-parameters 指向 control-parameters.json 的 parameters[].key；constant 是编译期常量，ref 或 derived_from 指向 safety-interlocks.json 的 fault_bitmap。evaluable 为 false 时 not_evaluable_reason 写明卡在哪。位运算一律加括号：C/JS 里 & 的优先级低于比较运算符。",
   "criterion_globals": [

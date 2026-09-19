@@ -8,7 +8,9 @@ import {
 } from '../data/loadScene'
 import { MOCK_SCENE } from '../data/mock/motor.cooling-fan.fu6832'
 import type { FlowState } from '../data/flows'
-import type { FlowId, ScenePackage } from '../data/types'
+import { FLOW_IDS, type FlowId, type KnowledgeFilter, type ScenePackage } from '../data/types'
+
+export type PanelView = 'canvas' | 'grid'
 
 type ParamValue = number | string
 
@@ -38,6 +40,30 @@ interface AppState {
   /** D 区 */
   model: string
 
+  /* ------------------------------------------------------ 第三轮上提的四组字段 */
+
+  /**
+   * C 区视图，按流程各存一份：人手点过分段控件的流程记人的选择，
+   * 没点过的流程留空、由场景包 ui.defaultView 或代码兜底决定。
+   * 人工选择持久到 localStorage，刷新与切页都不回弹。
+   */
+  canvasView: Partial<Record<FlowId, PanelView>>
+  /** 画板上当前选中的节点 id，无选中为 null（W3 消费） */
+  canvasSelected: string | null
+  /** 折叠状态记忆，键为 `${flowId}.${groupId}`，true 为展开（W4 消费） */
+  collapse: Record<string, boolean>
+  /** 知识库三轴筛选（W2 消费）；三个数组都空表示不过滤 */
+  kbFilter: KnowledgeFilter
+
+  /** 演示模式：只过滤展示面，不删场景包里的任何数据。默认开。 */
+  demoMode: boolean
+
+  setCanvasView: (flow: FlowId, v: PanelView) => void
+  setDemoMode: (on: boolean) => void
+  setCanvasSelected: (id: string | null) => void
+  setCollapse: (key: string, open: boolean) => void
+  setKbFilter: (patch: Partial<KnowledgeFilter>) => void
+
   selectProduct: (path: [string, string, string], sceneId?: string) => void
   setParam: (key: string, v: ParamValue) => void
   confirmFlow: (flow: FlowId) => void
@@ -47,8 +73,66 @@ interface AppState {
   bootstrap: () => void
 }
 
+/** 折叠状态记忆的键：流程 × 分组 */
+export const collapseKey = (flow: FlowId, group: string) => `${flow}.${group}`
+
 export const paramKey = (flow: FlowId, group: string, sub: string, item: string) =>
   `${flow}.${group}.${sub}.${item}`
+
+/* --------------------------------------------------- 人工选择的本地持久化
+
+   没有后端，人摆过的版式与模式只能落在浏览器本地：换机器、清缓存即丢，
+   这是《第三轮实施计划》第六节风险 5 已拍板的取法（甲案）。
+   读写一律包 try/catch：隐私窗口与禁用站点数据时 localStorage 会直接抛。 */
+
+const LS_CANVAS_VIEW = 'omnitest.canvasView.v1'
+const LS_DEMO_MODE = 'omnitest.demoMode.v1'
+
+function readCanvasView(): Partial<Record<FlowId, PanelView>> {
+  try {
+    const raw = localStorage.getItem(LS_CANVAS_VIEW)
+    if (!raw) return {}
+    const j = JSON.parse(raw) as Record<string, unknown>
+    const out: Partial<Record<FlowId, PanelView>> = {}
+    for (const f of FLOW_IDS) {
+      const v = j[f]
+      if (v === 'canvas' || v === 'grid') out[f] = v
+    }
+    return out
+  } catch {
+    return {}
+  }
+}
+
+function writeCanvasView(v: Partial<Record<FlowId, PanelView>>) {
+  try {
+    localStorage.setItem(LS_CANVAS_VIEW, JSON.stringify(v))
+  } catch {
+    /* 存不下就只在本次会话里生效，不报错、不影响渲染 */
+  }
+}
+
+/** 演示模式默认开；地址栏 `?mode=full` 仍然直接强制全量，供评审与截图对照 */
+function readDemoMode(): boolean {
+  try {
+    if (typeof window !== 'undefined') {
+      const q = new URLSearchParams(window.location.search).get('mode')
+      if (q === 'full') return false
+      if (q === 'demo') return true
+    }
+    return localStorage.getItem(LS_DEMO_MODE) !== 'full'
+  } catch {
+    return true
+  }
+}
+
+function writeDemoMode(on: boolean) {
+  try {
+    localStorage.setItem(LS_DEMO_MODE, on ? 'demo' : 'full')
+  } catch {
+    /* 同上 */
+  }
+}
 
 export const useAppStore = create<AppState>((set) => ({
   sceneId: DEFAULT_SCENE_ID,
@@ -68,9 +152,29 @@ export const useAppStore = create<AppState>((set) => ({
 
   model: 'deepseek-v4-pro',
 
+  canvasView: readCanvasView(),
+  demoMode: readDemoMode(),
+  canvasSelected: null,
+  collapse: {},
+  kbFilter: { usage: [], origin: [], owner: [] },
+
+  setCanvasView: (flow, v) =>
+    set((s) => {
+      const canvasView = { ...s.canvasView, [flow]: v }
+      writeCanvasView(canvasView)
+      return { canvasView }
+    }),
+  setDemoMode: (demoMode) => {
+    writeDemoMode(demoMode)
+    set({ demoMode })
+  },
+  setCanvasSelected: (canvasSelected) => set({ canvasSelected }),
+  setCollapse: (key, open) => set((s) => ({ collapse: { ...s.collapse, [key]: open } })),
+  setKbFilter: (patch) => set((s) => ({ kbFilter: { ...s.kbFilter, ...patch } })),
+
   selectProduct: (path, sceneId) => {
     const id = sceneId ?? DEFAULT_SCENE_ID
-    // 换包等于换掉六条流程的全部数据，上一个产品的人工改动与确认状态不再适用，
+    // 换包等于换掉五条流程的全部数据，上一个产品的人工改动与确认状态不再适用，
     // 一并清掉；「要不要丢」的询问在 ProductCascader 里做，这里只负责执行。
     set({ path, loading: true, overrides: {}, touched: {}, confirmed: {} })
     void loadScene(id).then((scene) => set({ scene, sceneId: id, loading: false }))

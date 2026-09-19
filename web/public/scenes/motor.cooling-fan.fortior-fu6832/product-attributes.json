@@ -14,6 +14,122 @@
     "转速信号",
     "机械"
   ],
+  "group_tiers": [
+    {
+      "id": "obj",
+      "title": "被测对象",
+      "groups": [
+        {
+          "id": "obj-em",
+          "title": "电磁参数",
+          "members": [
+            "电机本体"
+          ],
+          "subgroups": [
+            {
+              "id": "obj-em-model",
+              "title": "等效模型",
+              "items": [
+                "pole_pairs",
+                "rs",
+                "ld",
+                "lq",
+                "ke"
+              ]
+            },
+            {
+              "id": "obj-em-base",
+              "title": "基准与旋向",
+              "items": [
+                "motor_speed_base",
+                "motor_direction"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "obj-rated",
+          "title": "额定工况",
+          "members": [
+            "转速规格",
+            "电压规格",
+            "电流规格"
+          ]
+        },
+        {
+          "id": "obj-chip",
+          "title": "主控规格",
+          "members": [
+            "芯片规格"
+          ],
+          "subgroups": [
+            {
+              "id": "obj-chip-v",
+              "title": "供电与电流",
+              "items": [
+                "vcc_operating_min",
+                "vcc_operating_max",
+                "vcc_abs_max",
+                "ivcc_typ",
+                "ivcc_max"
+              ]
+            },
+            {
+              "id": "obj-chip-t",
+              "title": "温度限值",
+              "items": [
+                "ambient_temp_range",
+                "junction_temp_max"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "obj-sense",
+          "title": "采样与反馈",
+          "members": [
+            "采样链路",
+            "转速信号"
+          ],
+          "subgroups": [
+            {
+              "id": "obj-sense-i",
+              "title": "相电流采样",
+              "items": [
+                "hw_shunt_mode",
+                "hw_rshunt",
+                "hw_ampgain"
+              ]
+            },
+            {
+              "id": "obj-sense-v",
+              "title": "母线电压量测",
+              "items": [
+                "hw_rv_mode",
+                "rv1",
+                "rv2"
+              ]
+            },
+            {
+              "id": "obj-sense-fg",
+              "title": "转速反馈",
+              "items": [
+                "rotate_signal_type",
+                "fg_pulse_period"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "obj-mech",
+          "title": "机械外形",
+          "members": [
+            "机械"
+          ]
+        }
+      ]
+    }
+  ],
   "attributes": [
     {
       "key": "pole_pairs",

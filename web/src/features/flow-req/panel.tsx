@@ -29,7 +29,8 @@ import {
   cn,
 } from '../../components/ui'
 import { getPack, statusOf, type RawPack, type RawRequirement } from '../scene/pack'
-import { ConfirmFooter, Empty } from '../shared/bits'
+import { ConfirmFooter, Empty, TierTree } from '../shared/bits'
+import { buildTiers, readTiers } from '../shared/tiers'
 import { listPackWorkflows, loadPackWorkflow, type WfEntry } from '../scene/workflows'
 import { WorkflowCanvas } from '../workflow'
 import type { WorkflowModel } from '../workflow'
@@ -213,7 +214,10 @@ function thresholdBadge(r: RawRequirement): string | null {
 /* ------------------------------------------------------------- 分组图标 */
 
 const CAT_ICON: [RegExp, LucideIcon][] = [
-  [/启动/, Zap],
+  [/^性能|基本性能/, Gauge],
+  [/^工况/, Wind],
+  [/安全与自检|电气与防护/, ShieldCheck],
+  [/启动|自锁/, Zap],
   [/转速/, Gauge],
   [/响应|时间/, Timer],
   [/电流|电压/, Activity],
@@ -221,8 +225,15 @@ const CAT_ICON: [RegExp, LucideIcon][] = [
   [/风/, Wind],
   [/保护/, ShieldCheck],
   [/硬件|自检/, CircuitBoard],
-  [/可靠/, RotateCw],
+  [/可靠|耐久|环境/, RotateCw],
+  [/防夹|力/, ShieldCheck],
+  [/规则|检验/, ListChecks],
 ]
+const iconOf = (name: string, size = 14) => {
+  const Ic = catIcon(name)
+  return <Ic size={size} strokeWidth={1.9} />
+}
+
 const catIcon = (name: string): LucideIcon => {
   for (const [re, ic] of CAT_ICON) if (re.test(name)) return ic
   return ListChecks
@@ -342,6 +353,15 @@ export function ReqLeftPanel() {
   const reqs = pack.requirements.requirements
   const all = s.ids.size === reqs.length
 
+  // 一级类收敛到三类（性能 / 工况 / 安全与自检），骨架取自场景包
+  // test-requirements.json 的 group_tiers；十个原分类降为二级组，超 5 条的再切三级。
+  const tiers = buildTiers<RawRequirement>(
+    readTiers(pack.requirements),
+    reqs,
+    (r) => r.id,
+    (r) => r.category,
+  )
+
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
       <header className="flex h-[44px] shrink-0 items-center gap-2.5 border-b border-line-soft px-4">
@@ -369,39 +389,28 @@ export function ReqLeftPanel() {
       </header>
 
       <div className="fade-b min-h-0 flex-1 overflow-y-auto pb-2">
-        {pack.requirements.categories.map((c, i) => {
-          const items = reqs.filter((r) => r.category === c)
-          const picked = items.filter((r) => s.ids.has(r.id)).length
-          const Icon = catIcon(c)
-          // 默认摊开到累计 14 行为止：分类少的包（26 条判据分 11 类）也能把左栏填满，
-          // 分类多的包不会一次全铺开
-          const before = pack.requirements.categories
-            .slice(0, i)
-            .reduce((n, x) => n + reqs.filter((r) => r.category === x).length, 0)
-          return (
-            <Collapsible
-              key={c}
-              icon={<Icon size={14} strokeWidth={1.9} />}
-              title={short(c, 6)}
-              defaultOpen={before < 14}
-              right={
-                <span className="num text-[12px] text-t3">
-                  {picked}
-                  <span className="text-t3/70">/{items.length}</span>
-                </span>
-              }
-            >
-              {items.map((r) => (
-                <ReqRow key={r.id} r={r} />
-              ))}
-            </Collapsible>
-          )
-        })}
+        <TierTree
+          flow="req"
+          tiers={tiers}
+          // 一级类只展开第一个，其余折叠（06b 第 1.2 节）
+          defaultOpen={0}
+          itemKey={(r) => r.id}
+          render={(r) => <ReqRow r={r} />}
+          // 组头三态：已选进本轮基线记「已填」，源材料存疑记「待核实」。
+          // 「只能人工判」不是异常，不占暗红名额，它由行尾的空心点与栏底的
+          // 「可自动求值 n/m」交代。
+          flags={(r) => ({
+            filled: s.ids.has(r.id),
+            pending: !!(r._status || r._placeholder),
+          })}
+          tierIcon={(t) => iconOf(t, 15)}
+          groupIcon={(t) => iconOf(t)}
+        />
       </div>
 
       <div className="shrink-0 px-4 pt-2">
         <Tooltip
-          content={`可自动求值 ${pack.requirements.evaluable_count} 条，只能人工判 ${pack.requirements.not_evaluable_count} 条（排程规则与目视检查一类，不硬凑成布尔表达式）。`}
+          content={`可自动求值 ${pack.requirements.evaluable_count} 条，只能人工判 ${pack.requirements.not_evaluable_count} 条（排程规则与目视检查一类，不硬凑成布尔表达式）。组头的暗红计数即「只能人工判」的条数。`}
         >
           <span className="flex w-full items-center gap-2 text-[12px] text-t3">
             <span className="num">

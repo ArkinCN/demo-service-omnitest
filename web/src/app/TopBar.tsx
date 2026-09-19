@@ -24,9 +24,10 @@ import {
   Wand2,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { Avatar, Button, StatusDot, Tooltip, cn } from '../components/ui'
+import { Avatar, Button, Segmented, StatusDot, Tooltip, cn } from '../components/ui'
 import { FLOWS, FLOW_BY_PATH } from '../data/flows'
-import { FLOW_ICON, FLOW_SHORT } from './icons'
+import { FLOW_ICON, FLOW_SHORT, MODULE_ICON, MODULE_SHORT } from './icons'
+import { useKnowledgeTotal } from '../features/knowledge/data'
 import { flowStateOf, useAppStore } from '../state/useAppStore'
 import { ProductCascader } from './ProductCascader'
 
@@ -59,18 +60,20 @@ const ACTION_ICON: Record<string, LucideIcon> = {
   search: Search,
 }
 
-/** 六流程 stepper：圆形序号 / 打勾，短名 ≤6 字 */
+/** 五流程 stepper：圆形序号 / 打勾，短名 ≤6 字。知识库不在其中。 */
 function FlowStepper() {
   const { pathname } = useLocation()
+  // 模块路由（/knowledge）不属于任何一步，此时 stepper 不点亮任何一步
   const current = FLOW_BY_PATH[pathname] ?? FLOWS[0]
+  const onFlow = !!FLOW_BY_PATH[pathname]
   const scene = useAppStore((s) => s.scene)
   const confirmed = useAppStore((s) => s.confirmed)
 
   return (
-    <nav aria-label="六流程" className="flex min-w-0 flex-1 items-center justify-center">
+    <nav aria-label="五流程" className="flex min-w-0 flex-1 items-center justify-center">
       {FLOWS.map((f, i) => {
         const state = flowStateOf(f.id, current.id, scene, confirmed)
-        const on = f.id === current.id
+        const on = onFlow && f.id === current.id
         const done = state === 'confirmed'
         const Icon = FLOW_ICON[f.id]
         return (
@@ -113,12 +116,19 @@ function FlowStepper() {
   )
 }
 
+const KnowledgeIcon = MODULE_ICON.knowledge
+
 export function TopBar() {
   const { pathname } = useLocation()
+  const onFlow = !!FLOW_BY_PATH[pathname]
   const current = FLOW_BY_PATH[pathname] ?? FLOWS[0]
   const benchBusy = useAppStore((s) => s.benchBusy)
   const benchUser = useAppStore((s) => s.benchUser)
   const pending = useAppStore((s) => s.interlockPending)
+  const demoMode = useAppStore((s) => s.demoMode)
+  const setDemoMode = useAppStore((s) => s.setDemoMode)
+  // 取数是异步的，用 hook 订阅才会在落地后重渲；同步函数取值会永远停在 0
+  const kbTotal = useKnowledgeTotal()
   const disabledAction = current.actions.find((a) => a.disabled)
 
   return (
@@ -138,7 +148,42 @@ export function TopBar() {
         <FlowStepper />
 
         <div className="flex shrink-0 items-center gap-2.5">
+          {/* 知识库是基础模块不是第六步：与 stepper 之间隔一条竖线，
+              视觉上跟五步主线断开 */}
+          <span className="h-[26px] w-px bg-line" />
+          <Tooltip content="知识库 · 五条流程共用的基础模块">
+            <NavLink
+              to="/knowledge"
+              className={({ isActive }) =>
+                cn(
+                  'flex h-[30px] items-center gap-1.5 rounded-full border px-2.5 transition-colors',
+                  isActive
+                    ? 'border-ink bg-ink-wash text-p700'
+                    : 'border-line bg-white text-t2 hover:border-ink hover:text-p700',
+                )
+              }
+            >
+              <KnowledgeIcon size={14} strokeWidth={1.75} />
+              <span className="text-[12px]">{MODULE_SHORT.knowledge}</span>
+              <span className="num text-[11px] text-t3">{kbTotal}</span>
+            </NavLink>
+          </Tooltip>
           <ProductCascader />
+          {/* 演示 / 全量：只切展示面，两边读的都是同一份场景包，不删任何数据 */}
+          <Tooltip content="演示只露场景包 demo_profile 点名的那几项；全量把登记过的全表摊开，供评审对照。两边数据同源。">
+            <span>
+              <Segmented
+                ariaLabel="演示模式"
+                size="sm"
+                value={demoMode ? 'demo' : 'full'}
+                onChange={(v) => setDemoMode(v === 'demo')}
+                items={[
+                  { value: 'demo', label: '演示' },
+                  { value: 'full', label: '全量' },
+                ]}
+              />
+            </span>
+          </Tooltip>
           <Tooltip content={benchBusy ? `台架被 ${benchUser} 占用中` : '台架空闲，可排队启动'}>
             <span className="flex h-[30px] items-center gap-1.5 rounded-full border border-line bg-white px-2.5">
               <StatusDot status={benchBusy ? 'alert' : 'done'} pulse={!benchBusy} />
@@ -155,7 +200,8 @@ export function TopBar() {
         </div>
       </div>
 
-      {/* 动作条 48 · 次表面浅绿，左动作右状态 */}
+      {/* 动作条 48 · 次表面浅绿，左动作右状态。模块页没有流程动作，整条不渲染 */}
+      {onFlow ? (
       <div className="flex h-[48px] items-center gap-2 border-b border-line bg-p50"
         style={{ paddingInline: 'clamp(18px, 1.7vw, 32px)' }}>
         {current.actions.slice(0, 4).map((a) => {
@@ -184,6 +230,7 @@ export function TopBar() {
           {disabledAction ? '闸门未放行' : '就绪可启动'}
         </span>
       </div>
+      ) : null}
     </header>
   )
 }

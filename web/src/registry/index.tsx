@@ -4,7 +4,15 @@ import {
   type ComponentType,
   type ReactNode,
 } from 'react'
-import type { CardId, FlowId, ScenePackage } from '../data/types'
+import type {
+  CanvasNode,
+  CanvasNodeType,
+  CardId,
+  CopilotAction,
+  FlowId,
+  ModuleId,
+  ScenePackage,
+} from '../data/types'
 
 /* ===========================================================================
    扩展注册表：别的 agent 把组件放在 src/features/<name>/ 下，
@@ -37,7 +45,27 @@ export interface LeftPanelRegistration {
   component: ComponentType<{ flow: FlowId; scene: ScenePackage }>
 }
 
+/* ------------------------------------------------------------- 第三轮新增契约 */
+
+/** 模块页（不占流程序号，路由从 src/router.tsx 挂）。知识库是第一个模块。 */
+export interface ModulePageRegistration {
+  id: ModuleId
+  component: ComponentType
+}
+
+/** 画板节点实现。W3 在 src/features/canvas/ 下按节点类型逐个注册。 */
+export interface CanvasNodeRegistration {
+  type: CanvasNodeType
+  label: string
+  render: (ctx: { node: CanvasNode; flow: FlowId; scene: ScenePackage }) => ReactNode
+  /** 默认尺寸，画板落点建节点时用 */
+  size?: { w: number; h: number }
+}
+
 const cards = new Map<string, PanelCardRegistration>()
+const modulePages = new Map<ModuleId, ComponentType>()
+const canvasNodes = new Map<CanvasNodeType, CanvasNodeRegistration>()
+const copilotActions = new Map<FlowId | ModuleId, CopilotAction[]>()
 const leftPanels = new Map<FlowId, LeftPanelRegistration>()
 const assistants = new Map<FlowId, LeftPanelRegistration['component']>()
 
@@ -70,6 +98,49 @@ export function registerAssistant(
 ) {
   assistants.set(flow, component)
   bump()
+}
+
+/** 注册一个模块页的整页内容。W2 用它把 /knowledge 的版式挂进来。 */
+export function registerModulePage(id: ModuleId, component: ComponentType) {
+  modulePages.set(id, component)
+  bump()
+}
+
+export function hasModulePage(id: ModuleId) {
+  return modulePages.has(id)
+}
+
+/** 渲染模块页；未注册时返回 null，由 src/app/KnowledgePage.tsx 画空壳 */
+export function renderModulePage(id: ModuleId): ReactNode {
+  const c = modulePages.get(id)
+  return c ? createElement(c) : null
+}
+
+/** 注册一类画板节点的渲染。W3 用。 */
+export function registerCanvasNode(reg: CanvasNodeRegistration) {
+  canvasNodes.set(reg.type, reg)
+  bump()
+}
+
+export function getCanvasNode(type: CanvasNodeType): CanvasNodeRegistration | undefined {
+  return canvasNodes.get(type)
+}
+
+export function getCanvasNodes(): CanvasNodeRegistration[] {
+  return [...canvasNodes.values()]
+}
+
+/**
+ * 登记某条流程或模块的助手预置动作。W5 用。
+ * 同一 key 重复调用整条替换，不做合并——切场景包时按新包整条换掉。
+ */
+export function registerCopilotActions(flow: FlowId | ModuleId, actions: CopilotAction[]) {
+  copilotActions.set(flow, actions)
+  bump()
+}
+
+export function getCopilotActions(flow: FlowId | ModuleId): CopilotAction[] {
+  return copilotActions.get(flow) ?? []
 }
 
 export function hasAssistant(flow: FlowId) {

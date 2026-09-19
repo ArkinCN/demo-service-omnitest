@@ -16,6 +16,259 @@
     "顺逆风",
     "限流限功率"
   ],
+  "demo_profile": {
+    "note": "演示模式暴露 12 项控制参数，集中在启动与预定位两组——主线要动的是预定位 D 轴输出强度。全量模式下 70 项照旧。",
+    "groups": [
+      "启动",
+      "预定位",
+      "调速",
+      "顺逆风",
+      "载波与死区"
+    ],
+    "parameters": [
+      "motor_start_mode",
+      "motor_start_iq_current",
+      "motor_loop_rpm",
+      "motor_start_times",
+      "motor_open_acc",
+      "motor_align_enabled",
+      "motor_alignment_dout",
+      "motor_alignment_times",
+      "motor_alignment_degrees",
+      "speed_mode",
+      "nonemode_speed",
+      "motor_tailwind_enabled"
+    ]
+  },
+  "group_tiers": [
+    {
+      "id": "ctl-start",
+      "title": "启动与预定位",
+      "groups": [
+        {
+          "id": "ctl-start-main",
+          "title": "启动",
+          "members": [
+            "启动"
+          ],
+          "subgroups": [
+            {
+              "id": "ctl-start-seq",
+              "title": "模式与时序",
+              "items": [
+                "motor_start_mode",
+                "motor_start_times",
+                "motor_open_acc_cnt",
+                "motor_loop_rpm",
+                "motor_min_smo_speed"
+              ]
+            },
+            {
+              "id": "ctl-start-i",
+              "title": "电流与增益",
+              "items": [
+                "motor_start_iq_current",
+                "motor_open_acc",
+                "motor_omega_ramp_acc",
+                "motor_omega_acc_min",
+                "motor_omega_acc_end"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ctl-align",
+          "title": "预定位",
+          "members": [
+            "预定位"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ctl-loop",
+      "title": "闭环与整定",
+      "groups": [
+        {
+          "id": "ctl-obs",
+          "title": "观测器",
+          "members": [
+            "观测器"
+          ],
+          "subgroups": [
+            {
+              "id": "ctl-obs-run",
+              "title": "运行段带宽",
+              "items": [
+                "ato_bw_run",
+                "ato_bw_run1",
+                "ato_bw_run2",
+                "ato_bw_run3",
+                "ato_bw_run4"
+              ]
+            },
+            {
+              "id": "ctl-obs-fix",
+              "title": "启动段与滤波",
+              "items": [
+                "ato_bw",
+                "spd_bw",
+                "smothecomp_degrees"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ctl-pi-i",
+          "title": "电流环 PI",
+          "members": [
+            "电流环 PI"
+          ]
+        },
+        {
+          "id": "ctl-pi-s",
+          "title": "速度外环 PI",
+          "members": [
+            "速度外环 PI"
+          ],
+          "subgroups": [
+            {
+              "id": "ctl-pi-s-gain",
+              "title": "PID 增益",
+              "items": [
+                "speed_kp",
+                "speed_ki",
+                "speed_kd"
+              ]
+            },
+            {
+              "id": "ctl-pi-s-clamp",
+              "title": "使能与幅值",
+              "items": [
+                "outloop_enabled",
+                "sout_min",
+                "sout_max"
+              ]
+            },
+            {
+              "id": "ctl-pi-s-ramp",
+              "title": "刷新与加加速",
+              "items": [
+                "speed_refresh_times",
+                "speed_jerk_times",
+                "speed_jerk_max_value",
+                "speed_dec"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ctl-clamp",
+          "title": "限幅",
+          "members": [
+            "限幅"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ctl-run",
+      "title": "运行与保护",
+      "groups": [
+        {
+          "id": "ctl-pwm",
+          "title": "载波与死区",
+          "members": [
+            "载波与死区"
+          ],
+          "subgroups": [
+            {
+              "id": "ctl-pwm-t",
+              "title": "载波与死区时间",
+              "items": [
+                "pwm_frequency",
+                "pwm_deadtime",
+                "pwm_dt_offset",
+                "pwm_min_width"
+              ]
+            },
+            {
+              "id": "ctl-pwm-m",
+              "title": "采样与调制",
+              "items": [
+                "trgdly_position",
+                "svpwm_mode"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ctl-speed",
+          "title": "调速",
+          "members": [
+            "调速"
+          ]
+        },
+        {
+          "id": "ctl-wind",
+          "title": "顺逆风",
+          "members": [
+            "顺逆风"
+          ],
+          "subgroups": [
+            {
+              "id": "ctl-wind-det",
+              "title": "检测与使能",
+              "items": [
+                "motor_tailwind_enabled",
+                "motor_tailwind_detect_min_speed",
+                "motor_tailwind_detect_times",
+                "headwind_lowspeed_threshold"
+              ]
+            },
+            {
+              "id": "ctl-wind-tail",
+              "title": "顺风启动",
+              "items": [
+                "tailwind_dqkp",
+                "tailwind_dqki",
+                "tailwind_start_uq",
+                "tailwind_start_iq_current",
+                "tailwind_start_angle"
+              ]
+            },
+            {
+              "id": "ctl-wind-head",
+              "title": "逆风制动",
+              "items": [
+                "headwind_brake_time_base",
+                "headwind_alignment_times",
+                "headwind_alignment_dout",
+                "headwind_start_iq_current"
+              ]
+            },
+            {
+              "id": "ctl-wind-rev",
+              "title": "逆转启动",
+              "items": [
+                "iq_brake_start_speed",
+                "iq_brake_dqkp",
+                "iq_brake_dqki",
+                "iq_brake_start_degrees"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ctl-limit",
+          "title": "限流限功率",
+          "members": [
+            "限流限功率"
+          ]
+        }
+      ]
+    }
+  ],
   "notes": [
     "全部取值与范围来自本地可达的 Customer.h（41 KB，202 条 #define）与 25 份 dc-skills 规程，不来自记忆。min/max/step 优先用源文件行尾 [範圍: a ~ b] 注释；源文件没给范围的，note 字段写明是推定区间。",
     "value_shell 字段保留源文件的数值外壳（I_Value / _Q12 / _Q15），回写 Customer.h 时必须沿用原外壳，只改括号内数字。",

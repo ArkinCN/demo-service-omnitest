@@ -9,6 +9,101 @@
     "流程": "由规程纪律约束执行顺序与动作",
     "人员": "需要操作者显式确认才能放行"
   },
+  "demo_profile": {
+    "note": "演示模式在左栏逐条放行的是流程与人员两类共 9 条；硬件 10 条由固件阈值保证，收进二级折叠，追问时展开。",
+    "interlocks": [
+      "SI-PROC-01",
+      "SI-PROC-02",
+      "SI-PROC-03",
+      "SI-PROC-04",
+      "SI-PROC-05",
+      "SI-PROC-06",
+      "SI-PROC-07",
+      "SI-PERSON-01",
+      "SI-PERSON-02"
+    ]
+  },
+  "group_tiers": [
+    {
+      "id": "ilk-hw",
+      "title": "硬件电气红线",
+      "groups": [
+        {
+          "id": "ilk-hw-e",
+          "title": "电压与电流",
+          "items": [
+            "SI-HW-01",
+            "SI-HW-02",
+            "SI-HW-03",
+            "SI-HW-04"
+          ]
+        },
+        {
+          "id": "ilk-hw-m",
+          "title": "机械与热",
+          "items": [
+            "SI-HW-05",
+            "SI-HW-06",
+            "SI-HW-07"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ilk-proc",
+      "title": "流程纪律",
+      "groups": [
+        {
+          "id": "ilk-proc-base",
+          "title": "基线与顺序",
+          "items": [
+            "SI-PROC-01",
+            "SI-PROC-02",
+            "SI-PROC-04"
+          ]
+        },
+        {
+          "id": "ilk-proc-edit",
+          "title": "改动纪律",
+          "items": [
+            "SI-PROC-03",
+            "SI-PROC-05",
+            "SI-PROC-06",
+            "SI-PROC-07"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ilk-eq",
+      "title": "设备校验",
+      "groups": [
+        {
+          "id": "ilk-eq-all",
+          "title": "仪器与接线",
+          "items": [
+            "SI-EQ-01",
+            "SI-EQ-02",
+            "SI-EQ-03"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ilk-person",
+      "title": "人员与现场",
+      "groups": [
+        {
+          "id": "ilk-person-all",
+          "title": "人工闸口",
+          "items": [
+            "SI-PERSON-01",
+            "SI-PERSON-02"
+          ]
+        }
+      ]
+    }
+  ],
   "fault_bitmap": {
     "_source": {
       "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Motor_Protection.h",

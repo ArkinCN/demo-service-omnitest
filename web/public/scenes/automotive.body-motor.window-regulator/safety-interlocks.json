@@ -9,6 +9,105 @@
     "流程": "由规程纪律约束执行顺序与动作",
     "人员": "需要操作者显式确认才能放行"
   },
+  "demo_profile": {
+    "note": "同口径：流程 6 条加人员 5 条逐条放行，硬件 10 条收进二级。",
+    "interlocks": [
+      "SI-PR-01",
+      "SI-PR-02",
+      "SI-PR-03",
+      "SI-PR-04",
+      "SI-PR-05",
+      "SI-PR-06",
+      "SI-PE-01",
+      "SI-PE-02",
+      "SI-PE-03",
+      "SI-PE-04",
+      "SI-PE-05"
+    ]
+  },
+  "group_tiers": [
+    {
+      "id": "ilk-hw",
+      "title": "硬件电气红线",
+      "groups": [
+        {
+          "id": "ilk-hw-e",
+          "title": "电压与电流",
+          "items": [
+            "SI-HW-04",
+            "SI-HW-05",
+            "SI-HW-06",
+            "SI-HW-08"
+          ]
+        },
+        {
+          "id": "ilk-hw-m",
+          "title": "力与机械",
+          "items": [
+            "SI-HW-01",
+            "SI-HW-02",
+            "SI-HW-03",
+            "SI-HW-09"
+          ]
+        },
+        {
+          "id": "ilk-hw-t",
+          "title": "温度与故障位",
+          "items": [
+            "SI-HW-07",
+            "SI-HW-10"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ilk-proc",
+      "title": "流程纪律",
+      "groups": [
+        {
+          "id": "ilk-proc-base",
+          "title": "试验顺序",
+          "items": [
+            "SI-PR-01",
+            "SI-PR-02",
+            "SI-PR-03"
+          ]
+        },
+        {
+          "id": "ilk-proc-edit",
+          "title": "引用与数据",
+          "items": [
+            "SI-PR-04",
+            "SI-PR-05",
+            "SI-PR-06"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ilk-person",
+      "title": "人员与现场",
+      "groups": [
+        {
+          "id": "ilk-person-site",
+          "title": "现场防护",
+          "items": [
+            "SI-PE-01",
+            "SI-PE-02",
+            "SI-PE-04"
+          ]
+        },
+        {
+          "id": "ilk-person-qual",
+          "title": "留痕与资质",
+          "items": [
+            "SI-PE-03",
+            "SI-PE-05"
+          ]
+        }
+      ]
+    }
+  ],
   "fault_bitmap": {
     "_placeholder": true,
     "_source": {

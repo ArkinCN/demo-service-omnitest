@@ -77,7 +77,7 @@ await settle(2600)
 await page.screenshot({ path: `${OUT}zoom-timeseries.png` })
 console.log('✓ zoom-timeseries.png')
 
-/* 放大态 3 · 依据面板（副驾右侧的依据抽屉） */
+/* 放大态 3 · 依据面板（助手右侧的依据抽屉） */
 await page.goto(`${BASE}/tune?scene=${one}`, { waitUntil: 'domcontentloaded' })
 await settle(4200)
 await page

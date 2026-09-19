@@ -5,6 +5,7 @@ import {
   Cable,
   ChevronRight,
   CircuitBoard,
+  ClipboardList,
   Cpu,
   FileCode2,
   FileText,
@@ -15,6 +16,7 @@ import {
   Monitor,
   Radar,
   Ruler,
+  Sliders,
   Upload,
   Wand2,
   Waves,
@@ -24,8 +26,8 @@ import type { LucideIcon } from 'lucide-react'
 import {
   Badge,
   Button,
-  Collapsible,
   EmptyState,
+  Input,
   Select,
   SoftCard,
   SourceTag,
@@ -34,21 +36,25 @@ import {
   Tooltip,
   cn,
 } from '../../components/ui'
+import { BENCH_CHANNEL_MAP, BENCH_CHANNEL_PENDING } from '../../data/bench'
 import { decimalsOf } from '../../data/loadScene'
 import { registerLeftPanel } from '../../registry'
 import { paramKey, useAppStore } from '../../state/useAppStore'
 import {
-  byGroup,
   fileName,
   getPack,
   sizeText,
   sourceLine,
   statusOf,
   type RawAttribute,
+  type RawControlParam,
   type RawDocument,
+  type RawHeaderField,
+  type RawInterlock,
   type RawPack,
 } from '../scene/pack'
-import { ConfirmFooter, Empty } from '../shared/bits'
+import { ConfirmFooter, Empty, TierTree } from '../shared/bits'
+import { buildTiers, readTiers, type BuiltGroup, type BuiltTier, type Flags } from '../shared/tiers'
 import { simp } from '../shared/zh'
 import { probeDevice, type ConnState } from '../remote'
 
@@ -71,18 +77,25 @@ function short(s: string, n = 6) {
 /* ------------------------------------------------------------------ 左栏 */
 
 const GROUP_ICON: [RegExp, LucideIcon][] = [
-  [/电机本体|本体/, Cpu],
-  [/转速规格|转速$/, Gauge],
-  [/电压/, Zap],
-  [/电流|功率/, Activity],
-  [/芯片/, Cpu],
-  [/采样|链路/, Cable],
-  [/转速信号|信号/, Waves],
-  [/机械|外形|尺寸/, Ruler],
+  [/被测对象|电机|本体|传动/, Cpu],
+  [/驱动|控制|固件|模式/, Sliders],
+  [/台架|仪器|通道|接入/, Cable],
+  [/联锁|安全|人员|纪律|校验/, Lock],
+  [/运行与产出|登记|模板|约束/, ClipboardList],
+  [/转速|速度/, Gauge],
+  [/电压|供电|额定/, Zap],
+  [/电流|功率|力/, Activity],
+  [/芯片|主控|观测/, Cpu],
+  [/采样|反馈|噪音/, Waves],
+  [/机械|外形|尺寸|行程|环境/, Ruler],
 ]
 const groupIcon = (name: string): LucideIcon => {
   for (const [re, ic] of GROUP_ICON) if (re.test(name)) return ic
   return Boxes
+}
+const iconOf = (name: string, size = 14) => {
+  const Ic = groupIcon(name)
+  return <Ic size={size} strokeWidth={1.9} />
 }
 
 function AttrRow({ a }: { a: RawAttribute }) {
@@ -121,7 +134,7 @@ function AttrRow({ a }: { a: RawAttribute }) {
           <span className="cursor-help truncate text-[13px] font-medium text-t1">{short(a.name)}</span>
           {a._placeholder ? (
             <span
-              className="h-[6px] w-[6px] shrink-0 rounded-full bg-warn"
+              className="h-[6px] w-[6px] shrink-0 rounded-full bg-t3/45"
               aria-label="待确认"
             />
           ) : null}
@@ -165,6 +178,288 @@ function AttrRow({ a }: { a: RawAttribute }) {
   )
 }
 
+/** 控制参数行：与本体属性行同形，只是取数换成 control-parameters.json */
+function ParamRow({ p }: { p: RawControlParam }) {
+  const key = paramKey('init', 'cp', p.group, p.key)
+  const override = useAppStore((s) => s.overrides[key])
+  const touched = useAppStore((s) => s.touched[key])
+  const setParam = useAppStore((s) => s.setParam)
+  const value = override ?? (p.not_applicable ? '不适用' : p.value)
+  const editable = !p.not_applicable && p.editable && typeof p.value === 'number'
+
+  const detail = (
+    <span className="block space-y-1">
+      <span className="block font-medium">{p.name}</span>
+      <span className="num block opacity-75">
+        {p.key.toUpperCase()}
+        {p.min !== null && p.max !== null ? ` · ${p.min}~${p.max}` : ''}
+        {p.value_shell ? ` · 外壳 ${p.value_shell}` : ''}
+      </span>
+      <span className="block opacity-75">{sourceLine(p._source)}</span>
+      {statusOf(p) ? <span className="block opacity-75">待核实 · {statusOf(p)}</span> : null}
+    </span>
+  )
+
+  return (
+    <div className="flex min-h-[38px] items-center gap-2 px-4 py-1 transition-colors hover:bg-p50/60">
+      <Tooltip className="min-w-0" content={detail}>
+        <span className="flex min-w-0 items-center gap-1.5">
+          <SourceTag source={touched ? '人工' : '文档'} />
+          <span className="cursor-help truncate text-[13px] font-medium text-t1">{short(p.name)}</span>
+        </span>
+      </Tooltip>
+      <span className="ml-auto shrink-0">
+        {p.options?.length ? (
+          <Select
+            size="sm"
+            className="w-[150px]"
+            label={p.name}
+            options={p.options.map((o) => ({ value: String(o.value), label: o.label }))}
+            value={String(value)}
+            onChange={(v) => setParam(key, v)}
+          />
+        ) : editable ? (
+          <Stepper
+            size="sm"
+            label={p.name}
+            value={Number(value)}
+            unit={p.unit ?? undefined}
+            step={p.step ?? 1}
+            min={p.min ?? undefined}
+            max={p.max ?? undefined}
+            precision={
+              decimalsOf(p.step) || Math.min(4, decimalsOf(typeof p.value === 'number' ? p.value : 0))
+            }
+            onChange={(n) => setParam(key, n)}
+          />
+        ) : (
+          <span className="num text-[15px] font-semibold text-t1">
+            {String(value)}
+            {p.unit ? <span className="ml-1 text-[12px] font-normal text-t3">{p.unit}</span> : null}
+          </span>
+        )}
+      </span>
+    </div>
+  )
+}
+
+/* ------------------------------------------- 左栏 · 五个一级类的叶子与装配 */
+
+/**
+ * 左栏一条叶子。五个一级类的数据不在同一份 JSON 里（本体属性 / 控制参数 /
+ * 安全联锁 / 报告表头 / 台架常量），用一个联合类型收口，渲染只认这一个类型。
+ */
+type Leaf =
+  | { k: 'attr'; id: string; g: string; a: RawAttribute }
+  | { k: 'param'; id: string; g: string; p: RawControlParam }
+  | { k: 'ilk'; id: string; g: string; i: RawInterlock }
+  | { k: 'field'; id: string; g: string; f: RawHeaderField }
+  | { k: 'info'; id: string; g: string; label: string; value: string; hint: string; pending?: boolean }
+
+const leafFlags = (x: Leaf): Flags => {
+  if (x.k === 'attr')
+    return { filled: !x.a._placeholder && x.a.value !== null, pending: !!(x.a._status || x.a._placeholder) }
+  if (x.k === 'param') return { filled: x.p.value !== null, pending: !!x.p._status, alert: !!x.p.value_below_min }
+  if (x.k === 'ilk') return { filled: true, pending: !!x.i._status }
+  if (x.k === 'field') return { filled: !!x.f.sample_value }
+  return { filled: !x.pending, pending: x.pending }
+}
+
+function FieldRow({ f }: { f: RawHeaderField }) {
+  const key = paramKey('init', 'rp', 'header', f.key)
+  const v = useAppStore((s) => s.overrides[key])
+  const setParam = useAppStore((s) => s.setParam)
+  return (
+    <div className="flex min-h-[36px] items-center gap-2 px-4 py-1 transition-colors hover:bg-p50/60">
+      <Tooltip className="min-w-0" content={`${simp(f.name)} · 报告模板取值位 ${f.value_slot || '—'}；本项在流程 5 只带入不重填。`}>
+        <span className="flex min-w-0 items-center gap-1.5">
+          <SourceTag source={v ? '人工' : '建议'} />
+          <span className="cursor-help truncate text-[13px] font-medium text-t1">{short(simp(f.name), 7)}</span>
+        </span>
+      </Tooltip>
+      <span className="ml-auto shrink-0">
+        <Input
+          value={String(v ?? '')}
+          onChange={(e) => setParam(key, e.target.value)}
+          aria-label={simp(f.name)}
+          placeholder="待填"
+          className="h-[26px] w-[142px] text-[12.5px]"
+        />
+      </span>
+    </div>
+  )
+}
+
+function IlkRow({ i }: { i: RawInterlock }) {
+  return (
+    <Tooltip className="w-full" content={`${i.id} ${i.name} · ${i.action}`}>
+      <div className="flex min-h-[32px] w-full cursor-help items-center gap-2 px-4 py-1">
+        <Lock size={12} strokeWidth={1.9} className="shrink-0 text-t3" />
+        <span className="truncate text-[12.5px] text-t1">{short(i.name, 10)}</span>
+        <span className="num ml-auto shrink-0 text-[12px] text-t3">{i.id}</span>
+      </div>
+    </Tooltip>
+  )
+}
+
+function InfoRow({ x }: { x: Extract<Leaf, { k: 'info' }> }) {
+  return (
+    <Tooltip className="w-full" content={x.hint}>
+      <div className="flex min-h-[32px] w-full cursor-help items-center gap-2 px-4 py-1">
+        <span className="truncate text-[12.5px] font-medium text-t1">{x.label}</span>
+        {x.pending ? <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-t3/45" /> : null}
+        <span className="num ml-auto shrink-0 truncate text-[12.5px] text-t2">{x.value}</span>
+      </div>
+    </Tooltip>
+  )
+}
+
+function renderLeaf(x: Leaf) {
+  if (x.k === 'attr') return <AttrRow a={x.a} />
+  if (x.k === 'param') return <ParamRow p={x.p} />
+  if (x.k === 'ilk') return <IlkRow i={x.i} />
+  if (x.k === 'field') return <FieldRow f={x.f} />
+  return <InfoRow x={x} />
+}
+
+/** 二级组内超过 5 条时，按源数据自带的分组名再切一层三级子组（平铺规则一） */
+function autoSubs(items: Leaf[], prefix: string) {
+  if (items.length <= 5) return []
+  const order: string[] = []
+  const bag = new Map<string, Leaf[]>()
+  for (const x of items) {
+    if (!bag.has(x.g)) {
+      bag.set(x.g, [])
+      order.push(x.g)
+    }
+    bag.get(x.g)!.push(x)
+  }
+  if (order.length < 2) return []
+  return order.map((g, i) => ({ id: `${prefix}-s${i}`, title: short(g, 7), items: bag.get(g)! }))
+}
+
+const tierOf = (id: string, title: string, groups: BuiltGroup<Leaf>[]): BuiltTier<Leaf> => ({
+  id,
+  title,
+  groups: groups.filter((g) => g.items.length > 0),
+  count: groups.reduce((n, g) => n + g.items.length, 0),
+})
+
+const groupOf = (id: string, title: string, items: Leaf[]): BuiltGroup<Leaf> => ({
+  id,
+  title,
+  items,
+  subs: autoSubs(items, id),
+})
+
+/** 二 · 驱动与控制：固件登记走报告表头，控制开关与红线走 F2 可调的控制参数 */
+function driveTier(pack: RawPack): BuiltTier<Leaf> {
+  const f2 = (s: string) => s.startsWith('F2')
+  const fw = pack.report.header_fields.filter((f) => f2(f.from_flow) && /firmware|addr|boot|model/i.test(f.key))
+  const params = pack.controls.parameters.filter((p) => p.adjustable_in_flows?.some(f2))
+  const isRed = (p: RawControlParam) => /载波|死区|限流|限功率|保护|热管理/.test(p.group)
+  const toLeaf = (p: RawControlParam): Leaf => ({ k: 'param', id: p.key, g: p.group, p })
+  return tierOf('drive', '驱动与控制', [
+    groupOf('drive-fw', '固件登记', fw.map((f): Leaf => ({ k: 'field', id: f.key, g: '固件', f }))),
+    groupOf('drive-mode', '控制模式', params.filter((p) => !isRed(p)).map(toLeaf)),
+    groupOf('drive-red', '功率与载波', params.filter(isRed).map(toLeaf)),
+  ])
+}
+
+/** 三 · 台架与仪器：合成数据的场景包没有实体台架，只出仪器登记一组 */
+function benchTier(pack: RawPack): BuiltTier<Leaf> {
+  const real = !pack.caps.syntheticData
+  const link: Leaf[] = real
+    ? [
+        {
+          k: 'info',
+          id: 'bench-host',
+          g: '台架',
+          label: '台架工控机',
+          value: '172.25.5.166',
+          hint: '流程 1 只核对设备在不在，不建会话、不下发动作；实际接入在流程 3。',
+        },
+        {
+          k: 'info',
+          id: 'bench-port',
+          g: '台架',
+          label: '远程网关端口',
+          value: '8022',
+          hint: '浏览器不持有凭据，私钥只在网关一侧。网关未起时本行仍按登记值显示。',
+        },
+      ]
+    : []
+  const chan: Leaf[] = real
+    ? Object.values(BENCH_CHANNEL_MAP).map((c): Leaf => ({
+        k: 'info',
+        id: `ch-${c.signal}`,
+        g: '通道',
+        label: c.signal,
+        value: `${c.channel} · ${BENCH_CHANNEL_PENDING}`,
+        pending: true,
+        hint: `${c.note}。通道号与物理端子的对应关系属客户既有接线约定，${BENCH_CHANNEL_PENDING}，界面不自行指派。`,
+      }))
+    : []
+  const inst: Leaf[] = instrumentsOf(pack).map((d): Leaf => ({
+    k: 'info',
+    id: `inst-${d.name}`,
+    g: '仪器',
+    label: d.name,
+    value: real ? '待接入' : '未接入',
+    hint: `${d.hint} 仪器由场景包的实测量字典反推：谁取数就出谁，推不出来不硬凑。`,
+  }))
+  return tierOf('bench', '台架与仪器', [
+    groupOf('bench-link', '台架接入', link),
+    groupOf('bench-chan', '通道映射', chan),
+    groupOf('bench-inst', '仪器登记', inst),
+  ])
+}
+
+/** 五 · 运行与产出登记：本轮叫什么、跑几次、交给哪份模板 */
+function outputTier(pack: RawPack): BuiltTier<Leaf> {
+  const f2 = pack.report.header_fields.filter(
+    (f) => f.from_flow.startsWith('F2') && !/firmware|addr|boot|model/i.test(f.key),
+  )
+  const runReq =
+    pack.requirements.requirements.find((r) =>
+      Object.keys(r.threshold ?? {}).some((k) => /^runs$|required_pass/.test(k)),
+    ) ?? pack.requirements.requirements.find((r) => Object.keys(r.threshold ?? {}).some((k) => /cycles/.test(k)))
+  const limits: Leaf[] = Object.entries(runReq?.threshold ?? {})
+    .filter(([, v]) => typeof v === 'number')
+    .slice(0, 3)
+    .map(([k, v]): Leaf => ({
+      k: 'info',
+      id: `run-${k}`,
+      g: '约束',
+      label: k,
+      value: String(v),
+      hint: `取自判据 ${runReq?.id} ${runReq?.name}：${runReq?.criterion_text}。本轮运行约束按这条判据的阈值登记，不另编。`,
+    }))
+  const tpl: Leaf[] = [
+    {
+      k: 'info',
+      id: 'tpl-file',
+      g: '模板',
+      label: '报告模板',
+      value: fileName(pack.report.template_file).slice(0, 22),
+      hint: pack.report.template_file,
+    },
+    {
+      k: 'info',
+      id: 'tpl-sec',
+      g: '模板',
+      label: '模板分节',
+      value: `${pack.report.spec_sections.length} 节`,
+      hint: `报告正文由这 ${pack.report.spec_sections.length} 节构成，表头字段在流程 5 补全。`,
+    },
+  ]
+  return tierOf('out', '运行与产出登记', [
+    groupOf('out-id', '产品与批次', f2.map((f): Leaf => ({ k: 'field', id: f.key, g: '登记', f }))),
+    groupOf('out-run', '单轮运行约束', limits),
+    groupOf('out-tpl', '报告模板绑定', tpl),
+  ])
+}
+
 export function InitLeftPanel() {
   const pack = getPack()
   const locked = !!useAppStore((s) => s.confirmed.init)
@@ -173,15 +468,49 @@ export function InitLeftPanel() {
   if (!pack) return <Empty text="场景包未加载" />
 
   const attrs = pack.attributes.attributes
-  const grouped = byGroup(attrs, pack.attributes.groups)
   const holes = attrs.filter((a) => a._placeholder).length
+
+  // 一 · 被测对象：骨架取自场景包 product-attributes.json 的 group_tiers，不写死在代码里
+  const objTiers = buildTiers<Leaf>(
+    readTiers(pack.attributes),
+    attrs.map((a): Leaf => ({ k: 'attr', id: a.key, g: a.group, a })),
+    (x) => x.id,
+    (x) => x.g,
+  )
+  // 四 · 安全联锁：safety-interlocks.json 自己的四个一级类在本页降一级当二级组用
+  const ilkSpec = readTiers(pack.interlocks)
+  const ilkLeaves = pack.interlocks.interlocks.map((i): Leaf => ({ k: 'ilk', id: i.id, g: i.type, i }))
+  const ilkTier: BuiltTier<Leaf> = {
+    id: 'ilk',
+    title: '安全联锁',
+    groups: ilkSpec.map((t) => {
+      const built = buildTiers<Leaf>([t], ilkLeaves, (x) => x.id)
+      const gs = built[0]?.groups ?? []
+      return {
+        id: t.id,
+        title: t.title,
+        items: gs.flatMap((g) => g.items),
+        subs: gs.length > 1 ? gs.map((g) => ({ id: g.id, title: g.title, items: g.items })) : [],
+      }
+    }),
+    count: ilkLeaves.length,
+  }
+
+  const tiers: BuiltTier<Leaf>[] = [
+    ...objTiers,
+    driveTier(pack),
+    benchTier(pack),
+    ilkTier,
+    outputTier(pack),
+  ].filter((t) => t.groups.length > 0)
+  const total = tiers.reduce((n, t) => n + t.count, 0)
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
       <header className="flex h-[44px] shrink-0 items-center gap-2.5 border-b border-line-soft px-4">
         <Boxes size={17} strokeWidth={1.9} className="shrink-0 text-p700" />
-        <h2 className="text-[16px] leading-none font-semibold tracking-tight text-t1">本体属性</h2>
-        <span className="num text-[12px] text-t3">{attrs.length}</span>
+        <h2 className="text-[16px] leading-none font-semibold tracking-tight text-t1">初始化配置</h2>
+        <span className="num text-[12px] text-t3">{total}</span>
         <div className="ml-auto flex items-center gap-1.5">
           <Badge tone="neutral" mono title={`${holes} 项是占位值，源材料确实没给，已标「待确认」`}>
             占位 {holes}
@@ -205,24 +534,17 @@ export function InitLeftPanel() {
       </div>
 
       <div className="fade-b min-h-0 flex-1 overflow-y-auto pb-2">
-        {grouped.map(([g, items], i) => {
-          const Icon = groupIcon(g)
-          // 默认展开到累计 12 行为止：左栏填得满，又不必一次铺开 29 项
-          const before = grouped.slice(0, i).reduce((n, [, xs]) => n + xs.length, 0)
-          return (
-            <Collapsible
-              key={g}
-              icon={<Icon size={14} strokeWidth={1.9} />}
-              title={short(g, 6)}
-              defaultOpen={before < 12}
-              right={<span className="num text-[12px] text-t3">{items.length}</span>}
-            >
-              {items.map((a) => (
-                <AttrRow key={a.key} a={a} />
-              ))}
-            </Collapsible>
-          )
-        })}
+        <TierTree
+          flow="init"
+          tiers={tiers}
+          // 一级类只展开第一个，其余折叠（06b 第 1.2 节）
+          defaultOpen={0}
+          itemKey={(x) => x.id}
+          render={renderLeaf}
+          flags={leafFlags}
+          tierIcon={(t) => iconOf(t, 15)}
+          groupIcon={(t) => iconOf(t)}
+        />
       </div>
 
       {locked ? (
@@ -241,10 +563,10 @@ export function InitLeftPanel() {
         </footer>
       ) : (
         <ConfirmFooter
-          label="确认属性"
-          count={attrs.length}
+          label="确认配置"
+          count={total}
           unit="项"
-          hint={`${attrs.length} 项本体属性；占位 ${holes} 项在确认后仍按「待确认」跟踪。`}
+          hint={`五类共 ${total} 项，其中本体属性 ${attrs.length} 项；占位 ${holes} 项在确认后仍按「待确认」跟踪。`}
           onClick={() => confirmFlow('init')}
         />
       )}

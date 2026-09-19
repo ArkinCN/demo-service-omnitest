@@ -29,13 +29,20 @@ export type Step =
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 
+/** 轮次序号。消息与工具调用的标识必须逐轮唯一，否则第二轮的正文会追加到
+    第一轮的同名气泡里、第二轮的工具结果会回填到第一轮的同名卡片上。 */
+let turn = 0
+
 async function* play(steps: Step[], req: SendRequest, pace: number): AsyncGenerator<AgentEvent, void, void> {
   const wait = (ms: number) => (pace === 0 ? Promise.resolve() : sleep(ms * pace))
+  turn += 1
+  const t = turn
+  const uid = (id: string) => `t${t}-${id}`
   let seg = 0
   for (const s of steps) {
     if (s.kind === 'say') {
       seg += 1
-      const messageId = `m-${seg}`
+      const messageId = `m${t}-${seg}`
       for (let i = 0; i < s.text.length; i += 6) {
         await wait(22)
         yield { type: 'message_delta', messageId, delta: s.text.slice(i, i + 6) }
@@ -46,7 +53,7 @@ async function* play(steps: Step[], req: SendRequest, pace: number): AsyncGenera
       await wait(240)
       yield {
         type: 'tool_call',
-        callId: s.callId,
+        callId: uid(s.callId),
         name: s.name,
         title: s.title,
         args: s.args,
@@ -55,12 +62,12 @@ async function* play(steps: Step[], req: SendRequest, pace: number): AsyncGenera
       }
       if (s.mutating) {
         const ok = req.requestConfirm
-          ? await req.requestConfirm({ callId: s.callId, name: s.name, argsSummary: s.argsSummary })
+          ? await req.requestConfirm({ callId: uid(s.callId), name: s.name, argsSummary: s.argsSummary })
           : false
         if (!ok) {
           yield {
             type: 'tool_result',
-            callId: s.callId,
+            callId: uid(s.callId),
             status: 'error',
             durationMs: 0,
             resultSummary: '已取消：未获人工确认，动作未执行',
@@ -73,7 +80,7 @@ async function* play(steps: Step[], req: SendRequest, pace: number): AsyncGenera
       await wait(Math.min(900, s.durationMs))
       yield {
         type: 'tool_result',
-        callId: s.callId,
+        callId: uid(s.callId),
         status: 'ok',
         durationMs: s.durationMs,
         resultSummary: s.resultSummary,
@@ -92,10 +99,20 @@ async function* play(steps: Step[], req: SendRequest, pace: number): AsyncGenera
   yield { type: 'done', reason: 'complete' }
 }
 
-export function makeAdapter(id: string, label: string, steps: Step[], pace = 1): AgentAdapter {
+/**
+ * steps 可以是一段固定脚本，也可以是按请求现算的一段脚本——
+ * 点预置动作按钮时走后者：同一条流程里，按钮各有各的脚本，
+ * 手打的消息仍回落到该流程的默认脚本。
+ */
+export function makeAdapter(
+  id: string,
+  label: string,
+  steps: Step[] | ((req: SendRequest) => Step[]),
+  pace = 1,
+): AgentAdapter {
   return {
     id,
     label,
-    send: (req: SendRequest) => play(steps, req, pace),
+    send: (req: SendRequest) => play(typeof steps === 'function' ? steps(req) : steps, req, pace),
   }
 }

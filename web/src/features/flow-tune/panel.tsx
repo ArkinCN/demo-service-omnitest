@@ -8,6 +8,7 @@ import {
   GitCompareArrows,
   Layers,
   ListChecks,
+  Sliders,
   Sparkles,
   Target,
   TrendingDown,
@@ -24,9 +25,11 @@ import {
   Tooltip,
   cn,
 } from '../../components/ui'
+import { collapseKey } from '../../state/useAppStore'
 import { getPack, sourceLine, type RawControlParam, type RawExperience } from '../scene/pack'
 import { evaluateAll, runtimeMeasures, type Evaluated } from '../flow-run/evaluate'
-import { ConfirmFooter, Empty } from '../shared/bits'
+import { ConfirmFooter, Empty, TierTree } from '../shared/bits'
+import { demoFilter, type BuiltGroup, type BuiltTier } from '../shared/tiers'
 import { TimeSeriesChart } from '../timeseries'
 import { POWERUP_ANNOTATION, currentThresholds, loadWaves, type Wave } from '../waveforms'
 
@@ -154,8 +157,14 @@ export function useCandidates(): Candidate[] {
         })
       }
     }
-    // 给得出具体数值的排前面，只有动作原文的排后面——队列靠前的才是能直接采纳的
-    return out.sort((a, b) => Number(typeof b.suggested === 'number') - Number(typeof a.suggested === 'number'))
+    // 排序口径（06d 第 2.2 节）：证据级为「台架实测数据」的优先，
+    // 「能不能给出具体数值」退为第二排序键。此前按数值排，排第一的是规程条款级的
+    // EXP-001，与本批数据的病因（预定位太弱）对不上。
+    return out.sort(
+      (a, b) =>
+        rankOf(b.exp) - rankOf(a.exp) ||
+        Number(typeof b.suggested === 'number') - Number(typeof a.suggested === 'number'),
+    )
   }, [pack])
 }
 
@@ -180,8 +189,13 @@ function useWaves() {
       alive = false
     }
   }, [pack])
-  return waves
+  // 演示主线只对照一失败一成功两条，第三条同为失败样本、讲的是同一件事
+  return pack ? demoFilter(pack.datasets, 'datasets', waves, (w) => w.id) : waves
 }
+
+/** 图例上的成败字样，不能只有样本编号 */
+const verdictWord = (w: Wave) =>
+  w.verdict === 'pass' ? 'PASS' : w.verdict === 'fail' ? 'FAIL' : w.verdictText
 
 interface Shortfalls {
   waves: Wave[]
@@ -194,7 +208,12 @@ interface Shortfalls {
 function useShortfalls(): Shortfalls {
   const pack = getPack()
   const waves = useWaves()
-  const rows = useMemo(() => (pack ? evaluateAll(pack, runtimeMeasures(waves)) : []), [pack, waves])
+  // 演示模式只在 demo_profile 点名的判据上统计，与流程 3 判定卡同一口径
+  const rows = useMemo(() => {
+    if (!pack) return []
+    const all = evaluateAll(pack, runtimeMeasures(waves))
+    return demoFilter(pack.requirements, 'requirements', all, (r) => r.req.id)
+  }, [pack, waves])
   return {
     waves,
     rows,
@@ -220,42 +239,6 @@ function useBoxHeight() {
 }
 
 /* ------------------------------------------------------------------ 左栏 */
-
-function Stat({
-  n,
-  label,
-  tone,
-  hint,
-}: {
-  n: number
-  label: string
-  tone: 'bad' | 'ok' | 'mute'
-  hint: string
-}) {
-  return (
-    <Tooltip className="min-w-0 flex-1" content={hint}>
-      <span className="flex min-w-0 cursor-help flex-col gap-1">
-        <span className="flex items-center gap-1.5">
-          <span
-            className={cn(
-              'h-[7px] w-[7px] shrink-0 rounded-full',
-              tone === 'ok' ? 'bg-p600' : tone === 'bad' ? 'bg-alert' : 'bg-t3/40',
-            )}
-          />
-          <span className="truncate text-[12px] font-medium text-t3">{label}</span>
-        </span>
-        <span
-          className={cn(
-            'num text-[26px] leading-none font-semibold tracking-tight',
-            tone === 'bad' && n > 0 ? 'text-alert' : 'text-t1',
-          )}
-        >
-          {n}
-        </span>
-      </span>
-    </Tooltip>
-  )
-}
 
 /** 变化幅度小徽标：方向靠图标，不靠颜色，避免多一处状态色 */
 function DeltaTag({ c }: { c: Candidate }) {
@@ -329,6 +312,71 @@ function RecRow({ c }: { c: Candidate }) {
   )
 }
 
+/** 推荐参数按改动部位切三类（06f 第 2.5 节）：改哪一段，决定这一条该不该在本轮动 */
+const REC_TIER: { id: string; title: string; hit: (c: Candidate) => boolean }[] = [
+  {
+    id: 'rec-start',
+    title: '启动阶段',
+    hit: (c) => /启动|预定位|防夹|start|align/i.test(`${c.param.group}${c.param.key}`),
+  },
+  {
+    id: 'rec-switch',
+    title: '闭环切换',
+    hit: (c) => /loop_rpm|smo_speed|switch/i.test(c.param.key),
+  },
+  { id: 'rec-tune', title: '环路整定', hit: () => true },
+]
+
+function recTiers(cands: Candidate[]): BuiltTier<Candidate>[] {
+  const left = [...cands]
+  const groups: BuiltGroup<Candidate>[] = []
+  for (const t of REC_TIER) {
+    if (t.id === 'rec-tune') continue
+    const items = left.filter(t.hit)
+    for (const x of items) left.splice(left.indexOf(x), 1)
+    if (items.length) groups.push({ id: t.id, title: t.title, items, subs: [] })
+  }
+  if (left.length) groups.push({ id: 'rec-tune', title: '环路整定', items: left, subs: [] })
+  return [{ id: 'rec', title: '推荐参数', groups, count: cands.length }]
+}
+
+/** 未采集按「缺哪个实测量」归并，不再逐条平铺，也不再硬截断到 10 条 */
+function missingTiers(missing: Evaluated[]): BuiltTier<Evaluated>[] {
+  const order: string[] = []
+  const bag = new Map<string, Evaluated[]>()
+  for (const r of missing) {
+    const k = r.missing[0] ?? '未登记实测量'
+    if (!bag.has(k)) {
+      bag.set(k, [])
+      order.push(k)
+    }
+    bag.get(k)!.push(r)
+  }
+  // 同一个缺失量挡住 6 条以上时再按判据分类切一层三级子组（平铺规则一）
+  const groups = order.map((k, i) => {
+    const items = bag.get(k)!
+    const cats: string[] = []
+    const byCat = new Map<string, Evaluated[]>()
+    for (const r of items) {
+      if (!byCat.has(r.req.category)) {
+        byCat.set(r.req.category, [])
+        cats.push(r.req.category)
+      }
+      byCat.get(r.req.category)!.push(r)
+    }
+    return {
+      id: `miss-${i}`,
+      title: short(k, 10),
+      items,
+      subs:
+        items.length > 5 && cats.length > 1
+          ? cats.map((c, j) => ({ id: `miss-${i}-${j}`, title: short(c, 7), items: byCat.get(c)! }))
+          : [],
+    }
+  })
+  return [{ id: 'miss', title: '未采集', groups, count: missing.length }]
+}
+
 export function TuneLeftPanel() {
   const pack = getPack()
   const cands = useCandidates()
@@ -338,51 +386,54 @@ export function TuneLeftPanel() {
   if (!pack) return <Empty text="场景包未加载" />
 
   const takenList = cands.filter((c) => picked.has(c.param.key))
+  const failTier: BuiltTier<Evaluated>[] = [
+    {
+      id: 'fail',
+      title: '未达标项',
+      groups: failed.length
+        ? [{ id: 'fail-all', title: '判成不通过', items: failed, subs: [] }]
+        : [],
+      count: failed.length,
+    },
+  ]
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
       <header className="flex h-[44px] shrink-0 items-center gap-2.5 border-b border-line-soft px-4">
         <Target size={17} strokeWidth={1.9} className="shrink-0 text-p700" />
         <h2 className="text-[16px] leading-none font-semibold tracking-tight text-t1">未达标与推荐</h2>
-        <span className="num ml-auto text-[12px] text-t3">{rows.length}</span>
-        <InfoTip
-          content={`判定沿用流程 4 的同一套求值：判据表 ${rows.length} 条里，criterion 真判成 false 的才算未达标；缺现场实测量而求不出值的单列「未采集」，既不算通过也不算不通过，也不进调优推荐。`}
-        />
+        {/* 三个大数字退成栏头一行：精简后未达标只有一条，用不着三个 26px 的数（06d 第 3.2 节） */}
+        <Tooltip
+          className="ml-auto"
+          content={`未达标 ${failed.length} · 已通过 ${passed.length} · 未采集 ${missing.length}；判据表本轮统计 ${rows.length} 条。criterion 真判成 false 的才算未达标；缺现场实测量而求不出值的单列「未采集」，既不算通过也不算不通过，也不进调优推荐。`}
+        >
+          <span className="num flex cursor-help items-center gap-2 text-[12.5px]">
+            <span className={cn('font-semibold', failed.length ? 'text-alert' : 'text-t1')}>
+              {failed.length}
+            </span>
+            <span className="text-t3">/</span>
+            <span className="font-semibold text-t1">{passed.length}</span>
+            <span className="text-t3">/</span>
+            <span className="text-t3">{missing.length}</span>
+          </span>
+        </Tooltip>
+        <InfoTip content="三个数依次是未达标 / 已通过 / 未采集，口径与流程 3 判定卡同一套求值。" />
       </header>
 
       <div className="fade-b min-h-0 flex-1 overflow-y-auto pb-2">
-        {/* 三个大数字 */}
-        <div className="px-4 pt-3 pb-1">
-          <div className="surface-2 flex items-start gap-3 px-3 py-3">
-            <Stat n={failed.length} label="未达标" tone="bad" hint="criterion 判成 false 的判据条数" />
-            <Stat n={passed.length} label="已通过" tone="ok" hint="criterion 判成 true 的判据条数" />
-            <Stat
-              n={missing.length}
-              label="未采集"
-              tone="mute"
-              hint="缺现场实测量，本轮求不出值，不算通过也不算不通过"
-            />
-          </div>
-        </div>
-
-        {/* 未达标项 */}
-        <Collapsible
-          icon={<ListChecks size={14} strokeWidth={1.9} />}
-          title="未达标项"
-          right={<span className="num text-[12px] text-t3">{failed.length}</span>}
-        >
-          {failed.length === 0 ? (
-            <div className="px-4 py-3">
-              <EmptyState
-                icon={<Check size={24} strokeWidth={1.6} />}
-                title="本轮无不通过项"
-                hint={`未采集 ${missing.length} 条，采到再判。`}
-              />
-            </div>
-          ) : (
-            failed.map((r) => (
+        {/* 一级类只展开第一个「未达标项」；有未达标时强制展开，不许折叠掉 */}
+        {failed.length ? (
+          <TierTree
+            flow="tune"
+            tiers={failTier}
+            defaultOpen={0}
+            lockTier={() => true}
+            itemKey={(r) => r.req.id}
+            flags={() => ({ alert: true })}
+            tierIcon={() => <ListChecks size={15} strokeWidth={1.9} />}
+            groupIcon={() => <StatusDot status="alert" />}
+            render={(r) => (
               <Tooltip
-                key={r.req.id}
                 className="w-full"
                 content={`${r.req.id} ${r.req.name} · 要求 ${r.req.criterion_text}`}
               >
@@ -394,45 +445,81 @@ export function TuneLeftPanel() {
                   <span className="num ml-auto shrink-0 text-[12px] text-t3">{r.req.id}</span>
                 </div>
               </Tooltip>
-            ))
-          )}
-        </Collapsible>
+            )}
+          />
+        ) : (
+          <Collapsible
+            level={1}
+            icon={<ListChecks size={15} strokeWidth={1.9} />}
+            title="未达标项"
+            storeKey={collapseKey('tune', 'fail')}
+            defaultOpen
+            stat={{ total: 0 }}
+          >
+            <div className="px-4 py-3">
+              {/* 不编数据：本轮 20 条可求值判据一条都没有现场实测量，
+                  「0 条不通过」不是「都合格」，是根本没判。这句话要写在屏幕上，
+                  不能让观众把空态读成通过。回放与候选队列照常保留。 */}
+              <EmptyState
+                icon={<Check size={24} strokeWidth={1.6} />}
+                title="本轮无现场实测，判据未求值"
+                hint={`未采集 ${missing.length} 条：判据要的现场实测量（母线电流、转速、力、位移、声压级）本轮没有采，因此既判不出通过也判不出不通过。屏幕上的时序与候选是既有数据的回放，不是本轮实测。`}
+              />
+            </div>
+          </Collapsible>
+        )}
 
-        {/* 推荐参数 */}
-        <Collapsible
-          icon={<Sparkles size={14} strokeWidth={1.9} />}
-          title="推荐参数"
-          right={<span className="num text-[12px] text-t3">{cands.length}</span>}
-        >
-          {cands.length === 0 ? (
+        {/* 推荐参数：默认折叠，组内按改动部位切三类 */}
+        {cands.length ? (
+          <TierTree
+            flow="tune"
+            tiers={recTiers(cands)}
+            // 一级类里只有「未达标项」默认展开，推荐与未采集一律折叠
+            defaultOpen={-1}
+            itemKey={(c) => c.param.key}
+            flags={(c) => ({ filled: picked.has(c.param.key) })}
+            tierIcon={() => <Sparkles size={15} strokeWidth={1.9} />}
+            groupIcon={() => <Sliders size={14} strokeWidth={1.9} />}
+            render={(c) => <RecRow c={c} />}
+          />
+        ) : (
+          <Collapsible
+            level={1}
+            icon={<Sparkles size={15} strokeWidth={1.9} />}
+            title="推荐参数"
+            storeKey={collapseKey('tune', 'rec')}
+            defaultOpen={false}
+            stat={{ total: 0 }}
+          >
             <div className="px-4 py-3">
               <EmptyState icon={<Sparkles size={24} strokeWidth={1.6} />} title="经验库无可对上的项" />
             </div>
-          ) : (
-            cands.map((c) => <RecRow key={c.param.key} c={c} />)
-          )}
-        </Collapsible>
+          </Collapsible>
+        )}
 
-        {/* 未采集 */}
-        <Collapsible
-          icon={<CircleDashed size={14} strokeWidth={1.9} />}
-          title="未采集"
-          right={<span className="num text-[12px] text-t3">{missing.length}</span>}
-        >
-          {missing.slice(0, 10).map((r) => (
-            <Tooltip
-              key={r.req.id}
-              className="w-full"
-              content={`${r.req.id} ${r.req.name} · 缺 ${r.missing.join('、')}`}
-            >
-              <div className="flex min-h-[36px] w-full items-center gap-2 px-4 py-1">
-                <StatusDot status="na" />
-                <span className="cursor-help truncate text-[13px] text-t2">{short(r.req.name, 10)}</span>
-                <span className="num ml-auto shrink-0 text-[12px] text-t3">缺 {r.missing.length}</span>
-              </div>
-            </Tooltip>
-          ))}
-        </Collapsible>
+        {/* 未采集：按缺哪个实测量归并，不截断 */}
+        {missing.length ? (
+          <TierTree
+            flow="tune"
+            tiers={missingTiers(missing)}
+            defaultOpen={-1}
+            itemKey={(r) => r.req.id}
+            tierIcon={() => <CircleDashed size={15} strokeWidth={1.9} />}
+            groupIcon={() => <CircleDashed size={14} strokeWidth={1.9} />}
+            render={(r) => (
+              <Tooltip
+                className="w-full"
+                content={`${r.req.id} ${r.req.name} · 缺 ${r.missing.join('、')}`}
+              >
+                <div className="flex min-h-[36px] w-full items-center gap-2 px-4 py-1">
+                  <StatusDot status="na" />
+                  <span className="cursor-help truncate text-[13px] text-t2">{short(r.req.name, 10)}</span>
+                  <span className="num ml-auto shrink-0 text-[12px] text-t3">缺 {r.missing.length}</span>
+                </div>
+              </Tooltip>
+            )}
+          />
+        ) : null}
       </div>
 
       {/* 底部悬浮：本轮将写回的宏 + 主按钮 */}
@@ -501,6 +588,9 @@ function WaveOverlay({ full }: { full?: boolean }) {
                 style={{ background: w.series.color }}
               />
               {w.id}
+              <span className={cn('font-semibold', w.verdict === 'fail' ? 'text-alert' : 'text-p700')}>
+                {verdictWord(w)}
+              </span>
             </span>
           </Tooltip>
         ))}
@@ -509,9 +599,12 @@ function WaveOverlay({ full }: { full?: boolean }) {
             合成
           </Badge>
         ) : null}
-        <span className="num ml-auto text-[12px] text-t3">
-          Δ峰值 {(peak - Math.min(...waves.map((w) => w.metrics.peak))).toFixed(2)} {unit}
-        </span>
+        {/* Δ峰值不进演示分镜：精简后前后对照靠曲线形状讲（06d 第 3.2 节），放大态仍给 */}
+        {full ? (
+          <span className="num ml-auto text-[12px] text-t3">
+            Δ峰值 {(peak - Math.min(...waves.map((w) => w.metrics.peak))).toFixed(2)} {unit}
+          </span>
+        ) : null}
       </div>
       <div ref={box} className="min-h-0 flex-1">
         <TimeSeriesChart
@@ -682,15 +775,10 @@ function EvidencePanel({ full }: { full?: boolean }) {
               <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-t1">
                 {symptomKey(c.exp.symptom)}
               </span>
-              {/* 证据级三格条：序位口径，不是概率 */}
-              <span className="flex shrink-0 items-center gap-[3px]" aria-label={c.exp.evidence_level}>
-                {[1, 2, 3].map((k) => (
-                  <span
-                    key={k}
-                    className={cn('h-[4px] w-[11px] rounded-full', k <= rank ? 'bg-p600' : 'bg-p100')}
-                  />
-                ))}
-              </span>
+              {/* 证据级直接写字：三格条一格一格数不清是什么意思（06d 第 3.2 节） */}
+              <Badge tone={rank >= 3 ? 'soft' : 'neutral'} className="shrink-0">
+                {c.exp.evidence_level}
+              </Badge>
               <Badge tone="neutral" mono className="shrink-0">
                 {c.exp.id}
               </Badge>

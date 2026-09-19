@@ -39,7 +39,9 @@
       "_source": {
         "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
         "locator": "第 5 节 失败分诊迭代 表 第 1 行"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     },
     {
       "id": "EXP-002",
@@ -67,7 +69,9 @@
       "_source": {
         "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
         "locator": "第 5 节 失败分诊迭代 表 第 2 行"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     },
     {
       "id": "EXP-003",
@@ -93,7 +97,9 @@
       "_source": {
         "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
         "locator": "第 5 节 失败分诊迭代 表 第 3 行"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     },
     {
       "id": "EXP-004",
@@ -121,7 +127,9 @@
       "_source": {
         "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
         "locator": "第 5 节 失败分诊迭代 表 第 4 行"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     },
     {
       "id": "EXP-005",
@@ -156,7 +164,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
           "locator": "Customer.h:113 注释「MOTOR_LOOP_RPM 操作範圍: 500~2000」"
         }
-      ]
+      ],
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     },
     {
       "id": "EXP-006",
@@ -186,7 +196,9 @@
       "_source": {
         "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
         "locator": "第 5 节 失败分诊迭代 表 第 6 行"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     },
     {
       "id": "EXP-007",
@@ -215,7 +227,9 @@
       "_source": {
         "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
         "locator": "第 5 节 失败分诊迭代 表 第 7 行"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     },
     {
       "id": "EXP-008",
@@ -243,7 +257,9 @@
       "_source": {
         "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
         "locator": "第 5 节 失败分诊迭代 表 第 8 行"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     },
     {
       "id": "EXP-009",
@@ -278,7 +294,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包/分析报告-预定位太弱判定-20260812.md",
           "locator": "第 0.1 节第 2 条：客户证实全部 98 条都是「预定位太弱」的复现"
         }
-      ]
+      ],
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     },
     {
       "id": "EXP-010",
@@ -314,7 +332,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包/01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0010/tool_output/diagnosis.json",
           "locator": "verdict / atomic_detectors[]"
         }
-      ]
+      ],
+      "usage": "测试需求",
+      "usage_class": "D2 规程沉淀 · 判据修正"
     },
     {
       "id": "EXP-011",
@@ -341,7 +361,10 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包/分析报告-预定位太弱判定-20260812.md",
         "locator": "第 1.2 节「量化分辨率的问题与单位无关」段"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "D1 实验沉淀 · 判据修正",
+      "usage_review": "待人工复核"
     },
     {
       "id": "EXP-012",
@@ -367,7 +390,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包/分析报告-预定位太弱判定-20260812.md",
         "locator": "第 0.2 节 一句话结论 与 第 5.4 节"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "D1 实验沉淀 · 判据修正"
     },
     {
       "id": "EXP-013",
@@ -393,7 +418,9 @@
       "_source": {
         "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包/分析报告-预定位太弱判定-20260812.md",
         "locator": "第 0.1 节第 3 条 与 第 0.2 节"
-      }
+      },
+      "usage": "测试需求",
+      "usage_class": "D1 实验沉淀 · 判据修正"
     },
     {
       "id": "EXP-014",
@@ -419,7 +446,9 @@
       "_source": {
         "file": "/home/zzz/.claude/projects/-mnt-f-Main-File-2-Projects---/memory/fortior-test-bench-hardware.md",
         "locator": "「信号定义(方向是关键,易混)」段"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     },
     {
       "id": "EXP-015",
@@ -448,7 +477,9 @@
       "_source": {
         "file": "/home/zzz/.claude/projects/-mnt-f-Main-File-2-Projects---/memory/fortior-test-bench-hardware.md",
         "locator": "「示波器接线」段"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     },
     {
       "id": "EXP-016",
@@ -480,7 +511,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260917-产品故事与分工v1.0/_调研/A-DebugCopilot场景与知识库取证.md",
           "locator": "第三节 纪律层 与 第七节 四个缺口"
         }
-      ]
+      ],
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     },
     {
       "id": "EXP-017",
@@ -506,7 +539,9 @@
       "_source": {
         "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
         "locator": "第 1 节 闭环配置定位 与 第 2 节 备份 + 改宏 纪律"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     },
     {
       "id": "EXP-018",
@@ -532,7 +567,9 @@
       "_source": {
         "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
         "locator": "第 1 节 闭环配置定位（宏族探测，跨程序差异核心节）"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     },
     {
       "id": "EXP-019",
@@ -568,7 +605,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260917-产品故事与分工v1.0/_调研/A-DebugCopilot场景与知识库取证.md",
           "locator": "第六节「示波器非硬前提（散热风扇可降级；吸尘器四份规程强制）」"
         }
-      ]
+      ],
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     },
     {
       "id": "EXP-020",
@@ -594,7 +633,9 @@
       "_source": {
         "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
         "locator": "第 4 节 证据二 第 3 步"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     },
     {
       "id": "EXP-021",
@@ -626,7 +667,9 @@
           "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/00-用户需求原话-20260919.md",
           "locator": "典型流程 2 测试保护原则"
         }
-      ]
+      ],
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     },
     {
       "id": "EXP-022",
@@ -657,7 +700,9 @@
       "_source": {
         "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/auto-startup-tune/SKILL.md",
         "locator": "「## 固定候选」与候选推进小节（第 106 行「need_human 不得继续创建第 11 个候选」）"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     },
     {
       "id": "EXP-023",
@@ -683,7 +728,9 @@
       "_source": {
         "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/protect-verify-ovp/SKILL.md",
         "locator": "第 2 节 Vbus 复检(强约束)"
-      }
+      },
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     },
     {
       "id": "EXP-024",
@@ -715,7 +762,9 @@
           "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/protect-verify-overspeed/SKILL.md",
           "locator": "设计前提与「## 中断保护」小节"
         }
-      ]
+      ],
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     }
   ]
 }

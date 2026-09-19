@@ -1,5 +1,7 @@
 import { useMemo, useState, createElement } from 'react'
 import { LayoutGrid, Layers, Network } from 'lucide-react'
+import { useAppStore } from '../state/useAppStore'
+import { CanvasHost, useFlowView } from '../features/canvas'
 import { Button, Modal, Panel, PanelCard, PanelHeader, Segmented, cn } from '../components/ui'
 import { CARD_LIB } from '../data/cards'
 import type { CardId, CardInstance, FlowId, ScenePackage } from '../data/types'
@@ -10,96 +12,16 @@ import { ToolRail } from './ToolRail'
 
 /** C 区 · 面板：一页只有一个 hero（首卡横跨两格），其余退后。 */
 
-type View = 'grid' | 'canvas'
+/**
+ * 第三轮：画板为默认视图，网格降为备选。视图状态上提到 store.canvasView，
+ * 按流程各存一份、人工选择持久到 localStorage；某条流程人没点过时，
+ * 默认值读场景包的 ui.defaultView（由 scene.json 的 default_view 拼成），
+ * 不写死在代码里。画板本体在 src/features/canvas/，自研 SVG 画布已整个下架。
+ */
+type View = 'canvas' | 'grid'
 
 const cardIcon = (id: CardId, size = 13) =>
   createElement(CARD_ICON[id] ?? Layers, { size, strokeWidth: 1.9 })
-
-function CanvasView({
-  flow,
-  scene,
-  onExpand,
-}: {
-  flow: FlowId
-  scene: ScenePackage
-  onExpand: (c: CardInstance) => void
-}) {
-  const content = scene.flows[flow]
-  const layout =
-    content.canvas ??
-    ({
-      nodes: content.cards.map((c, i) => ({
-        id: c.id,
-        x: 48 + (i % 2) * 420,
-        y: 32 + Math.floor(i / 2) * 224,
-        w: 360,
-        h: 192,
-      })),
-      links: [],
-    } as NonNullable<ScenePackage['flows'][FlowId]['canvas']>)
-
-  const byId = new Map(content.cards.map((c) => [c.id, c]))
-  const center = (id: CardId) => {
-    const n = layout.nodes.find((x) => x.id === id)
-    return n ? { x: n.x + n.w / 2, y: n.y + n.h / 2 } : { x: 0, y: 0 }
-  }
-
-  return (
-    <div className="paper-grid relative min-h-0 flex-1 overflow-auto">
-      <div className="relative h-[470px] w-[860px]">
-        <svg className="pointer-events-none absolute inset-0 h-full w-full">
-          {layout.links.map((l, i) => {
-            const a = center(l.from)
-            const b = center(l.to)
-            const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
-            return (
-              <g key={i}>
-                <path
-                  d={`M${a.x} ${a.y} L${b.x} ${b.y}`}
-                  stroke="var(--p-300)"
-                  strokeWidth="1.25"
-                  strokeDasharray={l.kind === 'belong' ? '6 5' : undefined}
-                  fill="none"
-                />
-                {l.label ? (
-                  <text
-                    x={mid.x}
-                    y={mid.y - 5}
-                    textAnchor="middle"
-                    fontSize="11"
-                    fill="var(--tp-text-3)"
-                    stroke="#fff"
-                    strokeWidth="3"
-                    paintOrder="stroke"
-                  >
-                    {l.label}
-                  </text>
-                ) : null}
-              </g>
-            )
-          })}
-        </svg>
-        {layout.nodes.map((n) => {
-          const inst = byId.get(n.id) ?? { id: n.id }
-          return (
-            <div key={n.id} className="absolute" style={{ left: n.x, top: n.y, width: n.w, height: n.h }}>
-              <PanelCard
-                className="h-full"
-                icon={cardIcon(n.id)}
-                title={CARD_LIB[n.id].title}
-                alert={inst.alert}
-                active={inst.active}
-                onExpand={() => onExpand(inst)}
-              >
-                <CardArt id={n.id} />
-              </PanelCard>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
 
 /** 五卡版式：首卡 hero 横跨两列，其余四张填满第二行与右上角 */
 function slotStyle(i: number, n: number): React.CSSProperties {
@@ -123,31 +45,40 @@ function slotStyle(i: number, n: number): React.CSSProperties {
 
 export function ResourcePanel({ flow, scene }: { flow: FlowId; scene: ScenePackage }) {
   useRegistryVersion()
-  const [view, setView] = useState<View>('grid')
+  // 人点过按人的，没点过按场景包的 ui.defaultView，场景包没给才落代码兜底
+  const view = useFlowView(flow, scene)
+  const setView = useAppStore((s) => s.setCanvasView)
   const [open, setOpen] = useState<CardInstance | null>(null)
 
   const registered = useMemo(() => getPanelCards(flow), [flow])
   const regById = useMemo(() => new Map(registered.map((r) => [r.id, r])), [registered])
   const content = scene.flows[flow]
 
-  const slots: CardInstance[] = useMemo(() => {
-    const extra = registered
-      .filter((r) => !content.cards.some((c) => c.id === r.id))
-      .map((r) => ({ id: r.id as CardId }))
-    return [...content.cards, ...extra]
-  }, [content, registered])
+  // 卡槽以场景包的 content.cards 为准：有几张铺几张（slotStyle 支持 3 / 4 / 5 三种版式）。
+  // 第三轮起不再拿「注册过但没进卡槽」的卡回填到 5 格——否则 loadScene.ts 里删掉的卡
+  // （流程 3 的原理图与安全联锁状态盘、流程 4 的判定卡）会被自动补回屏幕。
+  // 没进卡槽的卡仍可取用，入口在卡头的「换卡」下拉里。
+  const slots: CardInstance[] = content.cards
+  const spare: CardInstance[] = useMemo(
+    () =>
+      registered
+        .filter((r) => !content.cards.some((c) => c.id === r.id))
+        .map((r) => ({ id: r.id as CardId })),
+    [content, registered],
+  )
 
   const GRID_SLOTS = 5
   const [swapped, setSwapped] = useState<Record<string, CardId>>({})
+  const pool = useMemo(() => [...slots, ...spare], [slots, spare])
   const gridSlots = useMemo(() => {
     const base = slots.slice(0, GRID_SLOTS)
     return base.map((c) => {
       const to = swapped[c.id]
-      return to ? (slots.find((x) => x.id === to) ?? c) : c
+      return to ? (pool.find((x) => x.id === to) ?? c) : c
     })
-  }, [slots, swapped])
+  }, [slots, pool, swapped])
   const shown = new Set(gridSlots.map((c) => c.id))
-  const hidden = slots.filter((c) => !shown.has(c.id))
+  const hidden = pool.filter((c) => !shown.has(c.id))
   const swap = (from: CardId, to: CardId) => setSwapped((m) => ({ ...m, [from]: to }))
 
   const renderCard = (id: CardId) => {
@@ -164,10 +95,10 @@ export function ResourcePanel({ flow, scene }: { flow: FlowId; scene: ScenePacka
           <Segmented
             ariaLabel="面板视图"
             value={view}
-            onChange={(v) => setView(v as View)}
+            onChange={(v) => setView(flow, v as View)}
             items={[
+              { value: 'canvas', label: '画板', icon: <Network size={13} strokeWidth={1.9} /> },
               { value: 'grid', label: '网格', icon: <LayoutGrid size={13} strokeWidth={1.9} /> },
-              { value: 'canvas', label: '画布', icon: <Network size={13} strokeWidth={1.9} /> },
             ]}
           />
         }
@@ -211,7 +142,9 @@ export function ResourcePanel({ flow, scene }: { flow: FlowId; scene: ScenePacka
             </div>
           </div>
         ) : (
-          <CanvasView flow={flow} scene={scene} onExpand={setOpen} />
+          // 统一画板：滚轮缩放、拖拽平移、工具条拖入建节点、节点放大态，
+          // 本体在 src/features/canvas/CanvasHost.tsx。
+          <CanvasHost flow={flow} scene={scene} />
         )}
         <ToolRail groups={scene.toolGroups} />
       </div>

@@ -1,5 +1,59 @@
 {
   "schema": "report-template/v1",
+  "group_tiers": [
+    {
+      "id": "rpt-id",
+      "title": "被测件身份",
+      "groups": [
+        {
+          "id": "rpt-id-all",
+          "title": "机型与固件",
+          "items": [
+            "model",
+            "project_name",
+            "firmware_version"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rpt-addr",
+      "title": "固件位址基线",
+      "groups": [
+        {
+          "id": "rpt-addr-all",
+          "title": "位址与引导",
+          "items": [
+            "inlet_start_addr",
+            "outlet_start_addr",
+            "bootloader"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rpt-to",
+      "title": "交付对象",
+      "groups": [
+        {
+          "id": "rpt-to-org",
+          "title": "客户方",
+          "items": [
+            "customer_name",
+            "customer_engineer"
+          ]
+        },
+        {
+          "id": "rpt-to-contact",
+          "title": "联系方式",
+          "items": [
+            "email",
+            "phone"
+          ]
+        }
+      ]
+    }
+  ],
   "scene_id": "motor.cooling-fan.fortior-fu6832",
   "generated_by": "_build/build_scene_pack.py",
   "generated_at": "2026-09-19",

@@ -1,5 +1,6 @@
 /**
- * 收尾交付截图：六页 1920×1080 + 1440×810，放大态三张，汽车包两张，对照拼图一张。
+ * 收尾交付截图：五个流程页加知识库页各 1920×1080 + 1440×810，
+ * 放大态三张，汽车包两张。
  *   npm run build && npm run preview   然后   node scripts/shootfinal.mjs
  * 环境变量：BASE（默认 http://localhost:4173）、ONLY（只出某一张）、PREFIX（默认 final）
  */
@@ -17,19 +18,22 @@ if (!exe) throw new Error('本机未找到 Chrome')
 const MOTOR = 'motor.cooling-fan.fortior-fu6832'
 const AUTO = 'automotive.body-motor.window-regulator'
 const PAGES = [
-  ['kb', '/kb'],
   ['init', '/init'],
   ['req', '/requirements'],
   ['run', '/run'],
   ['tune', '/tune'],
   ['report', '/report'],
+  // 知识库是模块不是流程，排在五步之后单独出一张
+  ['knowledge', '/knowledge'],
 ]
 
-/** 放大态：点开某张卡的「放大」按钮再截 */
+/** 放大态：点开某张卡的「放大」按钮再截。
+    第三项可以是卡槽序号，也可以给一段文字——按文字挑画板上那个节点，
+    免得默认挑到「被测对象」这种放大后只有一行字的事实型节点。 */
 const ZOOM = [
-  ['zoom-canvas', '/requirements', 0],
+  ['zoom-canvas', '/requirements', '工作流画布'],
   ['zoom-timeseries', '/run', 0],
-  ['zoom-evidence', '/kb', 1],
+  ['zoom-evidence', '/knowledge', 1],
 ]
 
 const SHOTS = []
@@ -54,9 +58,14 @@ for (const s of SHOTS) {
   await page.waitForLoadState('networkidle').catch(() => {})
   await page.waitForTimeout(4200)
   if (s.zoom != null) {
-    const btns = page.locator('[aria-label$="放大"]')
-    await btns.nth(s.zoom).click({ timeout: 4000 }).catch(() => {})
-    await page.waitForTimeout(1400)
+    if (typeof s.zoom === 'string') {
+      const node = page.locator('.react-flow__node').filter({ hasText: s.zoom }).first()
+      await node.dblclick({ timeout: 4000 }).catch(() => {})
+    } else {
+      const btns = page.locator('[aria-label$="放大"]')
+      await btns.nth(s.zoom).click({ timeout: 4000 }).catch(() => {})
+    }
+    await page.waitForTimeout(1600)
   }
   await page.screenshot({ path: `${OUT}${s.name}.png` })
   console.log('✓', `${s.name}.png ${s.w}×${s.h}`)

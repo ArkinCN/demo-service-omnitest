@@ -22,6 +22,7 @@ import type {
 } from '../data/types'
 import { hasLeftPanel, renderLeftPanel, useRegistryVersion } from '../registry'
 import { paramKey, useAppStore } from '../state/useAppStore'
+import { KnowledgeDrawer } from '../features/knowledge/KnowledgeDrawer'
 
 /** B 区 · 参数与确认（规格 6）：输入清单 + 分组手风琴 + 底部确认条 */
 
@@ -293,8 +294,16 @@ export function LeftPanel({ flow, scene }: { flow: FlowId; scene: ScenePackage }
 
   const alerts = content.checklist.filter((c) => c.status === 'alert').length
 
+  // 第三轮：五个流程页的 B 区顶部统一挂一条「本流程可用知识」窄条。
+  // 各流程页用 registerLeftPanel 接管了左栏，所以窄条只能挂在这一层，
+  // 接管与不接管两条分支都要挂。
   if (custom) {
-    return <Panel>{renderLeftPanel(flow, { flow, scene })}</Panel>
+    return (
+      <Panel>
+        <KnowledgeDrawer flow={flow} />
+        {renderLeftPanel(flow, { flow, scene })}
+      </Panel>
+    )
   }
 
   return (
@@ -315,6 +324,7 @@ export function LeftPanel({ flow, scene }: { flow: FlowId; scene: ScenePackage }
         }
       />
 
+      <KnowledgeDrawer flow={flow} />
       <Checklist items={content.checklist} onLocate={locate} />
       <div key={flow} className="animate-rise fade-b min-h-0 flex-1 overflow-y-auto">
         {content.groups.map((g) => (

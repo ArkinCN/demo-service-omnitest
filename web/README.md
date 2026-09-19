@@ -484,3 +484,143 @@ rsync -a --delete \
     没有条目数。
 13. 知识库流水线产物只覆盖散热风扇那一路；玻璃升降器包的文档与经验仍由场景包顶着，
     没有切片、没有页码回溯。
+
+---
+
+## 第三轮接口（W1 Phase A 落，并行期以此为准）
+
+第三轮把六流程改成五流程、知识库降级为模块、C 区默认改画板、助手加预置动作。
+以下接口由信息架构与壳这一包（W1）一次性落齐，其余四包直接按名取用，不要自行改这些文件。
+
+### 1 · 流程与模块
+
+| 导出 | 文件 | 说明 |
+| --- | --- | --- |
+| `FLOW_IDS` / `FlowId` | `src/data/types.ts` | 五条流程 `init` `req` `run` `tune` `report`，编号 1–5 |
+| `MODULE_IDS` / `ModuleId` | `src/data/types.ts` | 模块只有 `knowledge`，不占流程序号 |
+| `FLOWS` / `FLOW_BY_ID` / `FLOW_BY_PATH` | `src/data/flows.ts` | 路径不变，`index` 重排为 1–5 |
+| `registerModulePage(id, component)` | `src/registry/index.tsx` | 把模块页整页内容挂到 `/knowledge` |
+
+路由在 `src/router.tsx`：`/knowledge` 指向 `src/app/KnowledgePage.tsx`，旧路径 `/kb` 永久重定向到 `/knowledge`，
+根路径与通配仍落 `/init`。顶栏右端一枚常驻知识库按钮，与五步 stepper 之间隔一条竖线。
+
+### 2 · C 区画板
+
+| 导出 | 文件 | 说明 |
+| --- | --- | --- |
+| `CANVAS_NODE_TYPES` / `CanvasNodeType` | `src/data/types.ts` | 十一类节点 |
+| `CanvasEdgeKind` / `CanvasNode` / `CanvasEdge` / `CanvasLayout` | `src/data/types.ts` | 边两种语义：`physical` 物理连接、`data` 数据流 |
+| `CARD_CANVAS_NODE` | `src/data/cards.ts` | 卡片库标识到节点类型的映射 |
+| `registerCanvasNode(reg)` / `getCanvasNode(type)` | `src/features/canvas/index.ts` | 节点实现注册表 |
+| `CanvasHost` | `src/features/canvas/CanvasHost.tsx` | 画板占位容器，一个节点都没注册时退回旧画布 |
+| `BENCH_CHANNEL_MAP` / `channelLabel()` / `BENCH_CHANNEL_PENDING` | `src/data/bench.ts` | 通道映射：PWM1 接 CH4、FG1 接 CH2、FG2 接 CH3，台架实测，界面上一律标「待客户确认」 |
+
+视图状态上提到 `useAppStore` 的 `canvasView`，默认值 `'canvas'`，网格降为备选。
+
+### 3 · D 区助手预置动作
+
+`CopilotAction`（`src/data/types.ts`）字段：`id`、`flow`、`label`、`icon`、`prompt`、`skill`、`requiresConfirm`。
+`prompt` 与 `skill` 至少给一个。用 `registerCopilotActions(flow, actions)`（`src/registry/index.tsx`）登记，
+`src/app/AssistantPanel.tsx` 的输入区上方已留好按钮槽，登记为空时整条不渲染。
+图标名取值限定在 `src/app/icons.ts` 的 `COPILOT_ACTION_ICON_NAMES` 内，取不到时退回通用图标。
+
+### 4 · 知识三轴
+
+`KnowledgeUsage` 三类：`spec` 产品说明书、`requirement` 测试需求、`process` 工艺，固定三类不加第四类。
+`KnowledgeOrigin` 两类：`doc` 文档、`experience` 经验。显示名走 `KNOWLEDGE_USAGE_LABEL` 与 `KNOWLEDGE_ORIGIN_LABEL`。
+三轴筛选状态在 `useAppStore` 的 `kbFilter`，取数与筛选在 `src/features/knowledge/data.ts`。
+每个流程页 B 区顶部的「本流程可用知识」窄条与抽屉是 `src/features/knowledge/KnowledgeDrawer.tsx`。
+
+### 5 · 全局状态新增字段
+
+`src/state/useAppStore.ts` 上提四组：`canvasView`、`canvasSelected`、`collapse`、`kbFilter`，
+对应 setter 为 `setCanvasView`、`setCanvasSelected`、`setCollapse`、`setKbFilter`，
+折叠记忆的键用 `collapseKey(flow, group)` 生成。
+
+### 6 · 并行期不要碰的文件
+
+`src/data/types.ts`、`src/data/flows.ts`、`src/data/cards.ts`、`src/data/bench.ts`、
+`src/app/icons.ts`、`src/router.tsx`、`src/state/useAppStore.ts`、`src/registry/index.tsx`、
+`src/features/index.tsx` 这九个文件在并行期冻结。要加东西写进跨包请求单，交收尾包统一改。
+
+---
+
+## 第三轮收尾（W6 落，并行期的冻结全部解除）
+
+W1 至 W5 五包并行交付之后的一次统一收口：合并五份跨包请求单、执行编排者的七条裁决。
+**上一节「第三轮接口」里凡与本节冲突的，以本节为准**——尤其是 `canvasView` 的形状与
+「并行期不要碰的文件」那一条（冻结已解除）。
+
+### 1 · 全局状态的两处形状变更
+
+`src/state/useAppStore.ts`：
+
+| 字段 | 旧 | 新 |
+| --- | --- | --- |
+| `canvasView` | `'canvas' \| 'grid'`，全局一份 | `Partial<Record<FlowId, 'canvas' \| 'grid'>>`，**按流程各存一份** |
+| `setCanvasView` | `(v) => void` | `(flow, v) => void` |
+| `demoMode` / `setDemoMode` | 无 | `boolean`，默认 `true`；顶栏「演示 / 全量」分段控件切它 |
+
+两者的人工选择都持久到 localStorage（键 `omnitest.canvasView.v1`、`omnitest.demoMode.v1`），
+读写包 `try/catch`：隐私窗口与禁用站点数据时 `localStorage` 会直接抛。
+地址栏 `?mode=full` 仍然强制全量，供评审与截图对照。
+
+**该显示哪个视图不要自己拼**，用 `useFlowView(flow, scene)`（`src/features/canvas`）：
+人点过按人的 → 场景包的 `ui.defaultView` → 代码兜底 `FALLBACK_DEFAULT_VIEW`。
+`src/features/shared/tiers.ts` 的 `demoOn()` 现在读 store，不再读地址栏，调用点一个没动。
+
+### 2 · 场景包多一段界面配置
+
+`ScenePackage` 新增 `ui?: { defaultView?: Partial<Record<FlowId, 'canvas' | 'grid'>> }`
+（`src/data/types.ts`），由 `adaptScene()`（`src/data/loadScene.ts`）从 `scene.json` 的
+`default_view` 段拼进来。`src/features/canvas/defaultView.ts` 因此不再自己 `fetch` 一次
+`scene.json`——同一份 JSON 读两遍那笔账已经平掉，`resolveDefaultViews()` 与
+`rememberFlowView()` 两个导出随之删除。
+
+### 3 · AgentChat 的三个新口子
+
+`src/features/agent-chat/AgentChat.tsx` 本轮之前对宿主是完全封闭的，宿主只能靠
+「DOM 接管三件套」凑合。现在补了正经接口，那三件套整体下架：
+
+| 新 prop / 类型 | 作用 | 取代了什么 |
+| --- | --- | --- |
+| `actionSlot?: ReactNode` | 渲染在 `.ac-stream` 与 `.ac-composer` 之间的 `.ac-slot` 里 | 往 `.ac-root` 里 portal 一个宿主节点 |
+| `onReady?: (api: AgentChatApi) => void` | 交出命令式句柄，`api.send(text)` 代发一条消息 | 往 `.ac-textarea` 写值再点 `.ac-send` |
+| `onBusyChange?: (busy: boolean) => void` | 忙态变化回调 | `MutationObserver` 盯 `.ac-header__state[data-busy]` |
+
+`ActionDock` 的签名随之改成 `{ scope, send, busy }`，不再收容器 ref，也不再 portal。
+任何一块对话都能挂：`/knowledge` 页就是这么接的（`scope="knowledge"`）。
+`src/features/copilot/composer.ts` 已删除。
+
+### 4 · 卡槽与注册表
+
+- **网格不再回填。** `src/app/ResourcePanel.tsx` 以 `content.cards` 为准，有几张铺几张；
+  没进卡槽的卡只留在卡头「换卡」下拉里。
+- **`remote-device` 撤槽。** `loadScene.ts` 的 `runFlow().cards` 与 `src/features/index.tsx`
+  的 `CARD_IMPL` 都不再出这张卡，`runCards['remote-device']` 与卡体 `BenchLive` 一并删除。
+  设备只以画板上的 MCP 节点出现（`src/features/remote/DeviceMcpNode.tsx`）。
+- **设备记录合并成一份。** `src/features/flow-run/panel.tsx` 里那份 `BENCH` 与
+  `src/features/remote/device.ts` 的 `BENCH_DEVICE` 是同一台机器的逐字拷贝，留后者。
+- **知识库注册归位。** `import './knowledge/register'` 统一收进 `src/features/index.tsx`，
+  `src/app/KnowledgePage.tsx` 里那行临时 import 删掉。
+
+### 5 · 图标表扩到 28 个
+
+`src/app/icons.ts` 的 `COPILOT_ACTION_ICON` 补 11 个语义名：
+`library` `folder-tree` `scale` `link` `workflow` `lock` `stethoscope` `network`
+`file-diff` `note-pen` `package`。两个场景包的 `copilot-actions.json`（工程内 `public/`
+与数据仓 `40_工程/agent-test-web-data/` 两处共四份）里对应的 11 枚按钮，`icon` 已按
+`icon_draft` 记的原语义回填；`icon_draft` 字段保留作追溯。
+
+### 6 · lint 与构建产物
+
+`.oxlintrc.json` 加了 `ignorePatterns`：`dist` `dist-*` `dist-ssr` `shots` `shots2`
+`node_modules`；`.gitignore` 同步加 `dist-*`。并行期 `dist-w5/` 那类产物目录曾把
+lint 基线从 26 条冲到三千多条，忽略之后不会再发生。
+
+### 7 · 截图
+
+`node scripts/shootfinal.mjs` 出整页与放大态（`PREFIX` 默认 `final`，
+`BASE` 默认 `http://localhost:4173`）；`node scripts/shootextra.mjs` 出五张状态图
+`final-extra-{canvas-zoom,node-zoom,confirm,kb-filter,collapse}.png`，
+每张都会打印它实际做到了哪一步。旧的 `final-kb*.png` 已由 `final-knowledge*.png` 取代。

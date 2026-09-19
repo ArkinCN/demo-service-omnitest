@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Activity,
   AlertTriangle,
-  Cable,
   CheckCircle2,
   CircuitBoard,
   Cpu,
@@ -13,14 +12,12 @@ import {
   RotateCw,
   ShieldCheck,
   Sliders,
-  Terminal,
   Waves as WavesIcon,
   Zap,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import {
   Badge,
-  Button,
   Collapsible,
   EmptyState,
   InfoTip,
@@ -32,12 +29,19 @@ import {
   cn,
 } from '../../components/ui'
 import { decimalsOf } from '../../data/loadScene'
-import { paramKey, useAppStore } from '../../state/useAppStore'
-import { byGroup, getPack, sourceLine, statusOf, type RawControlParam } from '../scene/pack'
-import { ConfirmFooter, Empty } from '../shared/bits'
+import { collapseKey, paramKey, useAppStore } from '../../state/useAppStore'
+import {
+  getPack,
+  sourceLine,
+  statusOf,
+  type RawControlParam,
+  type RawInterlock,
+  type RawPack,
+} from '../scene/pack'
+import { ConfirmFooter, Empty, TierTree } from '../shared/bits'
+import { buildTiers, demoFilter, readTiers } from '../shared/tiers'
 import { TimeSeriesChart } from '../timeseries'
 import { POWERUP_ANNOTATION, currentThresholds, loadWaves, type Wave } from '../waveforms'
-import { RemoteDeviceCard, probeDevice, type ConnState } from '../remote'
 import { evaluateAll, runtimeMeasures, type VerdictState } from './evaluate'
 
 /* ===========================================================================
@@ -85,7 +89,10 @@ function flowFiltersOf(total: number) {
 
 /** 分组图标：按组名关键词取 */
 const GROUP_ICON: [RegExp, LucideIcon][] = [
-  [/启动|start/i, Zap],
+  [/闭环|整定|环路|PI/i, WavesIcon],
+  [/流程纪律|纪律/, ShieldCheck],
+  [/人员|现场/, Monitor],
+  [/启动|预定位|start/i, Zap],
   [/调速|转速|speed/i, Gauge],
   [/顺逆|方向|风/i, RotateCw],
   [/保护|限流|故障/i, ShieldCheck],
@@ -95,6 +102,10 @@ const GROUP_ICON: [RegExp, LucideIcon][] = [
 const groupIcon = (name: string): LucideIcon => {
   for (const [re, ic] of GROUP_ICON) if (re.test(name)) return ic
   return Sliders
+}
+const iconOf = (name: string, size = 14) => {
+  const Ic = groupIcon(name)
+  return <Ic size={size} strokeWidth={1.9} />
 }
 
 function ParamRow({ p }: { p: RawControlParam }) {
@@ -166,6 +177,75 @@ function ParamRow({ p }: { p: RawControlParam }) {
   )
 }
 
+/**
+ * 闸门分组：编号里自带 PROC / PERSON 类别，直接拿来当二级组，不再九条平铺；
+ * 组内超过 5 条的（流程类 7 条）再按场景包 group_tiers 切一层三级子组。
+ */
+interface GateGroup {
+  id: string
+  title: string
+  items: RawInterlock[]
+  subs: { id: string; title: string; items: RawInterlock[] }[]
+}
+
+function gateGroups(pack: RawPack, items: RawInterlock[]): GateGroup[] {
+  const spec = readTiers(pack.interlocks).filter((t) => /流程|人员/.test(t.title))
+  const pick = (ids?: string[]) => {
+    const want = new Set((ids ?? []).map((x) => x.toLowerCase()))
+    return items.filter((i) => want.has(i.id.toLowerCase()))
+  }
+  const out: GateGroup[] = spec.map((t) => {
+    const mine = pick(t.groups.flatMap((g) => g.items ?? []))
+    return {
+      id: t.id,
+      title: t.title,
+      items: mine,
+      subs:
+        mine.length > 5
+          ? t.groups
+              .map((g) => ({ id: g.id, title: g.title, items: pick(g.items) }))
+              .filter((g) => g.items.length > 0)
+          : [],
+    }
+  })
+  const used = new Set(out.flatMap((g) => g.items.map((i) => i.id)))
+  const rest = items.filter((i) => !used.has(i.id))
+  if (rest.length) out.push({ id: 'gate-rest', title: '其他', items: rest, subs: [] })
+  return out.filter((g) => g.items.length > 0)
+}
+
+/** 闸门一行：圆形勾选 + 短名 + 编号 */
+function GateRow({
+  i,
+  on,
+  onToggle,
+}: {
+  i: RawInterlock
+  on: boolean
+  onToggle: () => void
+}) {
+  return (
+    <Tooltip className="w-full" content={`${i.id} ${i.name} · ${i.action}`}>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center gap-2.5 px-4 py-1.5 text-left transition-colors hover:bg-p50/70"
+      >
+        <span
+          className={cn(
+            'flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border transition-colors [&>svg]:block',
+            on ? 'border-transparent bg-p600 text-white' : 'border-line bg-white text-transparent',
+          )}
+        >
+          <CheckCircle2 size={12} strokeWidth={2.5} />
+        </span>
+        <span className="truncate text-[13px] text-t1">{short(i.name, 10)}</span>
+        <span className="num ml-auto shrink-0 text-[12px] text-t3">{i.id}</span>
+      </button>
+    </Tooltip>
+  )
+}
+
 export function RunLeftPanel() {
   const pack = getPack()
   const [filter, setFilter] = useState('F4')
@@ -183,11 +263,25 @@ export function RunLeftPanel() {
 
   if (!pack) return <Empty text="场景包未加载" />
 
-  const params = pack.controls.parameters.filter(
-    (p) => filter === 'all' || p.adjustable_in_flows?.some((f) => f.startsWith(filter)),
+  // 演示模式只暴露 demo_profile 点名的那 12 项控制参数；全量模式下按流程过滤照旧。
+  const params = demoFilter(
+    pack.controls,
+    'parameters',
+    pack.controls.parameters.filter(
+      (p) => filter === 'all' || p.adjustable_in_flows?.some((f) => f.startsWith(filter)),
+    ),
+    (p) => p.key,
   )
-  const grouped = byGroup(params, pack.controls.groups)
+  // 一级类取自场景包 control-parameters.json 的 group_tiers：启动与预定位 / 闭环与整定 /
+  // 运行与保护。启动组 10 项按「模式与时序」「电流与增益」切三级子组。
+  const tiers = buildTiers<RawControlParam>(
+    readTiers(pack.controls),
+    params,
+    (p) => p.key,
+    (p) => p.group,
+  )
   const green = gateItems.length > 0 && g.acked.size === gateItems.length
+  const groups = gateGroups(pack, gateItems)
 
   const attr = (re: RegExp) => pack.attributes.attributes.find((a) => re.test(`${a.key}${a.name}`))
   const vMin = attr(/voltage_min|工作电压下限|运行电压下限/)
@@ -242,29 +336,30 @@ export function RunLeftPanel() {
       </header>
 
       <div className="fade-b min-h-0 flex-1 overflow-y-auto pb-2">
-        {grouped.map(([g2, items], i) => {
-          const Icon = groupIcon(g2)
-          // 默认摊开到累计 8 行为止：左栏填得满，又不会一次铺开全部参数
-          const before = grouped.slice(0, i).reduce((n, [, xs]) => n + xs.length, 0)
-          return (
-            <Collapsible
-              key={g2}
-              icon={<Icon size={14} strokeWidth={1.9} />}
-              title={short(g2, 8)}
-              defaultOpen={before < 8}
-              right={<span className="num text-[12px] text-t3">{items.length}</span>}
-            >
-              {items.map((p) => (
-                <ParamRow key={p.key} p={p} />
-              ))}
-            </Collapsible>
-          )
-        })}
+        <TierTree
+          flow="run"
+          tiers={tiers}
+          // 一级类只展开第一个「启动与预定位」，其余折叠
+          defaultOpen={0}
+          itemKey={(p) => p.key}
+          render={(p) => <ParamRow p={p} />}
+          flags={(p) => ({
+            filled: p.value !== null,
+            pending: !!statusOf(p),
+            alert: !!p.value_below_min,
+          })}
+          tierIcon={(t) => iconOf(t, 15)}
+          groupIcon={(t) => iconOf(t)}
+        />
 
         {/* 本轮运行设置 */}
         <Collapsible
-          icon={<Cpu size={14} strokeWidth={1.9} />}
+          level={1}
+          icon={<Cpu size={15} strokeWidth={1.9} />}
           title="运行设置"
+          storeKey={collapseKey('run', 'run-setting')}
+          defaultOpen={false}
+          stat={{ total: 2 }}
           right={<InfoTip content={runNote} />}
         >
           <div className="flex min-h-[40px] items-center gap-2 px-4 py-1.5">
@@ -288,8 +383,8 @@ export function RunLeftPanel() {
           </div>
         </Collapsible>
 
-        {/* 安全确认闸门 */}
-        <div className="border-b border-line-soft">
+        {/* 安全确认闸门：组头带放行状态，组内按编号自带的类别分两组 */}
+        <div className="border-b border-line">
           <button
             type="button"
             onClick={() => setGateOpen((v) => !v)}
@@ -314,33 +409,58 @@ export function RunLeftPanel() {
             </Badge>
           </button>
           {gateOpen ? (
-            <ul className="animate-fade">
-              {gateItems.map((i) => {
-                const on = gate.acked.has(i.id)
-                return (
-                  <li key={i.id}>
-                    <Tooltip className="w-full" content={`${i.id} ${i.name} · ${i.action}`}>
-                      <button
-                        type="button"
-                        onClick={() => toggle(i.id)}
-                        className="flex w-full items-center gap-2.5 px-4 py-1.5 text-left transition-colors hover:bg-p50/70"
+            <div className="animate-fade">
+              {groups.map((grp, i) => (
+                <Collapsible
+                  key={grp.id}
+                  level={2}
+                  icon={iconOf(grp.title)}
+                  title={grp.title}
+                  storeKey={collapseKey('run', grp.id)}
+                  defaultOpen={i === 0}
+                  stat={{
+                    done: grp.items.filter((x) => gate.acked.has(x.id)).length,
+                    total: grp.items.length,
+                  }}
+                >
+                  {grp.subs.length ? (
+                    grp.subs.map((sub, k) => (
+                      <Collapsible
+                        key={sub.id}
+                        level={3}
+                        title={sub.title}
+                        storeKey={collapseKey('run', sub.id)}
+                        defaultOpen={k === 0}
+                        stat={{
+                          done: sub.items.filter((x) => gate.acked.has(x.id)).length,
+                          total: sub.items.length,
+                        }}
                       >
-                        <span
-                          className={cn(
-                            'flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border transition-colors [&>svg]:block',
-                            on ? 'border-transparent bg-p600 text-white' : 'border-line bg-white text-transparent',
-                          )}
-                        >
-                          <CheckCircle2 size={12} strokeWidth={2.5} />
-                        </span>
-                        <span className="truncate text-[13px] text-t1">{short(i.name, 10)}</span>
-                        <span className="num ml-auto shrink-0 text-[12px] text-t3">{i.id}</span>
-                      </button>
-                    </Tooltip>
-                  </li>
-                )
-              })}
-            </ul>
+                        {sub.items.map((i2) => (
+                          <GateRow
+                            key={i2.id}
+                            i={i2}
+                            on={gate.acked.has(i2.id)}
+                            onToggle={() => toggle(i2.id)}
+                          />
+                        ))}
+                      </Collapsible>
+                    ))
+                  ) : (
+                    <>
+                      {grp.items.map((i2) => (
+                        <GateRow
+                          key={i2.id}
+                          i={i2}
+                          on={gate.acked.has(i2.id)}
+                          onToggle={() => toggle(i2.id)}
+                        />
+                      ))}
+                    </>
+                  )}
+                </Collapsible>
+              ))}
+            </div>
           ) : null}
         </div>
       </div>
@@ -362,6 +482,10 @@ export function RunLeftPanel() {
 
 /* ------------------------------------------------------------ 卡片 · 时序曲线 */
 
+/**
+ * 本轮回放哪几条时序。演示主线只要一失败一成功两条（datasets.json 的
+ * demo_profile 点名 TRY-0010 与 TRY-0009）；全量模式下包里登记的照旧全放。
+ */
 function useWaves() {
   const pack = getPack()
   const [waves, setWaves] = useState<Wave[]>([])
@@ -372,8 +496,12 @@ function useWaves() {
       alive = false
     }
   }, [pack])
-  return waves
+  return pack ? demoFilter(pack.datasets, 'datasets', waves, (w) => w.id) : waves
 }
+
+/** 图例上的成败字样：只有编号看不出这条是成还是败（06d 第 3.1 节） */
+const verdictWord = (w: Wave) =>
+  w.verdict === 'pass' ? 'PASS' : w.verdict === 'fail' ? 'FAIL' : w.verdictText
 
 /** 卡体高度随视口缩放，图表高度跟着量出来，避免 1440/1600 下横轴被裁。
  *  用回调 ref 而不是 useEffect：卡体是在时序数据到位之后才挂上来的，
@@ -428,6 +556,9 @@ export function WaveformPanel({ full }: { full?: boolean }) {
                   style={{ background: active ? w.series.color : 'var(--p-200)' }}
                 />
                 {w.id}
+                <span className={cn('font-semibold', w.verdict === 'fail' ? 'text-alert' : 'text-p700')}>
+                  {verdictWord(w)}
+                </span>
               </button>
             </Tooltip>
           )
@@ -438,9 +569,12 @@ export function WaveformPanel({ full }: { full?: boolean }) {
           </Badge>
         ) : null}
         {pack?.caps.probeUnconfirmed ? <InfoTip content={pack.caps.probeNote} /> : null}
-        <span className="num ml-auto text-[12px] text-t3">
-          {waves[0].sampleRate ? `${Math.round(waves[0].sampleRate / 1000)} kSa/s` : '—'}
-        </span>
+        {/* 采样率读数不进演示分镜（06d 第 3.1 节），放大态仍给 */}
+        {full ? (
+          <span className="num ml-auto text-[12px] text-t3">
+            {waves[0].sampleRate ? `${Math.round(waves[0].sampleRate / 1000)} kSa/s` : '—'}
+          </span>
+        ) : null}
       </div>
       <div ref={box} className="min-h-0 flex-1">
         <TimeSeriesChart
@@ -532,12 +666,16 @@ function VerdictCard({ full }: { full?: boolean }) {
   const pack = getPack()
   const waves = useWaves()
   if (!pack) return <Empty text="场景包未加载" />
-  const rows = evaluateAll(pack, runtimeMeasures(waves))
+  // 演示模式只判 demo_profile 点名的 6 条；放大态与全量模式给全表。
+  const rows = full
+    ? evaluateAll(pack, runtimeMeasures(waves))
+    : demoFilter(pack.requirements, 'requirements', evaluateAll(pack, runtimeMeasures(waves)), (r) => r.req.id)
   const pass = rows.filter((r) => r.state === 'pass').length
   const fail = rows.filter((r) => r.state === 'fail').length
   const missing = rows.filter((r) => r.state === 'missing').length
   const judged = rows.filter((r) => r.state === 'pass' || r.state === 'fail')
-  const list = full ? rows : [...judged, ...rows.filter((r) => r.state === 'missing')].slice(0, 6)
+  // 首屏只列 3 行：有结论的排前面，其余按未采集补位；全表进放大态
+  const list = full ? rows : [...judged, ...rows.filter((r) => r.state === 'missing')].slice(0, 3)
 
   const Stat = ({ n, label, tone }: { n: number; label: string; tone: 'ok' | 'bad' | 'mute' }) => (
     <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -675,85 +813,13 @@ function GateRing({ full }: { full?: boolean }) {
   )
 }
 
-/* ------------------------------------------------------------ 卡片 · 台架实况 */
+/* ------------------------------------------------------------ 卡片 · 台架实况
 
-const BENCH = {
-  id: 'bench',
-  name: '台架工控机',
-  model: 'SK-20251218QPBB / Windows 11',
-  host: '172.25.5.166',
-  port: 5011,
-  user: 'administrator',
-  keyRef: 'FORTIOR_WIN_KEY',
-  kind: 'host' as const,
-  via: null,
-  presets: [
-    { label: '主机名', cmd: 'hostname' },
-    { label: '取图目录', cmd: 'dir C:\\fc_pull' },
-  ],
-}
-
-function BenchLive({ full }: { full?: boolean }) {
-  const [state, setState] = useState<ConnState>('connecting')
-  useEffect(() => {
-    let alive = true
-    void probeDevice('bench')
-      .then((r) => alive && setState(r.online ? 'connected' : 'closed'))
-      .catch(() => alive && setState('error'))
-    return () => {
-      alive = false
-    }
-  }, [])
-
-  if (full) {
-    return (
-      <div className="flex h-full min-h-0 w-full flex-col gap-2">
-        <RemoteDeviceCard device={BENCH} state={state} onOpenTerminal={() => {}} />
-        <p className="text-[12px] leading-5 text-t3">
-          浏览器不持有任何凭据；私钥只在网关一侧，devices.json 里写的是环境变量名 FORTIOR_WIN_KEY。
-          台架机 SSH 服务跑在 Session 0，桌面 GUI 在 Session 1。
-        </p>
-      </div>
-    )
-  }
-
-  const online = state === 'connected'
-  return (
-    <div className="flex h-full min-h-0 w-full flex-col justify-center gap-2.5">
-      <div className="flex items-center gap-2.5">
-        <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-tps bg-p50 text-p700">
-          <Monitor size={17} strokeWidth={1.75} />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-[13px] font-medium text-t1">台架工控机</span>
-          <span className="num block truncate text-[12px] text-t3">{BENCH.host}</span>
-        </span>
-        <Badge tone={online ? 'soft' : 'warn'} dot>
-          {online ? '在线' : '离线'}
-        </Badge>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button size="sm" variant="secondary" icon={<Terminal size={13} strokeWidth={1.9} />}>
-          终端
-        </Button>
-        <Button size="sm" variant="default" icon={<Cable size={13} strokeWidth={1.9} />}>
-          取图
-        </Button>
-        <Tooltip
-          content={
-            online
-              ? '网关 :8022 在线，可开 SSH 会话与远程取图。'
-              : '网关未启动。起法：cd ~/lab/webssh && npm run gateway，端口 8022，token 在 .env。'
-          }
-        >
-          <span className="ml-auto cursor-help text-t3">
-            <InfoTip content={online ? '网关 :8022 在线' : '网关未启动（离线态）'} />
-          </span>
-        </Tooltip>
-      </div>
-    </div>
-  )
-}
+   第三轮撤掉「单机设备会话」这张独立卡（《第三轮需求变更方案 v0.1》第 2.3 节第 4 条），
+   本页原来那份 BENCH 设备记录与 src/features/remote/device.ts 的 BENCH_DEVICE
+   是同一台机器（峰岹电机测试 Windows 工控机 SK-20251218QPBB）的两份逐字拷贝，
+   收尾轮合并成一份、留 device.ts 那份。设备现在只以画板上的 MCP 节点出现，
+   节点体在 src/features/remote/DeviceMcpNode.tsx。 */
 
 /* ---------------------------------------------------------- 卡片 · 执行进度（备） */
 
@@ -790,7 +856,8 @@ function Progress({ full }: { full?: boolean }) {
         />
       </div>
       <div className="mono min-h-0 flex-1 overflow-y-auto text-[11px] leading-[18px] text-t3">
-        {(full ? log : log.slice(-5)).map((l) => (
+        {/* 首屏只留最后 3 行，全量日志进放大态（06d：执行进度日志折叠到二级） */}
+        {(full ? log : log.slice(-3)).map((l) => (
           <div key={l} className="truncate" title={l}>
             {l}
           </div>
@@ -805,6 +872,5 @@ export const runCards = {
   schematic: SchematicCover,
   verdict: VerdictCard,
   interlock: GateRing,
-  'remote-device': BenchLive,
   progress: Progress,
 }

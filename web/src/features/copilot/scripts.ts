@@ -24,72 +24,14 @@ function ev(id: string, kind: EvidenceItem['kind'], title: string, excerpt: stri
 }
 
 export function scriptFor(flow: FlowId, p: RawPack): Step[] {
-  const docs = p.documents.documents
   const exps = p.experience.experiences
-  const t = p.scene.taxonomy
-  const node = `${t.level1_scene.key}/${t.level2_category.key}/${t.level3_product_type.key}`
-  const nodeName = `${t.level1_scene.name} › ${t.level2_category.name} › ${t.level3_product_type.name}`
   const gate = p.interlocks.interlocks.filter((i) => i.type === '人员' || i.type === '流程')
   const tuneExps = exps.filter((e) => e.tags.flow?.startsWith('F5'))
   const topExp = tuneExps[0] ?? exps[0]
   const holes = p.attributes.attributes.filter((a) => a._placeholder)
-  // 知识库流水线产物（public/kb/），挂的三级节点与本场景对得上才引用
-  const kbDocs = p.kb.documentsIndex as
-    | { taxonomy?: { l1: string; l2: string; l3: string }; summary?: Record<string, number> }
-    | null
-  const kbExp = p.kb.experienceIndex as { summary?: { total?: number }; caveats?: string[] } | null
-  const kt = kbDocs?.taxonomy
-  const kbOn = !!kt && p.scene.id === `${kt.l1}.${kt.l2}.${kt.l3}`
-  const kbN = kbOn ? (kbDocs?.summary ?? {}) : {}
   const na = p.attributes.attributes.filter((a) => a.not_applicable)
 
   switch (flow) {
-    case 'kb':
-      return [
-        {
-          kind: 'say',
-          text: `${nodeName} 的知识库已装载：文档 ${docs.length} 条、经验 ${exps.length} 条。先把转化缺口点一遍。`,
-        },
-        {
-          kind: 'tool',
-          callId: 'kb-1',
-          name: 'kb_scan',
-          title: '知识库扫描',
-          args: { node, kinds: ['document', 'experience'] },
-          argsSummary: `扫描 ${nodeName} 下的文档与经验`,
-          durationMs: 840,
-          resultSummary: kbOn
-            ? `流水线 ${kbN.documents ?? 0} 份 / 切片 ${kbN.total_chunks ?? 0} 片 · 经验 ${kbExp?.summary?.total ?? 0} 条 · 场景包另登记 ${docs.length} 条`
-            : `文档 ${docs.length} 条（${Object.keys(p.documents.count_by_type).length} 类）· 经验 ${exps.length} 条`,
-          result: { documents: docs.length, byType: p.documents.count_by_type, experiences: exps.length, pipeline: kbN },
-        },
-        {
-          kind: 'say',
-          text: kbOn
-            ? `转化流水线跑完 ${kbN.documents ?? 0} 份、切成 ${kbN.total_chunks ?? 0} 片，检索能回溯到页码。场景包另登记 ${docs.length} 条材料，其中 ${docs.filter((d) => !d.converted).length} 条还没进流水线。${kbExp?.caveats?.[0] ? `经验库这一批有个前提要说清：${kbExp.caveats[0]}` : ''}`
-            : `文档 ${docs.length} 条里，${docs.filter((d) => !d.converted).length} 条还没转化，${docs.filter((d) => !d.exists).length} 条本地没有正文。${p.caps.statusCount ? `另有 ${p.caps.statusCount} 处数据带「待核实」标记——有来源、来源本身还没定版，能用，引用时要说明。` : ''}`,
-        },
-        {
-          kind: 'evidence',
-          items: [
-            ev(
-              'kb-ev-1',
-              'procedure',
-              `${topExp.id} · ${topExp.evidence_level}`,
-              topExp.symptom,
-              sourceLine(topExp._source),
-            ),
-            ev(
-              'kb-ev-2',
-              'document',
-              docs[0].title,
-              `${docs[0].type} · ${docs[0].conversion_status_label}`,
-              docs[0].path ?? docs[0].url ?? '（正文未取得，只有编号与元数据）',
-            ),
-          ],
-        },
-      ]
-
     case 'init':
       return [
         {

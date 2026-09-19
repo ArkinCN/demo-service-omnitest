@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button, Panel, PanelHeader, Select, Textarea, cn } from '../components/ui'
 import type { FlowId, ScenePackage } from '../data/types'
-import { hasAssistant, renderAssistant, useRegistryVersion } from '../registry'
+import { getCopilotActions, hasAssistant, renderAssistant, useRegistryVersion } from '../registry'
+import { copilotActionIcon } from './icons'
 import { useAppStore } from '../state/useAppStore'
 
 /** D 区 · 对话（规格 8）：测试助手，界面短名"助手"。
@@ -43,10 +44,6 @@ type Msg =
     }
 
 const SEED: Record<FlowId, (greet: string) => Msg[]> = {
-  kb: (g) => [
-    { id: 't', role: 'assistant', type: 'tool', tool: '知识库扫描', target: '散热风扇节点', args: '范围=文档 + 经验', result: '文档 42 · 经验 52 · 待校对 6', ms: 820 },
-    { id: 'g', role: 'assistant', type: 'text', text: g },
-  ],
   init: (g) => [
     { id: 't', role: 'assistant', type: 'tool', tool: '文档结构化', target: 'FU6832 数据手册', args: '模板=产品描述', result: '抽出 14 字段 · 1 项缺失', ms: 2140 },
     { id: 'g', role: 'assistant', type: 'text', text: g },
@@ -198,6 +195,7 @@ function ShellAssistantPanel({ flow, scene }: { flow: FlowId; scene: ScenePackag
   const [draft, setDraft] = useState('')
   const scroller = useRef<HTMLDivElement>(null)
   const content = scene.flows[flow]
+  const actions = getCopilotActions(flow)
 
   // 切流程即整屏换内容（规格原则 3 一屏一态）：渲染期按 key 重置，不用 effect
   const [thread, setThread] = useState(() => ({ key: flow, msgs: SEED[flow](content.greeting) }))
@@ -275,18 +273,34 @@ function ShellAssistantPanel({ flow, scene }: { flow: FlowId; scene: ScenePackag
       </div>
 
       <footer className="shrink-0 border-t border-line-soft px-2 pt-1.5 pb-2">
-        <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-          {content.quick.map((q) => (
-            <button
-              key={q}
-              type="button"
-              onClick={() => send(q)}
-              className="rounded-tps border border-line px-1.5 py-0.5 text-[11px] text-t2 transition-colors hover:border-ink hover:bg-ink-wash hover:text-ink"
-            >
-              {q}
-            </button>
-          ))}
-        </div>
+        {/* 助手预置动作按钮槽。登记为空时整条不渲染，不留空白。
+            真实助手（src/features/copilot/）已整块接管 D 区，这里是壳层演示对话的
+            退路：同样一行最多 5 枚、第 6 枚起收进末尾的「更多」计数，点一下把预置
+            prompt 送进对话。红线动作在这条退路上一律不执行，只回显。 */}
+        {actions.length ? (
+          <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+            {actions.slice(0, 5).map((a) => {
+              const Icon = copilotActionIcon(a.icon)
+              return (
+                <button
+                  key={a.id}
+                  type="button"
+                  title={a.skill ? `${a.label} · 规程 ${a.skill}` : a.label}
+                  onClick={() => send(a.prompt ?? a.label)}
+                  className="flex items-center gap-1 rounded-tps border border-line px-1.5 py-0.5 text-[11px] text-t2 transition-colors hover:border-ink hover:bg-ink-wash hover:text-ink"
+                >
+                  <Icon size={12} strokeWidth={1.9} />
+                  {a.label}
+                </button>
+              )
+            })}
+            {actions.length > 5 ? (
+              <span className="rounded-tps border border-line-soft px-1.5 py-0.5 text-[11px] text-t3">
+                更多 {actions.length - 5}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
         <div className="rounded-tp border border-line bg-surface transition-colors focus-within:border-ink">
           <Textarea
             rows={2}

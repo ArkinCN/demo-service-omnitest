@@ -13,6 +13,249 @@
     "台架与工装",
     "数据采集"
   ],
+  "demo_profile": {
+    "note": "对照场景取 12 项：防夹算法与台架工装各半，用来证明同一套左栏骨架能装别的行业。",
+    "groups": [
+      "防夹算法",
+      "位置与行程",
+      "保护与热管理",
+      "台架与工装",
+      "数据采集"
+    ],
+    "parameters": [
+      "antipinch_enable",
+      "antipinch_force_threshold",
+      "antipinch_detect_method",
+      "antipinch_retract_mode",
+      "soft_stop_position",
+      "position_reset_at_top",
+      "stall_current_threshold",
+      "stall_hold_time",
+      "pwm_duty",
+      "bench_supply_voltage",
+      "chamber_temperature",
+      "sample_rate"
+    ]
+  },
+  "group_tiers": [
+    {
+      "id": "ctl-start",
+      "title": "防夹与行程",
+      "groups": [
+        {
+          "id": "ctl-pinch",
+          "title": "防夹算法",
+          "members": [
+            "防夹算法"
+          ],
+          "subgroups": [
+            {
+              "id": "ctl-pinch-win",
+              "title": "生效区间",
+              "items": [
+                "antipinch_enable",
+                "antipinch_window_lower",
+                "antipinch_window_upper",
+                "startup_blanking_time"
+              ]
+            },
+            {
+              "id": "ctl-pinch-det",
+              "title": "检测判据",
+              "items": [
+                "antipinch_detect_method",
+                "antipinch_force_threshold",
+                "current_slope_window",
+                "current_slope_threshold",
+                "antipinch_confirm_count"
+              ]
+            },
+            {
+              "id": "ctl-pinch-act",
+              "title": "回缩动作",
+              "items": [
+                "antipinch_retract_mode",
+                "antipinch_retract_distance"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ctl-pos",
+          "title": "位置与行程",
+          "members": [
+            "位置与行程"
+          ],
+          "subgroups": [
+            {
+              "id": "ctl-pos-stop",
+              "title": "软停",
+              "items": [
+                "soft_stop_position",
+                "soft_stop_speed_ratio"
+              ]
+            },
+            {
+              "id": "ctl-pos-ripple",
+              "title": "纹波与霍尔",
+              "items": [
+                "ripple_filter_bandwidth",
+                "ripple_comparator_hysteresis",
+                "ripple_pulses_per_rev",
+                "hall_pulses_per_mm",
+                "position_reset_at_top"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ctl-loop",
+      "title": "驱动与整定",
+      "groups": [
+        {
+          "id": "ctl-drive",
+          "title": "驱动与调制",
+          "members": [
+            "驱动与调制"
+          ]
+        },
+        {
+          "id": "ctl-pi-i",
+          "title": "电流环整定",
+          "members": [
+            "电流环整定"
+          ],
+          "subgroups": [
+            {
+              "id": "ctl-pi-i-gain",
+              "title": "增益",
+              "items": [
+                "current_loop_kp",
+                "current_loop_ki"
+              ]
+            },
+            {
+              "id": "ctl-pi-i-bw",
+              "title": "带宽与裕度",
+              "items": [
+                "phase_margin",
+                "pi_phase_lag",
+                "current_loop_bandwidth",
+                "tuning_order"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ctl-run",
+      "title": "保护与台架",
+      "groups": [
+        {
+          "id": "ctl-prot",
+          "title": "保护与热管理",
+          "members": [
+            "保护与热管理"
+          ],
+          "subgroups": [
+            {
+              "id": "ctl-prot-stall",
+              "title": "堵转判定",
+              "items": [
+                "stall_current_threshold",
+                "stall_debounce_time",
+                "stall_hold_time"
+              ]
+            },
+            {
+              "id": "ctl-prot-v",
+              "title": "电压与电流阈值",
+              "items": [
+                "ovp_threshold",
+                "uvp_threshold",
+                "ocp_threshold",
+                "reverse_polarity_voltage"
+              ]
+            },
+            {
+              "id": "ctl-prot-t",
+              "title": "热跳闸与恢复",
+              "items": [
+                "thermal_trip_temp",
+                "thermal_recovery_time_normal",
+                "thermal_recovery_time_80c"
+              ]
+            },
+            {
+              "id": "ctl-prot-c",
+              "title": "热保护启动循环",
+              "items": [
+                "thermal_first_start_cycles_normal",
+                "thermal_first_start_cycles_80c",
+                "thermal_restart_cycles"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ctl-bench",
+          "title": "台架与工装",
+          "members": [
+            "台架与工装"
+          ],
+          "subgroups": [
+            {
+              "id": "ctl-bench-src",
+              "title": "电源与回路",
+              "items": [
+                "bench_supply_voltage",
+                "bench_harness_resistance",
+                "supply_ripple_max"
+              ]
+            },
+            {
+              "id": "ctl-bench-fix",
+              "title": "试验工装",
+              "items": [
+                "test_rod_stiffness",
+                "test_rod_diameter",
+                "chamber_temperature"
+              ]
+            },
+            {
+              "id": "ctl-bench-dur",
+              "title": "耐久与环境",
+              "items": [
+                "durability_cycle_target",
+                "durability_dwell_time",
+                "durability_stall_time",
+                "mud_water_dust_ratio",
+                "water_spray_pressure"
+              ]
+            },
+            {
+              "id": "ctl-bench-die",
+              "title": "绝缘试验",
+              "items": [
+                "dielectric_test_voltage",
+                "dielectric_test_duration"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ctl-daq",
+          "title": "数据采集",
+          "members": [
+            "数据采集"
+          ]
+        }
+      ]
+    }
+  ],
   "notes": [
     "adjustable_in_flows 标这个参数在哪个流程里允许改。同一个参数可能在多个流程出现，但含义不同：F2 是确认初值，F5 是未达标后回调。",
     "options 非空表示这是枚举参数，前端应出下拉框而不是加减号；此时 min/max/step 为 null。",
