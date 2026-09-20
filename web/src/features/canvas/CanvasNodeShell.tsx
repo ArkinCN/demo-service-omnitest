@@ -65,7 +65,11 @@ export function CanvasNodeShell({
       bodyClassName="p-2"
     >
       <div className="flex h-full min-h-0 flex-col">
-        <div className="min-h-0 flex-1">{children ?? (node.card ? <CardArt id={node.card} /> : null)}</div>
+        {/* 节点高度固定，内容超出时原先被硬切掉半行、且看不出还有下文。
+            改成可滚 + 底部渐隐（DESIGN.md §3 卡内长列表口径），不写死绝对高度。 */}
+        <div className="cv-node-scroll min-h-0 flex-1">
+          {children ?? (node.card ? <CardArt id={node.card} /> : null)}
+        </div>
         {state || foot ? (
           <div className="mt-1 flex shrink-0 items-center gap-1.5 text-[12px] leading-none text-t3">
             {state ? (

@@ -25,6 +25,7 @@ import {
   cn,
 } from '../../components/ui'
 import { collapseKey } from '../../state/useAppStore'
+import { useFlowActions } from '../redline'
 import { getPack, fileName, sizeText, type RawHeaderField } from '../scene/pack'
 import { ConfirmFooter, Empty, TierTree } from '../shared/bits'
 import { buildTiers, demoFilter, readTiers } from '../shared/tiers'
@@ -178,6 +179,7 @@ export function ReportLeftPanel() {
   const pack = getPack()
   seed()
   const h = useShared()
+  const bind = useFlowActions()
   if (!pack) return <Empty text="场景包未加载" />
 
   const fields = pack.report.header_fields
@@ -357,10 +359,12 @@ export function ReportLeftPanel() {
         </Collapsible>
       </div>
 
+      {/* 与顶栏「生成报告」同一条动作 */}
       <ConfirmFooter
         label="确认表头"
         count={fields.length}
         unit="项"
+        onClick={bind('gen-report').onClick}
         hint={
           left === 0
             ? `表头 ${fields.length} 项已补全，可生成报告。`
@@ -400,7 +404,9 @@ function useVerdictRows() {
   const pack = getPack()
   const waves = useWaves()
   if (!pack) return []
-  const all = evaluateAll(pack, runtimeMeasures(waves))
+  // 判定口径与流程 3、流程 4 同一套：runtimeMeasures 少传 pack 会漏掉
+  // datasets.json 里 package_stats 登记的批次量，报告页的通过数会比另两页少一截
+  const all = evaluateAll(pack, runtimeMeasures(waves, pack))
   return demoFilter(pack.requirements, 'requirements', all, (r) => r.req.id)
 }
 
@@ -498,6 +504,7 @@ function ReportPreview({ full }: { full?: boolean }) {
   const pack = getPack()
   seed()
   const h = useShared()
+  const bind = useFlowActions()
   const waves = useWaves()
   const rows = useVerdictRows()
   const [box, boxH] = useBoxHeight()
@@ -662,10 +669,16 @@ function ReportPreview({ full }: { full?: boolean }) {
 
       {/* 导出：卡头右侧是壳层的「放大」，导出挂在预览自己身上 */}
       <span className="absolute top-1 right-1">
-        <Tooltip content={`导出为 ${fmt.value}；图位与判定表随正文一起定版`}>
-          <span className="flex h-[24px] w-[24px] cursor-pointer items-center justify-center rounded-tpx bg-white/70 text-t3 transition-colors hover:bg-white hover:text-p700 [&>svg]:block">
+        <Tooltip content={`导出为 ${fmt.value}；导出是红线动作，点下去先弹确认卡`}>
+          <button
+            type="button"
+            aria-label="导出"
+            data-action="export"
+            onClick={bind('export').onClick}
+            className="flex h-[24px] w-[24px] cursor-pointer items-center justify-center rounded-tpx bg-white/70 text-t3 transition-colors hover:bg-white hover:text-p700 [&>svg]:block"
+          >
             <Download size={14} strokeWidth={1.75} />
-          </span>
+          </button>
         </Tooltip>
       </span>
     </div>
@@ -828,6 +841,7 @@ function FullReport() {
 /* ------------------------------------------------------- 卡片 · 产物留档 */
 
 function Artifacts({ full }: { full?: boolean }) {
+  const bind = useFlowActions()
   const pack = getPack()
   const rows = useVerdictRows()
   useShared()
@@ -933,7 +947,15 @@ function Artifacts({ full }: { full?: boolean }) {
         })}
       </ul>
       <div className="shrink-0 pt-2.5">
-        <Button block size="sm" variant="secondary" icon={<Archive size={13} strokeWidth={1.9} />}>
+        {/* 归档是六条红线之一：点下去先弹确认卡，人再点一次才执行 */}
+        <Button
+          block
+          size="sm"
+          variant="secondary"
+          data-action="archive-kb"
+          onClick={bind('archive-kb').onClick}
+          icon={<Archive size={13} strokeWidth={1.9} />}
+        >
           归档到知识库
         </Button>
       </div>

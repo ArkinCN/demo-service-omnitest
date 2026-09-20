@@ -2,14 +2,14 @@
  * 收尾轮（W6）补的五张状态截图，与 shootfinal.mjs 的整页图配套：
  *   画板缩放态 / 节点放大态 / 待确认态 / 知识库筛选态 / 折叠展开态
  *   node scripts/shootextra.mjs
- * 环境变量：BASE（默认 http://localhost:4173）、PREFIX（默认 final）、ONLY
+ * 环境变量：BASE（默认 http://localhost:4173）、PREFIX（默认 final）、ONLY、OUTDIR（输出目录名，默认 shots2）
  * 每一张都打印它实际做到了哪一步，做不到就明说，不拿看起来像的图冒充。
  */
 import { chromium } from 'playwright'
 import { globSync, mkdirSync } from 'node:fs'
 
 const BASE = process.env.BASE ?? 'http://localhost:4173'
-const OUT = new URL('../shots2/', import.meta.url).pathname
+const OUT = new URL(`../${process.env.OUTDIR ?? 'shots2'}/`, import.meta.url).pathname
 const P = process.env.PREFIX ?? 'final'
 const ONLY = process.env.ONLY
 mkdirSync(OUT, { recursive: true })
@@ -19,11 +19,18 @@ if (!exe) throw new Error('本机未找到 Chrome')
 
 const MOTOR = 'motor.cooling-fan.fortior-fu6832'
 
+/** 与 shootfinal.mjs 同口径：任何一步失败都记警告，收尾以非零码退出，不再静默出图。 */
+const WARNINGS = []
+const warn = (name, msg) => {
+  WARNINGS.push(`${name}: ${msg}`)
+  console.log('  [warn]', name, '—', msg)
+}
+
 const SHOTS = [
   {
     name: 'canvas-zoom',
     path: '/init',
-    note: '画板缩放态：放大到内容超出视口，右下角缩放条与左下角缩略导航图同屏',
+    note: '画板缩放态：放大到内容超出视口，右下角缩放条与其上方的缩略导航图同屏',
     async act(page) {
       const plus = page.locator('button[aria-label="放大画布"]')
       await plus.waitFor({ timeout: 8000 })
@@ -34,7 +41,13 @@ const SHOTS = [
       }
       const pct = await page.locator('[data-testid="canvas-zoom"]').innerText()
       const zb = await page.locator('[data-testid="canvas-zoom"]').boundingBox()
-      const mm = await page.locator('.react-flow__minimap').boundingBox().catch(() => null)
+      const mm = await page
+        .locator('.react-flow__minimap')
+        .boundingBox()
+        .catch((e) => {
+          warn('canvas-zoom', `缩略导航图取不到位置：${String(e).slice(0, 90)}`)
+          return null
+        })
       return `缩放读数 ${pct}；缩放条中心 x=${Math.round(zb.x + zb.width / 2)}；缩略导航图${
         mm ? `中心 x=${Math.round(mm.x + mm.width / 2)}` : '未出现'
       }（C 区左右边界约 436 与 1840，中线约 1138）`
@@ -51,7 +64,15 @@ const SHOTS = [
       await node.dblclick()
       await page.waitForTimeout(1400)
       const n = await page.locator('.tp-modal, [role="dialog"]').count()
-      const t = await page.locator('.tp-modal, [role="dialog"]').first().innerText().catch(() => '')
+      if (!n) warn('node-zoom', '双击「设备节点」后没有浮层')
+      const t = await page
+        .locator('.tp-modal, [role="dialog"]')
+        .first()
+        .innerText()
+        .catch((e) => {
+          warn('node-zoom', `浮层文本读不到：${String(e).slice(0, 90)}`)
+          return ''
+        })
       return `浮层数 ${n}；浮层首行「${t.split('\n')[0] ?? ''}」`
     },
   },
@@ -111,13 +132,16 @@ for (const s of SHOTS) {
   page.on('console', (m) => m.type() === 'error' && console.log('  [console]', m.text().slice(0, 160)))
   page.on('pageerror', (e) => console.log('  [pageerror]', String(e).slice(0, 200)))
   await page.goto(`${BASE}${s.path}?scene=${MOTOR}`, { waitUntil: 'domcontentloaded' })
-  await page.waitForLoadState('networkidle').catch(() => {})
+  await page
+    .waitForLoadState('networkidle')
+    .catch((e) => warn(s.name, `networkidle 未达成：${String(e).slice(0, 90)}`))
   await page.waitForTimeout(4200)
   let detail = ''
   try {
     detail = await s.act(page)
   } catch (e) {
     detail = `动作失败：${String(e).slice(0, 120)}`
+    warn(s.name, detail)
   }
   const file = `${P}-extra-${s.name}.png`
   await page.screenshot({ path: `${OUT}${file}` })
@@ -126,3 +150,10 @@ for (const s of SHOTS) {
   await page.close()
 }
 await browser.close()
+
+if (WARNINGS.length) {
+  console.log(`\n✗ ${WARNINGS.length} 处失败（图已落盘，但内容不可信）：`)
+  for (const w of WARNINGS) console.log('  -', w)
+  process.exit(1)
+}
+console.log('\n✓ 全部动作成功，无静默失败')

@@ -1,5 +1,21 @@
 // 后端适配层：定义 SSE 事件协议，并提供 mock / DeepSeek Harness 两种实现。
 import type { EvidenceItem, PermissionLevel, Verdict } from './types';
+import {
+  REDLINE_ACTIONS,
+  requestRedlineAsync,
+  useAppStore,
+  type RedlineAction,
+} from '../../state/useAppStore';
+
+/**
+ * 把后端推来的工具名映射到六个红线动作之一。
+ * 名字对不上就落到 write_param——宁可按最严的那档当写回处理，也不放宽。
+ */
+function redlineActionOf(name: string): RedlineAction {
+  const n = name.split('.').pop() ?? name;
+  const hit = REDLINE_ACTIONS.find((a) => a === n);
+  return hit ?? 'write_param';
+}
 
 // ---------------------------------------------------------------------------
 // 1. SSE 事件协议
@@ -26,6 +42,17 @@ export interface ToolCallEvent {
   argsSummary: string;
   /** 改动类动作（写参数、控硬件、落盘）。为 true 时前端必须先要人确认再放行。 */
   mutating?: boolean;
+  /**
+   * 设备桥签发的待确认凭据。服务端调红线工具拿到 status: confirmation_required
+   * 之后，把凭据原样塞进这个字段；前端据此渲染确认条与倒计时，人点确认后
+   * 直接批准这张凭据，不另起一套。依据：08a-开发接口契约 v1.0 第 3.4 节。
+   */
+  confirm?: {
+    confirm_token: string;
+    prompt?: string;
+    args_preview?: string;
+    seconds_left?: number;
+  };
 }
 
 /** 工具返回。前端按 callId 回填同一张卡片。 */
@@ -358,6 +385,26 @@ export const mockAdapterInstant: AgentAdapter = {
 // 人工确认闸门：DSH 侧把改动类工具登记为 requires_approval，推 tool_call 时带 mutating:true
 // 并挂起该次调用；前端调 requestConfirm 拿到人的点击后，POST /api/agent/confirm
 // {call_id, approved, actor} 放行或取消，DSH 再继续推 tool_result。
+/**
+ * 确认人署名，随回执一起写进留痕。缺了确认人的审计留痕没有意义。
+ * 读 store 而不是写死常量：写死的话谁批的都是同一个名字，留痕分不出人（07i 核验 P2）。
+ */
+const confirmActor = () => useAppStore.getState().operator;
+
+/** 放行回执。actor 与 confirm_token 都带上，与契约第 1.1.2 节的建议一致。 */
+function postConfirm(callId: string, approved: boolean, confirmToken?: string) {
+  return fetch('/api/agent/confirm', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      call_id: callId,
+      approved,
+      actor: confirmActor(),
+      ...(confirmToken ? { confirm_token: confirmToken } : {}),
+    }),
+  });
+}
+
 export const dshAdapter: AgentAdapter = {
   id: 'dsh',
   label: 'DeepSeek Harness',
@@ -378,13 +425,41 @@ export const dshAdapter: AgentAdapter = {
       yield { type: 'done', reason: 'error', message: `HTTP ${resp.status}` };
       return;
     }
-    const confirmAt = async (callId: string) => {
-      const ok = req.requestConfirm ? await req.requestConfirm({ callId, name: '', argsSummary: '' }) : false;
-      await fetch('/api/agent/confirm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ call_id: callId, approved: ok }),
-      });
+    // 确认弹窗要拿到「你正在确认的是哪个工具、什么参数」。此前这里传的是两个空串，
+    // 走脚本适配器有值、走真后端反而丢了（08a-开发接口契约 v1.0 第 1.1.2 节
+    // 「这条接口的一个设计缺口」）。改成从已经收到的那条 tool_call 事件里取。
+    const seen = new Map<string, ToolCallEvent>();
+    const confirmAt = async (call: ToolCallEvent) => {
+      const ok = req.requestConfirm
+        ? await req.requestConfirm({
+            callId: call.callId,
+            name: call.title ?? call.name,
+            argsSummary: call.confirm?.args_preview ?? call.argsSummary,
+          })
+        : false;
+      // 副驾这一侧不另起凭据，也不自己批凭据。
+      //
+      // 2026-09-20 改（07i 核验 P2）：这里原本直接调 approveConfirmation，于是全工程
+      // 出现了第二个批准调用点。现在改成把这张票排进 B 区那张红线确认卡，由人敲批准
+      // PIN 再点确认——批准桥凭据的路径因此只剩一条：确认卡 → approveRedline →
+      // approveConfirmation。桥那侧没有 PIN 也批不动，两级鉴权与页面路径互为兜底。
+      const token = call.confirm?.confirm_token;
+      if (ok && token) {
+        const passed = await requestRedlineAsync({
+          action: redlineActionOf(call.name),
+          title: call.title ?? call.name,
+          prompt:
+            call.confirm?.prompt ??
+            `助手请求执行「${call.title ?? call.name}」。这是红线动作，设备桥已拒绝执行并签发凭据，需现场输入批准 PIN。`,
+          argsSummary: call.confirm?.args_preview ?? call.argsSummary ?? '',
+          confirmToken: token,
+          danger: call.name === 'estop',
+        });
+        // 人没批（点了取消、PIN 错、桥 403）就按取消送回执，不谎报放行
+        await postConfirm(call.callId, passed, token);
+        return;
+      }
+      await postConfirm(call.callId, ok, token);
     };
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
@@ -406,7 +481,8 @@ export const dshAdapter: AgentAdapter = {
         if (!dataLine) continue;
         try {
           const ev = JSON.parse(dataLine) as AgentEvent;
-          if (ev.type === 'tool_call' && ev.mutating) void confirmAt(ev.callId);
+          if (ev.type === 'tool_call') seen.set(ev.callId, ev);
+          if (ev.type === 'tool_call' && ev.mutating) void confirmAt(seen.get(ev.callId) ?? ev);
           yield ev;
         } catch {
           // 协议外的行直接丢弃，不中断流

@@ -5,7 +5,7 @@
     python3 _build/selfcheck.py
 
 检查项（任一 FAIL 退出码非 0）：
-  C1  10 个 JSON 全部可解析
+  C1  11 个 JSON 全部可解析
   C2  _source / _placeholder 对象数不低于基线，构建没把来源字段弄丢
   C3  test-requirements 的 criterion 语法：evaluable 为 true 的用 node 做 JS 语法检查
   C4  criterion 里每个自由标识符都在 variables 或 criterion_globals 里
@@ -29,7 +29,12 @@ JSON_FILES = [
     "scene.json", "product-attributes.json", "control-parameters.json",
     "safety-interlocks.json", "test-requirements.json", "workflows.json",
     "datasets.json", "experience.json", "documents.json", "report-template.json",
+    "copilot-actions.json",
 ]
+
+# copilot-actions.json 的条目级对象（buttons）按契约第 3.4 节不要求带 _source，
+# 它在顶层用 _derived_from 交代来源，所以 C2 的「本文件至少有一个带源对象」不适用于它。
+NO_SOURCE_FILES = {"copilot-actions.json"}
 
 # 基线：改动前 build_scene_pack.py 报的「带 _source/_placeholder 的对象」数与占位数
 BASELINE_SOURCED = 331
@@ -90,7 +95,7 @@ for name, obj in DATA.items():
     t, p = count_sourced(obj)
     tot += t
     ph += p
-    if t == 0:
+    if t == 0 and name not in NO_SOURCE_FILES:
         fail("C2", "%s 里没有任何带 _source 的对象" % name)
 if tot < BASELINE_SOURCED:
     fail("C2", "带 _source/_placeholder 的对象数 %d，低于基线 %d，来源字段有丢失"

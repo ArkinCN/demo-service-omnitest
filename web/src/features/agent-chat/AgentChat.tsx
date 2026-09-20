@@ -29,8 +29,13 @@ export interface AgentChatProps {
   evidenceOpenOnMount?: boolean;
   /** 确认人署名，回填到已执行的改动类动作卡片 */
   operator?: string;
-  /** 演示用：改动类动作自动放行，不弹确认。生产环境不要开。 */
-  autoConfirm?: boolean;
+  /*
+   * 曾有一个 autoConfirm 开关：为真时改动类动作不弹确认、直接 resolve(true)。
+   * 2026-09-20 整条删除（07i 独立核验 P2）。两条理由：
+   *   一、它与 api.ts 的批准转发串起来就是一条「无人点击即批准设备桥凭据」的通路；
+   *   二、它放行出来的留痕与真人批准同名同形，台账因此不能当作「确有人批准」的证据。
+   * 演示要省点击就少点几个按钮，不在红线上开自动挡。
+   */
   defaultModel?: string;
   defaultPermission?: PermissionLevel;
   /** 「沉淀为经验」提交回调，缺省只在控制台打印 */
@@ -85,7 +90,6 @@ export function AgentChat(props: AgentChatProps) {
     autoStartPrompt,
     evidenceOpenOnMount = false,
     operator = '当前操作员',
-    autoConfirm = false,
     defaultModel = 'deepseek-v4-pro',
     defaultPermission = 'params',
     onSaveExperience,
@@ -199,25 +203,17 @@ export function AgentChat(props: AgentChatProps) {
     }
   }, []);
 
-  /** 注入给适配器的人工确认闸门 */
+  /**
+   * 注入给适配器的人工确认闸门。
+   * 只有一条出路：把 resolve 挂进 confirmWaiters，等人在气泡的确认卡上点。
+   * 没有任何分支能在无人点击的情况下 resolve(true)——自动放行的那条已删。
+   */
   const requestConfirm = useCallback(
     (call: { callId: string }) =>
       new Promise<boolean>((resolve) => {
-        if (autoConfirm) {
-          decisions.current.set(call.callId, { approved: true, by: `${operator}（演示自动放行）` });
-          setItems((prev) =>
-            prev.map((i) =>
-              i.kind === 'tool' && i.id === call.callId
-                ? { ...i, call: { ...i.call, status: 'running', confirmedBy: operator } }
-                : i,
-            ),
-          );
-          resolve(true);
-          return;
-        }
         confirmWaiters.current.set(call.callId, resolve);
       }),
-    [autoConfirm, operator],
+    [],
   );
 
   const handleConfirm = useCallback(

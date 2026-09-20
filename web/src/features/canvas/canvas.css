@@ -110,14 +110,41 @@
   pointer-events: none;
 }
 
-/* 缩略导航图：React Flow 的 position="bottom-left" 只给定位，外观回到 DESIGN.md。
+/* 缩略导航图：React Flow 的 position="bottom-right" 只给定位，外观回到 DESIGN.md。
    描边取 --p-200 而不是最浅的 --tp-line——它浮在带点阵的画板底上，
    用最浅那档会看不出这是一个控件。 */
 .cv-wrap .react-flow__minimap {
   margin: 12px;
+  /* 与右下角缩放条同列：往上让出缩放条那一条（30 高 + 12 间距）的位置 */
+  margin-bottom: 54px;
   border: 1px solid var(--p-200);
   border-radius: 10px;
   background: #fff;
   box-shadow: 0 1px 3px rgba(31, 42, 36, 0.08);
   overflow: hidden;
+}
+
+/* 节点内容区：高度由节点尺寸决定，内容超出时可滚，底部一层渐隐提示「下面还有」。
+   不用 .fade-b：那一条留了 scrollbar-gutter 水槽，在 240px 宽的节点里会吃掉
+   一截正文宽度；节点这么小也不适合挂经典滚动条，按 DESIGN.md 第 3 节第 3 条
+   走「渐隐 + 无滚动条」。渐隐层用 position: sticky 钉在视口下沿、margin-top
+   取负值不占高度，所以内容不超出时它落在卡底、与卡面同色，看不出来。 */
+.cv-node-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.cv-node-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+.cv-node-scroll::after {
+  content: '';
+  display: block;
+  position: sticky;
+  bottom: 0;
+  height: 16px;
+  margin-top: -16px;
+  background: linear-gradient(to top, var(--tp-surface) 35%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
 }

@@ -300,7 +300,7 @@ TRIAGE = os.path.join(AITIOR, "dc-skills/coolingfan-openloop-debug/SKILL.md")
 
 
 def exp(eid, symptom, cause, action, result, source, tags, confidence="规程条款",
-        note=None, parameters_resolved=True):
+        note=None, parameters_resolved=True, status=None):
     d = {
         "id": eid, "symptom": symptom, "cause": cause,
         "action": action, "result": result,
@@ -309,6 +309,8 @@ def exp(eid, symptom, cause, action, result, source, tags, confidence="规程条
     # M4：parameters_resolved 说明 tags.parameters 里的宏名能不能在本场景包里解析到
     # control-parameters.json 的某个 key。false 表示前端「按参数检索经验」检索不到这一条。
     d["parameters_resolved"] = parameters_resolved
+    if status:
+        d["_status"] = status
     if note:
         d["note"] = note
     d["_source"] = source
@@ -380,7 +382,13 @@ def gen_experience():
             "确认无误后经用户同意把速度环 Ki（SPEED_KI / SKI）上调 20%",
             "换算错是更常见的原因，先查换算再动 PI",
             src(TRIAGE, "第 5 节 失败分诊迭代 表 第 7 行"),
-            T("F5 调优确认及运行", ["SPEED_KI", "Pole_Pairs"], ["稳态偏差", "外环 PI"])),
+            T("F5 调优确认及运行", ["SPEED_KI", "Pole_Pairs"], ["稳态偏差", "外环 PI"]),
+            parameters_resolved=False,
+            status="待核实：Pole_Pairs 宏在客户头文件 Customer.h:56（#define Pole_Pairs (2)）确实存在，"
+                   "本包也已登记，但登记位置是 product-attributes.json 的电机本体属性"
+                   "（key = pole_pairs，极对数），不在 control-parameters.json 的 70 个可调控制参数里。"
+                   "SPEED_KI 能解析到 control-parameters.json 的 key = speed_ki。"
+                   "极对数是否应补登记为可调参数，待客户确认，确认前本条按未解析处理。"),
         exp("EXP-008",
             "稳态转速振荡，3 次频率测量的极差 / 均值超过 3%",
             "外环增益偏高",
@@ -461,7 +469,13 @@ def gen_experience():
             "上拉后方波可见；转速 RPM = FG 频率 × 60 / 每转脉冲数",
             src(BENCH_MEMO, "「示波器接线」段"),
             T("F4 启动测试及结果分析", ["FG_PULSE_PERIOD"], ["台架", "开漏", "接线"]),
-            confidence="台架经验"),
+            confidence="台架经验",
+            parameters_resolved=False,
+            status="待核实：FG_PULSE_PERIOD 宏在客户头文件 Customer.h:334"
+                   "（#define FG_PULSE_PERIOD (2)，注释「FG 每轉脈波數量」）确实存在，本包也已登记，"
+                   "但登记位置是 product-attributes.json 的转速信号属性"
+                   "（key = fg_pulse_period，FG 每转脉波数），不在 control-parameters.json 的 70 个可调控制参数里。"
+                   "每转脉冲数是否应补登记为可调参数，待客户确认，确认前本条按未解析处理。"),
         exp("EXP-016",
             "运行稳定性逐档扫描（sweep）跑出来的工作点全不对",
             "功率标定（Power_k）还没做就先跑了运行稳定",

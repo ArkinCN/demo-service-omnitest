@@ -1,6 +1,7 @@
 import type { FlowId } from '../../data/types'
 import type { EvidenceItem } from '../agent-chat'
 import { sourceLine, type RawPack } from '../scene/pack'
+import { demoOn } from '../shared/tiers'
 import type { Step } from './adapter'
 
 /* ===========================================================================
@@ -27,7 +28,23 @@ export function scriptFor(flow: FlowId, p: RawPack): Step[] {
   const exps = p.experience.experiences
   const gate = p.interlocks.interlocks.filter((i) => i.type === '人员' || i.type === '流程')
   const tuneExps = exps.filter((e) => e.tags.flow?.startsWith('F5'))
-  const topExp = tuneExps[0] ?? exps[0]
+  // 首选那一条要与候选队列同一个口径：证据级「台架实测数据」优先（06d 第 2.2 节）。
+  // 原来取的是 tuneExps[0]，即场景包登记顺序的第一条（规程条款级的 EXP-001），
+  // 与候选队列排在第一位的那条对不上，助手会讲一条屏幕上没推的经验。
+  const EV_RANK: Record<string, number> = { 台架实测数据: 3, 台架经验: 2, 判定工具输出: 2, 规程条款: 1 }
+  const topExp =
+    [...tuneExps].sort((a, b) => (EV_RANK[b.evidence_level] ?? 1) - (EV_RANK[a.evidence_level] ?? 1))[0] ??
+    exps[0]
+  // 演示模式下脚本按分镜收到最短：只留「开场 → 动作 → 结论」三拍，
+  // 中间那几次工具调用与证据卡切全量模式才给（06d 第 4 节分层方案）。
+  const demo = demoOn()
+  // 已标注批次的统计（datasets.json 的 package_stats）。没有这一段就是 null，
+  // 助手那句话跟着换，不编。
+  const ps = p.datasets.package_stats as Record<string, unknown> | undefined
+  const batch =
+    ps && typeof ps.pass === 'number' && typeof ps.labeled === 'number'
+      ? { pass: ps.pass as number, labeled: ps.labeled as number }
+      : null
   const holes = p.attributes.attributes.filter((a) => a._placeholder)
   const na = p.attributes.attributes.filter((a) => a.not_applicable)
 
@@ -125,8 +142,8 @@ export function scriptFor(flow: FlowId, p: RawPack): Step[] {
           resultSummary: '（需人工确认）',
           result: {},
         },
-        {
-          kind: 'tool',
+        ...(demo ? [] : [{
+          kind: 'tool' as const,
           callId: 'run-3',
           name: 'waveform_replay',
           title: '时序回放与取指标',
@@ -140,23 +157,32 @@ export function scriptFor(flow: FlowId, p: RawPack): Step[] {
             ? `${p.datasets.datasets.length} 条全部是合成数据，不是实测`
             : `${p.datasets.datasets.length} 条实测时序`,
           result: { synthetic: p.caps.syntheticData, datasets: p.datasets.datasets.map((d) => d.id) },
-        },
+        }]),
         {
           kind: 'say',
-          text: `判定这一步我给不出结论：判据要的现场实测量本轮一个都没采到。缺什么已逐条列在判定卡上，不拿别的量顶替。${p.caps.syntheticData ? ` ${p.caps.syntheticBanner}` : ''}${p.caps.probeUnconfirmed ? ` ${p.caps.probeNote}` : ''}`,
+          // 结论这句跟着判定卡的真实求值走，不写死：批次统计里有已标注的通过次数时，
+          // 起动成功率这一条按合取短路判得出「不通过」；没有这一段登记的场景包
+          // （例如合成的玻璃升降器包）照旧说判不了。
+          text: batch
+            ? `起动成功率这一条判不通过：已标注 ${batch.labeled} 次里通过 ${batch.pass} 次，判据要的是每次都成功。fault 标志与 FG2 最小转速本轮没采，但合取式里已经有一项为假，补齐也翻不过来。其余判据缺实测量，一律标未采集，不拿别的量顶替。${p.caps.syntheticData ? ` ${p.caps.syntheticBanner}` : ''}`
+            : `判定这一步我给不出结论：判据要的现场实测量本轮一个都没采到。缺什么已逐条列在判定卡上，不拿别的量顶替。${p.caps.syntheticData ? ` ${p.caps.syntheticBanner}` : ''}${p.caps.probeUnconfirmed ? ` ${p.caps.probeNote}` : ''}`,
         },
-        {
-          kind: 'evidence',
-          items: [
-            ev(
-              'run-ev-1',
-              'case',
-              p.datasets.datasets[0]?.name ?? '本场景登记的时序数据',
-              p.datasets.datasets[0]?.note ?? '',
-              sourceLine(p.datasets.datasets[0]?._source),
-            ),
-          ],
-        },
+        ...(demo
+          ? []
+          : [
+              {
+                kind: 'evidence' as const,
+                items: [
+                  ev(
+                    'run-ev-1',
+                    'case',
+                    p.datasets.datasets[0]?.name ?? '本场景登记的时序数据',
+                    p.datasets.datasets[0]?.note ?? '',
+                    sourceLine(p.datasets.datasets[0]?._source),
+                  ),
+                ],
+              },
+            ]),
       ]
 
     case 'tune':
@@ -179,16 +205,31 @@ export function scriptFor(flow: FlowId, p: RawPack): Step[] {
         topExp
           ? {
               kind: 'say',
-              text: `${topExp.id} 给的动作是：${topExp.action}`,
+              text: `${topExp.id}（${topExp.evidence_level}）给的动作是：${topExp.action}`,
             }
           : { kind: 'say', text: '经验库里没有能对上本场景参数名的 F5 条目，这一轮我不给推荐。' },
+        ...(demo || !topExp
+          ? []
+          : [
+              {
+                kind: 'evidence' as const,
+                items: [
+                  ev(
+                    'tune-ev-1',
+                    'procedure',
+                    `${topExp.id} · ${topExp.evidence_level}`,
+                    topExp.cause,
+                    sourceLine(topExp._source),
+                  ),
+                ],
+              },
+            ]),
         {
-          kind: 'evidence',
-          items: topExp
-            ? [ev('tune-ev-1', 'procedure', `${topExp.id} · ${topExp.evidence_level}`, topExp.cause, sourceLine(topExp._source))]
-            : [],
+          kind: 'say',
+          // 排序口径已改成证据级优先（06d 第 2.2 节），这句话原来写的是「按能否给出
+          // 具体数值排队」，与代码里的 useCandidates() 对不上，一并改过来。
+          text: '候选按证据级排队，台架实测数据那一级排在规程条款前面，一次只动一项。采纳与写回都要你点，我不写回也不触发重跑。',
         },
-        { kind: 'say', text: '候选按能否给出具体数值排队，一次只动一项。采纳与写回都要你点，我不写回也不触发重跑。' },
       ]
 
     case 'report':

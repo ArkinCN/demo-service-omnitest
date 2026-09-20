@@ -48,6 +48,12 @@ export function ActionDock({
   const picked = useAppStore((s) => s.canvasView[scope as FlowId])
   const canvasSelected = useAppStore((s) => s.canvasSelected)
   const model = useAppStore((s) => s.model)
+  // 第四轮上提到 store 的三处选中态/进度，接进上下文包，
+  // 对应的红线准备按钮才有可能从恒灰转可用（07i 核验 P3）
+  const adoptedKeys = useAppStore((s) => s.adoptedKeys)
+  const adoptMeta = useAppStore((s) => s.adoptMeta)
+  const runRound = useAppStore((s) => s.runRound)
+  const chatRounds = useAppStore((s) => s.chatRounds)
 
   // canvasView 第三轮改成按流程存，这里取本 scope 那一份；
   // 人没点过就是场景包给的默认值（知识库模块没有 C 区，落兜底值不参与判断）
@@ -73,7 +79,18 @@ export function ActionDock({
         canvasView,
         canvasSelected,
         model,
-        transcriptSummary: null,
+        // 对话摘要按已跑完的轮数如实给；一轮都没跑过时为 null，不编一句摘要顶上
+        transcriptSummary:
+          chatRounds > 0
+            ? `本会话已与助手完成 ${chatRounds} 轮对话（流程 ${scope}）`
+            : null,
+        adopted: adoptedKeys.map((k) => ({
+          key: k,
+          name: adoptMeta[k]?.name ?? k,
+          from: adoptMeta[k]?.from ?? '—',
+          to: adoptMeta[k]?.to ?? '—',
+        })),
+        runRound,
       }),
     [
       scope,
@@ -89,6 +106,10 @@ export function ActionDock({
       canvasView,
       canvasSelected,
       model,
+      adoptedKeys,
+      adoptMeta,
+      runRound,
+      chatRounds,
     ],
   )
 

@@ -3,7 +3,7 @@
 import { CardArt } from '../../app/CardArt'
 import { getPanelCards } from '../../registry'
 import { DeviceMcpNodeBody } from '../remote/DeviceMcpNode'
-import { useDeviceState } from '../remote/device'
+import { useBridgeDevice } from '../remote/bridge'
 import type { CanvasNode, FlowId, ScenePackage } from '../../data/types'
 import { CanvasNodeShell, NodeFacts, type NodeFact } from './CanvasNodeShell'
 import type { CanvasLinkState } from './model'
@@ -46,11 +46,16 @@ export function FactNode({
 
 export function DeviceNode({ node, scene }: { node: CanvasNode; scene: ScenePackage }) {
   const { expand } = useCanvasCtx()
-  const conn = useDeviceState()
-  const state: CanvasLinkState = conn === 'connected' ? 'online' : conn === 'error' ? 'fault' : 'offline'
+  // 节点状态改读设备桥：三态映射照 README 第 5 节——live 走绿，mock 走中性并显式
+  // 标「合成」，桥不可达或 connected=false 走暗红。
+  const bridge = useBridgeDevice()
+  const mode = bridge.device?.status.mode
+  const state: CanvasLinkState =
+    bridge.link !== 'online' ? 'offline' : mode === 'live' ? 'online' : mode === 'mock' ? 'offline' : 'fault'
+  const foot = bridge.link === 'online' ? `设备桥 · ${bridge.toolCount} 个工具` : '设备桥未接入'
   return (
-    <CanvasNodeShell node={node} state={state} foot="命令行会话" onExpand={() => expand(node)}>
-      <DeviceMcpNodeBody scene={scene} state={conn} />
+    <CanvasNodeShell node={node} state={state} foot={foot} onExpand={() => expand(node)}>
+      <DeviceMcpNodeBody scene={scene} bridge={bridge} />
     </CanvasNodeShell>
   )
 }

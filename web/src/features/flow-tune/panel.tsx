@@ -25,7 +25,8 @@ import {
   Tooltip,
   cn,
 } from '../../components/ui'
-import { collapseKey } from '../../state/useAppStore'
+import { collapseKey, useAppStore } from '../../state/useAppStore'
+import { useFlowActions } from '../redline'
 import { getPack, sourceLine, type RawControlParam, type RawExperience } from '../scene/pack'
 import { evaluateAll, runtimeMeasures, type Evaluated } from '../flow-run/evaluate'
 import { ConfirmFooter, Empty, TierTree } from '../shared/bits'
@@ -68,25 +69,25 @@ function fmt(v: number | string | boolean) {
   return v
 }
 
-/* ------------------------------------------------- 采纳状态（跨左栏与卡片共享） */
+/* ------------------------------------------------- 采纳状态（跨左栏与卡片共享）
 
-const adopted = new Set<string>()
-const adoptListeners = new Set<() => void>()
-function toggleAdopt(key: string) {
-  if (adopted.has(key)) adopted.delete(key)
-  else adopted.add(key)
-  adoptListeners.forEach((l) => l())
-}
+   第四轮搬进 useAppStore：顶栏「采纳并回到启动测试」要读同一份勾选，
+   模块级变量它读不到（08c 第零节「点不动的三处」第 1 条）。 */
+
 function useAdopted() {
-  const [, force] = useState(0)
-  useEffect(() => {
-    const l = () => force((v) => v + 1)
-    adoptListeners.add(l)
-    return () => {
-      adoptListeners.delete(l)
-    }
-  }, [])
-  return adopted
+  const keys = useAppStore((s) => s.adoptedKeys)
+  return useMemo(() => new Set(keys), [keys])
+}
+
+/** 勾选时把回显信息一并登记，顶栏动作条据此摆出「宏名 原值→新值」 */
+function useToggleAdopt() {
+  const toggle = useAppStore((s) => s.toggleAdopt)
+  return (c: Candidate) =>
+    toggle(c.param.key, {
+      name: c.param.name,
+      from: String(fmt(c.current)),
+      to: String(fmt(c.suggested)),
+    })
 }
 
 /* ------------------------------------------------------------ 候选推荐（数据） */
@@ -211,7 +212,7 @@ function useShortfalls(): Shortfalls {
   // 演示模式只在 demo_profile 点名的判据上统计，与流程 3 判定卡同一口径
   const rows = useMemo(() => {
     if (!pack) return []
-    const all = evaluateAll(pack, runtimeMeasures(waves))
+    const all = evaluateAll(pack, runtimeMeasures(waves, pack))
     return demoFilter(pack.requirements, 'requirements', all, (r) => r.req.id)
   }, [pack, waves])
   return {
@@ -253,6 +254,7 @@ function DeltaTag({ c }: { c: Candidate }) {
 
 function RecRow({ c }: { c: Candidate }) {
   const on = useAdopted().has(c.param.key)
+  const toggleAdopt = useToggleAdopt()
   const tip = (
     <span className="block space-y-1">
       <span className="block font-medium">{c.param.name}</span>
@@ -299,7 +301,7 @@ function RecRow({ c }: { c: Candidate }) {
           role="checkbox"
           aria-checked={on}
           aria-label={`采纳 ${c.param.name}`}
-          onClick={() => toggleAdopt(c.param.key)}
+          onClick={() => toggleAdopt(c)}
           className={cn(
             'flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border transition-colors [&>svg]:block',
             on ? 'border-transparent bg-p600 text-white' : 'border-line bg-white text-transparent hover:border-p300',
@@ -381,6 +383,9 @@ export function TuneLeftPanel() {
   const pack = getPack()
   const cands = useCandidates()
   const picked = useAdopted()
+  const adopt = useFlowActions()('adopt-back')
+  const focusReq = useAppStore((s) => s.focusReq)
+  const demo = useAppStore((s) => s.demoMode)
   const { failed, missing, passed, rows } = useShortfalls()
 
   if (!pack) return <Empty text="场景包未加载" />
@@ -407,18 +412,37 @@ export function TuneLeftPanel() {
           className="ml-auto"
           content={`未达标 ${failed.length} · 已通过 ${passed.length} · 未采集 ${missing.length}；判据表本轮统计 ${rows.length} 条。criterion 真判成 false 的才算未达标；缺现场实测量而求不出值的单列「未采集」，既不算通过也不算不通过，也不进调优推荐。`}
         >
+          {/* 演示模式只留「未达标几条」这一个数：已通过与未采集两个计数进 tooltip
+              与下面的折叠组，不在栏头再摆一遍（06d 第 3.2 节） */}
           <span className="num flex cursor-help items-center gap-2 text-[12.5px]">
             <span className={cn('font-semibold', failed.length ? 'text-alert' : 'text-t1')}>
               {failed.length}
             </span>
-            <span className="text-t3">/</span>
-            <span className="font-semibold text-t1">{passed.length}</span>
-            <span className="text-t3">/</span>
-            <span className="text-t3">{missing.length}</span>
+            {demo ? (
+              <span className="text-t3">条未达标</span>
+            ) : (
+              <>
+                <span className="text-t3">/</span>
+                <span className="font-semibold text-t1">{passed.length}</span>
+                <span className="text-t3">/</span>
+                <span className="text-t3">{missing.length}</span>
+              </>
+            )}
           </span>
         </Tooltip>
-        <InfoTip content="三个数依次是未达标 / 已通过 / 未采集，口径与流程 3 判定卡同一套求值。" />
+        <InfoTip
+          content={
+            focusReq
+              ? `三个数依次是未达标 / 已通过 / 未采集，口径与流程 3 判定卡同一套求值。本次从流程 3 判定卡的判据 ${focusReq} 点进来。`
+              : '三个数依次是未达标 / 已通过 / 未采集，口径与流程 3 判定卡同一套求值。'
+          }
+        />
       </header>
+      {focusReq ? (
+        <div className="shrink-0 border-b border-line-soft bg-p50 px-4 py-1.5 text-[12px] text-p700">
+          来自流程 3 判定卡的未达标项 <span className="num font-semibold">{focusReq}</span>
+        </div>
+      ) : null}
 
       <div className="fade-b min-h-0 flex-1 overflow-y-auto pb-2">
         {/* 一级类只展开第一个「未达标项」；有未达标时强制展开，不许折叠掉 */}
@@ -542,13 +566,16 @@ export function TuneLeftPanel() {
           </ul>
         ) : null}
       </footer>
+      {/* 与顶栏「采纳并回到启动测试」同一条动作：写回参数是六条红线之一，
+          点下去先弹确认卡，批准后才写回并跳回流程 3 */}
       <ConfirmFooter
         label="确认采纳"
         count={takenList.length}
         unit="项"
+        onClick={adopt.disabled ? undefined : adopt.onClick}
         hint={
           takenList.length
-            ? '写回只改数值外壳括号内的数字，不换外壳、不动行尾注释。'
+            ? '写回只改数值外壳括号内的数字，不换外壳、不动行尾注释；确认卡上再点一次才真写回。'
             : '先在推荐参数里勾选要采纳的项。'
         }
       />
@@ -630,12 +657,17 @@ const QUEUE_CAP = 10
 function CandidateQueue({ full }: { full?: boolean }) {
   const cands = useCandidates()
   const picked = useAdopted()
+  const demo = useAppStore((s) => s.demoMode)
   if (!cands.length) return <EmptyState icon={<Layers size={24} strokeWidth={1.5} />} title="无候选" />
   const cur = cands.findIndex((c) => !picked.has(c.param.key))
   // 放大态逐个铺满 10 个槽位；卡内空间有限，只铺命中的候选，空槽压成一行，
-  // 免得把半行硬切在卡底
+  // 免得把半行硬切在卡底。
+  // 演示模式（06d 第 3.2 节）首屏只铺当前这一条候选，另外几条与 10 个槽位一并收成
+  // 一行「另 n 条」，点开卡或切全量模式才逐条铺。
+  const lite = demo && !full
+  const shownCands = lite ? cands.slice(0, 1) : cands
   const free = Math.max(0, QUEUE_CAP - cands.length)
-  const slots = Array.from({ length: full ? QUEUE_CAP : cands.length })
+  const slots = Array.from({ length: full ? QUEUE_CAP : shownCands.length })
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
@@ -650,7 +682,7 @@ function CandidateQueue({ full }: { full?: boolean }) {
           {/* 竖向连线：把 10 个槽位串成一条推进路径 */}
           <span className="absolute top-1.5 bottom-1.5 left-[6px] w-px bg-line-soft" aria-hidden />
           {slots.map((_, i) => {
-            const c = cands[i]
+            const c = shownCands[i]
             const on = c ? picked.has(c.param.key) : false
             const isCur = i === cur
             return (
@@ -692,11 +724,13 @@ function CandidateQueue({ full }: { full?: boolean }) {
               </li>
             )
           })}
-          {!full && free ? (
+          {!full && (free || lite) ? (
             <li className="relative flex items-center gap-2.5 py-[2px]">
               <span className="relative z-10 h-[13px] w-[13px] shrink-0 rounded-full border-2 border-dashed border-line bg-surface" />
-              <span className="text-[13px] text-t3">空位</span>
-              <span className="num ml-auto shrink-0 text-[12px] text-t3">{free}</span>
+              <span className="text-[13px] text-t3">{lite ? '另有候选' : '空位'}</span>
+              <span className="num ml-auto shrink-0 text-[12px] text-t3">
+                {lite ? cands.length - 1 : free}
+              </span>
             </li>
           ) : null}
         </ol>
@@ -706,7 +740,7 @@ function CandidateQueue({ full }: { full?: boolean }) {
           {cands.length}
           <span className="text-t3">/{QUEUE_CAP}</span>
         </span>
-        <span className="text-[12px] text-t3">上限 10 · 耗尽转人工</span>
+        {lite ? null : <span className="text-[12px] text-t3">上限 10 · 耗尽转人工</span>}
         <InfoTip
           content="固定候选表出自客户端规程 auto-startup-tune（AItior 安装目录 resources/data/dc-skills/auto-startup-tune/SKILL.md，「## 固定候选」小节）：盲试最多 10 个候选，每个候选只偏离基线一个轴；跑完仍不行判 need_human 转人工，不得创建第 11 个候选，也不得自行扩大搜索区间（经验条目 EXP-022）。表内三个宏名属吸尘器产品线，在本散热风扇工程里零命中，因此本包不做映射，槽位只按本场景匹配得出的候选填。"
         />
@@ -728,13 +762,16 @@ function symptomKey(sym: string) {
 function EvidencePanel({ full }: { full?: boolean }) {
   const cands = useCandidates()
   const picked = useAdopted()
+  const demo = useAppStore((s) => s.demoMode)
   if (!cands.length) return <EmptyState icon={<BookOpen size={24} strokeWidth={1.5} />} title="无命中条目" />
 
-  // 一条经验可能带出多个参数，这里按经验去重，只列命中的前 3 条
+  // 一条经验可能带出多个参数，这里按经验去重。演示模式首屏只留排在最前的那一条
+  // （证据级「台架实测数据」的 EXP-009），另外两条折到卡内滚动区之外，
+  // 切全量或放大才给（06d 第 3.2 节「知识库依据的另外 2 条经验 折叠到二级」）。
   const seen = new Set<string>()
-  const hits = cands
-    .filter((c) => (seen.has(c.exp.id) ? false : (seen.add(c.exp.id), true)))
-    .slice(0, full ? 12 : 3)
+  const uniq = cands.filter((c) => (seen.has(c.exp.id) ? false : (seen.add(c.exp.id), true)))
+  const hits = uniq.slice(0, full ? 12 : demo ? 1 : 3)
+  const rest = uniq.length - hits.length
 
   return (
     <div
@@ -786,6 +823,16 @@ function EvidencePanel({ full }: { full?: boolean }) {
           </Tooltip>
         )
       })}
+      {rest > 0 ? (
+        <Tooltip
+          className="w-full"
+          content={`另外 ${rest} 条命中经验证据级更低，演示主线不讲；切「全量」或放大这张卡可逐条看。`}
+        >
+          <span className="num block shrink-0 cursor-help px-2.5 py-1 text-[12px] text-t3">
+            另 {rest} 条
+          </span>
+        </Tooltip>
+      ) : null}
     </div>
   )
 }
@@ -1002,9 +1049,11 @@ function RoundWave({ full }: { full?: boolean }) {
 function ParamChanges({ full }: { full?: boolean }) {
   const all = useCandidates()
   const picked = useAdopted()
+  const demo = useAppStore((s) => s.demoMode)
   const numeric = all.filter((c) => typeof c.suggested === 'number')
   const chosen = numeric.filter((c) => picked.has(c.param.key))
-  const rows = (chosen.length ? chosen : numeric).slice(0, full ? 10 : 3)
+  // 演示主线一次只动一项（06d 第 2.1 节），首屏就只列那一项
+  const rows = (chosen.length ? chosen : numeric).slice(0, full ? 10 : demo ? 1 : 3)
   const pending = chosen.length === 0
 
   if (!rows.length)
@@ -1013,15 +1062,26 @@ function ParamChanges({ full }: { full?: boolean }) {
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
       <div className="flex shrink-0 items-center gap-2 pb-1.5">
-        <span className="num text-[26px] leading-none font-semibold tracking-tight text-t1">
-          {chosen.length}
-        </span>
-        <span className="text-[12px] text-t3">项已采纳 / 候选 {numeric.length}</span>
-        <Tooltip content="写回沿用原数值外壳与量纲，只改括号里的那个数；落盘与重编重烧一律由人点，助手不写回。">
-          <span className="num ml-auto cursor-help text-[12px] text-t3">
-            {pending ? '待采纳' : '待写回'}
+        <Tooltip
+          className="min-w-0 flex-1"
+          content={`已采纳 ${chosen.length} 项 / 候选 ${numeric.length} 项。写回沿用原数值外壳与量纲，只改括号里的那个数；落盘与重编重烧一律由人点，助手不写回。`}
+        >
+          <span className="flex cursor-help items-baseline gap-1.5">
+            <span className="num text-[26px] leading-none font-semibold tracking-tight text-t1">
+              {chosen.length}
+            </span>
+            <span className="text-[12px] text-t3">
+              {demo && !full ? (pending ? '项已采纳 · 待采纳' : '项已采纳 · 待写回') : `项已采纳 / 候选 ${numeric.length}`}
+            </span>
           </span>
         </Tooltip>
+        {demo && !full ? null : (
+          <Tooltip content="写回沿用原数值外壳与量纲，只改括号里的那个数；落盘与重编重烧一律由人点，助手不写回。">
+            <span className="num ml-auto cursor-help text-[12px] text-t3">
+              {pending ? '待采纳' : '待写回'}
+            </span>
+          </Tooltip>
+        )}
       </div>
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto">
         {rows.map((c) => (

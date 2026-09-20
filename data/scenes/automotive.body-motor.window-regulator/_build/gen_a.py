@@ -1895,7 +1895,7 @@ def gen_test_requirements():
            {"fault_flags": _vm("fault_flags"),
             "FAULT_REVERSE_POLARITY": {
                 "source": "constant", "value": 128,
-                "derived_from": "safety-interlocks.json fault_bitmap 位 0x0080",
+                "derived_from": ["safety-interlocks.fault_bitmap.0x0080"],
                 "desc": "反极性检出位掩码（0x0080）"},
             "window_motion_detected": _vm("window_motion_detected"),
             "post_test_basic_pass": _vm("post_test_basic_pass")},

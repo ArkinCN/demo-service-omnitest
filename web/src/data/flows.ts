@@ -58,13 +58,9 @@ export const FLOWS: FlowDef[] = [
     label: '启动测试及结果分析',
     precondition: '需流程 2 已确认且安全联锁全绿',
     actions: [
-      {
-        id: 'start',
-        label: '启动测试',
-        primary: true,
-        disabled: true,
-        disabledReason: '安全确认闸门未逐条确认前不可启动',
-      },
+      // 置灰不再写死：由 useAppStore 里安全闸门的勾选数现算，九条全勾即放行。
+      // 行为表在 src/features/redline/flowActions.ts。
+      { id: 'start', label: '启动测试', primary: true },
       { id: 'precheck', label: '预检自检' },
       { id: 'stop', label: '停止' },
       { id: 'estop', label: '急停', danger: true },

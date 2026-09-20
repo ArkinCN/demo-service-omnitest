@@ -259,11 +259,22 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return (
     <div className="border-b border-line-soft py-2">
       <div className="pb-1 text-[12px] text-t3">{label}</div>
-      <div className="text-[12.5px] leading-5 break-words text-t2">{children}</div>
+      {/* leading-5（20px）在 12.5px 字号上对长路径这类连续字符偏紧，抬到 leading-[1.65] */}
+      <div className="text-[12.5px] leading-[1.65] break-words text-t2">{children}</div>
     </div>
   )
 }
 
+/**
+ * 右栏条目详情。
+ *
+ * 底部留白挂在末个字段上（`[&>div:last-child]:pb-7`），不挂在滚动容器上。
+ * 原先写的是容器自己 `pb-4`：`.fade-b::after` 是 `position: sticky; bottom: 0`，
+ * 它的定位基准是滚动容器的内边距盒，容器只要有 padding-bottom，渐隐带就被顶到
+ * 离底 16px 处，最后那 16px 正文既不渐隐、又被面板的 overflow-hidden 硬切，
+ * 于是「备注」这种多行长文的末行与卡片下边界叠成一团。把留白改挂到末个字段上，
+ * 渐隐带回到视口真正的下沿；末个字段的下框线一并去掉，免得与卡底连成双线。
+ */
 function DetailColumn({ entry }: { entry: KnowledgeEntry | null }) {
   const Usage = KNOWLEDGE_ICON.usage
   return (
@@ -282,7 +293,7 @@ function DetailColumn({ entry }: { entry: KnowledgeEntry | null }) {
           />
         </div>
       ) : (
-        <div className="fade-b min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+        <div className="fade-b min-h-0 flex-1 overflow-y-auto px-4 [&>div:last-child]:border-b-0 [&>div:last-child]:pb-7">
           <h3 className="pt-3 pb-2 text-[14px] leading-6 font-semibold text-t1">
             {entry.title}
           </h3>

@@ -6,6 +6,7 @@ import {
   CircuitBoard,
   Cpu,
   Gauge,
+  ChevronRight,
   ListFilter,
   Lock,
   Monitor,
@@ -29,7 +30,9 @@ import {
   cn,
 } from '../../components/ui'
 import { decimalsOf } from '../../data/loadScene'
-import { collapseKey, paramKey, useAppStore } from '../../state/useAppStore'
+import { useNavigate } from 'react-router'
+import { RUN_PHASE_LABEL, collapseKey, paramKey, useAppStore } from '../../state/useAppStore'
+import { useFlowActions } from '../redline'
 import {
   getPack,
   sourceLine,
@@ -42,7 +45,7 @@ import { ConfirmFooter, Empty, TierTree } from '../shared/bits'
 import { buildTiers, demoFilter, readTiers } from '../shared/tiers'
 import { TimeSeriesChart } from '../timeseries'
 import { POWERUP_ANNOTATION, currentThresholds, loadWaves, type Wave } from '../waveforms'
-import { evaluateAll, runtimeMeasures, type VerdictState } from './evaluate'
+import { evaluateAll, measureOrigin, runtimeMeasures, type VerdictState } from './evaluate'
 
 /* ===========================================================================
    流程 4 · 启动测试及结果分析（v2 视觉样板页）
@@ -57,23 +60,16 @@ function short(s: string, n = 6) {
   return clean.length > n ? `${clean.slice(0, n)}…` : clean
 }
 
-/* ---------------------------------------------------- 闸门状态（跨卡片共享） */
+/* ---------------------------------------------------- 闸门状态（跨卡片共享）
 
-const gate = { acked: new Set<string>(), total: 0 }
-const gateListeners = new Set<() => void>()
-function bumpGate() {
-  gateListeners.forEach((l) => l())
-}
+   第四轮把这份状态从模块级私有变量搬进 useAppStore：顶栏动作条要靠它算
+   「启动测试」亮不亮，顶栏盾形徽章要靠它报还差几条，模块级变量这两处都拿不到。
+   依据：08c-部署联调与演示SOP-v1.0.md 第零节「点不动的三处」第 2 条。 */
+
 export function useGate() {
-  const [, force] = useState(0)
-  useEffect(() => {
-    const l = () => force((v) => v + 1)
-    gateListeners.add(l)
-    return () => {
-      gateListeners.delete(l)
-    }
-  }, [])
-  return gate
+  const acked = useAppStore((s) => s.gateAcked)
+  const total = useAppStore((s) => s.gateTotal)
+  return useMemo(() => ({ acked: new Set(acked), total }), [acked, total])
 }
 
 /* ------------------------------------------------------------------ 左栏 */
@@ -229,6 +225,8 @@ function GateRow({
       <button
         type="button"
         onClick={onToggle}
+        data-gate={i.id}
+        aria-pressed={on}
         className="flex w-full items-center gap-2.5 px-4 py-1.5 text-left transition-colors hover:bg-p50/70"
       >
         <span
@@ -253,13 +251,17 @@ export function RunLeftPanel() {
   const [runs, setRuns] = useState(100)
   const [volt, setVolt] = useState<string>('')
   const [gateOpen, setGateOpen] = useState(true)
-  const [, force] = useState(0)
+  const demo = useAppStore((s) => s.demoMode)
+  const toggle = useAppStore((s) => s.toggleGate)
+  const setGateTotal = useAppStore((s) => s.setGateTotal)
+  const bind = useFlowActions()
 
   const gateItems = useMemo(
     () => (pack ? pack.interlocks.interlocks.filter((i) => i.type === '人员' || i.type === '流程') : []),
     [pack],
   )
-  gate.total = gateItems.length
+  // 闸门总条数由本场景包登记，写进 store 供顶栏动作条与盾形徽章共用
+  useEffect(() => setGateTotal(gateItems.length), [gateItems.length, setGateTotal])
 
   if (!pack) return <Empty text="场景包未加载" />
 
@@ -307,13 +309,6 @@ export function RunLeftPanel() {
   const runNote = runReq
     ? `判据 ${runReq.id}：${runReq.criterion_text}`
     : '本场景包没有按次数计的回归判据，启停次数只作台架设置。'
-
-  const toggle = (id: string) => {
-    if (gate.acked.has(id)) gate.acked.delete(id)
-    else gate.acked.add(id)
-    bumpGate()
-    force((v) => v + 1)
-  }
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
@@ -417,9 +412,11 @@ export function RunLeftPanel() {
                   icon={iconOf(grp.title)}
                   title={grp.title}
                   storeKey={collapseKey('run', grp.id)}
-                  defaultOpen={i === 0}
+                  // 演示模式下逐条清单一律折叠，组头自带「勾了几条 / 共几条」，
+                  // 镜 3 要勾时再点开（06d 第 3.1 节）
+                  defaultOpen={!demo && i === 0}
                   stat={{
-                    done: grp.items.filter((x) => gate.acked.has(x.id)).length,
+                    done: grp.items.filter((x) => g.acked.has(x.id)).length,
                     total: grp.items.length,
                   }}
                 >
@@ -430,9 +427,9 @@ export function RunLeftPanel() {
                         level={3}
                         title={sub.title}
                         storeKey={collapseKey('run', sub.id)}
-                        defaultOpen={k === 0}
+                        defaultOpen={!demo && k === 0}
                         stat={{
-                          done: sub.items.filter((x) => gate.acked.has(x.id)).length,
+                          done: sub.items.filter((x) => g.acked.has(x.id)).length,
                           total: sub.items.length,
                         }}
                       >
@@ -440,7 +437,7 @@ export function RunLeftPanel() {
                           <GateRow
                             key={i2.id}
                             i={i2}
-                            on={gate.acked.has(i2.id)}
+                            on={g.acked.has(i2.id)}
                             onToggle={() => toggle(i2.id)}
                           />
                         ))}
@@ -452,7 +449,7 @@ export function RunLeftPanel() {
                         <GateRow
                           key={i2.id}
                           i={i2}
-                          on={gate.acked.has(i2.id)}
+                          on={g.acked.has(i2.id)}
                           onToggle={() => toggle(i2.id)}
                         />
                       ))}
@@ -466,13 +463,16 @@ export function RunLeftPanel() {
       </div>
 
       {/* 底部悬浮确认 */}
+      {/* 底部确认按钮与顶栏「启动测试」同一条动作、同一份行为表，
+          点下去照样先弹红线确认卡，不另开一条放行路径 */}
       <ConfirmFooter
         label="确认参数"
         count={params.length}
         unit="项"
+        onClick={bind('start').disabled ? undefined : bind('start').onClick}
         hint={
           green
-            ? `本流程可调 ${params.length} 项，安全闸门 ${gateItems.length} 条已全部确认。`
+            ? `本流程可调 ${params.length} 项，安全闸门 ${gateItems.length} 条已全部确认，点此启动本轮（仍需在确认卡上再点一次）。`
             : `本流程可调 ${params.length} 项；安全闸门还差 ${gateItems.length - g.acked.size} 条未确认，确认前不可启动。`
         }
       />
@@ -665,17 +665,26 @@ const STATE_LABEL: Record<VerdictState, string> = {
 function VerdictCard({ full }: { full?: boolean }) {
   const pack = getPack()
   const waves = useWaves()
+  const demo = useAppStore((s) => s.demoMode)
+  const runPhase = useAppStore((s) => s.runPhase)
+  const runProgress = useAppStore((s) => s.runProgress)
+  const setFocusReq = useAppStore((s) => s.setFocusReq)
+  const nav = useNavigate()
   if (!pack) return <Empty text="场景包未加载" />
   // 演示模式只判 demo_profile 点名的 6 条；放大态与全量模式给全表。
-  const rows = full
-    ? evaluateAll(pack, runtimeMeasures(waves))
-    : demoFilter(pack.requirements, 'requirements', evaluateAll(pack, runtimeMeasures(waves)), (r) => r.req.id)
+  const all = evaluateAll(pack, runtimeMeasures(waves, pack))
+  const rows = full ? all : demoFilter(pack.requirements, 'requirements', all, (r) => r.req.id)
   const pass = rows.filter((r) => r.state === 'pass').length
   const fail = rows.filter((r) => r.state === 'fail').length
   const missing = rows.filter((r) => r.state === 'missing').length
   const judged = rows.filter((r) => r.state === 'pass' || r.state === 'fail')
-  // 首屏只列 3 行：有结论的排前面，其余按未采集补位；全表进放大态
-  const list = full ? rows : [...judged, ...rows.filter((r) => r.state === 'missing')].slice(0, 3)
+  // 首屏只列有结论的那几行：演示模式下不拿「未采集」补位凑行数（06d 第 3.1 节
+  // 「判定卡，只留有结论的几行」）；全表进放大态。
+  const list = full
+    ? rows
+    : demo
+      ? judged.slice(0, 3)
+      : [...judged, ...rows.filter((r) => r.state === 'missing')].slice(0, 3)
 
   const Stat = ({ n, label, tone }: { n: number; label: string; tone: 'ok' | 'bad' | 'mute' }) => (
     <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -699,19 +708,54 @@ function VerdictCard({ full }: { full?: boolean }) {
     </div>
   )
 
+  // 本轮正在跑时判定还没出，摆一条进度而不是摆上一轮的结论
+  if (runPhase === 'running')
+    return (
+      <div className="flex h-full min-h-0 w-full flex-col justify-center gap-2.5 px-1">
+        <div className="flex items-baseline gap-2">
+          <span className="num text-[26px] leading-none font-semibold text-t1">{runProgress}%</span>
+          <span className="text-[12px] text-t3">运行中 · 判定待出</span>
+        </div>
+        <div className="h-[6px] overflow-hidden rounded-full bg-p100">
+          <div
+            className="h-full rounded-full bg-p600 transition-[width] duration-200"
+            style={{ width: `${runProgress}%` }}
+          />
+        </div>
+        <p className="text-[12px] leading-5 text-t3">本轮回放已登记时序，跑完即按判据求值。</p>
+      </div>
+    )
+
+  const tip = `已求值 ${judged.length} / ${pack.requirements.evaluable_count} 条可求值判据，全表 ${rows.length} 条：通过 ${pass}、不通过 ${fail}、未采集 ${missing}。${
+    measureOrigin(pack) ?? ''
+  }${
+    judged.length === 0
+      ? '本轮一条都判不了：判据要的现场实测量（母线电流、转速、力、位移、声压级）得由台架传感器现场采，本轮只回放了一条曲线，不拿别的数顶替。'
+      : ''
+  }`
+
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
-      <div className="flex shrink-0 items-start gap-2 pb-2">
-        <Stat n={pass} label="通过" tone="ok" />
-        <Stat n={fail} label="不通过" tone="bad" />
-        <Stat n={missing} label="未采集" tone="mute" />
-        <InfoTip
-          content={`已求值 ${judged.length} / ${pack.requirements.evaluable_count} 条可求值判据，全表 ${rows.length} 条。${
-            judged.length === 0
-              ? '本轮一条都判不了：判据要的现场实测量（母线电流、转速、力、位移、声压级）得由台架传感器现场采，本轮只回放了一条曲线，不拿别的数顶替。'
-              : ''
-          }`}
-        />
+      {/* 演示模式把三个 26px 大数字收成一行：首屏只需要「判出几条、其中几条不通过」，
+          分项计数进 tooltip（06d 第 3.1 节与 06b 第 3 节密度规则） */}
+      <div className={cn('flex shrink-0 gap-2 pb-2', demo && !full ? 'items-center' : 'items-start')}>
+        {demo && !full ? (
+          <Tooltip className="min-w-0 flex-1" content={tip}>
+            <span className="flex cursor-help items-baseline gap-1.5">
+              <span className={cn('num text-[26px] leading-none font-semibold tracking-tight', fail > 0 ? 'text-alert' : 'text-t1')}>
+                {fail}
+              </span>
+              <span className="text-[12px] text-t3">条不通过 · 已判 {judged.length}</span>
+            </span>
+          </Tooltip>
+        ) : (
+          <>
+            <Stat n={pass} label="通过" tone="ok" />
+            <Stat n={fail} label="不通过" tone="bad" />
+            <Stat n={missing} label="未采集" tone="mute" />
+          </>
+        )}
+        <InfoTip content={tip} />
       </div>
       <div
         className="no-scrollbar min-h-0 flex-1 overflow-y-auto"
@@ -720,21 +764,48 @@ function VerdictCard({ full }: { full?: boolean }) {
           WebkitMaskImage: 'linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%)',
         }}
       >
-        {list.map((r) => (
-          <Tooltip
-            key={r.req.id}
-            className="w-full"
-            content={`${r.req.criterion_text}${r.missing.length ? ` · 缺 ${r.missing.join('、')}` : ''}`}
-          >
-            <div className="flex w-full items-center gap-2 border-b border-line-soft py-[5px] last:border-b-0">
-              <StatusDot
-                status={r.state === 'pass' ? 'done' : r.state === 'fail' ? 'alert' : 'na'}
-              />
+        {list.map((r) => {
+          // 未达标的行点得动：带着判据 id 进流程 4，那边直接定位到这一条。
+          // 别的行不可点——没有结论可跟进的行给点击反馈是假的。
+          const jump = r.state === 'fail'
+          const row = (
+            <div
+              className={cn(
+                'flex w-full items-center gap-2 border-b border-line-soft py-[5px] last:border-b-0',
+                jump && 'rounded-tpx transition-colors hover:bg-alert-wash/60',
+              )}
+            >
+              <StatusDot status={r.state === 'pass' ? 'done' : r.state === 'fail' ? 'alert' : 'na'} />
               <span className="truncate text-[12.5px] text-t1">{short(r.req.name, 12)}</span>
               <span className="num ml-auto shrink-0 text-[12px] text-t3">{STATE_LABEL[r.state]}</span>
+              {jump ? <ChevronRight size={13} strokeWidth={2} className="shrink-0 text-alert" /> : null}
             </div>
-          </Tooltip>
-        ))}
+          )
+          return (
+            <Tooltip
+              key={r.req.id}
+              className="w-full"
+              content={`${r.req.criterion_text}${r.note ? ` · ${r.note}` : r.missing.length ? ` · 缺 ${r.missing.join('、')}` : ''}${jump ? ' · 点此进流程 4 看推荐' : ''}`}
+            >
+              {jump ? (
+                <button
+                  type="button"
+                  data-testid="verdict-fail-row"
+                  aria-label={`${r.req.name} 未达标，进流程 4`}
+                  className="w-full text-left"
+                  onClick={() => {
+                    setFocusReq(r.req.id)
+                    nav('/tune')
+                  }}
+                >
+                  {row}
+                </button>
+              ) : (
+                row
+              )}
+            </Tooltip>
+          )
+        })}
       </div>
     </div>
   )
@@ -826,6 +897,10 @@ function GateRing({ full }: { full?: boolean }) {
 function Progress({ full }: { full?: boolean }) {
   const pack = getPack()
   const waves = useWaves()
+  const demo = useAppStore((s) => s.demoMode)
+  const runPhase = useAppStore((s) => s.runPhase)
+  const runProgress = useAppStore((s) => s.runProgress)
+  const runRound = useAppStore((s) => s.runRound)
   if (!pack) return <Empty text="场景包未加载" />
   const s2 = pack.datasets.package_stats as Record<string, number>
   const hasBatch = typeof s2.attempts_total === 'number'
@@ -846,18 +921,33 @@ function Progress({ full }: { full?: boolean }) {
     <div className="flex h-full min-h-0 w-full flex-col gap-2">
       <div className="flex shrink-0 items-baseline gap-2">
         <span className="num text-[26px] leading-none font-semibold text-t1">{done}</span>
-        <span className="num text-[13px] text-t3">/ {total}</span>
-        <span className="ml-auto text-[12px] text-t3">{hasBatch ? '已标注' : '已回放'}</span>
+        {demo && !full ? null : <span className="num text-[13px] text-t3">/ {total}</span>}
+        <Tooltip content={`${hasBatch ? '已标注' : '已回放'} ${done} / ${total}。${log.join('　')}`}>
+          <span className="ml-auto cursor-help text-[12px] text-t3">
+            {hasBatch ? `已标注 / ${total}` : `已回放 / ${total}`}
+          </span>
+        </Tooltip>
+      </div>
+      {/* 本轮运行态：待启动 / 运行中 / 已出判定 / 已停止 / 已急停，由顶栏那颗
+          「启动测试」经红线确认卡驱动，不是自己跑起来的 */}
+      <div className="flex shrink-0 items-center gap-1.5">
+        <Badge tone={runPhase === 'estopped' ? 'warn' : runPhase === 'running' ? 'soft' : 'neutral'} dot>
+          {RUN_PHASE_LABEL[runPhase]}
+        </Badge>
+        <span className="num text-[12px] text-t3" data-testid="run-phase">
+          {runPhase === 'running' ? `${runProgress}%` : runRound > 0 ? `本会话第 ${runRound} 轮` : '本会话未启动'}
+        </span>
       </div>
       <div className="h-[6px] shrink-0 overflow-hidden rounded-full bg-p100">
         <div
           className="h-full rounded-full bg-p600 transition-[width] duration-500"
-          style={{ width: `${Math.round((done / (total || 1)) * 100)}%` }}
+          style={{ width: `${runPhase === 'running' ? runProgress : Math.round((done / (total || 1)) * 100)}%` }}
         />
       </div>
       <div className="mono min-h-0 flex-1 overflow-y-auto text-[11px] leading-[18px] text-t3">
-        {/* 首屏只留最后 3 行，全量日志进放大态（06d：执行进度日志折叠到二级） */}
-        {(full ? log : log.slice(-3)).map((l) => (
+        {/* 演示模式首屏不铺日志行，只留进度条与计数，全量日志进放大态
+            （06d 第 3.1 节：执行进度日志折叠到二级） */}
+        {(full ? log : demo ? [] : log.slice(-3)).map((l) => (
           <div key={l} className="truncate" title={l}>
             {l}
           </div>

@@ -32,7 +32,7 @@ import {
 import '@xyflow/react/dist/style.css'
 import './canvas.css'
 
-import { Button, Modal } from '../../components/ui'
+import { Button, Modal, cn } from '../../components/ui'
 import { CardArt } from '../../app/CardArt'
 import { BENCH_CHANNEL_PENDING, CANVAS_EDGE_DASH } from '../../data/bench'
 import { getCanvasNode, getPanelCards, useRegistryVersion } from '../../registry'
@@ -167,7 +167,7 @@ function ZoomBar({ onReset }: { onReset: () => void }) {
   )
 }
 
-/** 缩略导航图只在内容超出视口时出现（规格 2.4），落在左下角 */
+/** 缩略导航图只在内容超出视口时出现（规格 2.4），落在右下角、叠在缩放条上方 */
 function useOverflow(nodes: Node<FlowNodeData>[]) {
   const w = useStore((s) => s.width)
   const h = useStore((s) => s.height)
@@ -189,7 +189,10 @@ function MiniMapIfOverflow({ nodes }: { nodes: Node<FlowNodeData>[] }) {
     <MiniMap
       pannable
       zoomable
-      position="bottom-left"
+      /* 原先钉在左下角，放大态下正压住「文档读取」那一列节点，看着像破版。
+         改到右下角与缩放条同列（CSS 里给它让出缩放条的 40px），两个控件叠成
+         一摞控制区，画板左侧的节点不再被盖。 */
+      position="bottom-right"
       style={{ width: 132, height: 88 }}
       nodeColor="#a8c5b5"
       nodeStrokeColor="#2e5e45"
@@ -401,7 +404,9 @@ function CanvasInner({
       <Modal
         open={!!expanded}
         onClose={() => setExpanded(null)}
-        width={1220}
+        /* 设备节点放大态只有「设备卡 + 接入形态 + 工具统计 + 终端」四块，
+           按 1220 宽铺开右半边基本是空的；这一类单独收窄到 860。 */
+        width={expanded?.type === 'device-mcp' ? 860 : 1220}
         title={expanded ? expanded.label : ''}
         meta={expanded ? CANVAS_NODE_META[expanded.type].sub : undefined}
         footer={
@@ -415,7 +420,12 @@ function CanvasInner({
           </>
         }
       >
-        <div className="flex h-[min(64vh,470px)] items-center justify-center rounded-tp2 bg-p50 p-2">
+        <div
+          className={cn(
+            'flex items-center justify-center rounded-tp2 bg-p50 p-2',
+            expanded?.type === 'device-mcp' ? 'h-[min(42vh,300px)]' : 'h-[min(64vh,470px)]',
+          )}
+        >
           {expanded ? expandedBody(expanded) : null}
         </div>
       </Modal>

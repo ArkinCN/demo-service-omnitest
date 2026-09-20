@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FlowId } from '../../data/types'
 import { registerCopilotActions } from '../../registry'
 import { useAppStore } from '../../state/useAppStore'
@@ -51,6 +51,21 @@ export function FlowCopilot({ flow }: { flow: FlowId }) {
   const [api, setApi] = useState<AgentChatApi | null>(null)
   const [busy, setBusy] = useState(false)
   const send = useCallback((text: string) => api?.send(text), [api])
+  const noteChatRound = useAppStore((s) => s.noteChatRound)
+
+  /**
+   * 忙态的下降沿就是「跑完一轮」。记一笔，上下文包据此给出 session.transcript_summary，
+   * 依赖它的「经验草稿」按钮才可能可用；此前那一项写死 null，按钮恒灰（07i 核验 P3）。
+   */
+  const wasBusy = useRef(false)
+  const handleBusy = useCallback(
+    (b: boolean) => {
+      setBusy(b)
+      if (wasBusy.current && !b) noteChatRound()
+      wasBusy.current = b
+    },
+    [noteChatRound],
+  )
 
   useEffect(() => {
     registerForScene(sceneId)
@@ -91,7 +106,7 @@ export function FlowCopilot({ flow }: { flow: FlowId }) {
         defaultPermission="readonly"
         autoStartPrompt={PROMPT[flow]}
         onReady={setApi}
-        onBusyChange={setBusy}
+        onBusyChange={handleBusy}
         actionSlot={<ActionDock scope={flow} send={send} busy={busy} />}
       />
     </div>

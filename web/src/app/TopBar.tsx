@@ -28,7 +28,8 @@ import { Avatar, Button, Segmented, StatusDot, Tooltip, cn } from '../components
 import { FLOWS, FLOW_BY_PATH } from '../data/flows'
 import { FLOW_ICON, FLOW_SHORT, MODULE_ICON, MODULE_SHORT } from './icons'
 import { useKnowledgeTotal } from '../features/knowledge/data'
-import { flowStateOf, useAppStore } from '../state/useAppStore'
+import { RUN_PHASE_LABEL, flowStateOf, useAppStore } from '../state/useAppStore'
+import { useFlowActions } from '../features/redline'
 import { ProductCascader } from './ProductCascader'
 
 /** 动作条图标：按动作 id 映射，缺省给一枚通用图标 */
@@ -129,7 +130,24 @@ export function TopBar() {
   const setDemoMode = useAppStore((s) => s.setDemoMode)
   // 取数是异步的，用 hook 订阅才会在落地后重渲；同步函数取值会永远停在 0
   const kbTotal = useKnowledgeTotal()
-  const disabledAction = current.actions.find((a) => a.disabled)
+  const bind = useFlowActions()
+  const runPhase = useAppStore((s) => s.runPhase)
+  const gateTotal = useAppStore((s) => s.gateTotal)
+  const gateAcked = useAppStore((s) => s.gateAcked)
+
+  // 动作条右端那行字只在流程 3 报运行态：别的流程没有「启动」这回事，
+  // 报「待启动」等于给一条不存在的进度。
+  const gateBlocked = current.id === 'run' && !(gateTotal > 0 && gateAcked.length >= gateTotal)
+  const statusText =
+    current.id !== 'run' ? '就绪' : gateBlocked ? '闸门未放行' : RUN_PHASE_LABEL[runPhase]
+  const statusTone: 'empty' | 'done' | 'alert' =
+    current.id !== 'run'
+      ? 'done'
+      : gateBlocked
+        ? 'empty'
+        : runPhase === 'estopped'
+          ? 'alert'
+          : 'done'
 
   return (
     <header className="shrink-0">
@@ -206,19 +224,25 @@ export function TopBar() {
         style={{ paddingInline: 'clamp(18px, 1.7vw, 32px)' }}>
         {current.actions.slice(0, 4).map((a) => {
           const Icon = ACTION_ICON[a.id] ?? Sparkles
+          const b = bind(a.id)
+          // 置灰理由一律现算：闸门差几条、有没有勾采纳项，都从 store 取，
+          // 不再写死在 data/flows.ts 里（08c 第零节「点不动的三处」第 2 条）
+          const reason = b.disabled ? (b.reason ?? a.disabledReason) : undefined
           const btn = (
             <Button
               key={a.id}
               size="sm"
-              disabled={a.disabled}
+              disabled={b.disabled}
+              onClick={b.onClick}
+              data-action={a.id}
               variant={a.primary ? 'primary' : a.danger ? 'danger' : 'default'}
               icon={<Icon size={14} strokeWidth={1.75} />}
             >
               {a.label}
             </Button>
           )
-          return a.disabled && a.disabledReason ? (
-            <Tooltip key={a.id} content={a.disabledReason} side="bottom">
+          return reason ? (
+            <Tooltip key={a.id} content={reason} side="bottom">
               <span className="cursor-not-allowed">{btn}</span>
             </Tooltip>
           ) : (
@@ -226,8 +250,8 @@ export function TopBar() {
           )
         })}
         <span className="ml-auto flex items-center gap-2 text-[12px] text-t2">
-          <StatusDot status={disabledAction ? 'empty' : 'done'} />
-          {disabledAction ? '闸门未放行' : '就绪可启动'}
+          <StatusDot status={statusTone} pulse={runPhase === 'running'} />
+          {statusText}
         </span>
       </div>
       ) : null}

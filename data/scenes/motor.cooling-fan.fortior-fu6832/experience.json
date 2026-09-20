@@ -223,7 +223,8 @@
         ]
       },
       "evidence_level": "规程条款",
-      "parameters_resolved": true,
+      "parameters_resolved": false,
+      "_status": "待核实：Pole_Pairs 宏在客户头文件 Customer.h:56（#define Pole_Pairs (2)）确实存在，本包也已登记，但登记位置是 product-attributes.json 的电机本体属性（key = pole_pairs，极对数），不在 control-parameters.json 的 70 个可调控制参数里。SPEED_KI 能解析到 control-parameters.json 的 key = speed_ki。极对数是否应补登记为可调参数，待客户确认，确认前本条按未解析处理。",
       "_source": {
         "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
         "locator": "第 5 节 失败分诊迭代 表 第 7 行"
@@ -473,7 +474,8 @@
         ]
       },
       "evidence_level": "台架经验",
-      "parameters_resolved": true,
+      "parameters_resolved": false,
+      "_status": "待核实：FG_PULSE_PERIOD 宏在客户头文件 Customer.h:334（#define FG_PULSE_PERIOD (2)，注释「FG 每轉脈波數量」）确实存在，本包也已登记，但登记位置是 product-attributes.json 的转速信号属性（key = fg_pulse_period，FG 每转脉波数），不在 control-parameters.json 的 70 个可调控制参数里。每转脉冲数是否应补登记为可调参数，待客户确认，确认前本条按未解析处理。",
       "_source": {
         "file": "/home/zzz/.claude/projects/-mnt-f-Main-File-2-Projects---/memory/fortior-test-bench-hardware.md",
         "locator": "「示波器接线」段"

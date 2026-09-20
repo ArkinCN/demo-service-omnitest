@@ -71,6 +71,10 @@ export interface EnvelopeInput {
   model: string
   /** 本轮对话的一句话摘要，没有对话时为 null */
   transcriptSummary: string | null
+  /** 流程 4 已勾选的候选改动。空数组表示没选中，zoneB.selected_candidate 据此为 null。 */
+  adopted: { key: string; name: string; from: string; to: string }[]
+  /** 本会话已跑完第几轮；0 表示没跑过，lastRun.artifacts 据此为 null */
+  runRound: number
 }
 
 const REDLINE = ['start', 'stop', 'estop', 'write_back', 'export', 'archive']
@@ -119,7 +123,17 @@ export function buildEnvelope(input: EnvelopeInput): Envelope {
         })),
         failed_items: [],
         missing_measures: missingMeasures,
-        artifacts: null,
+        // 轮次产物：本壳层没有真的落盘文件，跑完一轮后给的是回放态产物索引，
+        // 字段里写明 replay，别让下游把它当成真交付件。没跑过就如实 null。
+        artifacts:
+          input.runRound > 0
+            ? {
+                run_id: `replay-run-${input.runRound}`,
+                replay: true,
+                note: '回放态产物索引：页面按场景包登记值回放出来的一轮，不是台架落盘文件',
+                items: ['判定表', '报告草稿'],
+              }
+            : null,
         precheck: {
           hardware: 'ok',
           pending_gates: interlocks.filter((i) => i.type !== '硬件').map((i) => i.id),
@@ -164,7 +178,15 @@ export function buildEnvelope(input: EnvelopeInput): Envelope {
       // 这里如实写 null，依赖它们的按钮置灰。
       selected_document: null,
       selected_fail_item: null,
-      selected_candidate: null,
+      // 候选改动是例外：它的选中态第四轮已上提到 store 的 adoptedKeys / adoptMeta，
+      // 这里接上去，勾了候选「写回草稿」就能亮（07i 核验 P3）。
+      selected_candidate: input.adopted.length
+        ? {
+            count: input.adopted.length,
+            keys: input.adopted.map((c) => c.key),
+            items: input.adopted,
+          }
+        : null,
       interlocks: interlocks.map((i) => ({
         id: i.id,
         name: i.name,
@@ -243,13 +265,14 @@ export function missingContext(def: ActionDef, env: Envelope): string[] {
 
 /** 缺字段时按钮悬停提示：缺什么、去哪补 */
 const WHERE: Record<string, string> = {
-  '/lastRun/artifacts': '本轮产物包（轮次产物存储尚未实现，跑完一轮后才会有）',
+  '/lastRun/artifacts': '先在流程 3 跑完一轮（跑完后给的是回放态产物索引，不是台架落盘文件）',
   '/history/runs': '历史轮次索引（轮次存储尚未实现，至少跑过两轮才能比）',
   '/zoneB/selected_document': '先在知识库页选中一份文档',
   '/zoneB/selected_fail_item': '先在 B 区选中一条未达标项',
-  '/zoneB/selected_candidate': '先在 B 区选中一条候选改动',
+  '/zoneB/selected_candidate': '先在流程 4 的推荐参数里勾选至少一条候选改动',
   '/zoneB/firmware_project': '先在流程 1 指定驱动工程目录',
   '/zoneB/report_template': '先在流程 5 载入报告模板',
+  '/session/transcript_summary': '先与助手对话至少一轮（本会话对话摘要由对话轮数推出）',
   '/lastRun/precheck': '先跑一次预检',
   '/lastRun/verdicts': '先跑完一轮测试',
   '/lastRun/failed_items': '先跑完一轮测试',

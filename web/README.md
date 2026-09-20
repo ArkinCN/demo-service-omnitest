@@ -35,11 +35,8 @@ v2 视觉层重做后的验收截图另有一套，基准 1920×1080，见本文
 URL 上的 `?scene=<sceneId>` 直接指定开哪个场景包（截图脚本与分享链接都用它），
 目录里没有这个 id 时忽略，走 `public/scenes/index.json` 的 `default`。
 
-网关（远程设备卡要用，不起也能跑，卡片显示离线态）：
-
-```bash
-cd ~/lab/webssh && npm run gateway        # 监听 8022，token 在该目录 .env
-```
+两个后端的起法与配置见本文第 10 节「交互与设备桥」。两个都不起也能跑，
+画布设备节点显示「网关 未连通」并在 tooltip 里说明缺什么。
 
 ---
 
@@ -296,12 +293,17 @@ PREFIX=wip node scripts/shootfinal.mjs    # 改到一半时出一套 wip-*.png �
 | `final-{kb,init,req,run,tune,report}-1440.png` | 同上六页，1440×810，核对窄视口不破版 |
 | `final-zoom-canvas.png` | 放大态 · 工作流画布（流程 3 首卡） |
 | `final-zoom-timeseries.png` | 放大态 · 时序曲线（流程 4 首卡） |
-| `final-zoom-evidence.png` | 放大态 · 知识库依据（流程 1 第 2 槽） |
+| `final-zoom-evidence.png` | 放大态 · 知识库依据（流程 2 画板上双击「知识库依据」节点开浮层）。2026-09-20 改过一次取图口径：原先写的是「知识库模块页第 2 枚放大按钮」，而知识库模块页改成三栏版式后已无任何放大按钮，点击必然失败，旧图其实是一张没有浮层的知识库整页图 |
 | `final-auto-run.png` / `final-auto-init.png` | 场景二（汽车 › 车身电机 › 电动玻璃升降器）的流程 4 与流程 2 |
 | `final-compare-run.png` | 两包同一条流程并排，左电机右汽车，各缩到 960 宽，总宽 1920 |
 
 `shots2/` 里另有几张 `run.png` / `kb.png` 一类无前缀的图，是视觉层铺页过程中
 `scripts/shoot2.mjs` 出的中间稿，留着做前后对照，交付看 `final-*` 那一套。
+
+`shootfinal.mjs` 与 `shootextra.mjs` 不再吞掉失败：任何一步点不到、或放大动作
+之后页面上找不到浮层，都会打一条 `[warn]` 并在收尾时以退出码 1 结束，图虽然仍
+落盘但脚本明说它不可信。另给一个 `OUTDIR` 环境变量换输出目录（默认 `shots2`），
+自查时用它出一套到别处，不覆盖交付图。
 
 ## 7. 数据来源
 
@@ -624,3 +626,149 @@ lint 基线从 26 条冲到三千多条，忽略之后不会再发生。
 `BASE` 默认 `http://localhost:4173`）；`node scripts/shootextra.mjs` 出五张状态图
 `final-extra-{canvas-zoom,node-zoom,confirm,kb-filter,collapse}.png`，
 每张都会打印它实际做到了哪一步。旧的 `final-kb*.png` 已由 `final-knowledge*.png` 取代。
+
+---
+
+## 10. 交互与设备桥
+
+第四轮（2026-09-20）把原型上「看得见点不动」的四处接上了：顶栏动作条、左栏底部
+确认按钮、判定卡未达标行、画布设备节点。本节讲配置与红线流程，改动清单见
+`CHANGELOG-wire-20260920.md`。
+
+### 10.1 两个后端，各配各的
+
+页面这一侧接两个独立后端，地址与 token 全部经 `.env` 配置。复制模板再改：
+
+```bash
+cp .env.example .env
+```
+
+| 变量 | 默认值 | 谁在用 | 不配会怎样 |
+| --- | --- | --- | --- |
+| `VITE_DEVICE_BRIDGE_URL` | `http://127.0.0.1:8031` | 设备桥。画布设备节点的状态、工具条下半截的分层工具菜单、红线动作的凭据 | 节点显示「网关 未连通」，tooltip 写明桥不可达与该起哪个脚本 |
+| `VITE_BRIDGE_TOKEN` | 空 | 同上，桥的 `x-bridge-token` 头。**只是调用票，不是批准权**，见 10.5 | 所有请求被 401，节点 tooltip 指名缺这一项 |
+| `VITE_GATEWAY_URL` | `http://localhost:8022` | SSH 网关。只剩设备节点放大态里那个 xterm 终端一个用途 | 终端连不上，其余一切照常 |
+| `VITE_GATEWAY_TOKEN` | 空 | 同上 | 同上 |
+
+改完 `.env` 必须重启 `npm run dev`，Vite 不热加载环境变量。
+
+起设备桥：
+
+```bash
+cd ~/lab/spike-device-mcp
+cp .env.example .env      # 填 FORTIOR_WIN_KEY、BRIDGE_TOKEN、BRIDGE_APPROVER_PIN
+./run-bridge.sh           # 监听 127.0.0.1:8031；探一次 /health，再自动 connect 一次台架
+```
+
+桥的 `BRIDGE_TOKEN` 与前端的 `VITE_BRIDGE_TOKEN` 必须同值。桥的
+`BRIDGE_APPROVER_PIN` 与它们都不同值，且**前端不配这一项**——它由人在确认卡上现场输入。
+桥在 `BRIDGE_APPROVER_PIN` 未设置、或与 `BRIDGE_TOKEN` 同值时拒绝启动。
+
+`run-bridge.sh` 起桥后会自动调一次 `connect`，并打印本次拿到的 `mode`：`live` 真连上
+台架、`mock` 连不上返回合成数据、`unknown` 连接没建立。桥重启会清空 SSH 会话，
+不补这一步的话 `status` 会一直停在 `unknown`，演示当场才发现没连台架。要跳过自动
+连接用 `./run-bridge.sh --no-connect`，脚本会打出手动 connect 的命令行。桥默认只放行
+`http://localhost:5173` 与 `http://localhost:3080` 两个来源（它的 `BRIDGE_CORS_ORIGIN`）。
+前端跑在别的端口——例如 `npm run preview` 的 4173/4199——浏览器会直接拦掉请求，
+页面上看不到任何错误，只会显示「未连通」。所以要联设备桥就用 `npm run dev` 的 5173，
+或者去桥那侧把端口加进 `BRIDGE_CORS_ORIGIN`。
+
+设备桥的接口清单与红线机制见 `~/lab/spike-device-mcp/README.md` 第 3 节与第 6 节；
+前端调用点全部收在 `src/features/remote/bridge.ts` 一个文件里。
+
+### 10.2 设备节点读什么
+
+画布上的「设备节点」由 `src/features/remote/DeviceMcpNode.tsx` 渲染，数据源是桥的
+`GET /devices`（一次取全：设备元信息、live/mock 模式、按层分组的工具清单）与
+`GET /devices/{id}/status`（每 5 秒轮一次，只刷徽章）。节点上三行事实：
+
+- **工具**：桥现在真挂着几个工具，分几层。桥不通时退回场景包工具条的登记数。
+- **模式**：`live` 真连台架 / `mock` 连不上台架返回合成数据 / `未连过`。mock 一律
+  显式标「合成」，不让合成数据冒充实测。
+- **网关**：已连通 / 未连通。未连通时 tooltip 写明是缺 `VITE_BRIDGE_TOKEN`、
+  桥地址不可达，还是鉴权不匹配，并指出该起哪个脚本。
+
+C 区右侧工具条下半截按桥返回的三层分组渲染工具：连接层、观测层、动作层。观测层与
+连接层点了直接调；动作层六个工具描边走暗红，点下去只拿凭据，不执行。
+
+### 10.3 红线动作怎么走
+
+红线的原话：**启动、停止、急停、写回参数、导出、归档六个动作只能人点，且必须经确认。
+副驾不得自动执行。** 前端这一侧落成两条纪律：
+
+1. 这六个动作一律经 `useAppStore` 的 `requestRedline()` 排队，弹出确认卡
+   （`src/features/redline/RedlineConfirm.tsx`），人点「确认执行」才执行；
+2. 批准接口 `approveConfirmation()` 只有一个合法调用点——store 的 `approveRedline()`，
+   而它只由确认卡上那颗按钮触发。副驾（`features/copilot`、`features/agent-chat`）
+   只能排队，不能批准：`features/agent-chat/api.ts` 拿到桥的凭据后走
+   `requestRedlineAsync()` 把它排进同一张确认卡，不自己调批准接口。
+
+接了设备桥时是三段式，**闸口在桥里，前端骗不过去**：
+
+1. 前端不带 `confirm_token` 调一次桥的工具 → 桥拒绝执行（`executed: false`），
+   回一张 `pending` 凭据，带 `prompt` 与 `args_preview`；
+2. 人在确认卡上**输入批准 PIN**再点确认 → 前端调 `POST /confirmations/{token}/approve`，
+   带确认人署名与 `x-approver-pin` 头（见 10.5）；
+3. 前端带同一张票、**同一组参数**重调工具 → 才真执行。
+
+凭据的四道约束（单次使用、180 秒过期、绑工具名、绑参数指纹）只在桥里实现一次，
+前端不另起一套。副驾侧的 `POST /api/agent/confirm` 同样是转发这条批准接口，不另起凭据
+（依据：`08a-开发接口契约-v1.0.md` 第 3.4 节「两套确认机制，收口方案」）。
+
+桥不可达时第 1、3 步跳过，只驱动页面回放，**确认卡照弹**，并在卡上写明「设备桥未接入，
+本次只驱动页面回放，不向台架下发任何控制命令」。红线口径不因为桥没起就松掉。
+
+### 10.4 走一遍
+
+```bash
+cd ~/lab/spike-device-mcp && ./run-bridge.sh     # 桥已在 8031 监听则跳过
+cd ~/agent-test-web && npm run dev               # 必须是 5173，见 10.1 的 CORS 说明
+BASE=http://localhost:5173 node scripts/walk-wire.mjs
+```
+
+走查脚本要批准 PIN，从环境变量 `WALK_PIN` 读（脚本不接受写死的默认值）：
+
+```bash
+WALK_PIN=$(grep '^BRIDGE_APPROVER_PIN=' ~/lab/spike-device-mcp/.env | cut -d= -f2-) \
+  BASE=http://localhost:5173 node scripts/walk-wire.mjs
+```
+
+脚本走完整条主线：勾满九条安全闸门 → 启动按钮由灰转亮 → 点 → 确认卡 → 敲批准 PIN →
+运行中 → 出判定 → 未达标行点进流程 4 → 勾选候选 → 采纳（写回参数，走红线）→
+回流程 3 → 生成报告 → 导出（走红线）。截图落 `shots5/`。
+
+### 10.5 两级鉴权：调用票与批准权
+
+2026-09-20 修的一条严重问题（`07i-交互打通独立核验.md` 的 P1）：此前桥的全部鉴权
+就是一个 `x-bridge-token`，而它随 `VITE_BRIDGE_TOKEN` 被打进 `dist` 的 JS。任何拿到
+构建产物的人都能自己调工具签一张凭据、自己调 approve 批准、再带票执行，全程不需要
+任何人点任何按钮——整条红线形同虚设。
+
+现在桥把权限拆成两级：
+
+| 秘密 | 存在哪 | 能做什么 | 不能做什么 |
+| --- | --- | --- | --- |
+| `BRIDGE_TOKEN`（前端的 `VITE_BRIDGE_TOKEN`，请求头 `x-bridge-token`） | 桥的 `.env` 与**浏览器包里**，按公开处理 | 列设备、查状态、调工具、驳回凭据。调红线工具只会拿到一张 `pending` 凭据 | 把凭据推到 `approved` |
+| `BRIDGE_APPROVER_PIN`（请求头 `x-approver-pin`） | **只在桥的 `.env` 与桥进程内存**，不进任何 `VITE_` 变量、不进构建产物 | 批准一张 `pending` 凭据 | —— |
+
+桥用 `hmac.compare_digest` 做常量时间比较；没带 PIN 或 PIN 不对一律 **403**，凭据
+**保持 pending**（不消耗、不降级）；连续错 5 次锁 60 秒（`BRIDGE_APPROVER_PIN_MAX_FAILS`
+与 `BRIDGE_APPROVER_PIN_LOCK_SECONDS` 可调），锁定期间 PIN 正确也拒。批准成功后台账
+的 `approved_by` 记前端传来的操作者名，`approve_channel` 记 `human_pin`。
+
+**PIN 在前端的边界，说清楚。** PIN 由人在确认卡上敲进一个 `type="password"` 的输入框，
+只存在于该组件的 `useState` 里：换一张凭据即清空，卡关掉即随组件卸载消失。它不写
+`localStorage`、不写 `sessionStorage`、不进 store、不进任何模块级变量，因此**不会出现在
+构建产物里**。它确实会在敲入到请求发出的这段时间里存在于浏览器内存，也会以明文出现在
+那一次 HTTPS/HTTP 请求头里——能读到这台机器浏览器内存或能嗅到这条回环流量的人仍然能拿到
+它。这条边界改不掉，它换来的是：**光有构建产物批不动任何红线动作**，批准必须有人在这台
+机器前面现场敲一次。要再收紧一档，下一步是把批准挪到桥所在主机上的本地确认（页面只展示
+待批清单），页面这一侧连 PIN 都不经手。
+
+自查一条，交付任何构建产物前跑：
+
+```bash
+npm run build
+grep -c "$(grep '^BRIDGE_TOKEN=' ~/lab/spike-device-mcp/.env | cut -d= -f2-)" dist/assets/*.js   # 调用票仍会命中，属预期
+grep -c "$(grep '^BRIDGE_APPROVER_PIN=' ~/lab/spike-device-mcp/.env | cut -d= -f2-)" dist/assets/*.js   # 必须为 0
+```
