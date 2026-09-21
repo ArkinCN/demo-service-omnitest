@@ -1,5 +1,9 @@
 # 多场景 Agent 测试系统（agent-test-system）
 
+## 所有人先看：项目总开工顺序 v4.3
+
+[总顺序与分工](docs/开发交接/v4.3-20260921/README.md) · [飞书总入口](https://hcnd3xtushu0.feishu.cn/wiki/WKchwMsK0i2QIHkFzY8c5FmNnDf)。前端、后端与现场准备同时开始，再依次完成真实保存、资料和助手、模拟全流程、实机联调、完整验收与部署。每阶段明确负责人、交付结果和下一步条件；下面的后端指南作为详细参考。
+
 ## 后端同事先看这里 · v4.2
 
 [后端开工顺序](docs/开发交接/v4.2-20260921/README.md) · [飞书开工指南](https://hcnd3xtushu0.feishu.cn/wiki/OC2lwiqxGiblAJk3GVDchG1WnMg) · [客户代码复用清单](https://hcnd3xtushu0.feishu.cn/wiki/Jz2AwRoPSi83TDklAeccezYdnbh)。以客户已有 API、数据库、助手与报告库为起点，逐步新增测试业务并接新页面。新仓尚未迁入客户后端；不要从零重写已有能力。后端复用与数据库取舍以 v4.2 更正为准，v4.0 的完整功能与验收要求继续保留。
