@@ -1,5 +1,9 @@
 # 多场景 Agent 测试系统（agent-test-system）
 
+## 先看页面图解 v4.1
+
+[图文入口](docs/开发交接/v4.1-20260921/README.md) · [飞书图文版](https://hcnd3xtushu0.feishu.cn/wiki/PgtDwsWGMiD61KkgS43cIHwVn0w)。按实际页面讲解知识库、五个流程和助手，含 9 张界面截图及 2 张说明图。看懂页面后再查 v4.0 的接口、任务与部署明细。
+
 ## 2026-09-21 开发接手入口
 
 [开发交接 v4.0](docs/开发交接/v4.0-20260921/README.md) · [飞书入口](https://hcnd3xtushu0.feishu.cn/wiki/GFHPwZNQYibCrrki2JmcDwlBnzT)。包括功能、助手后端与客户代码、接口数据、36 项任务、调试部署、106 条验收及外部依赖。代码基线已同步 Gitee；新材料不表示真实后端已经完成。原 03 保留图示，旧 04 v3.2 简版改用此入口，历史版本保留。
