@@ -106,6 +106,12 @@ function FlowStepper() {
   // 当前节点在 FLOWS 中的下标：仅「当前 → 下一」段（下标 +1）播放进度动效
   const autoFlowId = autoRunning ? flowOfAutomationStage(autoCurrent) : null
   const curIdx = autoFlowId ? FLOWS.findIndex((f) => f.id === autoFlowId) : -1
+  /* 人测运行态（2026-10-10）：测试运行中给**当前节点**播「光圈扩散」。
+     ⚠️ 自动化运行期间 runPhase 也会被置 running（编排器启动台架时写的），
+     必须排除 autoRunning —— 否则自动化页面的顶栏节点也会起光圈，
+     而需求单要求「自动测试页面流程条零动效改动」。 */
+  const runPhase = useAppStore((s) => s.runPhase)
+  const humanRunning = !autoRunning && runPhase === 'running'
 
   // ── 缩放：按可用槽宽等比缩放，保证任何分辨率单行；文字过小则进入紧凑模式 ──────
   // 2026-10-10 调整：整体倍率由 2× 回落到 1.5×（用户反馈「显示尺寸过大」）。
@@ -268,8 +274,14 @@ function FlowStepper() {
                         : done || autoDone
                           ? 'bg-p100 text-p700'
                           : 'border border-line bg-white text-t3',
-                  // 2026-10-10：已到达 / 当前节点发光脉冲，提示进度（当前节点上方分支已含该态）
-                  !autoIsCurrent && (done || autoDone || on) ? 'automation-pulse' : '',
+                  // 2026-10-10：人测测试运行中 → 当前节点改播「光圈扩散」（run-ring），
+                  // 与呼吸光晕**互斥**（同一节点只留一层光圈，用户确认的替代关系）；
+                  // 非运行态与其它节点仍按原口径播发光脉冲。
+                  on && humanRunning
+                    ? 'run-ring'
+                    : !autoIsCurrent && (done || autoDone || on)
+                      ? 'automation-pulse'
+                      : '',
                 )}
                 style={{ fontSize: 'calc(var(--fb-scale) * 19px)' }}
               >
@@ -384,7 +396,11 @@ export function TopBar() {
               ② 运行中且浮层在 → 「终止」，点一下停掉整个自动化流程；
               ③ 运行中但人已退出浮层 → 「回到运行台」，点一下重新进入看进度
                  （后台那一轮没有中断，也没有重开第二轮）。 */}
+        {/* 2026-10-10（用户反馈）：顶栏紧贴视口上边缘，默认 `side="top"` 的浮层
+            会被裁到屏幕外（实测「自动化测试」长文案只露出最后一行）。
+            顶栏内的提示一律改为**向下弹出**。 */}
         <Tooltip
+          side="bottom"
           content={
             backToConsole
               ? '本轮仍在后台继续运行（你退出的是界面，不是测试），点此回到运行台看进度'
@@ -427,7 +443,7 @@ export function TopBar() {
               视觉上跟五步主线断开 */}
           <span className="h-[26px] w-px bg-line min-[1536px]:h-[30px]" />
           {/* 头部右侧控件（2026-10-10）：宽屏随 1.5× 流程条同步放大，窄屏回落原尺寸 */}
-          <Tooltip content="知识库 · 五条流程共用的基础模块">
+          <Tooltip side="bottom" content="知识库 · 五条流程共用的基础模块">
             <NavLink
               to="/knowledge"
               className={({ isActive }) =>
@@ -446,7 +462,7 @@ export function TopBar() {
           </Tooltip>
           <ProductCascader />
           {/* 演示 / 全量：只切展示面，两边读的都是同一份场景包，不删任何数据 */}
-          <Tooltip content="演示只露场景包 demo_profile 点名的那几项；全量把登记过的全表摊开，供评审对照。两边数据同源。">
+          <Tooltip side="bottom" content="演示只露场景包 demo_profile 点名的那几项；全量把登记过的全表摊开，供评审对照。两边数据同源。">
             <span>
               <Segmented
                 ariaLabel="演示模式"
@@ -460,13 +476,13 @@ export function TopBar() {
               />
             </span>
           </Tooltip>
-          <Tooltip content={benchBusy ? `台架被 ${benchUser} 占用中` : '台架空闲，可排队启动'}>
+          <Tooltip side="bottom" content={benchBusy ? `台架被 ${benchUser} 占用中` : '台架空闲，可排队启动'}>
             <span className="flex h-[30px] items-center gap-1.5 rounded-full border border-line bg-white px-2.5 min-[1536px]:h-[38px] min-[1536px]:px-3">
               <StatusDot status={benchBusy ? 'alert' : 'done'} pulse={!benchBusy} />
               <span className="text-[12px] text-t2 min-[1536px]:text-[15px]">{benchBusy ? '占用' : '空闲'}</span>
             </span>
           </Tooltip>
-          <Tooltip content={pending ? `安全联锁还有 ${pending} 项待确认` : '安全联锁就绪'}>
+          <Tooltip side="bottom" content={pending ? `安全联锁还有 ${pending} 项待确认` : '安全联锁就绪'}>
             <span className="flex h-[30px] items-center gap-1.5 rounded-full border border-line bg-white px-2.5 text-t2 min-[1536px]:h-[38px] min-[1536px]:px-3">
               <ShieldCheck size={14} strokeWidth={1.75} className={cn('min-[1536px]:h-[17px] min-[1536px]:w-[17px]', pending ? 'text-warn' : 'text-p600')} />
               <span className="num text-[12px] min-[1536px]:text-[15px]">{pending ? pending : '就绪'}</span>
