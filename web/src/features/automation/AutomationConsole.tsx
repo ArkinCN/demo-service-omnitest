@@ -9,7 +9,7 @@ import {
   SlidersHorizontal,
   Zap,
 } from 'lucide-react'
-import { Button, Tooltip, cn } from '../../components/ui'
+import { Button, Panel, PanelHeader, Tooltip, cn } from '../../components/ui'
 import { ConsoleChatPanel } from './ConsoleChatPanel'
 import { FanTrendView } from '../fan-trend/FanTrendView'
 import { getPack } from '../scene/pack'
@@ -290,60 +290,66 @@ export function AutomationConsole({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {/* 三栏栅格：1600 基准 260/1fr/320；1440 收窄；1280 以下右栏下移 */}
-      <div className="grid min-h-0 flex-1 grid-cols-[240px_minmax(0,1fr)_300px] gap-2.5 overflow-y-auto 2xl:grid-cols-[260px_minmax(0,1fr)_320px] xl:grid-cols-[220px_minmax(0,1fr)_280px]">
-        {/* ── 左栏：参数 + 执行动作 ── */}
-        <div className="flex min-h-0 flex-col gap-2.5">
-          <section className="flex min-h-0 flex-col rounded-tps border border-line-soft bg-surface">
-            <header className="flex shrink-0 items-center gap-1.5 border-b border-line-soft px-3 py-2">
-              <SlidersIcon />
-              <h2 className="text-[12.5px] font-semibold text-t1">自动选定的测试参数</h2>
-              <span className="num ml-auto text-[11.5px] text-t3">{params.length}</span>
-            </header>
-            <div className="min-h-0 flex-1 overflow-y-auto px-2 py-1.5">
-              {params.length ? (
-                params.map((p) => (
-                  <Tooltip
-                    key={p.key}
-                    className="w-full"
-                    content={`${p.fullName} · 来源：${p.source}${
-                      p.adopted ? '（本轮调优自动采纳）' : ''
-                    }`}
+      {/* 三栏栅格：左栏口径与人测页面左栏**同源**（app/FlowScreen.tsx 的 minmax(300px,380px)）；
+          右栏保持原档位；1280 以下（未进 xl）兜底窄一档，避免三栏互相挤压。 */}
+      <div className="grid min-h-0 flex-1 grid-cols-[minmax(280px,340px)_minmax(0,1fr)_300px] gap-2.5 overflow-y-auto 2xl:grid-cols-[minmax(300px,380px)_minmax(0,1fr)_320px] xl:grid-cols-[minmax(300px,380px)_minmax(0,1fr)_280px]">
+        {/* ── 左栏：参数 + 执行动作 ──
+            2026-10-10 样式统一（用户要求「照搬人测页面左栏」）：
+              · 容器改用共享 Panel（surface-1：白底 + 圆角 + 柔阴影）；
+              · 段头改用共享 PanelHeader（h-[44px] / px-4 / gap-2.5 / 标题 16px / 图标 17px），
+                与人测左栏的「参数」标题条完全同规格；
+              · 两段之间不再留卡片缝隙，改由 PanelHeader 自带的 border-b 分隔（人测同款）；
+              · 行元素对齐人测 ParamRow 口径（min-h-[32px] / py-1 / pl-3 pr-3 / 名称 13px）。
+            ⚠️ 只统一观感：菜单项内容、排序、来源徽标与「本轮采纳」语义全部保持原样。 */}
+        <Panel>
+          <PanelHeader
+            icon={<SlidersHorizontal size={17} strokeWidth={1.9} />}
+            title="自动选定的测试参数"
+            right={<span className="num text-[12px] text-t3">{params.length}</span>}
+          />
+          <div className="min-h-0 flex-1 overflow-y-auto py-1">
+            {params.length ? (
+              params.map((p) => (
+                <Tooltip
+                  key={p.key}
+                  className="w-full"
+                  content={`${p.fullName} · 来源：${p.source}${
+                    p.adopted ? '（本轮调优自动采纳）' : ''
+                  }`}
+                >
+                  <div
+                    className={cn(
+                      'flex min-h-[32px] items-center gap-2 border-l-2 py-1 pr-3 pl-3 transition-colors',
+                      p.adopted ? 'border-l-p700 bg-ink-wash' : 'border-l-transparent',
+                    )}
                   >
-                    <div
+                    <span className="min-w-0 flex-1 truncate text-[13px] text-t1">{p.name}</span>
+                    <span
                       className={cn(
-                        'mb-1 flex items-center gap-1.5 rounded-tps px-2 py-1.5 transition-colors',
-                        p.adopted ? 'bg-ink-wash' : 'bg-sunk',
+                        'shrink-0 rounded-full px-1.5 py-[1px] text-[10px] font-medium',
+                        SOURCE_CLS[p.source],
                       )}
                     >
-                      <span className="min-w-0 flex-1 truncate text-[12px] text-t1">{p.name}</span>
-                      <span
-                        className={cn(
-                          'shrink-0 rounded-full px-1.5 py-[1px] text-[10px] font-medium',
-                          SOURCE_CLS[p.source],
-                        )}
-                      >
-                        {p.source}
-                      </span>
-                      <span className="num shrink-0 text-[12.5px] font-semibold text-t1">
-                        {p.display}
-                        {p.unit ? (
-                          <span className="ml-0.5 text-[10.5px] font-normal text-t3">{p.unit}</span>
-                        ) : null}
-                      </span>
-                    </div>
-                  </Tooltip>
-                ))
-              ) : (
-                <p className="px-1 py-3 text-center text-[11.5px] text-t3">
-                  场景包未加载，暂无参数可显示
-                </p>
-              )}
-            </div>
-          </section>
+                      {p.source}
+                    </span>
+                    <span className="num shrink-0 text-[13px] font-semibold text-t1">
+                      {p.display}
+                      {p.unit ? (
+                        <span className="ml-0.5 text-[11px] font-normal text-t3">{p.unit}</span>
+                      ) : null}
+                    </span>
+                  </div>
+                </Tooltip>
+              ))
+            ) : (
+              <p className="px-3 py-3 text-center text-[12px] text-t3">
+                场景包未加载，暂无参数可显示
+              </p>
+            )}
+          </div>
 
-          <ToolPanel tools={tools} />
-        </div>
+          <ToolBlock tools={tools} />
+        </Panel>
 
         {/* ── 中栏：实时趋势 + 执行日志（可拖分隔条）+ 状态条 ── */}
         <div className="flex min-h-[320px] flex-col gap-2.5">
@@ -538,10 +544,6 @@ export function AutomationConsole({
 
 /* ---------------------------------------------------------------- 子组件 */
 
-function SlidersIcon() {
-  return <SlidersHorizontal size={14} strokeWidth={1.9} className="shrink-0 text-p700" />
-}
-
 /**
  * 秒级滴答：返回当前时刻（ms），只用于让「本阶段已用时」走动。
  * ⚠️ 它只是重渲染的节拍源，**不产生任何业务状态**，也不当计时器基准
@@ -620,20 +622,22 @@ function TrendPill({
   )
 }
 
-/** 左栏「执行动作」面板：真实调用三态，由编排器按 promise 生命周期围栏 */
-function ToolPanel({ tools }: { tools: AutomationToolState[] }) {
+/** 左栏「执行动作」区块：真实调用三态，由编排器按 promise 生命周期围栏。
+ *  2026-10-10 样式统一：并入左栏同一张 Panel（不再单独成卡），段头用共享 PanelHeader、
+ *  行元素用人测页面左栏的行口径；三态语义与文案一字未改。 */
+function ToolBlock({ tools }: { tools: AutomationToolState[] }) {
   return (
-    <section className="flex min-h-[160px] flex-col rounded-tps border border-line-soft bg-surface">
-      <header className="flex shrink-0 items-center gap-1.5 border-b border-line-soft px-3 py-2">
-        <Zap size={14} strokeWidth={1.9} className="shrink-0 text-p700" />
-        <h2 className="text-[12.5px] font-semibold text-t1">执行动作</h2>
-        <span className="num ml-auto text-[11.5px] text-t3">{tools.length}</span>
-      </header>
-      <div className="min-h-0 flex-1 overflow-y-auto px-2 py-1.5">
+    <>
+      <PanelHeader
+        icon={<Zap size={17} strokeWidth={1.9} />}
+        title="执行动作"
+        right={<span className="num text-[12px] text-t3">{tools.length}</span>}
+      />
+      <div className="min-h-[160px] flex-1 overflow-y-auto py-1">
         {tools.length ? (
           tools.map((t) => (
             <Tooltip key={t.id} className="w-full" content={t.message ?? t.label}>
-              <div className="mb-1 flex items-center gap-2 rounded-tps bg-sunk px-2 py-1.5">
+              <div className="flex min-h-[32px] items-center gap-2 py-1 pr-3 pl-3">
                 <span
                   className={cn(
                     'h-[6px] w-[6px] shrink-0 rounded-full',
@@ -648,13 +652,13 @@ function ToolPanel({ tools }: { tools: AutomationToolState[] }) {
                 />
                 <span
                   className={cn(
-                    'min-w-0 flex-1 truncate text-[12px]',
+                    'min-w-0 flex-1 truncate text-[13px]',
                     t.status === 'done' || t.status === 'skipped' ? 'text-t3' : 'text-t1',
                   )}
                 >
                   {t.label}
                 </span>
-                <span className="num shrink-0 text-[10.5px] text-t3">
+                <span className="num shrink-0 text-[11.5px] text-t3">
                   {t.status === 'running'
                     ? '进行中'
                     : t.status === 'done'
@@ -667,12 +671,12 @@ function ToolPanel({ tools }: { tools: AutomationToolState[] }) {
             </Tooltip>
           ))
         ) : (
-          <p className="px-1 py-3 text-center text-[11.5px] text-t3">
+          <p className="px-3 py-3 text-center text-[12px] text-t3">
             尚未开始执行，第一个动作出现后这里会逐条列出
           </p>
         )}
       </div>
-    </section>
+    </>
   )
 }
 
