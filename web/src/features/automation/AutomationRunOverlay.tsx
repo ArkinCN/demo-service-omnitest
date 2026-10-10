@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { X } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { cn } from '../../components/ui'
 import { FLOWS } from '../../data/flows'
 import { useAppStore } from '../../state/useAppStore'
@@ -8,6 +8,7 @@ import { AutomationConsole } from './AutomationConsole'
 import { AutomationIntro } from './AutomationIntro'
 import { AutomationResult } from './AutomationResult'
 import { AutomationStageFlow } from './AutomationStageFlow'
+import { AutoExitConfirm } from './AutoExitConfirm'
 
 /* ===========================================================================
    自动化回归 · 全屏接管容器（三屏路由）
@@ -16,24 +17,39 @@ import { AutomationStageFlow } from './AutomationStageFlow'
    为什么改：自动化会横跨五个流程跑。弹窗遮住底层页面时，人既看不到参数被
    改成什么、也看不到台架采到的曲线，「一键」就变成了盲跑。
 
-   2026-10-09（本轮）：**结果由「整屏结果页」改为「运行台之上的完成弹窗」**。
+   2026-10-09：**结果由「整屏结果页」改为「运行台之上的完成弹窗」**。
    为什么改：跑完之后人最想做的两件事是「看这轮采到的曲线/日志/判定」和
    「看结论」。老实现把结果做成整屏页，一关就整层卸载 → 回到人测页，本轮
    数据（趋势/日志/进度/判定）当场消失，想复查只能重跑。现在：
 
-     · 终态不再让整层卸载，`AutomationConsole` 常驻（三栏、分隔条、图表、
-       滚动位置全部保住 —— running→result 不重挂载是刻意的）；
-     · `AutomationResult` 变成浮在上面的模态弹窗，`dismissed` 只控制弹窗显隐；
-     · 弹窗「关闭」= 收起弹窗（停留运行台，可随时从底部「查看执行结果」再开）；
-     · 右上角 ✕（文案「退出自动化测试」）= 退出全屏回归，回人测流程页。
+    · 终态不再让整层卸载，`AutomationConsole` 常驻（三栏、分隔条、图表、
+      滚动位置全部保住 —— running→result 不重挂载是刻意的）；
+    · `AutomationResult` 变成浮在上面的模态弹窗，`dismissed` 只控制弹窗显隐；
+    · 弹窗「关闭」= 收起弹窗（停留运行台，可随时从底部「查看执行结果」再开）。
+
+   2026-10-10（本轮）：**新增唯一的退出口**——顶栏那颗「退出自动化测试」
+   （原先的「轮次 xxxx」显示与右上角 ✕ 均已删除）。口径：
+
+    · 运行中点它 → **先二次确认**（`AutoExitConfirm`）：
+      「测试正在运行，确定退出吗？／退出仅关闭当前界面，后台测试将继续跑完。」；
+    · 确认后走**软退出**：只隐藏浮层，不清数据、不发任何设备停止指令，
+      后台编排器继续跑到自然完成，操作者稍后可经顶栏「回到运行台」回来；
+    · 非运行态（引导态 / 终态）点它 → 没有「后台还在跑」这件事，直接退。
+
+   ⚠️ 为什么软退出不能复用 `exitOverlay()`：后者里的 `clearAutomation()` 会把
+   `automationRunStatus` 复位成 idle，而编排器还在跑 —— 下一条事件立刻把它
+   回写成 running，浮层当场自己弹回来（同类坑历史上已踩过两次）。
 
    三态与优先级（沿用既有判定，避免「点了闪一下又变结果」的老毛病）：
      终态 > 运行态 > 引导态。终态一旦成立就常驻运行台 + 弹窗（弹窗可收起）。
 
    纪律：
-     一、运行态**不给关闭入口**（防误触打断真机流程），只有终止按钮能停；
+     一、退出口**唯一**：顶栏那颗按钮。运行中退出必须过二次确认，且只是
+        「界面退出」——**不打断真机流程**，台架继续跑完（不调 stopFanTest、
+        不碰 cancel 适配器、不加取消令牌）；
      二、数据全部来自 store 切片（编排器事件驱动），本文件不自己算耗时；
-     三、保留既有 data-testid / data-phase 契约，验收脚本不用改。
+     三、保留既有 data-testid / data-phase 契约；`automation-close`（✕）已按
+        用户要求删除，退出断言改用 `auto-exit-button`。
    =========================================================================== */
 
 type Phase = 'intro' | 'running' | 'result'
@@ -53,6 +69,9 @@ export function AutomationRunOverlay() {
   const stopAutomation = useAppStore((s) => s.stopAutomation)
   const clearAutomation = useAppStore((s) => s.clearAutomation)
   const setAutomationIntent = useAppStore((s) => s.setAutomationIntent)
+  /** 「本轮浮层已被用户退出」（软退出位），见下方渲染闸门 */
+  const overlayHidden = useAppStore((s) => s.automationOverlayHidden)
+  const hideAutomationOverlay = useAppStore((s) => s.hideAutomationOverlay)
 
   /**
    * 本地「弹窗已收起」位。
@@ -68,6 +87,14 @@ export function AutomationRunOverlay() {
     if (dismissed) setDismissed(false)
   }
   if (!intent && wasIntent.current) wasIntent.current = false
+
+  /**
+   * 「退出二次确认」是否开着（本地态）。
+   *
+   * 只有**运行中**才需要它：那时离开界面会让人看不到本轮进度，而真机仍在跑，
+   * 必须先问一句。非运行态退出没有后果，直接走（见 requestExit）。
+   */
+  const [confirmExit, setConfirmExit] = useState(false)
 
   const isFinal = runStatus === 'completed' || runStatus === 'failed' || runStatus === 'stopped'
   const phase: Phase | null = isFinal
@@ -136,15 +163,48 @@ export function AutomationRunOverlay() {
    */
   const dismissResult = () => setDismissed(true)
   /**
-   * 退出全屏回归：回人测流程页。
-   * ⚠️ 不加「运行中则忽略」的守卫：运行态根本不给 ✕ 入口（见 HeaderBar），
-   * 调用方只可能是引导态/结果态，多一层守卫反而会掩盖入口回归的问题。
+   * 整层退出（**非运行态专用**）：清掉本轮显示态，回人测流程页。
+   *
+   * ⚠️ 只在 `runStatus !== 'running'` 时可用：它调的 `clearAutomation()` 会把
+   * runStatus 复位成 idle，运行中用它会被下一条编排器事件当场拉回来。
+   * 运行中退出请走 `confirmAndExit()`（软退出）。
    */
   const exitOverlay = () => {
     setDismissed(true)
     setAutomationIntent(false)
     clearAutomation()
   }
+
+  /**
+   * 退出入口 —— 全浮层**唯一**的那一个（顶栏「退出自动化测试」按钮）。
+   *
+   * 分岔口径（需求单编号 2 / 6）：
+   *   · 运行中 → 先弹二次确认（离开界面就看不到本轮进度了，而真机仍在跑）；
+   *   · 非运行态（引导态 / 终态）→ 没有「后台还在跑」这件事，直接退，不问。
+   */
+  const requestExit = () => {
+    if (runStatus === 'running') setConfirmExit(true)
+    else exitOverlay()
+  }
+
+  /**
+   * 确认退出 = **软退出**：只隐藏浮层，不清数据、不停后台、不发任何设备指令。
+   *
+   * ⚠️ 刻意**不调** `exitOverlay()` / `clearAutomation()`：那会把 runStatus 复位
+   * 成 idle 并清空运行台数据，而后台编排器还在跑 —— 下一条事件就把它回写成
+   * running，浮层当场弹回来（历史踩过）。真正的清理留给下一轮启动或整层退出。
+   * ⚠️ 也**不调** `stopAutomation()`：本需求要的就是「台架继续跑」。
+   */
+  const confirmAndExit = () => {
+    setConfirmExit(false)
+    hideAutomationOverlay()
+  }
+
+  /* 确认弹窗开着时本轮若已走到终态（自然跑完/失败/被终止），自动收掉它：
+     「已经跑完了还问你在不在跑」是错的。 */
+  useEffect(() => {
+    if (confirmExit && runStatus !== 'running') setConfirmExit(false)
+  }, [confirmExit, runStatus])
   /** 重新运行＝回到引导屏（仍让人确认一次现场安全，不直接开跑） */
   const retry = () => {
     setDismissed(true)
@@ -174,8 +234,6 @@ export function AutomationRunOverlay() {
     })
   }
 
-  const closeIntro = () => exitOverlay()
-
   /*
    * ⚠️ 无运行态时**必须整层不渲染**（2026-10-09 修「打开项目一片空白」）。
    *
@@ -190,8 +248,18 @@ export function AutomationRunOverlay() {
    *
    * 修法：保持「挂载常驻」不变（卸载会丢 running→result 的常驻运行台），
    * 只在**渲染层**加守卫——三态都不成立时返回 null。
+   *
+   * ⚠️ 2026-10-10 追加第二个条件：`automationOverlayHidden`（人点了退出）。
+   * 它是**渲染级**闸门，只挡浮层、不挡 store 同步 —— `_syncAutomation` 与事件
+   * 订阅照旧，顶栏因此仍能读到真实运行信号（按钮显示「回到运行台」）。
+   * 清掉该位的唯一入口是 `setAutomationIntent(true)`（「回到运行台」走它）。
+   *
+   * ⚠️ 这里**只判 overlayHidden，不能再叠 `&& !intent`**（2026-10-10 实测栽过）：
+   * 从「回到运行台」重进时 intent 被置 true 且此后没人清它，叠上 `!intent`
+   * 会让隐藏位当场失效 —— 表现是「重进之后**再点退出就退不掉了**」。
+   * 引导态不需要这个条件兜底：`setAutomationIntent(true)` 本身已清隐藏位。
    */
-  if (!phase) return null
+  if (!phase || overlayHidden) return null
 
   return (
     <div
@@ -205,11 +273,11 @@ export function AutomationRunOverlay() {
       {/* 引导屏：同样给顶栏，保持「这是全屏模式」的认知一致 */}
       {phase === 'intro' ? (
         <>
-          <HeaderBar phase={phase} runId={null} onClose={closeIntro} />
+          <HeaderBar onExit={requestExit} />
           <AutomationIntro
                 gateAcked={gateAcked.length}
                 onStart={startAutomation}
-             onCancel={closeIntro}
+             onCancel={exitOverlay}
               />
         </>
       ) : null}
@@ -222,12 +290,7 @@ export function AutomationRunOverlay() {
       */}
       {phase === 'running' || phase === 'result' ? (
         <>
-          <HeaderBar
-            phase={phase}
-            runId={summary.runId}
-            views={views}
-            onClose={phase === 'running' ? undefined : closeIntro}
-          />
+          <HeaderBar views={views} onExit={requestExit} />
           <main className="relative flex min-h-0 flex-1 flex-col p-3">
             <AutomationConsole
                 stages={views}
@@ -257,21 +320,23 @@ export function AutomationRunOverlay() {
           </main>
         </>
       ) : null}
+
+      {/* 退出二次确认：只在运行中弹；走到终态由上面的 effect 自动收掉。
+          ⚠️ 它调的是 confirmAndExit（软退出），不是 exitOverlay。 */}
+      {confirmExit && phase === 'running' ? (
+        <AutoExitConfirm onCancel={() => setConfirmExit(false)} onConfirm={confirmAndExit} />
+      ) : null}
     </div>
   )
 }
 
-/** 全屏顶栏：品牌 + 模式标 + 五步骤流光条 + 轮次号 + 退出 */
+/** 全屏顶栏：品牌 + 模式标 + 五步骤流光条 + 退出按钮（唯一的退出口） */
 function HeaderBar({
-  phase,
-  runId,
   views,
-  onClose,
+  onExit,
 }: {
-  phase: Phase
-  runId: string | null
   views?: ReturnType<typeof buildStageViews>['views']
-  onClose: (() => void) | undefined
+  onExit: () => void
 }) {
   return (
     <header
@@ -297,26 +362,56 @@ function HeaderBar({
         <div className="min-w-0 flex-1" />
       )}
 
-      {runId ? <span className="num shrink-0 text-[11.5px] text-t3">轮次 {runId.slice(0, 8)}</span> : null}
-
-      {/* 运行态不给退出入口：真机流程只能靠「终止」停，误关会让人以为跑完了 */}
-      {onClose ? (
-        <button
-          type="button"
-          aria-label="退出自动化测试"
-          data-testid="automation-close"
-          onClick={onClose}
-          className={cn(
-            'inline-flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-tpx border border-transparent text-t3 transition-colors',
-            phase === 'running'
-              ? 'cursor-not-allowed opacity-40'
-              : 'cursor-pointer hover:bg-p50 hover:text-p700',
-          )}
-          title={phase === 'running' ? '运行中不可退出，请先终止' : '退出自动化测试'}
-        >
-          <X size={15} strokeWidth={2} />
-        </button>
-      ) : null}
+      {/*
+        退出口唯一：原「轮次 xxxx」显示（runId.slice(0,8)）与右上角 ✕（automation-close）
+        均按用户要求删除，这里只留这一颗按钮。运行中点击会先过二次确认，
+        非运行态直接退（分岔在 requestExit）。
+      */}
+      <ExitButton onExit={onExit} />
     </header>
+  )
+}
+
+/**
+ * 退出按钮（全浮层唯一退出口）。
+ *
+ * 样式口径：与流程条节点**同族** —— 白底 + 细描边 + 全圆角，取「未到达节点」
+ * 那套 token（`border-line` / `bg-white` / `text-t3`），hover 走浅绿反馈。
+ *
+ * ⚠️ 尺寸与字号一律乘 `--fb-scale`（由 `AutomationStageFlow` 写到本 header 上），
+ * **不写死像素**：流程条会随视口放大到 1.5×，写死像素会让两者比例失衡。
+ * 变量缺失时回落到 1（此时与流程条未缩放态一致）。
+ *
+ * 图标取 LogOut：一眼能认出是「退出」，不必靠文字猜。
+ */
+function ExitButton({ onExit }: { onExit: () => void }) {
+  return (
+    <button
+      type="button"
+      data-testid="auto-exit-button"
+      onClick={onExit}
+      title="退出自动化测试：只关闭当前界面，后台测试继续跑完"
+      className={cn(
+        'inline-flex shrink-0 cursor-pointer items-center rounded-full border border-line bg-white text-t3 transition-colors duration-150',
+        'hover:border-p300 hover:bg-p50 hover:text-p700',
+        'focus-visible:border-p300 focus-visible:bg-p50 focus-visible:text-p700 focus-visible:outline-none',
+      )}
+      style={{
+        height: 'calc(var(--fb-scale, 1) * 32px)',
+        gap: 'calc(var(--fb-scale, 1) * 6px)',
+        paddingInline: 'calc(var(--fb-scale, 1) * 12px)',
+        fontSize: 'calc(var(--fb-scale, 1) * 13px)',
+      }}
+    >
+      <LogOut
+        strokeWidth={1.9}
+        className="shrink-0"
+        style={{
+          width: 'calc(var(--fb-scale, 1) * 14px)',
+          height: 'calc(var(--fb-scale, 1) * 14px)',
+        }}
+      />
+      退出自动化测试
+    </button>
   )
 }

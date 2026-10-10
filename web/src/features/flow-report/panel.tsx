@@ -26,7 +26,7 @@ import {
 } from '../../components/ui'
 import { collapseKey, useAppStore } from '../../state/useAppStore'
 import { useFlowActions } from '../redline'
-import { assembleReport } from './assemble'
+import { assembleReport, computePassRate, fmtPassRate } from './assemble'
 import {
   downloadUrl,
   persistReportInstance,
@@ -59,7 +59,12 @@ function short(s: string, n = 6) {
   return clean.length > n ? `${clean.slice(0, n)}…` : clean
 }
 
-/** 模板分节里的「上传模板文件」行：上传客户正式模板（.xlsm），覆盖式替换系统自建模板。 */
+/**
+ * 模板分节里的模板行。
+ *
+ * 2026-10-10 口径：**系统内置模板即正式报告**，所以未上传客户模板时不是「缺东西」，
+ * 而是「当前就用内置的正式模板」——措辞不能写成待办。上传客户 .xlsm 是**可选**能力。
+ */
 function TemplateUploadRow() {
   const [tpl, setTpl] = useState<{ ready: boolean; filename?: string; bytes?: number } | null>(null)
   const [busy, setBusy] = useState(false)
@@ -82,7 +87,7 @@ function TemplateUploadRow() {
     try {
       const r = await uploadTemplate(f)
       setTpl({ ready: true, filename: r.filename, bytes: r.bytes })
-      st.setNotice(`客户模板已上传（${r.filename}，${r.bytes} 字节），重新生成报告即为正式报告`)
+      st.setNotice(`客户模板已上传（${r.filename}，${r.bytes} 字节），重新生成报告将改用客户模板`)
     } catch (err) {
       st.setNotice(`模板上传失败：${err instanceof Error ? err.message : String(err)}`)
     } finally {
@@ -93,13 +98,13 @@ function TemplateUploadRow() {
   return (
     <div className="flex min-h-[40px] items-center gap-2 px-4 py-1.5">
       <span className="shrink-0 whitespace-nowrap text-[13px] font-medium text-t1">
-        {tpl?.ready ? '客户模板已就位' : '当前用系统自建模板'}
+        {tpl?.ready ? '客户模板' : '报告模板'}
       </span>
-      {tpl?.ready && (
-        <span className="num truncate text-[12px] text-t3">
-          {tpl.filename}（{sizeText(tpl.bytes ?? 0)}）
-        </span>
-      )}
+      <span className="num truncate text-[12px] text-t3">
+        {tpl?.ready
+          ? `${tpl.filename}（${sizeText(tpl.bytes ?? 0)}）`
+          : '系统内置（正式报告）'}
+      </span>
       <span className="ml-auto shrink-0">
         <input
           ref={inputRef}
@@ -114,7 +119,7 @@ function TemplateUploadRow() {
           onClick={() => inputRef.current?.click()}
           className="num cursor-pointer rounded-tpx border border-line px-2 py-1 text-[12px] text-t1 transition-colors hover:bg-p50 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {busy ? '上传中…' : tpl?.ready ? '替换模板' : '上传模板文件'}
+          {busy ? '上传中…' : tpl?.ready ? '更换' : '改用客户模板'}
         </button>
       </span>
     </div>
@@ -657,6 +662,21 @@ const STATE_TEXT: Record<string, string> = {
   not_applicable: '本台架不适用',
 }
 
+/* ---------------------------------------------------------------------------
+   报告页专用「不通过」降权色（2026-10-10 编号 4 美化，效果图已确认）
+   ---------------------------------------------------------------------------
+   为什么不直接调全局 `--tp-alert`：那个令牌被 **7 处共享组件**取用
+   （Badge / StatusDot / Card / Button(danger) / Tag / Bar / Row），
+   改它会把「上传失败」「红线确认卡」等**非报告界面**一起变色。
+   所以「红降权」只发生在报告页内：正红 #A6353A → 陶土三件套。
+
+   一条不许破的底线：判定状态**文字**仍是「不通过」原词，降的是颜色不是措辞。
+   --------------------------------------------------------------------------- */
+/** 圆点/色条：正红降为陶土浅 */
+const CLAY_DOT = 'bg-[#C58F8B]'
+/** 弱标记：浅陶土底 + 细描边 + 深陶土字（用于「不通过」这三字的外框） */
+const CLAY_MARK = 'rounded-tpx border border-[#E6CCCA] bg-[#FBF4F3] text-[#97504B]'
+
 /** 判定行：走和流程 4 同一套求值，不另写一份口径 */
 /** 判定口径与流程 3、流程 4 同一套；演示模式下同样只统计 demo_profile 点名的判据 */
 function useVerdictRows() {
@@ -913,7 +933,8 @@ function ReportPreview({ full }: { full?: boolean }) {
                   <span
                     className={cn(
                       'num ml-auto shrink-0 text-[12px]',
-                      r.state === 'fail' ? 'text-alert' : 'text-t3',
+                      // 不通过改成「弱标记」（改动点 ③）：浅陶土底 + 细描边，文字仍是「不通过」原词
+                      r.state === 'fail' ? `px-1.5 text-[11.5px] ${CLAY_MARK}` : 'text-t3',
                     )}
                   >
                     {STATE_TEXT[r.state]}
@@ -984,6 +1005,13 @@ function FullReport() {
   const waves = useWaves()
   const rows = useVerdictRows()
   if (!pack) return <Empty text="场景包未加载" />
+  // 通过率（B 口径）：与判定汇总卡、后端自建报告同一条公式（唯一实现见 assemble.ts）
+  const passRateText = fmtPassRate(
+    computePassRate(
+      rows.filter((r) => r.state === 'pass').length,
+      rows.filter((r) => r.state === 'fail').length,
+    ),
+  )
   const pt = pack.report.performance_table
   const raw = pack.report.template_file
 
@@ -1092,17 +1120,32 @@ function FullReport() {
           ))}
         </div>
 
-        <h2 className="mt-4 border-l-2 border-p700 pl-2 text-[13px] font-semibold text-t1">判定表</h2>
+        <h2 className="mt-4 border-l-2 border-p700 pl-2 text-[13px] font-semibold text-t1">
+          判定表
+          {/* 通过率（B 口径）：分母只含已判定的通过/不通过；无判定数据时显示「—」 */}
+          <span className="num ml-2 font-normal text-t2">通过率 {passRateText}</span>
+        </h2>
         <table className="mt-1.5 w-full border-collapse text-[12px]">
           <tbody>
             {rows.map((r) => (
-              <tr key={r.req.id} className="border-b border-line-soft">
-                <td className="num w-[92px] py-1 text-t3">{r.req.id}</td>
+              <tr
+                key={r.req.id}
+                className={cn('border-b border-line-soft', r.state === 'fail' && 'bg-[#FDFBFA]')}
+              >
+                {/* 不通过行用「左侧 3px 陶土细色条 + 中性正文」（改动点 ③），不整行标红 */}
+                <td
+                  className={cn(
+                    'num w-[92px] py-1 text-t3',
+                    r.state === 'fail' && 'pl-1.5 shadow-[inset_3px_0_0_0_#C58F8B]',
+                  )}
+                >
+                  {r.req.id}
+                </td>
                 <td className="py-1 text-t1">{r.req.name}</td>
                 <td
                   className={cn(
                     'num w-[72px] py-1 text-right',
-                    r.state === 'fail' ? 'text-alert' : 'text-t3',
+                    r.state === 'fail' ? `px-1.5 text-[11.5px] ${CLAY_MARK}` : 'text-t3',
                   )}
                 >
                   {STATE_TEXT[r.state]}
@@ -1284,6 +1327,13 @@ function VerdictSummary({ full }: { full?: boolean }) {
   // 本台架不适用（2026-10-08）：与 missing 分开，不进通过/不通过
   const notApplicable = rows.filter((r) => r.state === 'not_applicable').length
   const judged = pass + fail
+  /**
+   * 通过率（B 口径，2026-10-10 需求单编号 3）：分母只含**已判定**的通过/不通过。
+   * 未采集、本台架不适用、人工判定都不进分母；无判定数据时给「—」，
+   * **不显示 0%**（0% 会被读成「全不通过」，与事实相反）。
+   * 公式与文案口径在 `assemble.ts` 唯一实现，这里只取用。
+   */
+  const passRateText = fmtPassRate(computePassRate(pass, fail))
   // 不适用项排在未采集之前（有明确结论，已写明缺什么设备）
   const list = full
     ? rows
@@ -1293,31 +1343,54 @@ function VerdictSummary({ full }: { full?: boolean }) {
         ...rows.filter((r) => r.state === 'missing'),
       ].slice(0, 6)
 
+  /** 次要计数一格：数值从 26px 退到 17px，不再与通过率争视觉主位（改动点 ②） */
   const Stat = ({ n, label, tone }: { n: number; label: string; tone: 'ok' | 'bad' | 'mute' }) => (
     <div className="flex min-w-0 flex-1 flex-col gap-0.5">
       <span className="flex items-center gap-1.5">
         <span
           className={cn(
             'h-[7px] w-[7px] shrink-0 rounded-full',
-            tone === 'ok' ? 'bg-p600' : tone === 'bad' ? 'bg-alert' : 'bg-t3/40',
+            tone === 'ok' ? 'bg-p600' : tone === 'bad' ? CLAY_DOT : 'bg-t3/40',
           )}
         />
-        <span className="text-[12px] text-t3">{label}</span>
+        <span className="truncate text-[11.5px] text-t3">{label}</span>
       </span>
-      <span
-        className={cn(
-          'num text-[26px] leading-none font-semibold tracking-tight',
-          tone === 'bad' && n > 0 ? 'text-alert' : 'text-t1',
-        )}
-      >
-        {n}
-      </span>
+      <span className="num text-[17px] leading-none font-semibold tracking-tight text-t1">{n}</span>
     </div>
   )
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
-      <div className="flex shrink-0 items-start gap-2 pb-2.5">
+      {/* 主视觉：通过率 44px 墨绿（改动点 ①）——看报告的人第一个要的就是这个数 */}
+      <div className="flex shrink-0 items-end gap-2.5 border-b border-line-soft pb-3">
+        <span className="num text-[44px] leading-none font-semibold tracking-tight text-p700">
+          {passRateText}
+        </span>
+        <span className="flex items-center gap-1.5 pb-1">
+          <span className="text-[12px] text-t3">通过率</span>
+          <InfoTip
+            content={`全表 ${rows.length} 条判据，可自动求值 ${pack.requirements.evaluable_count} 条，本轮已求值 ${judged} 条。通过率 = 通过 ÷（通过 + 不通过），「未采集」与「本台架不适用」都不计入分母；本轮没有可判定的通过/不通过项时显示「—」，不显示 0%。${
+              notApplicable
+                ? `其中 ${notApplicable} 条为「本台架不适用」：需本台架未配置的测量手段（MCU 故障寄存器 / FG 转速信号 / 母线电流探头 / 程控电源等），逐条写明缺什么，不计入通过或不通过。`
+                : ''
+            }结论段按判定结果聚合，不自由撰写。`}
+          />
+        </span>
+        {fail > 0 ? (
+          /* 温和汇总（改动点 ⑤）：只在真有未达标项时出现；0 项时整块不显示，不做「0 项需改善」的噪音 */
+          <span className={cn('mb-1 ml-auto shrink-0 px-2.5 py-[3px] text-[11.5px]', CLAY_MARK)}>
+            {fail} 项需改善
+          </span>
+        ) : pass > 0 ? (
+          /* 「完美通过」印章（改动点 ⑤）：仅「有已判定项且不通过为 0」（即通过率 100%）时出现。
+             无判定数据时整块留空——绝不假装完美（口径见样式说明第 5 节）。 */
+          <span className="mb-1 ml-auto inline-flex shrink-0 items-center gap-2 rounded-tps border-[1.5px] border-p700 bg-gradient-to-b from-white to-p50 px-3 py-1 text-[12.5px] font-semibold tracking-wide text-p700 shadow-[0_1px_2px_rgba(46,94,69,0.10)]">
+            <span className="h-[15px] w-[15px] shrink-0 rounded-full bg-[radial-gradient(circle_at_34%_30%,#E6D391,#C9A227_72%)] shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.6)]" />
+            完美通过
+          </span>
+        ) : null}
+      </div>
+      <div className="flex shrink-0 items-start gap-2 pt-2.5 pb-2.5">
         <Stat n={pass} label="通过" tone="ok" />
         <Stat n={fail} label="不通过" tone="bad" />
         {/* 有「本台架不适用」项时优先展示它：已写明缺什么设备，比笼统的未采集更利于决策 */}
@@ -1326,13 +1399,6 @@ function VerdictSummary({ full }: { full?: boolean }) {
         ) : (
           <Stat n={missing} label="未采集" tone="mute" />
         )}
-        <InfoTip
-          content={`全表 ${rows.length} 条判据，可自动求值 ${pack.requirements.evaluable_count} 条，本轮已求值 ${judged} 条。${
-            notApplicable
-              ? `其中 ${notApplicable} 条为「本台架不适用」：需本台架未配置的测量手段（MCU 故障寄存器 / FG 转速信号 / 母线电流探头 / 程控电源等），逐条写明缺什么，不计入通过或不通过。`
-              : ''
-          }结论段按判定结果聚合，不自由撰写。`}
-        />
       </div>
       <div
         className="no-scrollbar min-h-0 flex-1 overflow-y-auto"
@@ -1351,7 +1417,8 @@ function VerdictSummary({ full }: { full?: boolean }) {
               <span
                 className={cn(
                   'h-[6px] w-[6px] shrink-0 rounded-full',
-                  r.state === 'pass' ? 'bg-p600' : r.state === 'fail' ? 'bg-alert' : 'bg-t3/35',
+                  // 不通过用陶土浅点（改动点 ④）：与「未采集/不适用」的静默灰拉开差距，又不刺眼
+                  r.state === 'pass' ? 'bg-p600' : r.state === 'fail' ? CLAY_DOT : 'bg-t3/35',
                 )}
               />
               <span className="truncate text-[12.5px] text-t1">{short(r.req.name, 12)}</span>
@@ -1430,7 +1497,8 @@ function ReportHistory({ full }: { full?: boolean }) {
               <StackBar
                 seg={[
                   { n: b.pass, cls: 'bg-p600', title: '通过' },
-                  { n: b.fail, cls: 'bg-alert', title: '不通过' },
+                  // 不通过段由正红改陶土（改动点 ③）：与墨绿段不再「红绿对冲」
+                  { n: b.fail, cls: CLAY_DOT, title: '不通过' },
                   // 不适用单独一段（中性灰），与「未判」分开，一眼可见缺的是设备不是数据
                   { n: b.na, cls: 'bg-t3/25', title: '本台架不适用' },
                   { n: b.other, cls: 'bg-p100', title: '未判' },

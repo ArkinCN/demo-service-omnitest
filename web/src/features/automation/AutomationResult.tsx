@@ -231,8 +231,9 @@ export function AutomationResult({
                   <>
                     <p className="text-t1">
                       {summary.reportStatus === 'ok'
-                        ? '报告已按客户模板生成'
-                        : '报告已生成（系统自建模板，可替换）'}
+                        ? '报告已生成'
+                        // 2026-10-10 前落的历史轮次才是占位版式；新生成一律走 ok
+                        : '报告已生成（历史占位版式）'}
                       {summary.reportDownloaded ? '，并已触发下载。' : '，但下载可能被浏览器拦截。'}
                     </p>
                     <p className="mt-0.5 text-[11.5px] text-t3">
