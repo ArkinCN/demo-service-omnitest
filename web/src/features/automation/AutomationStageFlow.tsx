@@ -80,7 +80,7 @@ export function AutomationStageFlow({ views }: { views: StageView[] }) {
           // 退回段＝「调优运行」这一步之前的连接段（启动测试 → 调优运行），退回时反向闪
           const isReturnSeg = f.id === 'tune'
           /* 段相位（与顶栏同一口径，见 shared/FlowSegLink）：
-               仅「当前 → 下一」段有动效；已走过段纯静态线；运行中未到达段静态暗箭头；
+               仅「当前 → 下一」段有动效；已走过段与未到达段都是纯静态线（无箭头）；
                非运行态整条安静。平滑消失由 CSS（.flow-seg-anim + data-on）承担。 */
           const leftId = i > 0 ? FLOWS[i - 1].id : null
           const leftDone = !!leftId && views.find((s) => s.id === leftId)?.status === 'success'
@@ -103,7 +103,6 @@ export function AutomationStageFlow({ views }: { views: StageView[] }) {
                   phase={segPhase}
                   testId="auto-stage-link"
                   arrowTestId="auto-seg-arrow"
-                  staticArrowTestId="auto-seg-arrow-static"
                 />
               ) : null}
               <div

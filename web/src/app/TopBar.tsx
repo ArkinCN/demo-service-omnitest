@@ -213,7 +213,7 @@ function FlowStepper() {
         /* 连接段（2026-10-10 第二轮）：段相位统一由 FlowSegLink/segPhaseOf 推导。
              · 仅「当前节点 → 下一节点」段有动效（亮色流光 + 亮绿箭头循环平移）；
              · 已走过段（左节点完成）纯静态线，无箭头；
-             · 未到达段（运行中）静态线 + 静态暗色箭头；
+             · 未到达段（运行中）纯静态暗线，无箭头（暗色小箭头已按用户指令移除）；
              · 空闲态全部静态、无箭头（完全安静）；
              · 退回段＝「调优运行」这一步之前的连接段（启动测试 → 调优运行），退回时反向。
            平滑消失由 CSS（.flow-seg-anim + data-on 的 opacity/scale 过渡）承担。 */
@@ -242,7 +242,6 @@ function FlowStepper() {
                 phase={segPhase}
                 testId="flow-stepper-link"
                 arrowTestId="flow-seg-arrow"
-                staticArrowTestId="flow-seg-arrow-static"
               />
             ) : null}
             <NavLink

@@ -120,7 +120,7 @@ export const EMPTY_AUTOMATION_SUMMARY: AutomationSummary = {
   gateAckCount: 0,
 }
 
-/** 日志流上限：跑满「4 档 × 最多 3 轮调优」也远用不到 200 条。
+/** 日志流上限：跑满「4 档 × 最多 1 轮调优」（TUNE_RETRIES）也远用不到 200 条。
  *  封顶是为了不让长跑之后 DOM 无限膨胀；**不丢事实**——被挤掉的都是更早的
  *  过程行，最终结论与失败原因另有 summary/stages 承载。 */
 const AUTOMATION_LOG_LIMIT = 200
@@ -438,6 +438,16 @@ interface AppState {
   mergeReportHeader: (patch: Record<string, string>) => void
   setNotice: (n: string | null) => void
 
+  /* ------------------------------------------ AI 助手权限档位（2026-10-10） */
+  /**
+   * 当前 AI 助手权限档位。全局单一来源：切换后同步到
+   * ① 各 AgentChat 实例（Composer 高亮）② 上下文包 policy.permission
+   * ③ 请求体 enabled_tools 的工具白名单。持久化在 `omnitest.permission.v1`。
+   */
+  permission: PermissionMode
+  /** 切换权限档位（写 store + 落盘）；未变化的档位不触发更新 */
+  setPermission: (p: PermissionMode) => void
+
   /* ------------------------------------------ 一键自动化测试流程（2026-09-30） */
   /** 自动化 run 整体状态 */
   automationRunStatus: AutomationRunStatus
@@ -632,6 +642,37 @@ function readReport(): { header: Record<string, string> } {
 function writeReport(header: Record<string, string>) {
   try {
     localStorage.setItem(LS_REPORT, JSON.stringify({ header }))
+  } catch {
+    /* 存不下就只在本次会话生效 */
+  }
+}
+
+/* AI 助手权限档位（2026-10-10 权限切换修复）。
+
+   为什么放到全局 store 并持久化：
+   - 此前权限是 AgentChat 组件内的 state，且**没有一路传到后端**——切档只改 UI
+     高亮，模型侧永远看到上下文包里写死的 readonly（详见根因报告）。
+   - 现在提升为全局、单一来源：切档立即写 store + 落盘；AgentChat（各宿主）、
+     上下文包 envelope、请求体 enabled_tools 三处都读它。
+   - 用户已确认「全局记忆一档」：刷新/切页/换对话后保持上次选的档位。
+   值用 PermissionLevel 的三档字符串；读回时非法值一律回落 'readonly'（安全默认）。 */
+const LS_PERMISSION = 'omnitest.permission.v1'
+
+export type PermissionMode = 'readonly' | 'params' | 'hardware'
+
+function readPermission(): PermissionMode {
+  try {
+    const raw = localStorage.getItem(LS_PERMISSION)
+    if (raw === 'readonly' || raw === 'params' || raw === 'hardware') return raw
+    return 'readonly'
+  } catch {
+    return 'readonly'
+  }
+}
+
+function writePermission(p: PermissionMode) {
+  try {
+    localStorage.setItem(LS_PERMISSION, p)
   } catch {
     /* 存不下就只在本次会话生效 */
   }
@@ -863,6 +904,7 @@ export const useAppStore = create<AppState>((set) => ({
   reportHeader: readReport().header,
   snapshotValues: {},
   notice: null,
+  permission: readPermission(),
   automationRunStatus: 'idle',
   automationStages: [],
   automationCurrentStageId: null,
@@ -1137,15 +1179,57 @@ export const useAppStore = create<AppState>((set) => ({
       return { reportHeader: header }
     }),
   setNotice: (notice) => set({ notice }),
+  setPermission: (permission) =>
+    set((s) => {
+      if (s.permission === permission) return s
+      writePermission(permission)
+      return { permission }
+    }),
 
-  _syncAutomation: (runStatus, stages, currentStageId, announcement, summary) =>
+  _syncAutomation: (runStatus, stages, currentStageId, announcement, summary) => {
     set({
       automationRunStatus: runStatus,
       automationStages: stages,
       automationCurrentStageId: currentStageId,
       automationAnnouncement: announcement,
       automationSummary: summary,
-    }),
+    })
+
+    /* ------------------------------------------------------------------
+       非致命报错判定（汇报模式）· 编号 1 的**唯一接入点**（2026-10-10）
+
+       仅在**整轮终态**触发一次：取一份「日志 + 阶段终态」快照交给纯判定模块，
+       把逐条判定落后台清单文件（logs/error_judge.log）供用户跑一轮后核对。
+       ⚠️ 本阶段**界面零变化**：不改渲染、不动任何运行中路径、不新增 store 切片。
+       ⚠️ 为什么延迟 + 动态 import：① 编排器在 END 之后还会紧跟 emit 尾部报错
+         （如「报告未生成」），需等其入列；② 避免 store 静态依赖 features/automation
+         形成循环依赖（沿用 startAutomation 里 `await import(...)` 的既有约定）。
+       去重、快照二次校验、失败只 console 记录等纪律，全在 judgeReport.ts 内。
+       ------------------------------------------------------------------ */
+    if (
+      !(runStatus === 'completed' || runStatus === 'failed' || runStatus === 'stopped') ||
+      !summary.runId
+    ) {
+      return
+    }
+    const _rid = summary.runId
+    void import('../features/automation/judgeReport').then(({ scheduleJudgeUpload }) => {
+      scheduleJudgeUpload({
+        runId: _rid,
+        sceneId: useAppStore.getState().sceneId,
+        terminalStatus: runStatus,
+        snapshot: () => {
+          const s = useAppStore.getState()
+          return {
+            logs: s.automationLogs,
+            stages: s.automationStages.map((x) => ({ id: x.id, name: x.name, status: String(x.status) })),
+            runStatus: s.automationRunStatus,
+            runId: s.automationSummary.runId,
+          }
+        },
+      })
+    })
+  },
   setAutomationIntent: (automationIntent) => set({ automationIntent }),
     /**
      * 启动自动化（**授权瞬间**：安全闸门在此代确认）。

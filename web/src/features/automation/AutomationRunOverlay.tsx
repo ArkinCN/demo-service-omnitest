@@ -274,7 +274,9 @@ function HeaderBar({
   onClose: (() => void) | undefined
 }) {
   return (
-    <header className="flex h-[56px] shrink-0 items-center gap-3 border-b border-line bg-surface px-4">
+    <header
+      className="flex h-[max(56px,var(--auto-header-h,56px))] shrink-0 items-center gap-3 border-b border-line bg-surface px-4"
+    >
       <div className="flex shrink-0 items-center gap-2">
         <span className="grad-ink flex h-[28px] w-[28px] items-center justify-center rounded-tps text-[14px] font-bold text-white shadow-tpink">
           O
