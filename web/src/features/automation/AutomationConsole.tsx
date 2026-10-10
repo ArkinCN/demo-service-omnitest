@@ -10,6 +10,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { Button, Tooltip, cn } from '../../components/ui'
+import { ConsoleChatPanel } from './ConsoleChatPanel'
 import { FanTrendView } from '../fan-trend/FanTrendView'
 import { getPack } from '../scene/pack'
 import { useAppStore } from '../../state/useAppStore'
@@ -84,6 +85,17 @@ const MAX_LOG_RATIO = 0.82
 const TREND_MIN_H = 220
 /** 日志区像素下限：沿用它原来的 min-h-[140px] */
 const LOG_MIN_H = 140
+/**
+ * 助手卡像素下限（2026-10-10 新增）。
+ *
+ * 与流程页 `app/FlowScreen.tsx` 的 `ASSISTANT_MIN_H` **同源同值**：助手卡在下方
+ * 第三行出现时，输入框 / 停止按钮 / 模型·权限行必须完整可见。实测「头部 44 +
+ * 动作条 34 + 输入框 58 + 模型行 40 + 内边距」≈ 215px，取 216。
+ *
+ * ⚠️ 这是**模式下限**：日志态用 LOG_MIN_H、助手态用本值，喂给 `clampLogRatio`
+ * 的第三个参数。若不按模式取，助手态会被旧的 140px 下界夹回、底部被裁。
+ */
+const CONSOLE_AI_MIN_H = 216
 /** 分隔条行高：原两区之间 10px gap 全收进条里 */
 const HANDLE_H = 20
 /** 值 = 日志区占比字符串（与流程页的 flow-assistant-ratio:* 键区分） */
@@ -93,15 +105,18 @@ const SPLIT_KEY = 'automation-console-split-ratio'
  * 把日志占比夹到「两侧像素下限都成立」的区间。
  *
  * 静态兜底 [0.18, 0.82] 只防极端值；矮视口（1280×720 一类）下两侧底线相加
- * （220 + 20 + 140 = 380px）可能超出容器，故必须用**实测高度**再夹一次，
- * 否则拖到端点会让栅格溢出、把底部状态条与「终止」按钮挤出屏幕。
- * 容器高度未知（首帧 / 已卸载）时退回静态兜底。
+ * 可能超出容器，故必须用**实测高度**再夹一次，否则拖到端点会让栅格溢出、
+ * 把底部状态条与「终止」按钮挤出屏幕。容器高度未知（首帧 / 已卸载）时退回静态兜底。
+ *
+ * ⚠️ 第三个参数 `thirdMinH` 是**第三行（日志卡 / 助手卡）的像素下限**：
+ * 日志态 140、助手态 216（见 CONSOLE_AI_MIN_H）。像素夹取必须用它，否则
+ * 助手态会被日志态的 140px 下界夹回、助手卡底部被裁。
  */
-function clampLogRatio(r: number, containerH: number): number {
+function clampLogRatio(r: number, containerH: number, thirdMinH: number = LOG_MIN_H): number {
   let lo = MIN_LOG_RATIO
   let hi = MAX_LOG_RATIO
   if (containerH > 0) {
-    const byPixels = LOG_MIN_H / containerH
+    const byPixels = thirdMinH / containerH
     const byTrend = 1 - TREND_MIN_H / containerH
     // 像素约束比静态兜底更紧时才收紧；否则保留静态区间
     lo = Math.max(lo, Math.min(byPixels, hi))
@@ -110,11 +125,17 @@ function clampLogRatio(r: number, containerH: number): number {
   return Math.min(hi, Math.max(lo, r))
 }
 
+/**
+ * 读磁盘上的日志占比。
+ *
+ * 持久值只按**日志口径**（LOG_MIN_H）夹一次即可：它是「用户想要的日志比例」，
+ * 与当前是日志态还是助手态无关；真正渲染时再由 `eff` 按模式下限现算。
+ */
 function readLogRatio(): number {
   if (typeof localStorage === 'undefined') return DEFAULT_LOG_RATIO
   const raw = Number(localStorage.getItem(SPLIT_KEY))
   if (!Number.isFinite(raw) || raw <= 0) return DEFAULT_LOG_RATIO
-  return clampLogRatio(raw, 0)
+  return clampLogRatio(raw, 0, LOG_MIN_H)
 }
 
 const pct = (r: number) => Math.round(r * 100)
@@ -168,6 +189,23 @@ export function AutomationConsole({
   const now = useNow()
   const elapsedLive = useMemo(() => liveElapsedOf(stages, now), [stages, now])
 
+  /* ---------------------------------------------- 第三行「日志 ↔ AI 助手」双态
+   *
+   * 2026-10-10 需求：日志卡右上角圆形 AI 按钮，点一下日志上卷、助手卡从下升起，
+   * 再点（或点助手内「收起」）反向切回。原理是**双卡常驻 + transform 卷动**：
+   *   · 两卡都保持挂载（absolute 叠在同一个卡片栈里）→ 日志滚动位置不丢、
+   *     助手对话与进行中的回答不被切换打断（切走时只把卡片移出视野，不卸载）；
+   *   · 位移用 transform.driver（GPU 合成、无布局抖动），motion-reduce 下降级为瞬时。
+   *
+   * `panel` 只影响两块：第三行的**像素下限**（日志 140 / 助手 216）与两卡的位移。
+   * 它**不改日志数据逻辑、不新增任何轮询或硬件调用**（运行台纪律：不另起轮询、
+   * 不启停台架），因此助手开合与测试运行完全解耦。
+   */
+  const [panel, setPanel] = useState<'log' | 'ai'>('log')
+  const aiActive = panel === 'ai'
+  /** 第三行像素下限随模式取（见 CONSOLE_AI_MIN_H 注释） */
+  const thirdMinH = aiActive ? CONSOLE_AI_MIN_H : LOG_MIN_H
+
   /* ---------------------------------------------- 中栏「趋势 ↔ 日志」分隔条 */
   const [ratio, setRatio] = useState(readLogRatio)
   const splitRef = useRef<HTMLDivElement>(null)
@@ -178,7 +216,9 @@ export function AutomationConsole({
   const persistRatio = useCallback(
     (r: number) => {
       const h = splitRef.current?.getBoundingClientRect().height ?? splitH
-      const next = clampLogRatio(r, h)
+      // 拖动得到的「日志占比」按**日志口径**夹取后落盘：持久值语义单一（用户想要的
+      // 日志比例），与当前模式无关；渲染时再按 thirdMinH 现算，避免助手态污染存值。
+      const next = clampLogRatio(r, h, LOG_MIN_H)
       setRatio(next)
       try {
         localStorage.setItem(SPLIT_KEY, String(next))
@@ -200,10 +240,12 @@ export function AutomationConsole({
     return () => ro.disconnect()
   }, [])
 
-  /* 高度变化的重新收口：视口变矮后旧比例可能已越界，夹回合法区间 */
+  /* 高度变化的重新收口：视口变矮后旧比例可能已越界，夹回合法区间。
+   * ⚠️ 依赖里带上 thirdMinH：切到助手态下限抬高（140→216）后也要夹一次，
+   * 否则旧比例可能让助手卡底部越界。 */
   useEffect(() => {
-    setRatio((r) => clampLogRatio(r, splitH))
-  }, [splitH])
+    setRatio((r) => clampLogRatio(r, splitH, thirdMinH))
+  }, [splitH, thirdMinH])
 
   /**
    * 拖拽：按下分隔条后监听 window 的 move/up，而不是条自己的。
@@ -243,8 +285,8 @@ export function AutomationConsole({
     document.body.style.userSelect = 'none'
   }
 
-  const eff = clampLogRatio(ratio, splitH)
-  const splitRows = `minmax(${TREND_MIN_H}px, ${(1 - eff).toFixed(4)}fr) ${HANDLE_H}px minmax(${LOG_MIN_H}px, ${eff.toFixed(4)}fr)`
+  const eff = clampLogRatio(ratio, splitH, thirdMinH)
+  const splitRows = `minmax(${TREND_MIN_H}px, ${(1 - eff).toFixed(4)}fr) ${HANDLE_H}px minmax(${thirdMinH}px, ${eff.toFixed(4)}fr)`
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -393,7 +435,39 @@ export function AutomationConsole({
             </span>
           </div>
 
-          <LogStream logs={logs} />
+          {/*
+            第三行「日志卡 ↔ AI 助手卡」卷动卡片栈（2026-10-10）。
+            · 双卡 absolute 叠放、都保持挂载 → 切换不卸载、不丢状态；
+            · 位移用 transform 卷动（日志 -100% 收向顶部、助手 +100% 升起），
+              motion-reduce 下 CSS 已取消过渡 → 瞬时切换；
+            · 圆形 AI 按钮**不随卷动位移**（固定在卡片栈右上角、悬浮于卡片之上），
+              两态恒可点击；两卡头部各留右侧避让，按钮不遮任何既有内容。
+          */}
+          <div className="relative min-h-0">
+            <div className="relative h-full overflow-hidden rounded-tps">
+              <div
+                className={cn(
+                  'absolute inset-0 transition-transform duration-300 ease-[cubic-bezier(0.22,0.75,0.3,1)] motion-reduce:transition-none',
+                  aiActive ? '-translate-y-full' : 'translate-y-0',
+                )}
+                inert={aiActive}
+                aria-hidden={aiActive}
+              >
+                <LogStream logs={logs} />
+              </div>
+              <div
+                className={cn(
+                  'absolute inset-0 transition-transform duration-300 ease-[cubic-bezier(0.22,0.75,0.3,1)] motion-reduce:transition-none',
+                  aiActive ? 'translate-y-0' : 'translate-y-full',
+                )}
+                inert={!aiActive}
+                aria-hidden={!aiActive}
+              >
+                <ConsoleChatPanel onCollapse={() => setPanel('log')} />
+              </div>
+            </div>
+            <ConsoleAiButton active={aiActive} onClick={() => setPanel((p) => (p === 'ai' ? 'log' : 'ai'))} />
+          </div>
           </div>
 
           <div className="grad-ink flex shrink-0 items-center gap-2 rounded-tps px-3 py-2 text-white">
@@ -620,7 +694,9 @@ function LogStream({ logs }: { logs: AutomationLogEntry[] }) {
 
   return (
     <section className="flex min-h-0 flex-col rounded-tps bg-[#1A2320]">
-      <header className="flex shrink-0 items-center gap-1.5 px-3 py-1.5 text-[10.5px] font-semibold tracking-[0.08em] text-white/45 uppercase">
+      {/* ⚠️ 头部右侧留 52px：右上角悬浮着圆形 AI 按钮（不随卷动位移），
+          不给「N 条」计数让位的话会被按钮压住。 */}
+      <header className="flex shrink-0 items-center gap-1.5 py-1.5 pr-[52px] pl-3 text-[10.5px] font-semibold tracking-[0.08em] text-white/45 uppercase">
         执行日志
         <span className="num ml-auto tracking-normal">{logs.length} 条</span>
       </header>
@@ -639,6 +715,36 @@ function LogStream({ logs }: { logs: AutomationLogEntry[] }) {
         )}
       </div>
     </section>
+  )
+}
+
+/**
+ * 卡片栈右上角的圆形「AI」按钮（2026-10-10）。
+ *
+ * 定位：悬浮在卡片之上、绝对右上角，**不随卷动位移**（两态同一位、恒可点击）。
+ * 语义随状态切换（`aria-pressed` / `aria-label` / tooltip），两态都用同一枚按钮。
+ * 视觉：墨绿渐充实心 + 白色加粗「AI」，悬浮阴影营造漂浮感；hover 轻微放大、
+ * active 下压、focus-visible 显式描边环；助手态加一圈激活光环以示「已展开」。
+ */
+function ConsoleAiButton({ active, onClick }: { active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      data-testid="auto-log-ai-toggle"
+      aria-pressed={active}
+      aria-label={active ? '返回执行日志' : '切换到 AI 助手'}
+      title={active ? '返回执行日志' : '切换到 AI 助手'}
+      onClick={onClick}
+      className={cn(
+        'grad-ink absolute top-1.5 right-2 z-10 flex h-9 w-9 items-center justify-center rounded-full',
+        'text-[12px] font-bold text-white shadow-tpink transition-transform',
+        'hover:scale-105 active:scale-95',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-p50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
+        active ? 'ring-2 ring-p100' : '',
+      )}
+    >
+      AI
+    </button>
   )
 }
 
