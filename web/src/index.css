@@ -387,24 +387,50 @@
 }
 
 /* ===========================================================================
-  流程条 · 常驻传递动效 + 退回动效（2026-10-10 新增，用户要求）
+  流程条 · 段相位动效（2026-10-10 第二轮重写，按用户需求单验收标准）
   ---------------------------------------------------------------------------
-  用户口径：
-    · 「节点之间必须有一直向右流动的带颜色的线，以及向右滑动的箭头图标」；
-    · 「已到达的节点要有发光/闪烁」（复用既有 .automation-pulse，不重定义）；
-    · 「调优运行失败退回启动测试时，有反向流动/反向闪烁动效，然后继续跑」。
+  用户口径（较上一轮收紧）：
+    · 「已完成节点之间不要箭头动效，保留静态线条」；
+    · 「只有当前节点和下一节点之间有亮色箭头循环平移」；
+    · 「未到达节点之间是静态的、暗色的箭头，不闪不滑」；
+    · 「节点从当前进行中变为已完成时，箭头动效要平滑消失（淡出/缩小），不闪烁」；
+    · 「空闲态流程条完全安静，只有自动化运行期间才显示进度箭头」。
+  上一轮口径（每段无条件挂流光 + 波浪箭头 + 4 段错相 delay）就此作废：
+  段相位改由 features/shared/FlowSegLink.tsx 的 segPhaseOf() 推导，
+  active/returning 段才有动效层；平滑进出由下方 .flow-seg-anim + data-on 承担。
 
-  复用纪律：流动光带直接用既有 .automation-rail-flow（automation-rail-sweep 右向），
-  不重定义同义 keyframes。此处只新增两件既有基建没有的东西：
-    ① 向右滑动的**箭头图标**（用户新语义，非粒子）：flow-arrow-right / flow-arrow-left；
-    ② 退回段的反向扫光 + 轻 glow：flow-seg-reverse。
-  全部并入下方 prefers-reduced-motion 降级（去动画、留静态），低动效偏好下不闪。
+  复用纪律：流光带继续用既有 .automation-rail-flow（automation-rail-sweep 右向），
+  退回沿用既有 .flow-seg-return / .flow-seg-arrow-rev，不重定义同义 keyframes。
+  全部并入下方 prefers-reduced-motion 降级（去循环动画、留静态形态）。
   =========================================================================== */
 
-/* 箭头图标：默认在连接线内自左向右滑动（波浪式，见下方 .flow-arrow--w*）。
-   ⚠️ 2026-10-10 修：上一轮箭头画在 h-[2px] + overflow-hidden 的连线里被裁成 2px 细条
-   → 肉眼不可见。现箭头是**独立层**（同段容器内 absolute 定位，容器不再裁切箭头），
-   亮绿实心 + 轻发光，尺寸随 --fb-scale 放大。 */
+/* 段动效层 wrapper（流光层与动效箭头层共用）：常驻 DOM，由 data-on 切换可见性。
+   淡出 = opacity 1→0 + scale 1→0.6（约 0.3s）→ 「当前节点变已完成」时旧段箭头
+   平滑消失，不瞬间消失、不闪烁；淡入反向回位。
+   ⚠️ 只用 opacity/transform（合成层，不触发布局）；连续切换由 transition 直接
+   重定向，天然无残留，不需要 JS 定时器 / 动画结束事件。 */
+.flow-seg-anim {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transform: scale(0.6);
+  transform-origin: center;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+.flow-seg-anim[data-on='true'] {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* 动效箭头（仅 active/returning 段可见，见 data-on）：
+   亮绿实心 + 轻发光；单段连续循环平移（两端淡入淡出防硬切）。
+   ⚠️ 上一轮是 4 段错相波（单段 3/4 周期不可见），只适合「全段同亮」的旧口径；
+   现在同一时刻只有一段动效，改为一程接一程连续可见，运行中一眼能看见进度。
+   ⚠️ keyframes 的 transform 会覆盖 class 上的 -translate-y-1/2（沿用上一轮既有
+   写法，垂直位置观感不变）。 */
 .flow-seg-arrow {
   color: var(--p-500);
   filter: drop-shadow(0 0 3px rgba(77, 143, 109, 0.85));
@@ -415,25 +441,16 @@
   filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.9));
 }
 
-/* 波浪相位：一条 4 段的波，每段箭头占周期的 1/4 完成穿越，其余时间隐藏。
-   动画时长 = 4 × 单段时长；delay = 段序 × 单段时长 → 形成 1→2→3→4→5、
-   到 5 后由第 1 段无缝接续的连续滚动波。
-   位移用 translateX（合成层，不触发布局），容器高度足够容纳箭头 → 不被裁。 */
-@keyframes flow-arrow-wave {
+@keyframes flow-arrow-scroll {
   0% {
     transform: translateX(0);
     opacity: 0;
   }
-  6% {
+  18% {
     opacity: 1;
   }
-  20% {
-    transform: translateX(var(--fb-seg-travel, 24px));
+  82% {
     opacity: 1;
-  }
-  25% {
-    transform: translateX(var(--fb-seg-travel, 24px));
-    opacity: 0;
   }
   100% {
     transform: translateX(var(--fb-seg-travel, 24px));
@@ -441,7 +458,23 @@
   }
 }
 .flow-seg-arrow {
-  animation: flow-arrow-wave var(--fb-wave-dur, 6.4s) linear infinite;
+  animation: flow-arrow-scroll var(--fb-wave-dur, 1.4s) linear infinite;
+}
+
+/* 静态暗箭头（仅 pending 段，即运行中未到达段）：不闪不滑、无循环动画，
+   只随 data-on 做一次淡入淡出；停在段中点指示「后面还有步骤」。 */
+.flow-seg-arrow-static {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  color: var(--tp-text-3);
+  opacity: 0;
+  transform: translateX(calc(var(--fb-seg-travel, 24px) / 2));
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.flow-seg-arrow-static[data-on='true'] {
+  opacity: 0.75;
 }
 
 /* 退回：该段箭头自右向左滑（与正向相反，一眼可辨「退回」），约 0.9s 一程 */
@@ -483,6 +516,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* 段动效层：去缩放位移，只留一次淡入淡出 */
+  .flow-seg-anim {
+    transform: none;
+    transition: opacity 0.16s ease;
+  }
+  .flow-seg-arrow-static {
+    transition: opacity 0.16s ease;
+  }
   .flow-seg-arrow,
   .flow-seg-arrow-rev,
   .flow-seg-return {
