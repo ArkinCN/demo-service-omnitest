@@ -1,9 +1,11 @@
 import { useLayoutEffect } from 'react'
-import { AlertOctagon, Check, ChevronRight } from 'lucide-react'
+import { AlertOctagon, Check } from 'lucide-react'
 import { FLOWS } from '../../data/flows'
 import { FLOW_ICON, FLOW_SHORT } from '../../app/icons'
 import { cn } from '../../components/ui'
+import { useAppStore } from '../../state/useAppStore'
 import { useFlowBarScale } from '../shared/useFlowBarScale'
+import { FlowSegLink, segPhaseOf } from '../shared/FlowSegLink'
 import type { StageView } from './automationViewModel'
 import { useStageReturnCue } from './useStageReturnCue'
 
@@ -17,9 +19,13 @@ import { useStageReturnCue } from './useStageReturnCue'
      ① 去掉全部 `flex-1` 拉伸 → 内容宽紧凑集群 + 居中（此前节点被弹性均分撑满整行）；
      ② 放大 2 倍（尺寸全部乘 --fb-scale），任何分辨率单行、文字过小则进入紧凑模式；
      ③ 箭头与细光带**分层**（此前 11px 箭头画在 h-[2px]+overflow-hidden 里被裁成细条，
-        肉眼不可见）；箭头改亮绿实心 + 轻发光，波浪相位错开形成 1→2→3→4→5 连续滚动；
+        肉眼不可见）；箭头改亮绿实心 + 轻发光；
      ④ 「调优运行 → 启动测试」退回时（编排器 tune 采纳后回 run 重跑），
-        该段连线走反向流动 + 箭头反向（useStageReturnCue 检测真实 stage 跳变）。
+        该段连线走反向流动 + 箭头反向（useStageReturnCue 检测真实 stage 跳变）；
+     ⑤ [第二轮] 动效范围收紧（用户需求单）：仅「当前节点 → 下一节点」段有动效，
+        已走过/未到达段全部静态，节点由「当前」变「已完成」时旧段动效淡出+缩小平滑
+        消失；空闲态整条完全安静。段相位统一由 shared/FlowSegLink 的 segPhaseOf()
+        推导（与顶栏同一口径），平滑进出由 CSS（.flow-seg-anim + data-on）承担。
 
    ⚠️ 状态全部来自编排器（StageView.status），不预判、不乐观显示。
    =========================================================================== */
@@ -36,6 +42,10 @@ function tone(status: StageView['status'], isCurrent: boolean): string {
 export function AutomationStageFlow({ views }: { views: StageView[] }) {
   // 退回提示：编排器调优循环「tune 采纳 → 回 run 重跑」时，该段走反向动效
   const returning = useStageReturnCue()
+  // 运行态与当前节点下标：仅「当前 → 下一」段播放进度动效，非运行态整条安静
+  const running = useAppStore((s) => s.automationRunStatus === 'running')
+  const curViewId = views.find((v) => v.isCurrent)?.id ?? null
+  const curIdx = curViewId ? FLOWS.findIndex((f) => f.id === curViewId) : -1
   // 缩放：与顶栏同口径（2026-10-10 由 2× 回落到 1.5×；标签基准 20px×s < 10px 进紧凑模式）
   const { slotRef, barRef, scale, compact } = useFlowBarScale<HTMLDivElement>({
     labelPx: 20,
@@ -69,42 +79,32 @@ export function AutomationStageFlow({ views }: { views: StageView[] }) {
           const Icon = FLOW_ICON[f.id]
           // 退回段＝「调优运行」这一步之前的连接段（启动测试 → 调优运行），退回时反向闪
           const isReturnSeg = f.id === 'tune'
+          /* 段相位（与顶栏同一口径，见 shared/FlowSegLink）：
+               仅「当前 → 下一」段有动效；已走过段纯静态线；运行中未到达段静态暗箭头；
+               非运行态整条安静。平滑消失由 CSS（.flow-seg-anim + data-on）承担。 */
+          const leftId = i > 0 ? FLOWS[i - 1].id : null
+          const leftDone = !!leftId && views.find((s) => s.id === leftId)?.status === 'success'
+          const segPhase =
+            i > 0
+              ? segPhaseOf({
+                  segIndex: i,
+                  leftDone,
+                  curIdx,
+                  running,
+                  returning,
+                  isReturnSeg,
+                })
+              : null
           return (
             <div key={f.id} className="flex shrink-0 items-center">
-              {i > 0 ? (
-                /* 连接段：外层容纳箭头（不裁切），内层细光带，箭头独立层波浪错相 */
-                <span
-                  aria-hidden
-                  data-testid="auto-stage-link"
-                  data-seg={i}
-                  className="relative z-10 flex shrink-0 items-center"
-                  style={{
-                    '--fb-wave-dur': '6.4s',
-                    '--fb-seg-travel': 'calc(var(--fb-scale) * 34px)',
-                  } as React.CSSProperties}
-                >
-                  <span
-                    className={cn(
-                      'block h-[calc(var(--fb-scale)*3px)] w-[calc(var(--fb-scale)*48px)] rounded-full',
-                      isReturnSeg && returning ? 'flow-seg-return' : 'automation-rail-flow',
-                    )}
-                  />
-                  <ChevronRight
-                    size={21}
-                    strokeWidth={3.5}
-                    aria-hidden
-                    data-testid="auto-seg-arrow"
-                    className={cn(
-                      'absolute top-1/2 left-0 -translate-y-1/2',
-                      isReturnSeg && returning ? 'flow-seg-arrow-rev' : 'flow-seg-arrow',
-                    )}
-                    style={{
-                      width: 'calc(var(--fb-scale) * 21px)',
-                      height: 'calc(var(--fb-scale) * 21px)',
-                      animationDelay: isReturnSeg && returning ? '0s' : `${(i - 1) * 1.6}s`,
-                    }}
-                  />
-                </span>
+              {segPhase ? (
+                <FlowSegLink
+                  segIndex={i}
+                  phase={segPhase}
+                  testId="auto-stage-link"
+                  arrowTestId="auto-seg-arrow"
+                  staticArrowTestId="auto-seg-arrow-static"
+                />
               ) : null}
               <div
                 className="flex shrink-0 items-center gap-[calc(var(--fb-scale)*5px)]"

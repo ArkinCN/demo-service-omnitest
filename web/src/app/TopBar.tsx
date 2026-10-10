@@ -5,7 +5,6 @@ import {
   Archive,
   Check,
   CheckCheck,
-  ChevronRight,
   CircleSlash,
   Eye,
   CheckCircle2,
@@ -35,6 +34,7 @@ import { RUN_PHASE_LABEL, flowStateOf, useAppStore } from '../state/useAppStore'
 import { useFlowActions } from '../features/redline'
 import { useStageReturnCue } from '../features/automation/useStageReturnCue'
 import { useFlowBarScale } from '../features/shared/useFlowBarScale'
+import { FlowSegLink, segPhaseOf } from '../features/shared/FlowSegLink'
 import { ProductCascader } from './ProductCascader'
 
 /** 动作条图标：按动作 id 映射，缺省给一枚通用图标 */
@@ -102,6 +102,9 @@ function FlowStepper() {
   const autoRunning = useAppStore((s) => s.automationRunStatus === 'running')
   const autoStages = useAppStore((s) => s.automationStages)
   const autoCurrent = useAppStore((s) => s.automationCurrentStageId)
+  // 当前节点在 FLOWS 中的下标：仅「当前 → 下一」段（下标 +1）播放进度动效
+  const autoFlowId = autoRunning ? flowOfAutomationStage(autoCurrent) : null
+  const curIdx = autoFlowId ? FLOWS.findIndex((f) => f.id === autoFlowId) : -1
 
   // ── 缩放：按可用槽宽等比缩放，保证任何分辨率单行；文字过小则进入紧凑模式 ──────
   // 2026-10-10 调整：整体倍率由 2× 回落到 1.5×（用户反馈「显示尺寸过大」）。
@@ -203,54 +206,44 @@ function FlowStepper() {
         const done = state === 'confirmed'
         const Icon = FLOW_ICON[f.id]
         // 自动化：当前阶段命中的流程 → 高亮脉冲；该流程已有成功阶段 → 成功态；失败 → 错误态
-        const autoFlow = autoRunning ? flowOfAutomationStage(autoCurrent) : null
-        const autoIsCurrent = autoRunning && autoFlow === f.id
+        const autoIsCurrent = autoRunning && autoFlowId === f.id
         const autoStageForFlow = autoStages.find((s) => flowOfAutomationStage(s.id) === f.id)
         const autoDone = autoRunning && autoStageForFlow?.status === 'success'
         const autoFailed = autoRunning && autoStageForFlow?.status === 'failed'
-        // 退回段＝「调优运行」这一步之前的连接线（启动测试 → 调优运行），退回时反向闪
-        const isReturnSeg = f.id === 'tune'
+        /* 连接段（2026-10-10 第二轮）：段相位统一由 FlowSegLink/segPhaseOf 推导。
+             · 仅「当前节点 → 下一节点」段有动效（亮色流光 + 亮绿箭头循环平移）；
+             · 已走过段（左节点完成）纯静态线，无箭头；
+             · 未到达段（运行中）静态线 + 静态暗色箭头；
+             · 空闲态全部静态、无箭头（完全安静）；
+             · 退回段＝「调优运行」这一步之前的连接段（启动测试 → 调优运行），退回时反向。
+           平滑消失由 CSS（.flow-seg-anim + data-on 的 opacity/scale 过渡）承担。 */
+        const leftId = i > 0 ? FLOWS[i - 1].id : null
+        const leftDone =
+          !!leftId &&
+          (autoStages.find((s) => flowOfAutomationStage(s.id) === leftId)?.status === 'success' ||
+            // 非运行态：已确认流程之间同样保留浅绿静态线（空闲态安静，但仍标出「已走过」）
+            (!autoRunning && flowStateOf(leftId, current.id, scene, confirmed) === 'confirmed'))
+        const segPhase =
+          i > 0
+            ? segPhaseOf({
+                segIndex: i,
+                leftDone,
+                curIdx,
+                running: autoRunning,
+                returning,
+                isReturnSeg: f.id === 'tune',
+              })
+            : null
         return (
           <div key={f.id} className="flex shrink-0 items-center">
-            {i > 0 ? (
-              /* 连接段（2026-10-10 重构）：
-                 · 外层 = 段容器，高度足够容纳箭头（不再 overflow-hidden 裁掉箭头）；
-                 · 内层 = 细光带（固定宽 32×s，右向流光 / 退回时暖红反向）；
-                 · 箭头 = 独立绝对定位层，波浪相位错开（--fb-wave-dur 与 delay 由 i 决定）。 */
-              <span
-                aria-hidden
-                data-testid="flow-stepper-link"
-                data-seg={i}
-                className="relative z-10 flex shrink-0 items-center"
-                style={{
-                  '--fb-wave-dur': '6.4s',
-                  '--fb-seg-travel': `calc(var(--fb-scale) * 34px)`,
-                  animationDelay: `${(i - 1) * 1.6}s`,
-                } as React.CSSProperties}
-              >
-                <span
-                  className={cn(
-                    'block h-[calc(var(--fb-scale)*3px)] w-[calc(var(--fb-scale)*48px)] rounded-full',
-                    isReturnSeg && returning ? 'flow-seg-return' : 'automation-rail-flow',
-                  )}
-                />
-                <ChevronRight
-                  size={21}
-                  strokeWidth={3.5}
-                  aria-hidden
-                  data-testid="flow-seg-arrow"
-                  className={cn(
-                    'absolute top-1/2 left-0 -translate-y-1/2',
-                    isReturnSeg && returning ? 'flow-seg-arrow-rev' : 'flow-seg-arrow',
-                  )}
-                  style={{
-                    width: 'calc(var(--fb-scale) * 21px)',
-                    height: 'calc(var(--fb-scale) * 21px)',
-                    animationDelay:
-                      isReturnSeg && returning ? '0s' : `${(i - 1) * 1.6}s`,
-                  }}
-                />
-              </span>
+            {segPhase ? (
+              <FlowSegLink
+                segIndex={i}
+                phase={segPhase}
+                testId="flow-stepper-link"
+                arrowTestId="flow-seg-arrow"
+                staticArrowTestId="flow-seg-arrow-static"
+              />
             ) : null}
             <NavLink
               to={f.path}
