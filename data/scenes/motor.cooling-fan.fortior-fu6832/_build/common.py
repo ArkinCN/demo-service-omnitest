@@ -4,8 +4,8 @@ import json
 import os
 
 # ---- 源材料根路径（全部绝对路径，便于 _source 可独立定位）----
-REPO = "/mnt/f/Main/File/2_Projects/峰岹"
-AITIOR = "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data"
+REPO = "[源] 2_Projects/峰岹"
+AITIOR = "[源] resources/data"
 
 CF_ROOT = os.path.join(
     REPO, "10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program")
@@ -44,7 +44,7 @@ DOC_B = os.path.join(
     REPO, "峰岹agent/09-实验室demo线/20260917-产品故事与分工v1.0/_调研/B-本地文件资产盘点.md")
 DOC_NEED = os.path.join(
     REPO, "峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/00-用户需求原话-20260919.md")
-BENCH_MEMO = "/home/zzz/.claude/projects/-mnt-f-Main-File-2-Projects---/memory/fortior-test-bench-hardware.md"
+BENCH_MEMO = "[源] memory/fortior-test-bench-hardware.md"
 
 OUT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 

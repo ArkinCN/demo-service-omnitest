@@ -105,6 +105,66 @@
   color: var(--ac-text);
   border: 1px solid var(--ac-secondary);
   border-top-left-radius: 3px;
+  /* 助手气泡里渲染的是 Markdown 结构，不能再用 pre-wrap：
+     它会把块标签之间的换行/缩进也当可视空白，标题与列表前多出一截空行。
+     段内换行已由 Markdown 组件用 <br> 显式还原，这里交回 normal。 */
+  white-space: normal;
+}
+
+/* ---------- 助手回答的 Markdown 排版 ---------- */
+.ac-md__p { margin: 0; }
+.ac-md__p + .ac-md__p { margin-top: 6px; }
+.ac-md__h {
+  margin: 10px 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ac-primary-deep);
+  letter-spacing: .02em;
+}
+.ac-md__h:first-child { margin-top: 0; }
+.ac-md__list {
+  margin: 4px 0;
+  padding-left: 1.35em;
+  list-style: disc;
+}
+.ac-md__list:first-child { margin-top: 0; }
+.ac-md__list li { margin: 2px 0; }
+.ac-md__hr {
+  margin: 10px 0;
+  border: 0;
+  border-top: 1px solid var(--ac-rule);
+}
+/* GFM 表格（2026-10-04 补）：窄气泡里也要读得清——边框淡、表头浅底、
+   单元格左对齐不换行溢出省略会截断参数名，允许换行。 */
+.ac-md__table {
+  margin: 8px 0;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.ac-md__table th,
+.ac-md__table td {
+  border: 1px solid var(--ac-rule);
+  padding: 4px 8px;
+  text-align: left;
+  vertical-align: top;
+  word-break: break-word;
+}
+.ac-md__table th {
+  background: rgba(46, 94, 69, 0.07);
+  font-weight: 600;
+  color: var(--ac-primary-deep, #2e5e45);
+  white-space: nowrap;
+}
+/* 行内代码：与图表里的宏名同一观感（等宽 + 浅底），不抢正文颜色 */
+.ac-bubble code {
+  font-family: "IBM Plex Mono", "Cascadia Mono", Consolas, monospace;
+  font-size: 12.5px;
+  background: rgba(46, 94, 69, .08);
+  border: 1px solid rgba(46, 94, 69, .14);
+  border-radius: 4px;
+  padding: 0 4px;
 }
 .ac-caret {
   display: inline-block;

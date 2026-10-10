@@ -15,11 +15,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import KB_OUT, TAXONOMY, write_json  # noqa: E402
 
-PKG = Path("/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/"
+PKG = Path("峰岹agent/数据"
            "20260811_启动故障98次实验与30例对照数据包")
-SKILL = Path("/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/"
+SKILL = Path("[源] data/dc-skills"
              "coolingfan-openloop-debug/SKILL.md")
-EVIDENCE_DOC = Path("/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/"
+EVIDENCE_DOC = Path("峰岹agent/09-实验室demo线"
                     "20260917-产品故事与分工v1.0/_调研/A-DebugCopilot场景与知识库取证.md")
 
 

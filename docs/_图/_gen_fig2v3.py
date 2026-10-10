@@ -3,7 +3,7 @@
 A 版保留原编号（1 号位空出），B 版重排为 1-5。版式语言沿用 _图/_gen.py。"""
 import os
 
-OUT = "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_图"
+OUT = "docs/20260919-通用Agent测试系统v2.0/_图"
 F = "Microsoft YaHei, Noto Sans CJK SC, WenQuanYi Zen Hei, sans-serif"
 
 GREEN = "#2E5E45"

@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/zzz/lab/dsh-plugins/hooks/codex_payload_probe.py",
+            "command": "[源] hooks/codex_payload_probe.py",
             "timeout": 15
           }
         ]

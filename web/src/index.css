@@ -173,20 +173,345 @@
     );
   }
 
-  /* 右列两行（面板 : 助手）。1440×810 这类矮视口下面板占比收一档，
-     让助手的消息区不被压到只剩输入框。 */
-  .right-rows {
-    grid-template-rows: minmax(0, 1.75fr) minmax(0, 1fr);
-  }
-
-  @media (max-height: 859px) {
-    .right-rows {
-      grid-template-rows: minmax(0, 1.45fr) minmax(0, 1fr);
-    }
-  }
+  /* 右列两行（面板 : 助手）的行高改由 FlowScreen.tsx 内联控制：那里有可拖拽的
+     分隔条与「收起助手」，比例还要按流程分别记住，写死在这里会和它打架。
+     默认比例仍是原来的 1.75 : 1，见 FlowScreen 的 DEFAULT_ASSISTANT_RATIO。 */
 
   .no-scrollbar::-webkit-scrollbar {
     width: 0;
     height: 0;
   }
 }
+
+/* ===========================================================================
+   一键自动化测试流程（2026-09-30）运行态视觉：脉冲高亮 + 阶段箭头流光 +
+   左栏收起过渡。全部挂在根容器 .automation-running 上，结束即整体失效，
+   不残留 loading / disabled / 错误动画。
+   =========================================================================== */
+
+/* 当前阶段圆形序号脉冲：轻微放大 + 呼吸，不抢正常阅读 */
+.automation-pulse {
+  animation: automation-pulse 1.4s ease-in-out infinite;
+}
+@keyframes automation-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(46, 94, 69, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(46, 94, 69, 0);
+  }
+}
+
+/* 阶段间箭头流光：指向下一阶段的连接线持续移动（sweep 复用骨架屏扫光的 keyframes） */
+.automation-arrow {
+  background: linear-gradient(
+    90deg,
+    var(--tp-line) 0%,
+    var(--tp-ink) 45%,
+    var(--tp-line) 90%
+  );
+  background-size: 200% 100%;
+  animation: sweep 1.4s linear infinite;
+}
+
+/* 左栏收起/右列拉伸的过渡：grid 列宽变化由 transition 平滑过渡 */
+.automation-grid {
+  transition: grid-template-columns 0.4s cubic-bezier(0.22, 0.75, 0.3, 1);
+}
+
+/* ===========================================================================
+   一键自动化测试 · 全屏浮层三态视觉（2026-10-05）
+   ---------------------------------------------------------------------------
+   为什么单列这一段：老实现是「右上卡片区的一张大屏」，挂载条件就是 running，
+   跑完立刻卸载 —— 人看不到结果（用户实测「界面一闪而过」）。现在改成
+   壳层全局浮层（引导 / 运行 / 结果 三态一屏），需要一套自己的入场与过渡：
+
+     .automation-overlay-mask  遮罩淡入（深墨绿半透明 + 轻模糊，压住底层页面）
+     .automation-card-in        主卡片「淡入 + 轻上浮」，避免硬切白屏
+     .automation-log-in         日志逐条滑入（animation-delay 由组件按序给）
+
+   纪律：所有动画都只做「入场」，不做循环闪烁（除了表示「正在跑」的 pulse/arrow），
+   结束即整体卸载，不残留 loading / disabled / 错误动画。
+   =========================================================================== */
+
+.automation-overlay-mask {
+  animation: automation-mask-in 0.22s ease-out both;
+}
+@keyframes automation-mask-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.automation-card-in {
+  animation: automation-card-in 0.26s cubic-bezier(0.22, 0.75, 0.3, 1) both;
+}
+@keyframes automation-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.automation-log-in {
+  animation: automation-log-in 0.24s cubic-bezier(0.22, 0.75, 0.3, 1) both;
+}
+@keyframes automation-log-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ===========================================================================
+   自动化回归 · 全屏接管专用动效（2026-10-08 新增）
+
+   纪律（与既有 .automation-* 一致）：
+     · 只做「入场」与「正在跑」两类反馈，**不做循环闪烁**；
+     · 复用既有 sweep / automation-pulse，不重定义同义 keyframes；
+     · 全部纳入下方 prefers-reduced-motion 降级分支（去位移、留淡入）。
+   =========================================================================== */
+
+/* 五步骤条的连接线：进行中时一道流光自左向右扫过 */
+.automation-rail-flow {
+  background: linear-gradient(90deg, var(--tp-p-200), var(--tp-p-700), var(--tp-p-200));
+  background-size: 220% 100%;
+  animation: automation-rail-sweep 1.5s linear infinite;
+}
+@keyframes automation-rail-sweep {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+/* 连接线上的粒子：让「正在往下一步走」有方向感（静态连线看不出流动） */
+.automation-rail-particle {
+  position: absolute;
+  top: -1.5px;
+  left: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: var(--tp-p-700);
+  box-shadow: 0 0 6px rgba(46, 94, 69, 0.55);
+  animation: automation-rail-particle 1.5s linear infinite;
+}
+@keyframes automation-rail-particle {
+  0% {
+    left: 0;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    left: calc(100% - 5px);
+    opacity: 0;
+  }
+}
+
+/* 引导屏呼吸环：两道细环反向旋转，暗示「将要开始」而非「正在跑」 */
+.automation-intro-ring {
+  animation: automation-intro-spin 2.6s linear infinite;
+}
+.automation-intro-ring-2 {
+  animation: automation-intro-spin 1.9s linear infinite reverse;
+}
+@keyframes automation-intro-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 运行日志逐条入场：只在最近若干条上累加延迟，避免长跑后 delay 无限增长 */
+.automation-log-line {
+  animation: automation-log-in 0.22s cubic-bezier(0.22, 0.75, 0.3, 1) both;
+}
+
+/* 动效偏好：系统开了「减少动态效果」就去掉入场位移，只保留淡入 */
+@media (prefers-reduced-motion: reduce) {
+  .automation-overlay-mask,
+  .automation-card-in,
+  .automation-log-in,
+  .automation-pulse,
+  .automation-arrow,
+  .automation-log-line,
+  .automation-rail-flow,
+  .automation-rail-particle,
+  .automation-intro-ring,
+  .automation-intro-ring-2 {
+    animation: automation-mask-in 0.16s ease-out both;
+  }
+}
+
+/* ===========================================================================
+  顶栏五流程条 · 滑动高亮块（2026-10-09 新增，用户要求「阶段之间需要有动效」）
+  ---------------------------------------------------------------------------
+  原实现：每个阶段各自一个 bg-p50 底，切换时各自淡入淡出 —— 没有「位移」。
+  现在：一个绝对定位的圆角高亮块，随激活阶段做 translateX 平滑滑过去。
+  纪律：与 .automation-* 分开维护（后者是自动化运行态专用，结束即失效）；
+  这里只做一次 300ms 位移过渡；下方 prefers-reduced-motion 分支去掉位移，只留定位。
+  =========================================================================== */
+.flow-pill {
+  transition:
+    transform 0.3s cubic-bezier(0.22, 0.75, 0.3, 1),
+    width 0.3s cubic-bezier(0.22, 0.75, 0.3, 1);
+  will-change: transform, width;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow-pill {
+    transition: none;
+  }
+}
+
+/* ===========================================================================
+  KaTeX 公式（2026-10-08 新增）
+
+   为什么放全局：公式要同时在**助手回答**（agent-chat.css / --ac-* 变量）与
+   **知识库抽取稿**（index.css / --tp-* 变量）两处显示。两套作用域变量互不相通，
+   放这里用 --tp-* 令牌，两处都能吃到同一份观感，不会出现「聊天里正常、
+   文档里又是另一套颜色」。
+
+   配色纪律：公式正色用**中大墨绿**（--p-700 / #2E5E45），与品牌骨架同源；
+   KaTeX 自带的强调色一并改掉，避免它默认的黑/蓝在墨绿体系里显得突兀。
+   =========================================================================== */
+
+/* 行内公式：随正文基线，不额外撑高行距 */
+.ac-md__math {
+  color: var(--p-700);
+  font-size: 1.02em;
+}
+
+/* 块级公式：独立居中，上下留白各 8px，长公式允许横向滚动而不撑破气泡 */
+.ac-md__math--block {
+  display: block;
+  margin: 8px 0;
+  padding: 2px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  text-align: center;
+}
+
+/* 公式渲染失败时的等宽原文兜底：读者仍能看到内容，不至于白屏 */
+.ac-md__math-fallback {
+  display: inline-block;
+  padding: 0 4px;
+  border: 1px solid var(--tp-line, #e3e8e4);
+  border-radius: 4px;
+  background: var(--p-50, #f2f7f4);
+  color: var(--tp-text-2, #5b6b62);
+  font-family: var(--tp-font-mono, monospace);
+  font-size: 0.92em;
+  word-break: break-all;
+}
+
+/* 抽取稿里「公式未能自动提取」的友好占位（C1）：
+   原文是 docling 写的英文 `e1: formula not decoded →`，直接显示很难看
+   （用户原话「显示为机器阅读格式」）。这里换成中文占位并说明原因，
+   不假装公式存在，也不静默隐藏——读者知道原件里有公式、只是没抽出来。 */
+.ac-md__math-missing {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  border: 1px dashed var(--p-300, hsl(149 26% 72%));
+  border-radius: 4px;
+  background: var(--p-50, #f2f7f4);
+  color: var(--tp-text-3, #9aa69f);
+  font-size: 0.92em;
+  white-space: nowrap;
+  cursor: help;
+}
+
+/* KaTeX 自带的强调色统一到墨绿体系 */
+.katex {
+  color: inherit;
+}
+.katex .mord.text {
+  color: var(--p-700);
+}
+.katex .frac-line,
+.katex .overline .overline-line,
+.katex .underline .underline-line {
+  border-color: currentColor;
+}
+/* 块级公式在深色容器（未来 HUD）里也不至于糊掉：KaTeX 底色随容器 */
+.katex-display {
+  margin: 0;
+}
+
+/* ===========================================================================
+   统一配置工作区（左侧菜单区 · 覆盖自独立前端包 v4.5）
+   ---------------------------------------------------------------------------
+   B 区从「分组手风琴树（TierTree）」升级为「配置工作区」两态：
+   「常用配置」卡片（config-quick-card）与「更多配置」统一面板
+   （unified-config：搜索 + 分类 tab + 分组字段）。字段行底部的元信息
+   （范围 / 依据 / 待核实）由 .config-field-meta 承载。
+   =========================================================================== */
+
+.config-overview { padding: 16px 14px; }
+.config-mode-bar { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
+.config-mode-bar > div:first-child { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.config-mode-bar strong { color: var(--tp-text); font-size: 14px; }
+.config-mode-bar span { color: var(--tp-text-2); font-size: 11px; }
+.config-mode-bar [role='group'] { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; border-radius: 12px; background: var(--p-50); border: 1px solid var(--tp-line); }
+.config-mode-bar button { border: 0; border-radius: 9px; padding: 8px; color: var(--tp-text-2); cursor: pointer; font-size: 12px; font-weight: 600; }
+.config-mode-bar button[aria-pressed='true'] { background: white; color: var(--p-700); box-shadow: 0 2px 5px #173f2e0d; }
+
+.config-quick-card { min-width: 0; border: 1px solid var(--tp-line); border-radius: 14px; background: var(--tp-surface); box-shadow: 0 3px 12px #173f2e05; padding: 12px 0; }
+.config-quick-card > * { max-width: 100%; }
+
+.unified-config { display: flex; flex-direction: column; gap: 12px; }
+.unified-config-search { display: flex; align-items: center; gap: 8px; border: 1px solid var(--tp-line); border-radius: 10px; background: white; padding: 9px 10px; color: var(--tp-text-2); }
+.unified-config-search input { width: 100%; min-width: 0; background: transparent; border: 0; outline: 0; font-size: 12px; color: var(--tp-text); }
+.unified-config-search span { font-size: 11px; white-space: nowrap; }
+.unified-config-search button { display: flex; padding: 2px; border: 0; background: transparent; }
+.unified-config-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.unified-config-tabs button { display: flex; align-items: center; gap: 5px; border: 1px solid var(--tp-line); border-radius: 8px; background: white; padding: 7px 9px; color: var(--tp-text-2); font-size: 11px; cursor: pointer; }
+.unified-config-tabs button[aria-pressed='true'] { background: var(--p-700); color: white; border-color: var(--p-700); }
+.unified-config-tabs small { font-size: 10px; opacity: 0.8; }
+.unified-config-tab { display: flex; align-items: center; gap: 6px; }
+.unified-config-groups { display: grid; gap: 12px; }
+.unified-config-group { min-width: 0; border: 1px solid var(--tp-line); border-radius: 14px; background: white; overflow: visible; }
+.unified-config-group > header { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--tp-line-soft); }
+.unified-config-group header span { font-size: 10px; color: var(--tp-text-2); }
+.unified-config-group h3 { margin: 2px 0 0; font-size: 13px; font-weight: 600; color: var(--tp-text); }
+.unified-config-group header small { font-size: 11px; color: var(--tp-text-2); }
+.unified-config-fields { display: grid; gap: 8px; padding: 10px; }
+.unified-config-field { min-width: 0; border: 1px solid var(--tp-line-soft); border-radius: 10px; background: #fbfdfb; overflow: visible; }
+.unified-config-field[data-pending] { border-color: #ddc894; background: #fffdf6; }
+.unified-config-field[data-alert] { border-color: #d7b9b9; background: #fff9f9; }
+.unified-config-field > div { flex-wrap: wrap; padding: 10px; gap: 8px; }
+.unified-config-field .truncate { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+.unified-config-field > div > span:last-child { max-width: 100%; }
+.config-quick-card .truncate { white-space: normal; overflow: visible; text-overflow: clip; }
+.unified-config-empty { display: grid; justify-items: center; gap: 8px; padding: 24px 12px; border: 1px dashed var(--tp-line); border-radius: 12px; text-align: center; font-size: 12px; color: var(--tp-text-2); }
+.unified-config-empty button { border: 0; border-radius: 8px; background: var(--p-50); color: var(--p-700); padding: 8px 12px; cursor: pointer; }
+
+.config-field-meta { display: grid; flex-basis: 100%; gap: 3px; padding-top: 7px; border-top: 1px solid var(--tp-line-soft); font-size: 10px; line-height: 1.5; color: var(--tp-text-2); overflow-wrap: anywhere; }
+.config-field-meta strong { font-weight: 500; color: #8a651e; }
+.config-quick-card > div { flex-wrap: wrap; }
+.config-quick-card .config-field-meta { margin-inline: 0; }
+.config-stepper { border: 1px solid var(--tp-line); border-radius: 9px; padding: 4px; background: white; }
+

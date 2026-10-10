@@ -412,11 +412,11 @@
       ],
       "_source": [
         {
-          "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/startstop-with-scope/SKILL.md",
+          "file": "[源] startstop-with-scope/SKILL.md",
           "locator": "frontmatter description 与执行规则"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260917-产品故事与分工v1.0/_调研/A-DebugCopilot场景与知识库取证.md",
+          "file": "[源] _调研/A-DebugCopilot场景与知识库取证.md",
           "locator": "第二节第 4 类「startstop-with-scope（默认 100 次可 1~1000，FG2>10000rpm 且无 fault）」"
         }
       ]
@@ -469,11 +469,11 @@
       ],
       "_source": [
         {
-          "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/auto-startup-tune/SKILL.md",
+          "file": "[源] auto-startup-tune/SKILL.md",
           "locator": "「## 固定候选」与候选推进小节"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260917-产品故事与分工v1.0/_调研/A-DebugCopilot场景与知识库取证.md",
+          "file": "[源] _调研/A-DebugCopilot场景与知识库取证.md",
           "locator": "第二节第 4 类"
         }
       ]
@@ -522,11 +522,11 @@
       ],
       "_source": [
         {
-          "file": "/home/zzz/.claude/projects/-mnt-f-Main-File-2-Projects---/memory/fortior-test-bench-hardware.md",
+          "file": "[源] memory/fortior-test-bench-hardware.md",
           "locator": "「核心判据:FG1 频率 = 2 × FG2 频率」段"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+          "file": "[源] include/Customer.h",
           "locator": "Customer.h:56 (#define Pole_Pairs)"
         }
       ],
@@ -576,15 +576,15 @@
       ],
       "_source": [
         {
-          "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+          "file": "[源] coolingfan-openloop-debug/SKILL.md",
           "locator": "第 4 节 证据二 判据「转速准确度」"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+          "file": "[源] 测试数据_20260622/report.xlsm",
           "locator": "sheet 測試程式規格表 行 29-30「最大/最低轉速範圍 ± 5%」"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+          "file": "[源] 测试数据_20260622/report.xlsm",
           "locator": "sheet PWM·VSP 性能測試 A3「※ 通過條件：RPM 誤差 ≤ ±5%」"
         }
       ]
@@ -627,7 +627,7 @@
         "F5 调优确认及运行"
       ],
       "_source": {
-        "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+        "file": "[源] coolingfan-openloop-debug/SKILL.md",
         "locator": "第 4 节 证据二 判据「转速稳定性」"
       }
     },
@@ -670,7 +670,7 @@
         "F4 启动测试及结果分析"
       ],
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet 測試程式規格表 行 65「FG 與實際轉速誤差 | 小於 50 RPM」"
       }
     },
@@ -706,7 +706,7 @@
         "F4 启动测试及结果分析"
       ],
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet 測試程式規格表 行 31"
       }
     },
@@ -754,7 +754,7 @@
         "F4 启动测试及结果分析"
       ],
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet 測試程式規格表 行 32-33"
       }
     },
@@ -796,7 +796,7 @@
         "F4 启动测试及结果分析"
       ],
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet 測試程式規格表 行 93"
       }
     },
@@ -866,15 +866,15 @@
       ],
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+          "file": "[源] 测试数据_20260622/report.xlsm",
           "locator": "sheet PWM·VSP 性能測試 A8:J8 表头、A9:A19 占空比档位"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+          "file": "[源] 测试数据_20260622/report.xlsm",
           "locator": "sheet PWM·VSP 性能測試 A3「※ 通過條件：RPM 誤差 ≤ ±5% | 過衝 (%) ≤ 10% | 穩態電流 ≤ 穩態上限」"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/平台代码/writeFile_rust/README.md",
+          "file": "[源] writeFile_rust/README.md",
           "locator": "「CSV 格式说明 · 列定义」8 列"
         }
       ],
@@ -921,7 +921,7 @@
         "F4 启动测试及结果分析"
       ],
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet 測試程式規格表 行 95"
       }
     },
@@ -957,7 +957,7 @@
         "F3 测试需求确认"
       ],
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet 測試程式規格表 行 94「時間需小於 _____ 秒」"
       },
       "_placeholder": true,
@@ -1003,11 +1003,11 @@
       ],
       "_source": [
         {
-          "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/tailwind-restart-test/SKILL.md",
+          "file": "[源] tailwind-restart-test/SKILL.md",
           "locator": "frontmatter description"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260917-产品故事与分工v1.0/_调研/A-DebugCopilot场景与知识库取证.md",
+          "file": "[源] _调研/A-DebugCopilot场景与知识库取证.md",
           "locator": "第二节第 4 类「tailwind-restart-test（12 档 500~6000ms）」"
         }
       ]
@@ -1059,7 +1059,7 @@
         "F4 启动测试及结果分析"
       ],
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet 測試程式規格表 行 89-90"
       },
       "note": "判据要逐个速度档、逐个风向（顺风/逆风）各求值一次，常态运行最高值须取同电压同转速工况的基线采集"
@@ -1097,7 +1097,7 @@
         "F4 启动测试及结果分析"
       ],
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet 測試程式規格表 行 91「_____ 秒」"
       },
       "_placeholder": true,
@@ -1156,11 +1156,11 @@
       ],
       "_source": [
         {
-          "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/protect-verify-ovp/SKILL.md",
+          "file": "[源] protect-verify-ovp/SKILL.md",
           "locator": "执行流程第 1、2 节"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Protect.h",
+          "file": "[源] include/Protect.h",
           "locator": "Protect.h:39 (#define PROTECTION_OV_PROTECT_THRESHOLD)"
         }
       ],
@@ -1219,11 +1219,11 @@
       ],
       "_source": [
         {
-          "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/protect-verify-uvp/SKILL.md",
+          "file": "[源] protect-verify-uvp/SKILL.md",
           "locator": "执行流程第 1、2 节"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Protect.h",
+          "file": "[源] include/Protect.h",
           "locator": "Protect.h:42 (#define PROTECTION_UV_PROTECT_THRESHOLD)"
         }
       ],
@@ -1251,7 +1251,7 @@
         "F4 启动测试及结果分析"
       ],
       "_source": {
-        "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/protect-verify-lvw/SKILL.md",
+        "file": "[源] protect-verify-lvw/SKILL.md",
         "locator": "第 0 节 阈值缺失分支"
       },
       "_placeholder": true,
@@ -1307,15 +1307,15 @@
       ],
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Protect.h",
+          "file": "[源] include/Protect.h",
           "locator": "Protect.h:31 (#define PROTECTION_TRIG_COUNT_THRESHOLD)"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Protect.h",
+          "file": "[源] include/Protect.h",
           "locator": "Protect.h:30 (#define PROTECTION_STALL_RECOVER_TIMES)"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Motor_Protection.h",
+          "file": "[源] include/Motor_Protection.h",
           "locator": "Motor_Protection.h:55 (#define FAULT_STALL_METHOD_SPDES)"
         }
       ],
@@ -1338,7 +1338,7 @@
         "F4 启动测试及结果分析"
       ],
       "_source": {
-        "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/protect-verify-overspeed/SKILL.md",
+        "file": "[源] protect-verify-overspeed/SKILL.md",
         "locator": "全文执行流程"
       },
       "_placeholder": true,
@@ -1361,7 +1361,7 @@
         "F4 启动测试及结果分析"
       ],
       "_source": {
-        "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/protect-verify-start-fail/SKILL.md",
+        "file": "[源] protect-verify-start-fail/SKILL.md",
         "locator": "frontmatter description"
       }
     },
@@ -1407,11 +1407,11 @@
       ],
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Protect.h",
+          "file": "[源] include/Protect.h",
           "locator": "Protect.h:54 (#define PROTECTION_OC_SOFT_THRESHOLD)"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+          "file": "[源] 测试数据_20260622/report.xlsm",
           "locator": "sheet 測試程式規格表 行 83"
         }
       ],
@@ -1456,11 +1456,11 @@
       ],
       "_source": [
         {
-          "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/hw-selfcheck-vbus/SKILL.md",
+          "file": "[源] hw-selfcheck-vbus/SKILL.md",
           "locator": "frontmatter description 与判据小节"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260917-产品故事与分工v1.0/_调研/A-DebugCopilot场景与知识库取证.md",
+          "file": "[源] _调研/A-DebugCopilot场景与知识库取证.md",
           "locator": "第二节第 2 类「hw-selfcheck-vbus ±10%」"
         }
       ]
@@ -1499,11 +1499,11 @@
       ],
       "_source": [
         {
-          "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/hw-selfcheck-ipm/SKILL.md",
+          "file": "[源] hw-selfcheck-ipm/SKILL.md",
           "locator": "frontmatter description 与判据小节"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260917-产品故事与分工v1.0/_调研/A-DebugCopilot场景与知识库取证.md",
+          "file": "[源] _调研/A-DebugCopilot场景与知识库取证.md",
           "locator": "第二节第 2 类「hw-selfcheck-ipm 相位±5°」"
         }
       ]
@@ -1560,11 +1560,11 @@
       ],
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+          "file": "[源] 测试数据_20260622/report.xlsm",
           "locator": "sheet 測試程式規格表 行 38-40「_____ 次 (客戶需求待確認)」"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+          "file": "[源] 测试数据_20260622/report.xlsm",
           "locator": "sheets ON-OFF LV / ON-OFF SV / ON-OFF HV"
         }
       ],
@@ -1614,7 +1614,7 @@
         "F4 启动测试及结果分析"
       ],
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet 測試程式規格表 行 96"
       }
     }

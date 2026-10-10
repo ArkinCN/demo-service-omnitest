@@ -121,10 +121,10 @@ FG2 为红外传感器照反光纸得到的机械真实转速、PWM1 为驱动�
 
 | 页面文件 | 原始路径 | 处理方式 |
 | --- | --- | --- |
-| `public/data/faithful_norm1200.csv` | `/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260701/faithful_norm1200.csv` | 原样复制，1200 点 |
-| `public/data/attempt_TRY-0009_PASS.csv` | `/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包/01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0009/capture/CH1_上电时刻归一化.csv` | 原样复制；标签取自同目录 `operator_label.json`，`operator_result` 为 `PASS` |
+| `public/data/faithful_norm1200.csv` | `测试数据_20260701/faithful_norm1200.csv` | 原样复制，1200 点 |
+| `public/data/attempt_TRY-0009_PASS.csv` | `[源] capture/CH1_上电时刻归一化.csv` | 原样复制；标签取自同目录 `operator_label.json`，`operator_result` 为 `PASS` |
 | `public/data/attempt_TRY-0010_FAIL.csv` | 同上，`attempts/TRY-0010/capture/CH1_上电时刻归一化.csv` | 原样复制；`operator_result` 为 `FAIL`，`case_id` 为 `CF-L-0003` |
-| `public/data/fullrun_v2b_decimated.csv` | `/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260627/fullrun_v2b_20260627.csv`（101 MB，**未复制入库**） | 由 `scripts/decimate_fullrun.py` 离线 min/max 抽稀，3,000,000 → 4,000 点，152 KB |
+| `public/data/fullrun_v2b_decimated.csv` | `测试数据_20260627/fullrun_v2b_20260627.csv`（101 MB，**未复制入库**） | 由 `scripts/decimate_fullrun.py` 离线 min/max 抽稀，3,000,000 → 4,000 点，152 KB |
 
 两份 attempt 记录各 24,000 点 @ 2000 Sa/s，t = 0 为操作员点击"即将上电"按钮的时刻，上电前 6 秒为
 采集工具合成的零值填充（CSV 中 `sample_source` 列标为 `SYNTHETIC_PRE_POWER`），该列因非数值已被
@@ -160,15 +160,15 @@ Worker 一行的数据来自演示页把触发门限临时下调到 1000 点后�
 
 ---
 
-## 五、集成到 `~/agent-test-web`
+## 五、集成到 `c/`
 
 1. 整目录复制：
    ```bash
-   cp -r ~/lab/timeseries/src/features/timeseries ~/agent-test-web/src/features/
+   cp -r [源] features/timeseries [源] src/features
    ```
 2. 装依赖（宿主工程已有 react）：
    ```bash
-   cd ~/agent-test-web && npm i uplot
+   cd c/ && npm i uplot
    ```
 3. 引入：
    ```tsx
@@ -189,7 +189,7 @@ Worker 一行的数据来自演示页把触发门限临时下调到 1000 点后�
 ## 六、本地运行
 
 ```bash
-cd ~/lab/timeseries
+cd c/components/timeseries
 npm install
 npm run dev     # 开发服务器
 npm run build   # 生产构建，输出到 dist/

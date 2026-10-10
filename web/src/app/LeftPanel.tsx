@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { CheckCircle2, Lock, Sliders } from 'lucide-react'
 import {
   Badge,
@@ -164,6 +164,7 @@ function ParamRow({
               label: item.optionLabels?.[i] ?? o,
             }))}
             value={String(value)}
+            disabled={locked}
             onChange={(v) => !locked && setParam(key, v)}
           />
         ) : (
@@ -359,4 +360,18 @@ export function LeftPanel({ flow, scene }: { flow: FlowId; scene: ScenePackage }
       </footer>
     </Panel>
   )
+}
+
+/** Core and complete configuration share the same field presentation. */
+export function ConfigOverview({ quick, children, count }: { quick: ReactNode; children: ReactNode; count: number }) {
+  const [expanded, setExpanded] = useState(false)
+  const sceneId = useAppStore((state) => state.sceneId)
+  useEffect(() => setExpanded(false), [sceneId])
+  return <section className="config-overview" aria-label="本流程配置">
+    <div className="config-mode-bar"><div><strong>配置工作区</strong><span>{count} 项 · 原始场景参数</span></div><div role="group" aria-label="配置显示模式">
+      <button type="button" aria-pressed={!expanded} onClick={() => setExpanded(false)}>常用配置</button>
+      <button type="button" aria-pressed={expanded} onClick={() => setExpanded(true)}>更多配置</button>
+    </div></div>
+    {expanded ? <div className="config-complete">{children}</div> : <div className="config-quick">{quick}</div>}
+  </section>
 }

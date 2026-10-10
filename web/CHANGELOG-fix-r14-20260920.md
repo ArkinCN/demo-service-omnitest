@@ -1,14 +1,14 @@
 # R-14 案例简化收口 · 流程 3「启动测试」与流程 4「调优运行」首屏压缩（2026-09-20）
 
 改版依据：用户录音意见 R-14「案例搞太复杂，演示是个 demo，故事不好讲」。设计口径出自
-`/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/06-第三轮改版/06d-案例简化与demo故事线.md`
+`[源] 06-第三轮改版/06d-案例简化与demo故事线.md`
 第 3 节「保留 / 折叠 / 删除清单」与第 4 节「分层呈现方案」，计数口径出自同目录
 `07d-W4完成报告.md` 第 4 节与 `06-第三轮改版/06b-初始化配置参数树与B区密度规则.md` 第 3 节。
 
 改动范围限定在 `src/features/flow-run/**`、`src/features/flow-tune/**`、
 `src/features/copilot/scripts.ts` 的 run / tune 两段。`ResourcePanel.tsx`、`canvas/`、
 `knowledge/`、`index.css`、`scripts/` 由另一个改版包负责，本轮一行未动。
-改前备份在 `/home/zzz/agent-test-web/.bak-src-r14-0849/`。
+改前备份在 `（见交付包内备份）`。
 
 ---
 
@@ -22,13 +22,13 @@
 
 改后：`起动成功率（100 次启停回归）`（判据编号 TR-START-01）判成**不通过**，流程 4 左栏
 落进一条未达标项，因果链接上了。两处实现，都写在
-`/home/zzz/agent-test-web/src/features/flow-run/evaluate.ts`：
+`[源] flow-run/evaluate.ts`：
 
 **其一，补上一个真实存在的实测量。** `runtimeMeasures()` 新增一个可选的场景包入参，
 从 `datasets.json` 的 `package_stats` 段取「已标注批次的通过次数」。散热风扇包这一段登记的是
 2026-08-11 启动故障 98 次实验的标注结果：尝试 101 次、已标注 98 次、通过 67 次、失败 30 次、
 作废 1 次，`_source` 指向
-`/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包/分析报告-预定位太弱判定-20260812.md`。
+`[源] 20260811_启动故障98次实验与30例对照数据包/分析报告-预定位太弱判定-20260812.md`。
 这是已经采到并标注过的量，不是推算，也不是把「未采集」改写成确定值；没有登记这一段的场景包
 （合成的玻璃升降器包就没有）一个数都不给，判据照旧落「未采集」。
 
@@ -73,7 +73,7 @@ pass_count === required_pass && fault_flag === 0 && fg2_rpm_min_observed > fg2_r
 按 06d 第 1.1 节：数「观众在 1920×1080 首屏上能直接看见的可辨识信息单元」，一个带值的字段、
 一个徽标、一颗按钮、一行列表各记 1；不计纯装饰图标、图表坐标轴刻度、折叠后不可见的内容。
 
-量法是一个 Playwright 脚本 `/home/zzz/agent-test-web/count-r14.mjs`：取视口内可见的文本节点，
+量法是一个 Playwright 脚本 `c/count-r14.mjs`：取视口内可见的文本节点，
 按「最近的可点控件或块级行容器」合并（同一行里的标签 + 数值 + 单位记 1），排除 `<svg>` 内部
 （坐标轴与图内标注）、零尺寸与视口外元素，分四区统计。跑法：
 
@@ -138,12 +138,12 @@ node count-r14.mjs            # 加 DETAIL=1 逐条打印数到了哪些
 
 | 文件（绝对路径） | 改了什么 |
 | --- | --- |
-| `/home/zzz/agent-test-web/src/features/flow-run/evaluate.ts` | `runtimeMeasures()` 增可选场景包入参并接批次统计量；新增 `measureOrigin()`、`clausesOf()`、`varsIn()`；`evaluateAll()` 增合取短路求值，`Evaluated` 增 `partial` / `note` 两字段 |
-| `/home/zzz/agent-test-web/src/features/flow-run/panel.tsx` | 闸门二级 / 三级组演示模式默认折叠；判定卡三大数字收成一行、只列有结论的行、tooltip 带上短路说明与实测量出处；执行进度卡日志与分母退到 tooltip 与放大态 |
-| `/home/zzz/agent-test-web/src/features/flow-tune/panel.tsx` | 判定接真实批次量；候选队列演示模式只铺一条、长注释撤下；知识库依据只留首条 + 「另 n 条」；栏头三数收成一数；参数变更卡表头合并、首屏一行 |
-| `/home/zzz/agent-test-web/src/features/copilot/scripts.ts` | tune 段首选经验改按证据级取（EXP-009，原来取的是 EXP-001）、排序话术改口径；run 段结论话术跟着真实求值走；两段在演示模式下各砍掉尾部的工具调用与证据卡 |
-| `/home/zzz/agent-test-web/count-r14.mjs` | 新建。首屏元素计数脚本（06d 口径的重新实现） |
-| `/home/zzz/agent-test-web/shot-r14.mjs` | 新建。本轮验收截图脚本 |
+| `[源] flow-run/evaluate.ts` | `runtimeMeasures()` 增可选场景包入参并接批次统计量；新增 `measureOrigin()`、`clausesOf()`、`varsIn()`；`evaluateAll()` 增合取短路求值，`Evaluated` 增 `partial` / `note` 两字段 |
+| `[源] flow-run/panel.tsx` | 闸门二级 / 三级组演示模式默认折叠；判定卡三大数字收成一行、只列有结论的行、tooltip 带上短路说明与实测量出处；执行进度卡日志与分母退到 tooltip 与放大态 |
+| `[源] flow-tune/panel.tsx` | 判定接真实批次量；候选队列演示模式只铺一条、长注释撤下；知识库依据只留首条 + 「另 n 条」；栏头三数收成一数；参数变更卡表头合并、首屏一行 |
+| `[源] copilot/scripts.ts` | tune 段首选经验改按证据级取（EXP-009，原来取的是 EXP-001）、排序话术改口径；run 段结论话术跟着真实求值走；两段在演示模式下各砍掉尾部的工具调用与证据卡 |
+| `c/count-r14.mjs` | 新建。首屏元素计数脚本（06d 口径的重新实现） |
+| `c/shot-r14.mjs` | 新建。本轮验收截图脚本 |
 
 场景包 JSON 一个字未改：本轮没有把任何「待核实 / 合成 / 未采集」改写成确定值。
 
@@ -184,7 +184,7 @@ node count-r14.mjs            # 加 DETAIL=1 逐条打印数到了哪些
 
 ## 六、截图
 
-产出目录 `/home/zzz/agent-test-web/shots4-r14/`，命令
+产出目录 `c/shots4-r14`，命令
 `npm run preview -- --port 4199` 后 `node shot-r14.mjs`：
 
 | 文件 | 内容 |

@@ -29,6 +29,7 @@ export function Collapsible({
   icon,
   meta,
   right,
+  rightInteractive,
   stat,
   defaultOpen = false,
   storeKey,
@@ -43,6 +44,16 @@ export function Collapsible({
   icon?: ReactNode
   meta?: ReactNode
   right?: ReactNode
+  /**
+   * `right` 里含可点击元素（按钮）时为 true：标题行外层改用 `div`、
+   * 折叠点击区单独用一个内层 `button`，右侧插槽独立渲染。
+   *
+   * 为什么需要它：HTML 不允许 `button` 嵌套 `button`。默认 right 放在标题
+   * 那个大 `button` 内（纯展示插槽够了）；但要在标题行右侧放一个真按钮
+   * （如「一键采纳」）就必须拆结构，否则浏览器会把嵌套 button 拍平、
+   * 点击行为错乱。默认 false，现有调用一律不受影响。
+   */
+  rightInteractive?: boolean
   stat?: CollapsibleStat
   defaultOpen?: boolean
   /** 折叠状态记忆键，用 `collapseKey(flow, group)` 生成 */
@@ -94,6 +105,37 @@ export function Collapsible({
       </span>
     ) : null
 
+  // 标题行内容（折叠箭头 + 图标 + 标题 + meta + 汇总）——两种结构共用。
+  const headRow = (
+    <>
+      <ChevronRight
+        size={level === 3 ? 12 : 14}
+        strokeWidth={2}
+        className={cn(
+          'shrink-0 text-t3 transition-transform duration-200',
+          open && 'rotate-90 text-p600',
+          lockOpen && 'opacity-40',
+        )}
+      />
+      {icon ? <span className="shrink-0 text-p600 [&>svg]:block">{icon}</span> : null}
+      {index && !icon ? <span className="num text-[12px] text-t3">{index}</span> : null}
+      <span
+        className={cn(
+          'truncate tracking-tight text-t1',
+          level === 1 ? 'text-[13.5px] font-semibold' : 'font-semibold',
+          level === 3 ? 'text-[12px] font-medium text-t2' : dense ? 'text-[12px]' : 'text-[13px]',
+        )}
+      >
+        {title}
+      </span>
+    </>
+  )
+  const rowClass = cn(
+    'group flex w-full items-center gap-2 text-left transition-colors duration-150 hover:bg-p50/70',
+    level === 1 ? 'h-[38px] bg-sunk px-4' : level === 3 ? 'h-[26px] px-6' : 'px-4',
+    level !== 1 && (dense ? 'h-[30px]' : 'h-[36px]'),
+  )
+
   return (
     <div
       className={cn(
@@ -101,42 +143,35 @@ export function Collapsible({
         className,
       )}
     >
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={toggle}
-        className={cn(
-          'group flex w-full items-center gap-2 text-left transition-colors duration-150 hover:bg-p50/70',
-          level === 1 ? 'h-[38px] bg-sunk px-4' : level === 3 ? 'h-[26px] px-6' : 'px-4',
-          level !== 1 && (dense ? 'h-[30px]' : 'h-[36px]'),
-        )}
-      >
-        <ChevronRight
-          size={level === 3 ? 12 : 14}
-          strokeWidth={2}
-          className={cn(
-            'shrink-0 text-t3 transition-transform duration-200',
-            open && 'rotate-90 text-p600',
-            lockOpen && 'opacity-40',
-          )}
-        />
-        {icon ? <span className="shrink-0 text-p600 [&>svg]:block">{icon}</span> : null}
-        {index && !icon ? <span className="num text-[12px] text-t3">{index}</span> : null}
-        <span
-          className={cn(
-            'truncate tracking-tight text-t1',
-            level === 1 ? 'text-[13.5px] font-semibold' : 'font-semibold',
-            level === 3 ? 'text-[12px] font-medium text-t2' : dense ? 'text-[12px]' : 'text-[13px]',
-          )}
-        >
-          {title}
-        </span>
-        {meta ? <span className="tick ml-auto">{meta}</span> : null}
-        {summary}
-        {right ? (
-          <span className={cn('flex items-center gap-1.5', summary ? '' : 'ml-auto')}>{right}</span>
-        ) : null}
-      </button>
+      {rightInteractive ? (
+        /* right 含按钮：外层 div，折叠点击区单独用 button，right 独立渲染——
+           HTML 不允许 button 嵌套 button（与流程 3「安全闸门」同款结构）。 */
+        <div className={cn(rowClass, 'hover:bg-transparent')}>
+          <button
+            type="button"
+            aria-expanded={open}
+            onClick={toggle}
+            disabled={lockOpen}
+            className="flex min-w-0 flex-1 items-center gap-2 text-left disabled:cursor-default"
+          >
+            {headRow}
+            {meta ? <span className="tick ml-auto">{meta}</span> : null}
+            {summary}
+            {/* 无 right 占位时给个 auto 推位，保证汇总靠右对齐 */}
+            {!right && !summary && !meta ? <span className="ml-auto" /> : null}
+          </button>
+          {right ? <span className="ml-auto flex shrink-0 items-center gap-1.5">{right}</span> : null}
+        </div>
+      ) : (
+        <button type="button" aria-expanded={open} onClick={toggle} className={rowClass}>
+          {headRow}
+          {meta ? <span className="tick ml-auto">{meta}</span> : null}
+          {summary}
+          {right ? (
+            <span className={cn('flex items-center gap-1.5', summary ? '' : 'ml-auto')}>{right}</span>
+          ) : null}
+        </button>
+      )}
       {open ? <div className="animate-fade pb-1">{children}</div> : null}
     </div>
   )

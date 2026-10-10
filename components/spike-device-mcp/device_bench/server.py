@@ -25,11 +25,15 @@ from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 
 from . import config
-from .backend import BenchBackend
+from .backend import BenchBackend, LocalVisaBackend
 from .confirm import GUARDED_ACTIONS, REGISTRY
+from .dll_bridge import DllBridgeError, get_client
 
 ALLOW_MOCK = os.environ.get("BENCH_ALLOW_MOCK", "1") != "0"
+# 观测层两条路二选一：ssh（默认，SSH 到工控机跑客户 exe）/ local（本机直连示波器发 SCPI）。
+LOCAL_MODE = config.BENCH_BACKEND == "local"
 BENCH = BenchBackend(config.BENCH, allow_mock=ALLOW_MOCK)
+LOCAL_SCOPE = LocalVisaBackend() if LOCAL_MODE else None
 
 server = MCPServer(
     name="device-bench",
@@ -88,17 +92,16 @@ def _guard(tool: str, args: dict, confirm_token: str | None) -> dict | None:
 @server.tool(
     name="connect",
     title="连接台架",
-    description="通过 SSH 连接峰岹台架工控机。连不上时降级为 mock 并在返回里标明原因。",
+    description="连接设备。本机直连模式下直连示波器（pyvisa-py），SSH 模式下 SSH 到工控机。",
     annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=True),
     meta={"group": "connection", "layer": "连接层", "guarded": False},
 )
 def connect(force_mock: bool = False) -> dict:
-    """建立或重建到台架的 SSH 会话。
-
-    Args:
-        force_mock: 置 true 则不尝试 SSH，直接进 mock，用于无台架时演示。
-    """
-    snap = BENCH.connect(force_mock=force_mock)
+    """建立连接。local 模式直连示波器；ssh 模式 SSH 到工控机（连不上降级 mock）。"""
+    if LOCAL_MODE:
+        snap = LOCAL_SCOPE.connect(force_mock=force_mock)
+    else:
+        snap = BENCH.connect(force_mock=force_mock)
     return _envelope(snap.pop("mode"), status="ok", **snap)
 
 
@@ -110,7 +113,7 @@ def connect(force_mock: bool = False) -> dict:
     meta={"group": "connection", "layer": "连接层", "guarded": False},
 )
 def status() -> dict:
-    snap = BENCH.snapshot()
+    snap = (LOCAL_SCOPE if LOCAL_MODE else BENCH).snapshot()
     pending = REGISTRY.list()
     return _envelope(
         snap.pop("mode"),
@@ -129,13 +132,37 @@ def status() -> dict:
     meta={"group": "connection", "layer": "连接层", "guarded": False},
 )
 def disconnect() -> dict:
-    snap = BENCH.disconnect()
+    snap = (LOCAL_SCOPE if LOCAL_MODE else BENCH).disconnect()
     return _envelope(snap.pop("mode"), status="ok", **snap)
 
 
 # ---------- 观测层 ----------
 
 _FG_RE = re.compile(r"FG(\d)=([0-9.eE+\-]+)")
+
+
+def _parse_visa_float(raw: str) -> float | None:
+    """解析 SCPI 查询返回的数值；哨兵值 / 非数值 → None（表示「无有效测量」）。"""
+    txt = raw.strip()
+    m = re.search(r"([0-9.eE+\-]+)", txt)
+    if not m:
+        return None
+    try:
+        v = float(m.group(1))
+    except ValueError:
+        return None
+    if abs(v) >= config.VISA_NAN / 10:
+        return None
+    return v
+
+
+def _ensure_local_scope() -> LocalVisaBackend:
+    """本机直连模式下确保示波器已连接（未连则尝试连一次）。"""
+    if LOCAL_SCOPE is None:
+        raise RuntimeError("非本机直连模式")
+    if not LOCAL_SCOPE.connected:
+        LOCAL_SCOPE.connect()
+    return LOCAL_SCOPE
 
 
 @server.tool(
@@ -158,6 +185,9 @@ def read_fg(samples: int = 1, interval_s: float = 1.0) -> dict:
         interval_s: 两次之间间隔秒数。
     """
     samples = max(1, min(int(samples), 10))
+    if LOCAL_MODE:
+        return _read_fg_local(samples, interval_s)
+
     rows: list[dict] = []
     mode = BENCH.mode
     for i in range(samples):
@@ -195,6 +225,57 @@ def read_fg(samples: int = 1, interval_s: float = 1.0) -> dict:
     )
 
 
+def _read_fg_local(samples: int, interval_s: float) -> dict:
+    """本机直连：用 pyvisa 发频率测量 SCPI 读 FG1/FG2（CH2/CH3）。"""
+    try:
+        scope = _ensure_local_scope()
+    except RuntimeError as exc:
+        return _envelope("unknown", status="unavailable", samples=[], rpm_mean=None,
+                         motor_spinning=False, note=str(exc))
+    if not scope.connected:
+        return _envelope(
+            scope.mode, status="unavailable", samples=[], rpm_mean=None,
+            motor_spinning=False, note=scope.snapshot().get("last_error"),
+        )
+
+    rows: list[dict] = []
+    for i in range(samples):
+        if i:
+            time.sleep(max(0.0, min(interval_s, 5.0)))
+        try:
+            fg1_raw = scope.query(f":MEASure:FREQuency? CHANnel{config.CH_FG1}")
+            fg2_raw = scope.query(f":MEASure:FREQuency? CHANnel{config.CH_FG2}")
+            fg1 = _parse_visa_float(fg1_raw)
+            fg2 = _parse_visa_float(fg2_raw)
+        except Exception as exc:  # noqa: BLE001 —— 读失败如实报，不编数
+            return _envelope(
+                scope.mode, status="unavailable", samples=rows, rpm_mean=None,
+                motor_spinning=False, note=f"读 FG 频率失败：{type(exc).__name__}: {exc}",
+            )
+        row = {
+            "i": i,
+            "fg1_hz": fg1,
+            "fg2_hz": fg2,
+            "raw": f"FG1={fg1_raw.strip()} FG2={fg2_raw.strip()}",
+            "elapsed_ms": None,
+        }
+        if fg2:
+            row["rpm"] = round(fg2 * 60, 1)
+        if fg1 and fg2:
+            row["fg1_over_fg2"] = round(fg1 / fg2, 3)
+        if fg1 is None and fg2 is None:
+            row["note"] = "示波器未测到有效频率：电机未转或探头未接（哨兵值，非通信故障）"
+        rows.append(row)
+    ok = [r for r in rows if r.get("rpm")]
+    return _envelope(
+        scope.mode,
+        status="ok",
+        samples=rows,
+        rpm_mean=round(sum(r["rpm"] for r in ok) / len(ok), 1) if ok else None,
+        motor_spinning=bool(ok),
+    )
+
+
 @server.tool(
     name="read_pwm",
     title="读 PWM 占空比",
@@ -213,6 +294,9 @@ def read_pwm(channel: int = 4) -> dict:
     Args:
         channel: 示波器通道号，PWM1 接在 CH4。
     """
+    if LOCAL_MODE:
+        return _read_pwm_local(channel)
+
     r = BENCH.exec(f'{config.SCOPECTL} q ":MEAS:ITEM? PDUTy,CHAN{channel}"')
     txt = r.out.strip()
     duty = None
@@ -242,6 +326,37 @@ def read_pwm(channel: int = 4) -> dict:
         duty_percent=duty,
         raw=txt,
         note=note,
+    )
+
+
+def _read_pwm_local(channel: int) -> dict:
+    """本机直连：用 pyvisa 发占空比测量 SCPI 读 PWM（默认 CH4）。"""
+    try:
+        scope = _ensure_local_scope()
+    except RuntimeError as exc:
+        return _envelope("unknown", status="unavailable", channel=channel,
+                         duty_percent=None, raw="", note=str(exc))
+    if not scope.connected:
+        return _envelope(
+            scope.mode, status="unavailable", channel=channel, duty_percent=None,
+            raw="", note=scope.snapshot().get("last_error"),
+        )
+    try:
+        raw = scope.query(f":MEASure:PDUTy? CHANnel{channel}")
+    except Exception as exc:  # noqa: BLE001
+        return _envelope(
+            scope.mode, status="unavailable", channel=channel, duty_percent=None,
+            raw="", note=f"读占空比失败：{type(exc).__name__}: {exc}",
+        )
+    duty = _parse_visa_float(raw)
+    return _envelope(
+        scope.mode,
+        status="ok" if duty is not None else "unavailable",
+        channel=channel,
+        signal="PWM1" if channel == 4 else f"CH{channel}",
+        duty_percent=round(duty, 2) if duty is not None else None,
+        raw=raw,
+        note=None if duty is not None else "示波器未测到有效占空比（无信号或探头未接）",
     )
 
 
@@ -278,13 +393,19 @@ def capture_scope(
         "window_s": window_s,
         "assumed_depth_points": depth,
         "effective_sample_rate_sa_s": round(depth / window_s, 1),
-        "tool": config.DEEPCAPTURE4,
+        "tool": "pyvisa SCPI 直连" if LOCAL_MODE else config.DEEPCAPTURE4,
         "expected_csv_mb": round(depth * len(chans) * 8 / 1e6),
         "caveat": (
             "PWM 载波约 25 kHz，在 25 kSa/s 下只有 1 点/周期，看不了波形形状；"
             "要看载波须另开 1 ms/div 的高速短抓。"
         ),
     }
+    if LOCAL_MODE:
+        mode = LOCAL_SCOPE.mode
+        if dry_run:
+            return _envelope(mode, status="planned", executed=False, plan=plan)
+        return _capture_scope_local(chans, plan)
+
     if dry_run:
         return _envelope(BENCH.mode, status="planned", executed=False, plan=plan)
     r = BENCH.exec(config.DEEPCAPTURE4, timeout=180)
@@ -298,6 +419,60 @@ def capture_scope(
         stderr_tail=r.err[-1000:],
         elapsed_ms=r.elapsed_ms,
     )
+
+
+def _capture_scope_local(chans: list[int], plan: dict) -> dict:
+    """本机直连：逐通道用 pyvisa 读 RIGOL 深存储波形（RAW/BYTE 格式 + preamble）。
+
+    RIGOL DS1000Z 波形读取序列：SOURce → MODE RAW → FORMat BYTE → PREamble? → DATA?。
+    返回每通道的 preamble 与数据字节；数据量大（3M 点×4 通道≈12MB），真机到场后
+    再按实际性能决定是否限制点数或落 CSV。本函数只做「读回来」，不落盘。
+    """
+    try:
+        scope = _ensure_local_scope()
+    except RuntimeError as exc:
+        return _envelope("unknown", status="failed", executed=True, plan=plan, note=str(exc))
+    if not scope.connected:
+        return _envelope(
+            scope.mode, status="failed", executed=True, plan=plan,
+            note=scope.snapshot().get("last_error"),
+        )
+
+    results: list[dict] = []
+    for ch in chans:
+        try:
+            scope.query(f":WAVeform:SOURce CHANnel{ch}")
+            scope.query(":WAVeform:MODE RAW")
+            scope.query(":WAVeform:FORMat BYTE")
+            pre_raw = scope.query(":WAVeform:PREamble?")
+            pre = [p for p in pre_raw.split(",")]
+            data = _read_waveform_bytes(scope)
+            results.append({
+                "channel": ch,
+                "preamble_raw": pre_raw,
+                "points": len(data),
+                "bytes": len(data),
+            })
+        except Exception as exc:  # noqa: BLE001
+            results.append({
+                "channel": ch,
+                "error": f"{type(exc).__name__}: {exc}",
+            })
+    ok = all("error" not in r for r in results)
+    return _envelope(
+        scope.mode,
+        status="ok" if ok else "failed",
+        executed=True,
+        plan=plan,
+        channels=results,
+        note="本机直连读取深存储波形；数据未落 CSV（落盘属报告/文件单元）",
+    )
+
+
+def _read_waveform_bytes(scope: LocalVisaBackend) -> bytes:
+    """读 :WAVeform:DATA? 的返回，剥掉 IEEE488.2 #<n><len><bytes> 头，返回纯数据字节。"""
+    return scope.query_binary(":WAVeform:DATA?")
+
 
 
 @server.tool(
@@ -319,6 +494,8 @@ def tail_log(lines: int = 40, date: str | None = None) -> dict:
         date: 形如 2026-09-11；留空则取该目录下最新的一份。
     """
     n = max(1, min(int(lines), 500))
+    if LOCAL_MODE:
+        return _tail_log_local(n, date)
     if date:
         pick = f'$f=Get-Item -LiteralPath "{config.MOTORDEBUG_LOG_DIR}\\motordebug.{date}.log"'
     else:
@@ -359,10 +536,81 @@ def tail_log(lines: int = 40, date: str | None = None) -> dict:
     )
 
 
+def _tail_log_local(n: int, date: str | None) -> dict:
+    """本机直连：直接读本机 MotorDebug 日志文件（不经 SSH PowerShell）。"""
+    import glob
+
+    log_dir = config.MOTORDEBUG_LOG_DIR
+    if date:
+        target = f"{log_dir}\\motordebug.{date}.log"
+    else:
+        candidates = sorted(
+            glob.glob(f"{log_dir}\\motordebug.*.log"),
+            key=lambda p: __import__("os").path.getmtime(p),
+            reverse=True,
+        )
+        target = candidates[0] if candidates else None
+    if not target or not __import__("os").path.isfile(target):
+        return _envelope(
+            "unknown", status="unavailable", logfile=None, line_count=0, lines=[],
+            stderr_tail=None,
+            note=f"本机日志目录 {log_dir} 无日志文件（客户 MotorDebug 软件未在本机运行或路径不同）",
+        )
+    try:
+        with open(target, "r", encoding="utf-8", errors="replace") as f:
+            body = f.read().splitlines()[-n:]
+    except OSError as exc:
+        return _envelope(
+            "unknown", status="unavailable", logfile=target, line_count=0, lines=[],
+            stderr_tail=None, note=f"读日志失败：{exc}",
+        )
+    return _envelope(
+        "live", status="ok" if body else "unavailable",
+        logfile=target, line_count=len(body), lines=body, stderr_tail=None,
+    )
+
+
 # ---------- 动作层（六个红线动作） ----------
 
 def _action_result(tool: str, mode: str, detail: dict) -> dict:
     return _envelope(mode, status="ok", executed=True, tool=tool, **detail)
+
+
+def _dispatch_dll(call):
+    """执行一次 dll-bridge 真动作，返回 {"mode", "data"|"error"|"note"}。
+
+    三态：
+      - live   ：真下发成功，data 是 dll-bridge 的原始返回；
+      - mock   ：DLL_BRIDGE_ALLOW_MOCK=1，返回合成反馈（仅演示，勿用于真机）；
+      - unknown：缺文件 / 子进程启动失败 / DLL 调用失败，error 是一句可查的人话。
+    绝不把失败静默降级成「电机已转」。
+    """
+    if config.DLL_BRIDGE_ALLOW_MOCK:
+        return {
+            "mode": "mock",
+            "note": "DLL_BRIDGE_ALLOW_MOCK=1，动作层返回合成反馈（仅演示，勿用于真机）",
+        }
+    try:
+        return {"mode": "live", "data": call()}
+    except DllBridgeError as exc:
+        return {"mode": "unknown", "error": str(exc)}
+
+
+def _dll_failure(tool: str, args: dict, reason: str) -> dict:
+    """动作层真下发失败/待接的统一返回：executed 仍为 True（确实尝试执行了），
+    但 status=failed、mode=unknown，把「为什么没成」讲清楚。"""
+    return _envelope(
+        "unknown",
+        status="failed",
+        executed=True,
+        tool=tool,
+        args=args,
+        reason=reason,
+        how_to_proceed=(
+            "真机测试需：① dll-bridge.exe 与 FTGeneralUtils.dll 就位；"
+            "② 电机板经 SWD/HID 连本机；③ 板内固件已烧好（否则需现场提供 hex 走 download-code）。"
+        ),
+    )
 
 
 @server.tool(
@@ -375,20 +623,35 @@ def _action_result(tool: str, mode: str, detail: dict) -> dict:
 )
 def start(duty_percent: float = 50.0, duration_s: float = 30.0,
           confirm_token: str | None = None) -> dict:
-    """启动电机跑一段。
+    """启动电机（FreeRun）。duty_percent/duration_s 为前端遗留语义，DLL 无运行时
+    写参数接口，真下发不消费它们（由固件内部控制），这里只如实记录。
 
     Args:
-        duty_percent: PWM 占空比百分比。
-        duration_s: 持续秒数。
+        duty_percent: PWM 占空比百分比（记录用，真下发走 FreeRun）。
+        duration_s: 持续秒数（记录用）。
         confirm_token: 人工批准过的一次性凭据；没有就拒绝执行。
     """
     args = {"duty_percent": duty_percent, "duration_s": duration_s}
     blocked = _guard("start", args, confirm_token)
     if blocked:
         return blocked
-    return _action_result("start", BENCH.mode, {
+    result = _dispatch_dll(lambda: get_client().free_run())
+    if result["mode"] != "live":
+        return _dll_failure("start", args, result.get("error") or result.get("note"))
+    return _action_result("start", "live", {
         "args": args,
-        "dispatch": "spike 阶段不真发控制命令；落地时这里下发 hid_preset_speed_test 工作流",
+        "dispatch": {
+            "target": "dll-bridge free-run",
+            "main_addr": hex(config.DLL_BRIDGE_MAIN_ADDR),
+            "sequence": "SetBreakPoint → EnterDebugMode → FreeRun",
+            "ipc": result["data"],
+            "note": (
+                "FreeRun 已真下发，电机启动（FreeRun 在 dll-bridge worker 线程持续阻塞，"
+                "直到收到 break-run）。duty_percent/duration_s 无法运行时下发"
+                "（FTGeneralUtils.dll 无写单参数接口），由固件内部控制；如需按参数运行须"
+                "走 GeneralMakeFiles→DownloadCode 编译烧录链（现场层，需固件工程 + hex）。"
+            ),
+        },
         "approved_token": confirm_token,
     })
 
@@ -405,8 +668,13 @@ def stop(confirm_token: str | None = None) -> dict:
     blocked = _guard("stop", {}, confirm_token)
     if blocked:
         return blocked
-    return _action_result("stop", BENCH.mode, {
-        "dispatch": "spike 阶段不真发控制命令", "approved_token": confirm_token})
+    result = _dispatch_dll(lambda: get_client().break_run())
+    if result["mode"] != "live":
+        return _dll_failure("stop", {}, result.get("error") or result.get("note"))
+    return _action_result("stop", "live", {
+        "dispatch": {"target": "dll-bridge break-run", "ipc": result["data"]},
+        "approved_token": confirm_token,
+    })
 
 
 @server.tool(
@@ -423,7 +691,7 @@ def stop(confirm_token: str | None = None) -> dict:
           "note": "软件急停不替代物理急停回路"},
 )
 def estop(reason: str = "", confirm_token: str | None = None) -> dict:
-    """急停。
+    """急停（软件急停 = BreakRun 立即中断 FreeRun）。
 
     Args:
         reason: 急停理由，会写进凭据历史。
@@ -433,9 +701,18 @@ def estop(reason: str = "", confirm_token: str | None = None) -> dict:
     blocked = _guard("estop", args, confirm_token)
     if blocked:
         return blocked
-    return _action_result("estop", BENCH.mode, {
-        "args": args, "dispatch": "spike 阶段不真发控制命令",
-        "approved_token": confirm_token})
+    result = _dispatch_dll(lambda: get_client().break_run())
+    if result["mode"] != "live":
+        return _dll_failure("estop", args, result.get("error") or result.get("note"))
+    return _action_result("estop", "live", {
+        "args": args,
+        "dispatch": {
+            "target": "dll-bridge break-run",
+            "ipc": result["data"],
+            "note": "软件急停已真下发（BreakRun）。物理急停回路另由现场保证，不由此软件接口承担。",
+        },
+        "approved_token": confirm_token,
+    })
 
 
 @server.tool(
@@ -447,7 +724,12 @@ def estop(reason: str = "", confirm_token: str | None = None) -> dict:
           "human_gate": "confirm_token", "risk": "改变被测对象行为，且可能不可逆"},
 )
 def write_param(key: str, value: float, confirm_token: str | None = None) -> dict:
-    """写一个参数。
+    """写一个参数。**如实说明**：FTGeneralUtils.dll 没有运行时「写单参数/寄存器」的
+    导出函数（12 个导出函数里只有 ReadMemValue 读内存，无写寄存器），所以这个动作
+    无法像 start/stop 那样单命令下发。参数变更只能走「改源码 → GeneralMakeFiles 编译 →
+    DownloadCode 烧录 → FreeRun」整条链，需要固件工程与 hex —— 属现场层硬阻塞。
+
+    这里不做假：返回「现场层待接」并讲清缺口，而不是 mode=mock 冒充「参数已写回」。
 
     Args:
         key: 参数名。
@@ -458,9 +740,22 @@ def write_param(key: str, value: float, confirm_token: str | None = None) -> dic
     blocked = _guard("write_param", args, confirm_token)
     if blocked:
         return blocked
-    return _action_result("write_param", BENCH.mode, {
-        "args": args, "dispatch": "spike 阶段不真写寄存器",
-        "approved_token": confirm_token})
+    return _envelope(
+        "unknown",
+        status="failed",
+        executed=True,
+        tool="write_param",
+        args=args,
+        reason=(
+            "FTGeneralUtils.dll 无运行时写单参数接口（12 个导出函数里只有 ReadMemValue 读内存，"
+            "没有写寄存器函数），无法单命令写回。"
+        ),
+        how_to_proceed=(
+            "参数变更需走 GeneralMakeFiles→DownloadCode 编译烧录链：需现场提供固件工程与 hex。"
+            "代码层已就绪（dll-bridge 支持 download-code），只差固件产物；在此之前本动作如实待接。"
+        ),
+        approved_token=confirm_token,
+    )
 
 
 @server.tool(
@@ -472,7 +767,8 @@ def write_param(key: str, value: float, confirm_token: str | None = None) -> dic
           "human_gate": "confirm_token", "risk": "落盘成对外交付物"},
 )
 def export(run_id: str, fmt: str = "xlsx", confirm_token: str | None = None) -> dict:
-    """导出一轮产物。
+    """导出一轮产物。真实报告文件由后端报告链路生成（write-file-rust.exe），
+    桥的 export 不再重复造一份，如实指向报告下载端点。
 
     Args:
         run_id: 轮次标识。
@@ -483,9 +779,18 @@ def export(run_id: str, fmt: str = "xlsx", confirm_token: str | None = None) -> 
     blocked = _guard("export", args, confirm_token)
     if blocked:
         return blocked
-    return _action_result("export", BENCH.mode, {
-        "args": args, "dispatch": "spike 阶段不真导出",
-        "approved_token": confirm_token})
+    return _action_result("export", "live", {
+        "args": args,
+        "dispatch": {
+            "target": "后端报告链路（write-file-rust.exe）",
+            "download": f"GET /api/reports/{run_id}/download",
+            "note": (
+                "报告文件由后端 reports.py 真调用 write-file-rust.exe 生成，"
+                "下载走报告端点；桥的 export 不再重复落盘一份。"
+            ),
+        },
+        "approved_token": confirm_token,
+    })
 
 
 @server.tool(
@@ -497,7 +802,8 @@ def export(run_id: str, fmt: str = "xlsx", confirm_token: str | None = None) -> 
           "human_gate": "confirm_token", "risk": "写入不可随意回退的存档"},
 )
 def archive(run_id: str, note: str = "", confirm_token: str | None = None) -> dict:
-    """归档一轮结果。
+    """归档一轮结果。真实归档由知识库链路负责（kb_convert_service 落 kb_entries），
+    桥的 archive 仅做标记，不重复写库。
 
     Args:
         run_id: 轮次标识。
@@ -508,9 +814,14 @@ def archive(run_id: str, note: str = "", confirm_token: str | None = None) -> di
     blocked = _guard("archive", args, confirm_token)
     if blocked:
         return blocked
-    return _action_result("archive", BENCH.mode, {
-        "args": args, "dispatch": "spike 阶段不真归档",
-        "approved_token": confirm_token})
+    return _action_result("archive", "live", {
+        "args": args,
+        "dispatch": {
+            "target": "知识库归档链路（kb_convert_service → kb_entries）",
+            "note": "归档由知识库链路落库，桥的 archive 仅做标记，不重复写库。",
+        },
+        "approved_token": confirm_token,
+    })
 
 
 # ---------- 入口 ----------

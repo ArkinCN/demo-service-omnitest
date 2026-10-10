@@ -9,9 +9,9 @@ rather than from screen scraping.
 |---|---|
 | dsh version | `@deepseek-ai/dsh` 0.1.5-rc.2 (npm dist-tag `latest` on 2026-09-19) |
 | Model | `deepseek-v4-pro`, provider route `deepseek-official` |
-| API key | `env.DEEPSEEK_API_KEY` in `/home/zzz/.claude/settings.json`, prefix `sk-***`(已脱敏), read into the process environment; never written into any config file in this repository |
-| Overlay | `/home/zzz/lab/dsh-plugins/cordis.patch.yml`, applied with `--patch` |
-| Workspace | `/home/zzz/lab/dsh-plugins` |
+| API key | `env.DEEPSEEK_API_KEY` in `[源] .claude/settings.json`, prefix `sk-***`(已脱敏), read into the process environment; never written into any config file in this repository |
+| Overlay | `[源] dsh-plugins/cordis.patch.yml`, applied with `--patch` |
+| Workspace | `c/components/dsh-plugins` |
 | Session logs | `$DSH_HOME/sessions/--home-zzz-lab-dsh-plugins--/<session-id>/session.v3.jsonl.zstd` |
 | Date | 2026-09-19 |
 
@@ -27,7 +27,7 @@ Session `session-780f4667-7423-41a9-bacc-ea6013e33eda`.
 
 ```sh
 dsh --profile headless --patch ./cordis.patch.yml \
-  "对散热风扇做一次起动测试并判定。调试器路径用 /opt/ath/bin/AsicCliDebugger.exe。"
+  "对散热风扇做一次起动测试并判定。调试器路径用 [源] bin/AsicCliDebugger.exe。"
 ```
 
 ### Tool-call sequence
@@ -35,12 +35,12 @@ dsh --profile headless --patch ./cordis.patch.yml \
 | # | Tool | Arguments | Result |
 |---|---|---|---|
 | 1 | `skill` | `{"name": "coolingfan-startup-check"}` | skill body loaded |
-| 2 | `mcp__motor__motor_start` | `{"debugger_exe": "/opt/ath/bin/AsicCliDebugger.exe"}` | `Motor started successfully` |
+| 2 | `mcp__motor__motor_start` | `{"debugger_exe": "[源] bin/AsicCliDebugger.exe"}` | `Motor started successfully` |
 | 3 | `mcp__scope__rigol_capture` | `{}` | 1200 samples, per-channel statistics, derived FG block |
 | 4 | `mcp__scope__rigol_measure` | `{"measurement_type": "FREQ", "channel": 2}` | `value: null`, `source: stub` |
 | 5 | `mcp__scope__rigol_measure` | `{"measurement_type": "FREQ", "channel": 3}` | `value: 208.0`, `source: stub` |
-| 6 | `mcp__motor__motor_read_udc` | `{"debugger_exe": "/opt/ath/bin/AsicCliDebugger.exe"}` | `{"udc_voltage": 23.912}` |
-| 7 | `mcp__motor__motor_stop` | `{"debugger_exe": "/opt/ath/bin/AsicCliDebugger.exe"}` | `Motor stopped successfully` |
+| 6 | `mcp__motor__motor_read_udc` | `{"debugger_exe": "[源] bin/AsicCliDebugger.exe"}` | `{"udc_voltage": 23.912}` |
+| 7 | `mcp__motor__motor_stop` | `{"debugger_exe": "[源] bin/AsicCliDebugger.exe"}` | `Motor stopped successfully` |
 
 Both hook bridges fired on step 2 and both passed:
 
@@ -74,7 +74,7 @@ Session `session-867af621-d50f-4888-880a-183ec99da337`.
 
 ```sh
 dsh --profile headless --patch ./cordis.patch.yml \
-  "用 30 A 起动散热风扇。调试器路径 /opt/ath/bin/AsicCliDebugger.exe，current_limit_a 传 30。"
+  "用 30 A 起动散热风扇。调试器路径 [源] bin/AsicCliDebugger.exe，current_limit_a 传 30。"
 ```
 
 | # | Tool | Arguments | Result |
@@ -109,12 +109,12 @@ dsh web --patch ./cordis.patch.yml --no-open --port 3080
 ```
 
 Driven by `tools_drive_ui.py` (Playwright over the Chrome build at
-`~/.cache/puppeteer/chrome/linux-151.0.7922.71/chrome-linux64/chrome`).
+`[源] chrome-linux64/chrome`).
 Screenshots in `shots/ui-*.png`.
 
 14 calls. The web profile mounts the shell and filesystem tools that headless
 does not, so the model spent its first nine calls orienting itself — `bash` to
-list the workspace and look for `/opt/ath/bin/AsicCliDebugger.exe` (absent, as
+list the workspace and look for `[源] bin/AsicCliDebugger.exe` (absent, as
 expected on this machine), then `read` on the skill and the three MCP stub
 sources. The ATH chain proper is calls 10 through 14:
 

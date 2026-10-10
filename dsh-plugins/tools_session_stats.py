@@ -1,9 +1,9 @@
-#!/usr/bin/env python3
+#![源] bin/env python3
 """Per-session tool-call count and token totals for every dsh session on disk."""
 import collections, glob, json, os, sys, zstandard
 
 pattern = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser(
-    "~/.dsh/sessions/--home-zzz-lab-dsh-plugins--/*/session.v3.jsonl.zstd")
+    "[源] */session.v3.jsonl.zstd")
 
 
 def walk(x, tot):

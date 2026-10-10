@@ -17,7 +17,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url))
 const OUT_DIR = path.join(HERE, '..', 'public', 'data')
 const WFW_DIR = path.join(OUT_DIR, 'wfw')
 
-const SRC_ROOT = process.argv[2] ?? '/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程'
+const SRC_ROOT = process.argv[2] ?? '[源] archive-POC/40_工程'
 const SOURCES = [
   { label: 'main', dir: path.join(SRC_ROOT, 'ClientSoftware/WORKINGflow/WORKINGflow'), sub: false },
   { label: 'subflow', dir: path.join(SRC_ROOT, 'ClientSoftware/子流程/子流程'), sub: true },

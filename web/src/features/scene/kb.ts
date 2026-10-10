@@ -1,7 +1,7 @@
 /* ===========================================================================
    知识库流水线产物的类型与取数。
 
-   源目录 /mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/kb/，
+   源目录 c-data/kb，
    整目录已复制到 public/kb/（排除 figures/ 大图与 content.md、source.json，
    前端只需要索引、切片与参数表）。它与场景包是两路产物：
 
@@ -13,6 +13,8 @@
    doc_id），所以界面上分开呈现：已转化的走流水线索引，未转化的仍由场景包登记
    顶上，不硬把两张表并成一张。
    =========================================================================== */
+
+import { fetchJson } from '../shared/fetchJson'
 
 export interface KbDocument {
   doc_id: string
@@ -148,13 +150,8 @@ export function kbAppliesTo(kb: KbBundle, sceneId: string): boolean {
 }
 
 async function getJson<T>(url: string): Promise<T | null> {
-  try {
-    const r = await fetch(url, { cache: 'force-cache' })
-    if (!r.ok) return null
-    return (await r.json()) as T
-  } catch {
-    return null
-  }
+  // 2026-10-08：改用统一 fetchJson（原 force-cache 会读旧副本，见 fetchJson 模块头）
+  return fetchJson<T>(url)
 }
 
 let task: Promise<KbBundle> | null = null

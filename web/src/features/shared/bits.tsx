@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { CheckCircle2 } from 'lucide-react'
+import { CheckCircle2, LockOpen } from 'lucide-react'
 import { Button, Collapsible, Tooltip, cn } from '../../components/ui'
 import type { FlowId } from '../../data/types'
 import { collapseKey } from '../../state/useAppStore'
@@ -144,6 +144,12 @@ export function Row({
  * 左栏底部主按钮。六条流程共用同一形态：通栏、lg、primary 实底渐变、
  * CheckCircle2 图标，文案统一 「确认<对象> · <数字><量词>」。
  * 前置条件没满足时不换形态、不置灰——理由只挂 tooltip（DESIGN.md §4 文案纪律 4）。
+ *
+ * 2026-09-28 两处扩展（都为「确认后变解除确认」这一形态服务）：
+ *   - `variant`：确认后换 secondary，与流程 1 的「解除确认」保持一致；
+ *   - `icon`：可换成解锁图标。**默认仍是确认态**，老调用点一行都不用改。
+ * 之所以不新写一个组件，是因为它们是**同一个位置的同一种按钮**，
+ * 拆成两个必然会漂移成两套样式（这轮已经吃过「两个入口各写一套」的亏）。
  */
 export function ConfirmFooter({
   label,
@@ -151,12 +157,18 @@ export function ConfirmFooter({
   unit,
   hint,
   onClick,
+  variant = 'primary',
+  icon = 'confirm',
 }: {
   label: string
   count: number | string
   unit: string
   hint: ReactNode
   onClick?: () => void
+  /** 确认态用 primary（实底），解除态用 secondary（描边） */
+  variant?: 'primary' | 'secondary'
+  /** confirm = 勾选图标，unlock = 解锁图标 */
+  icon?: 'confirm' | 'unlock'
 }) {
   return (
     <footer className="shrink-0 border-t border-line-soft bg-white/85 px-4 py-3 backdrop-blur">
@@ -164,8 +176,14 @@ export function ConfirmFooter({
         <Button
           block
           size="lg"
-          variant="primary"
-          icon={<CheckCircle2 size={15} strokeWidth={2} />}
+          variant={variant}
+          icon={
+            icon === 'unlock' ? (
+              <LockOpen size={15} strokeWidth={2} />
+            ) : (
+              <CheckCircle2 size={15} strokeWidth={2} />
+            )
+          }
           onClick={onClick}
         >
           {label} · {count} {unit}
@@ -203,6 +221,7 @@ export function TierTree<T>({
   flags,
   lockTier,
   tierIcon,
+  tierRight,
   groupIcon,
   defaultOpen = 0,
 }: {
@@ -216,6 +235,12 @@ export function TierTree<T>({
   lockTier?: (t: BuiltTier<T>) => boolean
   /** 一级类 / 二级组的图标，按标题取 */
   tierIcon?: (title: string) => ReactNode
+  /**
+   * 一级类标题行右侧的交互插槽（如「一键采纳」按钮）。返回非空时，
+   * 该一级类的 Collapsible 会改用「div 外框 + 独立折叠按钮」结构，
+   * 避免 button 嵌套 button。按一级类取，返回 null 则该类走默认结构。
+   */
+  tierRight?: (t: BuiltTier<T>) => ReactNode
   groupIcon?: (title: string) => ReactNode
   /** 默认展开第几个一级类（只展开这一个），其余全部折叠 */
   defaultOpen?: number
@@ -231,6 +256,7 @@ export function TierTree<T>({
           0,
           t.groups.findIndex((x) => x.subs.length === 0),
         )
+        const tr = tierRight?.(t)
         return (
           <Collapsible
             key={t.id}
@@ -241,6 +267,8 @@ export function TierTree<T>({
             storeKey={collapseKey(flow, t.id)}
             defaultOpen={i === defaultOpen}
             lockOpen={lockTier?.(t)}
+            right={tr ?? undefined}
+            rightInteractive={!!tr}
             stat={flags ? tStat : { total: t.count }}
           >
             {t.groups.map((g, j) => (

@@ -98,7 +98,10 @@ registerLeftPanel('report', ReportLeftPanel)
 // 壳层默认参数栏（Stepper + 来源标签）已经正好，不另外接管。
 
 for (const f of FLOW_IDS) {
-  registerAssistant(f, () => <FlowCopilot flow={f} />)
+  // 透传注册表给的 props：onCollapse 由壳层（FlowScreen）经 AssistantPanel →
+  // registry 一路带到这，只把 flow 往下传会把「收起」回调丢掉，
+  // 表现为助手头部少一枚收起键（编译不报错，只在界面上看不见）。
+  registerAssistant(f, (props) => <FlowCopilot flow={f} onCollapse={props.onCollapse} />)
 }
 
 /** 启动即把真实场景包读进来（public/scenes/motor.cooling-fan.fortior-fu6832/）。 */

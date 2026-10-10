@@ -8,7 +8,6 @@ from __future__ import annotations
 import json
 import os
 import re
-import signal
 import subprocess
 import shutil
 import sys
@@ -143,18 +142,14 @@ def convert_one(cfg: dict, converter) -> dict:
     # 平均每页不足 120 个可抽字符就当图片型 PDF，开 OCR；有文字层的不开，省时也避免重复
     need_ocr = conv_src.suffix.lower() == ".pdf" and text_density(conv_src) < 120
 
-    # 单份文档硬超时：docling 的 msword 后端在个别带 VML 旧式图形的 docx 上会卡死，
-    # 超时就记为失败并继续，不让一份文档拖垮整条流水线。
-    def _timeout(signum, frame):
-        raise TimeoutError(f"转换超过 {DOC_TIMEOUT_S}s，已放弃")
-
-    old_handler = signal.signal(signal.SIGALRM, _timeout)
-    signal.alarm(DOC_TIMEOUT_S)
-    try:
-        result = converter.convert(conv_src, ocr=need_ocr)
-    finally:
-        signal.alarm(0)
-        signal.signal(signal.SIGALRM, old_handler)
+    # 单份文档的硬超时由**外层驱动（main）用子进程 + kill 兜底**实现，跨平台可靠；
+    # 这里不再用 signal.SIGALRM / signal.alarm —— Windows 既无 SIGALRM 也无 alarm，
+    # 在 worker 子进程里一调用就直接抛 ValueError，会让整份文档转换在还没开始就失败。
+    # 原注释已说明 docling 会吞掉 SIGALRM 抛出的异常，故这段 in-process 超时本就是
+    # 冗余且会害 Windows 跑不起来的，删除后功能零损失：文档级死锁（如 msword 后端
+    # 在 VML 旧式图形上卡死）由 main 的 subprocess.run(timeout=DOC_TIMEOUT_S + 120)
+    # 强制终止子进程覆盖。
+    result = converter.convert(conv_src, ocr=need_ocr)
     doc = result.document
     md = doc.export_to_markdown()
     chunks = build_chunks(doc, doc_id)

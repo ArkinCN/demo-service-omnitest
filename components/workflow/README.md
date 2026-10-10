@@ -1,6 +1,6 @@
 # 峰岹工作流画布组件
 
-用 React Flow 渲染峰岹（Fortior）集成测试系统的 `.wfw` 工作流文件：加载、看图、点选节点查配置、改参数、增删连线、导出 JSON。独立工程，`src/features/workflow/` 下的代码可整目录搬进 `~/agent-test-web`。
+用 React Flow 渲染峰岹（Fortior）集成测试系统的 `.wfw` 工作流文件：加载、看图、点选节点查配置、改参数、增删连线、导出 JSON。独立工程，`src/features/workflow/` 下的代码可整目录搬进 `c/`。
 
 ## 一、选型
 
@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | 图渲染 | `@xyflow/react` 12.11.6 | `npm view @xyflow/react version time.modified` → `time.modified = 2026-09-01T12:08:12.184Z`，2026 年 9 月仍在更新，活跃 |
 | 自动布局 | `dagre` 0.8.5 | 分层有向图布局，体积小、无 WebWorker 依赖；elkjs 能力更强但打包体积与异步 API 在本场景无收益 |
-| 截图 | `playwright` + 本机 Chrome | 复用 `~/.cache/puppeteer/chrome/*/chrome-linux64/chrome`，不额外下载浏览器 |
+| 截图 | `playwright` + 本机 Chrome | 复用 `[源] chrome-linux64/chrome`，不额外下载浏览器 |
 
 ## 二、`.wfw` 格式发现
 
@@ -125,9 +125,9 @@ npm run build
 npm run shots      # 截图到 shots/
 ```
 
-`scripts/buildIndex.mjs` 只读客户原文件，不做修改。源路径可传参覆盖，默认 `/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程`。三个来源：
+`scripts/buildIndex.mjs` 只读客户原文件，不做修改。源路径可传参覆盖，默认 `[源] archive-POC/40_工程`。三个来源：
 
-| 来源 | 目录 | 数量 |
+| 来[源] | 目录 | 数量 |
 | --- | --- | --- |
 | 主流程 | `ClientSoftware/WORKINGflow/WORKINGflow` | 58 |
 | 子流程 | `ClientSoftware/子流程/子流程` | 9 |
@@ -137,7 +137,7 @@ npm run shots      # 截图到 shots/
 
 拷贝后的 `public/data/wfw/` 共 **3.72 MB**，在 10 MB 预算内。
 
-## 五、集成进 `~/agent-test-web`
+## 五、集成进 `c/`
 
 1. 整目录复制 `src/features/workflow/` 到宿主的 `src/features/` 下。
 2. 宿主安装 `@xyflow/react`、`dagre`、`@types/dagre`。

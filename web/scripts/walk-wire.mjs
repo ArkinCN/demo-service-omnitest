@@ -4,7 +4,7 @@
  * 附带取两态截图：设备桥在线与离线时，画布设备节点各显示什么。
  *
  * 用法：
- *   WALK_PIN=$(grep '^BRIDGE_APPROVER_PIN=' ~/lab/spike-device-mcp/.env | cut -d= -f2-) \
+ *   WALK_PIN=$(grep '^BRIDGE_APPROVER_PIN=' [源] spike-device-mcp/.env | cut -d= -f2-) \
  *   BASE=http://localhost:5173 node scripts/walk-wire.mjs
  *
  * 桥默认只放行 5173 与 3080 两个来源，所以走查要用 vite dev 而不是 preview。
@@ -27,7 +27,7 @@ const PIN = process.env.WALK_PIN ?? ''
 if (!PIN && !process.env.ONLY_DEVICE) {
   console.error(
     '缺 WALK_PIN：确认卡上的批准 PIN 要现场给，脚本不带默认值。\n' +
-      "  WALK_PIN=$(grep '^BRIDGE_APPROVER_PIN=' ~/lab/spike-device-mcp/.env | cut -d= -f2-) node scripts/walk-wire.mjs",
+      "  WALK_PIN=$(grep '^BRIDGE_APPROVER_PIN=' [源] spike-device-mcp/.env | cut -d= -f2-) node scripts/walk-wire.mjs",
   )
   process.exit(2)
 }

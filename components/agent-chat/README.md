@@ -2,7 +2,7 @@
 
 右下角「智能体对话」区（设计规格 D 区）的 React 组件与演示工程。独立可跑，也可整目录搬进宿主工程。
 
-- 工程路径：`~/lab/agent-chat/`（本仓库根）
+- 工程路径：`c/components/agent-chat`（本仓库根）
 - 组件目录：`src/features/agent-chat/`
 - 技术栈：Vite 8 + React 19 + TypeScript，无第三方 UI 库、无运行时依赖
 
@@ -101,7 +101,7 @@ import { AgentChat } from './features/agent-chat';
 
 ## 六、集成步骤
 
-1. 把 `src/features/agent-chat/` 整个目录复制到 `~/agent-test-web/src/features/agent-chat/`。目录自带 `agent-chat.css`，由 `AgentChat.tsx` 自行 import，不需要在宿主工程改样式入口。
+1. 把 `src/features/agent-chat/` 整个目录复制到 `[源] features/agent-chat`。目录自带 `agent-chat.css`，由 `AgentChat.tsx` 自行 import，不需要在宿主工程改样式入口。
 2. 宿主工程需具备 React 18 以上与 TypeScript；组件无第三方运行时依赖。
 3. 在 D 区容器里渲染 `<AgentChat adapter={dshAdapter} operator={当前登录人} />`，容器需有确定高度。
 4. 色板通过 `.ac-root` 上的 CSS 变量暴露，宿主要统一主题就覆盖这些变量：`--ac-primary` `#2E5E45`、`--ac-secondary` `#A8C5B5`、`--ac-tint` `#EAF2EC`、`--ac-accent` `#A6353A`、`--ac-text` `#2C2C2C`、`--ac-text-weak` `#555555`、背景白。

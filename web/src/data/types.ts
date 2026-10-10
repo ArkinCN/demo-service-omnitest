@@ -1,10 +1,10 @@
 /* ===========================================================================
    数据契约。命名与结构对齐设计规格
    《设计规格 · 信息架构与页面》
-   /mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/01-设计规格-信息架构与页面.md
+   docs/20260919-通用Agent测试系统v2.0/01-设计规格-信息架构与页面.md
    （第 4 节层级树、第 6 节 B 区、第 7 节卡片库、第 9 节六流程页面规格）
 
-   场景包源目录 /mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/<sceneId>/，
+   场景包源目录 c-data/scenes<sceneId>/，
    两个包都已就位（散热风扇、玻璃升降器）。两包之间的字段差异在加载时由
    src/features/scene/pack.ts 的 normalize() 抹平，压成本契约的映射在
    src/data/loadScene.ts 的 adaptScene() 里做，UI 层只认这一套字段。

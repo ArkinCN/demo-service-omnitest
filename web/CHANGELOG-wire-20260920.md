@@ -1,10 +1,10 @@
 # 第四轮接线：把「看得见点不动」的四处接上，并把设备桥接进页面
 
-日期 2026-09-20。工程 `/home/zzz/agent-test-web`。改动前的 `src/` 快照留在
-`/home/zzz/agent-test-web/.bak-src-wire-0906/`。
+日期 2026-09-20。工程 `[源] zzz/agent-test-web`。改动前的 `src/` 快照留在
+`（见交付包内备份）`。
 
 起因是《部署、联调与演示标准作业程序 v1.0》
-（`/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/08c-部署联调与演示SOP-v1.0.md`）
+（`docs/20260919-通用Agent测试系统v2.0/08c-部署联调与演示SOP-v1.0.md`）
 第零节列的「点不动的三处」，加上该文第 1.2 节那句「这个设备桥没有接进页面」。
 四处一并接上，红线口径不动。
 
@@ -30,7 +30,7 @@
 接了设备桥时走三段式，闸口在桥里不在前端：不带 `confirm_token` 调一次 → 桥拒绝执行并
 签发 `pending` 凭据 → 人点确认后调 `POST /confirmations/{token}/approve` → 带同一张票、
 同一组参数重调才执行。凭据的四道约束（单次使用、180 秒过期、绑工具名、绑参数指纹）
-只在桥里实现一次。依据：`~/lab/spike-device-mcp/README.md` 第 3 节，以及
+只在桥里实现一次。依据：`[源] spike-device-mcp/README.md` 第 3 节，以及
 `08a-开发接口契约-v1.0.md` 第 3.4 节「当前的两套确认机制，收口方案」。
 
 桥不可达时第 1、3 段跳过，只驱动页面回放，**确认卡照弹**，并在卡上写明本次不向台架
@@ -130,7 +130,7 @@ TR-START-01」。其余状态的行不可点——没有可跟进的结论却给
 | `VITE_GATEWAY_URL` | `http://localhost:8022` | SSH 网关，只剩节点放大态里那个终端一个用途 |
 | `VITE_GATEWAY_TOKEN` | 空 | 同上 |
 
-清单落在 `/home/zzz/agent-test-web/.env.example`，`.env` 已加进 `.gitignore`。
+清单落在 `c/.env.example`，`.env` 已加进 `.gitignore`。
 
 ### 4.2 节点与工具菜单
 
@@ -194,7 +194,7 @@ curl -s -H "x-bridge-token: $BRIDGE_TOKEN" "localhost:8031/confirmations?include
 
 ## 六、截图
 
-产出目录 `/home/zzz/agent-test-web/shots5/`，1920×1080。
+产出目录 `c/shots5`，1920×1080。
 
 | 文件 | 内容 |
 | --- | --- |
@@ -211,7 +211,7 @@ curl -s -H "x-bridge-token: $BRIDGE_TOKEN" "localhost:8031/confirmations?include
 | `online-10-report.png` | 流程 5 |
 | `online-11-export-confirm.png` | 导出的确认卡 |
 | `offline-0-device-node.png` | 桥离线（`VITE_DEVICE_BRIDGE_URL` 指向空端口 8039）：节点「网关 未连通」，工具条桥工具 0 个、离线占位 1 枚 |
-| `offline-0-device-node-tip.png` | 同上，tooltip 写「设备桥 http://127.0.0.1:8039 不可达：先起 ~/lab/spike-device-mcp/run-bridge.sh，或改配 VITE_DEVICE_BRIDGE_URL」 |
+| `offline-0-device-node-tip.png` | 同上，tooltip 写「设备桥 http://127.0.0.1:8039 不可达：先起 [源] spike-device-mcp/run-bridge.sh，或改配 VITE_DEVICE_BRIDGE_URL」 |
 
 ---
 
@@ -248,7 +248,7 @@ oxlint 把它也扫了。上表的 21 条是 `src/` 下的真实数。
    本轮范围是把已有能力接上，没有去补后端。现在它们统一置灰并给出理由，不再是
    「看着能点、点了没反应」。
 2. **动作层工具拿到批准后桥不真下发控制命令。** 这是设备桥 spike 阶段自身的限制
-   （`~/lab/spike-device-mcp/README.md` 第 8 节写明 `dispatch` 是占位），不是前端的缺口。
+   （`[源] spike-device-mcp/README.md` 第 8 节写明 `dispatch` 是占位），不是前端的缺口。
    页面这一侧的回放与真下发之间的切换点已经留好：`flowActions.ts` 的 `BRIDGE_CALL` 表。
 3. **凭据存在桥的进程内存里，桥一重启就没了。** 同样是桥侧的已知限制，落地要换成带
    持久化的存储，否则「人批了、服务重启、带票来执行」会失败。

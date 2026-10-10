@@ -165,4 +165,4 @@ def build():
 
 if __name__ == "__main__":
     for p, s in build():
-        print("%-64s %s" % (os.path.basename(p), s if s else "源 PDF 缺失，未生成"))
+        print("%-64s %s" % (os.path.basename(p), s if s else "[源] PDF 缺失，未生成"))

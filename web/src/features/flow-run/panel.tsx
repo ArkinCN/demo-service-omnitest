@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import {
   Activity,
   AlertTriangle,
@@ -31,7 +31,13 @@ import {
 } from '../../components/ui'
 import { decimalsOf } from '../../data/loadScene'
 import { useNavigate } from 'react-router'
-import { RUN_PHASE_LABEL, collapseKey, paramKey, useAppStore } from '../../state/useAppStore'
+import {
+  RUN_PHASE_LABEL,
+  collapseKey,
+  paramKey,
+  resolveParamKey,
+  useAppStore,
+} from '../../state/useAppStore'
 import { useFlowActions } from '../redline'
 import {
   getPack,
@@ -41,11 +47,21 @@ import {
   type RawInterlock,
   type RawPack,
 } from '../scene/pack'
-import { ConfirmFooter, Empty, TierTree } from '../shared/bits'
+import { ConfigOverview } from '../../app/LeftPanel'
+import { fmtMeasure } from '../shared/format'
+import { UnifiedConfigPanel } from '../../app/UnifiedConfigPanel'
+import { ConfirmFooter, Empty } from '../shared/bits'
 import { buildTiers, demoFilter, readTiers } from '../shared/tiers'
+import { getBaselineIds, subscribeBaseline } from '../flow-req/baselineStore'
 import { TimeSeriesChart } from '../timeseries'
 import { POWERUP_ANNOTATION, currentThresholds, loadWaves, type Wave } from '../waveforms'
-import { evaluateAll, measureOrigin, runtimeMeasures, type VerdictState } from './evaluate'
+import { FanTrendPanel } from '../fan-trend'
+import {
+  evaluateOnBackend,
+  persistRun,
+  type BackendVerdict,
+} from './api'
+import { controlValueMap, evaluateAll, measureOrigin, runtimeMeasures, type VerdictState } from './evaluate'
 
 /* ===========================================================================
    流程 4 · 启动测试及结果分析（v2 视觉样板页）
@@ -105,11 +121,22 @@ const iconOf = (name: string, size = 14) => {
 }
 
 function ParamRow({ p }: { p: RawControlParam }) {
+  // G-11：取值走**回落链**——本流程改过用自己的，没改过就继承初始化页确认过的值。
+  // 详见 useAppStore.resolveParamKey 的说明（为什么不动 key 结构）。
+  //
+  // ⚠️ `snapshotValues` 这一档不可少：`overrides` 是**内存态**，换页/刷新即重建，
+  // 而流程 3 是另一个页面——只靠内存回落，它永远继承不到初始化页的值
+  // （实测栽过：快照里明明是 NONEMODE，流程 3 仍显示场景包原值 PWMMODE）。
+  const overrides = useAppStore((s) => s.overrides)
+  const snapshotValues = useAppStore((s) => s.snapshotValues)
+  const resolved = resolveParamKey('run', 'cp', p.group, p.key, overrides, snapshotValues)
   const key = paramKey('run', 'cp', p.group, p.key)
-  const override = useAppStore((s) => s.overrides[key])
   const touched = useAppStore((s) => s.touched[key])
   const setParam = useAppStore((s) => s.setParam)
-  const value = override ?? (p.not_applicable ? '不适用' : p.value)
+  // 三档：本流程 override → 初始化页（内存或快照）→ 场景包原值
+  const value = resolved.value ?? (p.not_applicable ? '不适用' : p.value)
+  // 继承来的值要如实标出来源：不是本流程改的，是人**在初始化页**定的基线
+  const inherited = resolved.source === 'init'
   const editable = !p.not_applicable && p.editable && typeof p.value === 'number'
 
   const detail = (
@@ -121,6 +148,10 @@ function ParamRow({ p }: { p: RawControlParam }) {
         {p.value_shell ? ` · 外壳 ${p.value_shell}` : ''}
       </span>
       <span className="block opacity-75">{sourceLine(p._source)}</span>
+      {/* 继承来的值必须说清来历：人看到「值变了」要知道是谁定的 */}
+      {inherited ? (
+        <span className="block opacity-75">当前值继承自「初始化配置」确认过的基线</span>
+      ) : null}
       {statusOf(p) ? <span className="block opacity-75">待核实 · {statusOf(p)}</span> : null}
       {p.value_below_min ? <span className="block">实配值低于源注释自己写的下限</span> : null}
     </span>
@@ -130,7 +161,9 @@ function ParamRow({ p }: { p: RawControlParam }) {
     <div className="flex min-h-[40px] items-center gap-2 px-4 py-1.5 transition-colors hover:bg-p50/60">
       <Tooltip className="min-w-0" content={detail}>
         <span className="flex min-w-0 items-center gap-1.5">
-          <SourceTag source={touched ? '人工' : '文档'} />
+          {/* 继承来的值既非本流程人工改、也非纯文档值，标「建议」以区分——
+              三态（文档/人工/建议）是既有枚举，不新增第四态。 */}
+          <SourceTag source={inherited ? '建议' : touched ? '人工' : '文档'} />
           <span className="cursor-help truncate text-[13px] font-medium text-t1">{short(p.name)}</span>
           {p.value_below_min ? <AlertTriangle size={12} className="shrink-0 text-warn" /> : null}
         </span>
@@ -253,7 +286,9 @@ export function RunLeftPanel() {
   const [gateOpen, setGateOpen] = useState(true)
   const demo = useAppStore((s) => s.demoMode)
   const toggle = useAppStore((s) => s.toggleGate)
+  const ackAllGates = useAppStore((s) => s.ackAllGates)
   const setGateTotal = useAppStore((s) => s.setGateTotal)
+  const setNotice = useAppStore((s) => s.setNotice)
   const bind = useFlowActions()
 
   const gateItems = useMemo(
@@ -331,21 +366,35 @@ export function RunLeftPanel() {
       </header>
 
       <div className="fade-b min-h-0 flex-1 overflow-y-auto pb-2">
-        <TierTree
-          flow="run"
-          tiers={tiers}
-          // 一级类只展开第一个「启动与预定位」，其余折叠
-          defaultOpen={0}
-          itemKey={(p) => p.key}
-          render={(p) => <ParamRow p={p} />}
-          flags={(p) => ({
-            filled: p.value !== null,
-            pending: !!statusOf(p),
-            alert: !!p.value_below_min,
-          })}
-          tierIcon={(t) => iconOf(t, 15)}
-          groupIcon={(t) => iconOf(t)}
-        />
+        <ConfigOverview
+          key={pack.scene.id}
+          count={tiers.reduce((n, t) => n + t.count, 0)}
+          quick={
+            <>
+              {params.slice(0, 3).map((p) => (
+                <div className="config-quick-card" key={p.key}>
+                  <ParamRow p={p} />
+                </div>
+              ))}
+            </>
+          }
+        >
+          <UnifiedConfigPanel
+            flow="run"
+            tiers={tiers}
+            // 一级类只展开第一个「启动与预定位」，其余折叠
+            defaultOpen={0}
+            itemKey={(p) => p.key}
+            render={(p) => <ParamRow p={p} />}
+            flags={(p) => ({
+              filled: p.value !== null,
+              pending: !!statusOf(p),
+              alert: !!p.value_below_min,
+            })}
+            tierIcon={(t) => iconOf(t, 15)}
+            groupIcon={(t) => iconOf(t)}
+          />
+        </ConfigOverview>
 
         {/* 本轮运行设置 */}
         <Collapsible
@@ -380,29 +429,57 @@ export function RunLeftPanel() {
 
         {/* 安全确认闸门：组头带放行状态，组内按编号自带的类别分两组 */}
         <div className="border-b border-line">
-          <button
-            type="button"
-            onClick={() => setGateOpen((v) => !v)}
-            aria-expanded={gateOpen}
+          {/* 外层用 div 而非 button：标题行里要再放一个「一键确认」按钮，
+              HTML 不允许 button 嵌套 button。折叠点击区单独用一个 button。 */}
+          <div
             className={cn(
-              'flex h-[44px] w-full items-center gap-2.5 px-4 text-left transition-colors',
-              green ? 'bg-p50' : 'bg-sunk hover:bg-p50',
+              'flex h-[44px] w-full items-center gap-2.5 px-4 transition-colors',
+              green ? 'bg-p50' : 'bg-sunk',
             )}
           >
-            <ShieldCheck
-              size={16}
-              strokeWidth={1.9}
-              className={cn('shrink-0', green ? 'text-p700' : 'text-t3')}
-            />
-            <span className="text-[13px] font-semibold tracking-tight text-t1">安全闸门</span>
-            <span className="num ml-auto text-[13px] font-semibold text-t1">
-              {g.acked.size}
-              <span className="text-t3">/{gateItems.length}</span>
-            </span>
-            <Badge tone={green ? 'soft' : 'neutral'} dot>
+            <button
+              type="button"
+              onClick={() => setGateOpen((v) => !v)}
+              aria-expanded={gateOpen}
+              className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+            >
+              <ShieldCheck
+                size={16}
+                strokeWidth={1.9}
+                className={cn('shrink-0', green ? 'text-p700' : 'text-t3')}
+              />
+              <span className="shrink-0 whitespace-nowrap text-[13px] font-semibold tracking-tight text-t1">
+                安全闸门
+              </span>
+              <span className="num ml-auto shrink-0 text-[13px] font-semibold text-t1">
+                {g.acked.size}
+                <span className="text-t3">/{gateItems.length}</span>
+              </span>
+            </button>
+            {/* 一键确认：把全部人员/流程类闸门一次勾上，快速进入可启动状态。
+                ⚠️ 只填勾选态，**不绕过红线**——「启动测试」仍要走确认卡。 */}
+            <Tooltip content={`一键确认全部 ${gateItems.length} 条安全闸门（只填勾选态，启动仍需在确认卡上确认）`}>
+              <button
+                type="button"
+                disabled={green}
+                onClick={() => {
+                  ackAllGates(gateItems.map((x) => x.id))
+                  setNotice(`已一键确认全部 ${gateItems.length} 条安全闸门；启动测试仍需在确认卡上确认`)
+                }}
+                className={cn(
+                  'shrink-0 cursor-pointer whitespace-nowrap rounded-tpx border px-2 py-[3px] text-[12px] transition-colors',
+                  green
+                    ? 'cursor-not-allowed border-line text-t3 opacity-60'
+                    : 'border-p300 bg-white text-p700 hover:bg-p50',
+                )}
+              >
+                {green ? '已全绿' : '一键确认'}
+              </button>
+            </Tooltip>
+            <Badge tone={green ? 'soft' : 'neutral'} dot className="shrink-0">
               {green ? '全绿' : '未放行'}
             </Badge>
-          </button>
+          </div>
           {gateOpen ? (
             <div className="animate-fade">
               {groups.map((grp, i) => (
@@ -468,7 +545,7 @@ export function RunLeftPanel() {
       <ConfirmFooter
         label="确认参数"
         count={params.length}
-        unit="项"
+        unit="项并启动测试"
         onClick={bind('start').disabled ? undefined : bind('start').onClick}
         hint={
           green
@@ -520,6 +597,16 @@ function useBoxHeight() {
   return [ref, h] as const
 }
 
+/**
+ * 旧「图表」卡实现：回放场景包历史数据集（TRY-0010/0009/0021）。
+ *
+ * ⚠️ 2026-10-06 起本卡已改由 `FanTrendPanel`（实时风扇趋势）承担，
+ * 本组件**保留不删**，仅供其他用途或回退（其依赖 useWaves/TimeSeriesChart
+ * 与场景包 datasets 仍在）。若要恢复历史回放，把 runCards.timeseries 指回它即可。
+ *
+ * 同时注意：本函数若不再被引用，`useWaves` 可能成为未使用警告——保留是有意为之，
+ * 因为回退路径需要它。
+ */
 export function WaveformPanel({ full }: { full?: boolean }) {
   const pack = getPack()
   const waves = useWaves()
@@ -660,7 +747,49 @@ const STATE_LABEL: Record<VerdictState, string> = {
   fail: '不通过',
   missing: '未采集',
   manual: '人工判',
+  // 2026-10-08 新增第五态：本台架不具备该测量手段（区别于「未采集」——
+  // 未采集是"本该采到却没采到"，不适用是"台架没这个能力"，对决策含义不同）
+  not_applicable: '本台架不适用',
 }
+
+/**
+ * 实测量读数的显示格式化（2026-10-08）。
+ *
+ * ✅ 2026-10-08 起实现移入 `../shared/format`，与自动化全屏运行台共用同一份口径。
+ * 口径：4 位有效数字并去掉尾随零（`0.0017566666666666678` → `0.001757`，
+ * `4.7596` → `4.76`），与 flow-tune 面板 `fmt()` 的 `toPrecision(4)` 同一套。
+ *
+ * 为什么要抽出去：判定卡、趋势图 tooltip、自动化运行台三处都显示同一批实测量，
+ * 各写一份 `toPrecision(4)` 迟早会出现「同一个量在两个页面显示得不一样」。
+ */
+
+/* ---------------------------------------------------------- 需求基线（跨流程读）
+   流程 2 的「确认基线」决定**本轮判哪几条**。此前流程 3 从来不读这份基线，
+   `evaluateAll` 直接对场景包全表求值——「流程 2 取消了 14 条，流程 3 照样判 20 条」。
+   这里订阅 `flow-req/baselineStore` 的镜像（写入方：流程 2 的确认与读回）。
+
+   返回 `string[] | null`：**null 表示本会话还没读到基线**，调用方据此选择
+   「不过滤」。不要把它转成空数组——那会把「没确认过」显示成「一条都不判」。 */
+function useRequirementBaseline(): string[] | null {
+  return useSyncExternalStore(subscribeBaseline, getBaselineIds, getBaselineIds)
+}
+
+/**
+ * 本轮「落库 + 置位」只做一次的守卫（2026-10-08）。
+ *
+ * 为什么需要它：落库与置位原来挂在判定卡的 effect 里，且排在
+ * `if (cancelled) return` 之后。判定卡会因**画板/网格视图切换、卡片重排、
+ * registry 版本变化**而卸载重挂，cleanup 会把 await 期间那个闭包标记成
+ * cancelled —— 于是 `evaluateOnBackend` 返回后直接 return，`persistRun`
+ * 与 `confirmFlow('run')` 一次都没执行：判定上得了屏、产物存不下来、
+ * 顶栏「启动测试及结果分析」那一格永远点不亮（实测栽过：真实台架跑完一轮，
+ * `POST /api/evaluate` 200，随后 `POST /api/runs` 一次都没发出）。
+ *
+ * 现在把落库**与组件生命周期解耦**：cancelled 只用来护住组件自身的
+ * setState（authoritative / authState / persistError），落库与置位改由
+ * 模块级 round 守卫保证「同一轮只落一次、且不因卸载而放弃」。
+ */
+let persistedRunRound: number | null = null
 
 function VerdictCard({ full }: { full?: boolean }) {
   const pack = getPack()
@@ -670,21 +799,169 @@ function VerdictCard({ full }: { full?: boolean }) {
   const runProgress = useAppStore((s) => s.runProgress)
   const setFocusReq = useAppStore((s) => s.setFocusReq)
   const nav = useNavigate()
+  // 流程 2 确认过的需求基线（修 2→3 断点）。null = 本会话还没读到基线 → 不过滤。
+  const baselineIds = useRequirementBaseline()
+
+  /*
+   * 后端权威判定。前端这几行算出来的是**预览**，一跑完一轮就去后端要最终结论：
+   * 判定只有一份权威，两份长期并存必然漂移。后端够不着（没起服务、没登录）时
+   * 保留预览并明确标出来，不假装那就是结论。
+   */
+  const [authoritative, setAuthoritative] = useState<BackendVerdict[] | null>(null)
+  const [authState, setAuthState] = useState<'idle' | 'loading' | 'ok' | 'fallback'>('idle')
+  /*
+   * 落盘失败的原因。**不能只 catch 掉不出声**：轮次存不下会让「刷新后找回本轮」
+   * 失效，而界面上毫无痕迹，人只会以为功能没做。2026-09-23 全量审查就是靠
+   * 这个缺口才定位到 artifact_kind 前后端不一致——在那之前，落盘一直失败、
+   * 界面一直正常。这里把失败显式化，让「判定成功但没存下」这件事看得见。
+   */
+  const [persistError, setPersistError] = useState<string | null>(null)
+  const sceneId = useAppStore((s) => s.sceneId)
+  // 采纳/人工改过的控制参数与配置快照：判定里 control-parameters 变量要读采纳值，
+  // 否则「改了参数结论不变」。同时读本轮真采集量 runMeasures（beginRun 写入）。
+  const overrides = useAppStore((s) => s.overrides)
+  const snapshotValues = useAppStore((s) => s.snapshotValues)
+  const runMeasures = useAppStore((s) => s.runMeasures)
+
+  /*
+   * 每跑完一轮（runPhase 从 running 落回 idle）去后端要一次权威判定，
+   * 顺带把这一轮落成可找回的轮次产物（阶段 4 验收：刷新后仍能找回轮次和文件）。
+   *
+   * 两件事都不阻塞界面：成功就换成后端结论，失败就保留前端预览并标注，
+   * 让人知道「这是预览不是结论」，而不是静默假装成权威。
+   */
+  const prevPhase = useRef(runPhase)
+  useEffect(() => {
+    const finished = prevPhase.current === 'running' && runPhase !== 'running'
+    prevPhase.current = runPhase
+    if (!finished || !pack) return
+
+    let cancelled = false
+    // 本轮真采集量（beginRun 先采后判，running→done 时已就位）+ 固定波形回退。
+    // 用 getState() 读最新值，避免 effect 闭包捕获到过期的 runMeasures/overrides。
+    const st = useAppStore.getState()
+    const measures = { ...runtimeMeasures(waves, pack), ...st.runMeasures }
+    setAuthState('loading')
+
+    void (async () => {
+      try {
+        const result = await evaluateOnBackend(
+          sceneId,
+          measures,
+          controlValueMap(pack, st.overrides, st.snapshotValues),
+        )
+        // cancelled 只护住组件自身的 state（卸载后不该再 setState），**不**牵连落库。
+        if (!cancelled) {
+          setAuthoritative(result.results)
+          setAuthState('ok')
+        }
+        // 落盘与求值分开：求值结果要立刻上屏，落盘失败不该把判定也一起丢掉。
+        // ⚠️ 这里不能因 cancelled 而 return（见 persistedRunRound 的说明）。
+        // 守卫键取**当前**轮次号而不是 effect 入口处那个：急停/停止收口时
+        // settleRun 会在本 effect 之后才把 runRound +1（入口处读到的是旧号），
+        // 拿旧号比对会把这一轮误判成「已有更新一轮」而永远不落库。
+        const curRound = useAppStore.getState().runRound
+        if (persistedRunRound === curRound) return
+        persistedRunRound = curRound
+        try {
+          const localRows = evaluateAll(pack, measures, st.overrides, st.snapshotValues)
+          const runId = await persistRun({
+            sceneId,
+            verdicts: localRows,
+            measures,
+            backendVerdicts: result.results,
+            startedAt: new Date(Date.now() - 1000).toISOString(),
+          })
+          // 记住本轮号：流程 4 的采纳（param-change）要挂在某一轮上，
+          // 没有它采纳就无处落库。刷新后这个值会丢，读回另走「按场景取最近一轮」。
+          useAppStore.getState().setRunId(runId)
+          // 运行流程的确认锚点（2026-10-08 补齐断点）：本轮正常跑完且判定表**真落库**
+          // → 置 confirmed.run，顶栏「启动测试及结果分析」打勾。此前全站没有任何
+          // confirmFlow('run')，导致这一格永远点不亮（用户反馈「五个阶段完不成」的断点之一）。
+          // 只认 runPhase==='done'：被停止/急停收口的算中断，不算完成，不点亮（如实，不粉饰）。
+          // 读 store 最新值而不是闭包里的 runPhase：落库是异步的，await 期间状态可能又变。
+          if (useAppStore.getState().runPhase === 'done') useAppStore.getState().confirmFlow('run')
+        } catch (e) {
+          // 判定照旧算数（落盘失败不该把结论一起丢掉），但**必须留痕**：
+          // 既要在控制台给出可查的原因，也要在卡面上标出来，
+          // 否则「刷新后找回本轮」会静默失效，人只会以为功能没做。
+          const msg = e instanceof Error ? e.message : String(e)
+          console.error('[flow-run] 本轮产物落盘失败，刷新后无法找回：', msg)
+          // 落盘失败要放开守卫：本轮仍允许被再次触发（卡片重挂 / 再来一轮）时重试。
+          persistedRunRound = null
+          if (!cancelled) setPersistError(msg)
+        }
+      } catch (e) {
+        // 后端够不着（没起服务 / 响应不合法）：退回前端预览，并让卡面把这件事说清楚。
+        // ⚠️ 原因必须留下来（2026-10-08）：本分支原先是裸 catch，异常被完全吞掉，
+        // 于是「后端返回了前端不认的包装」这类问题在界面上只表现为「预览」两个字，
+        // 排查时毫无线索。现按项目纪律原样透传到控制台。
+        console.error('[flow-run] 后端权威判定不可用，已退回前端预览：', e instanceof Error ? e.message : e)
+        if (cancelled) return
+        setAuthoritative(null)
+        setAuthState('fallback')
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+    // waves 每次回放都会换一份新数组，不能进依赖，否则会反复重求值
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runPhase, sceneId, pack])
+
   if (!pack) return <Empty text="场景包未加载" />
+  // 流程 2 确认的需求基线：**只判「本轮纳入的那几条」**（修 2→3 断点）。
+  //
+  // ⚠️ `null` 与 `[]` 语义不同（见 baselineStore.ts）：
+  //   · `null`（本会话还没读到过基线）→ **不过滤**，保持旧的「全表」行为，
+  //     这样没走过流程 2 的路径（直接进流程 3）不会突然变成 0 条。
+  //   · `[]`（基线明说一条都不纳入）→ **真的判 0 条**，不拿全表顶替。
+  const inBaseline = (id: string) => (baselineIds === null ? true : baselineIds.includes(id))
   // 演示模式只判 demo_profile 点名的 6 条；放大态与全量模式给全表。
-  const all = evaluateAll(pack, runtimeMeasures(waves, pack))
-  const rows = full ? all : demoFilter(pack.requirements, 'requirements', all, (r) => r.req.id)
-  const pass = rows.filter((r) => r.state === 'pass').length
-  const fail = rows.filter((r) => r.state === 'fail').length
-  const missing = rows.filter((r) => r.state === 'missing').length
-  const judged = rows.filter((r) => r.state === 'pass' || r.state === 'fail')
+  // 判定输入 = 固定波形（演示回退）+ 本轮真采集（rpm/频率，真机优先）。
+  const all = evaluateAll(
+    pack,
+    { ...runtimeMeasures(waves, pack), ...runMeasures },
+    overrides,
+    snapshotValues,
+  )
+  const scoped = all.filter((r) => inBaseline(r.req.id))
+  const rows = full ? scoped : demoFilter(pack.requirements, 'requirements', scoped, (r) => r.req.id)
+
+  /**
+   * 展示行：后端给了权威判定就以后端为准（按 req_id 对齐，前端预览只作兜底）。
+   * 后端结果驱动的三个计数才是最终结论——本地预览可能因算法实现细节有出入，
+   * 两处数字必须同源，否则同一屏里「总计」和「明细」会互相打架。
+   */
+  const backendById = authoritative
+    ? new Map(authoritative.map((v) => [v.req_id, v]))
+    : null
+  const shownRows = backendById
+    ? rows.map((r) => {
+        const b = backendById.get(r.req.id)
+        return b ? { ...r, state: b.state, note: b.note ?? r.note, missing: b.missing ?? r.missing } : r
+      })
+    : rows
+  const pPass = shownRows.filter((r) => r.state === 'pass').length
+  const pFail = shownRows.filter((r) => r.state === 'fail').length
+  const pMissing = shownRows.filter((r) => r.state === 'missing').length
+  // 「本台架不适用」单独计数：不与 missing 混，也不计入通过（2026-10-08）
+  const pNa = shownRows.filter((r) => r.state === 'not_applicable').length
+
   // 首屏只列有结论的那几行：演示模式下不拿「未采集」补位凑行数（06d 第 3.1 节
   // 「判定卡，只留有结论的几行」）；全表进放大态。
+  // 2026-10-08：首屏纳入 not_applicable——它是有明确结论的一类（"本台架测不了"，
+  // 已带原因），把它藏起来反而让人以为还有悬而未决的项。
   const list = full
-    ? rows
+    ? shownRows
     : demo
-      ? judged.slice(0, 3)
-      : [...judged, ...rows.filter((r) => r.state === 'missing')].slice(0, 3)
+      ? shownRows.filter((r) => r.state === 'pass' || r.state === 'fail').slice(0, 3)
+      : [
+          ...shownRows.filter((r) => r.state === 'pass' || r.state === 'fail'),
+          ...shownRows.filter((r) => r.state === 'not_applicable'),
+          ...shownRows.filter((r) => r.state === 'missing'),
+        ].slice(0, 3)
 
   const Stat = ({ n, label, tone }: { n: number; label: string; tone: 'ok' | 'bad' | 'mute' }) => (
     <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -726,13 +1003,27 @@ function VerdictCard({ full }: { full?: boolean }) {
       </div>
     )
 
-  const tip = `已求值 ${judged.length} / ${pack.requirements.evaluable_count} 条可求值判据，全表 ${rows.length} 条：通过 ${pass}、不通过 ${fail}、未采集 ${missing}。${
-    measureOrigin(pack) ?? ''
-  }${
-    judged.length === 0
+  const judgedCount = shownRows.filter((r) => r.state === 'pass' || r.state === 'fail').length
+  // 分母也要跟着基线收窄：基线把表砍到 6 条时，还说「/ 20 条可求值」会让人
+  // 以为漏判了 14 条。口径写成「本轮纳入的这几条里，有几条可求值」。
+  const inScopeEvaluable = all.filter((r) => r.req.evaluable !== false && inBaseline(r.req.id)).length
+  const scopeNote =
+    baselineIds === null ? '（未读到需求基线，按全表判）' : `（需求基线纳入 ${all.filter((r) => inBaseline(r.req.id)).length} 条）`
+  const tip = `已求值 ${judgedCount} / ${inScopeEvaluable} 条可求值判据，本轮判定表 ${shownRows.length} 条：通过 ${pPass}、不通过 ${pFail}、本台架不适用 ${pNa}${
+    pMissing ? `、未采集 ${pMissing}` : ''
+  }。「本台架不适用」指该判据需要本台架未配置的测量手段（逐条 tooltip 写明缺什么），与「未采集」（本该采到却没采到）不同，不参与通过/不通过统计。判定范围${scopeNote}。结论来源：${
+    authState === 'ok'
+      ? '后端判定（权威）'
+      : authState === 'loading'
+        ? '正在向后端求值…'
+        : authState === 'fallback'
+          ? '前端预览（后端不可达，非最终结论）'
+          : '前端预览（尚未跑完一轮）'
+  }。${persistError ? `⚠ 本轮已判定但**产物落盘失败**，刷新后找不回本轮（${persistError}）。` : ''}${measureOrigin(pack) ?? ''}${
+    judgedCount === 0
       ? '本轮一条都判不了：判据要的现场实测量（母线电流、转速、力、位移、声压级）得由台架传感器现场采，本轮只回放了一条曲线，不拿别的数顶替。'
       : ''
-  }`
+  }参数说明：采纳/修改的参数若未被任何判据公式引用（比如预定位强度、预定位时间、启动 IQ 电流这些固件宏），判定结论**不随采纳变化**——它们改的是电机实际行为，要真机烧固件跑起来才体现。参数对判定生效的两条真实路径：①被判据公式引用的参数（如「无调速模式目标转速 nonemode_speed → 目标转速 → TR-START-02」）；②电机插上做真启停回归，产生本轮新实测量。`
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
@@ -742,17 +1033,27 @@ function VerdictCard({ full }: { full?: boolean }) {
         {demo && !full ? (
           <Tooltip className="min-w-0 flex-1" content={tip}>
             <span className="flex cursor-help items-baseline gap-1.5">
-              <span className={cn('num text-[26px] leading-none font-semibold tracking-tight', fail > 0 ? 'text-alert' : 'text-t1')}>
-                {fail}
+              <span className={cn('num text-[26px] leading-none font-semibold tracking-tight', pFail > 0 ? 'text-alert' : 'text-t1')}>
+                {pFail}
               </span>
-              <span className="text-[12px] text-t3">条不通过 · 已判 {judged.length}</span>
+              <span className="text-[12px] text-t3">条不通过 · 已判 {judgedCount}</span>
             </span>
           </Tooltip>
         ) : (
           <>
-            <Stat n={pass} label="通过" tone="ok" />
-            <Stat n={fail} label="不通过" tone="bad" />
-            <Stat n={missing} label="未采集" tone="mute" />
+            <Stat n={pPass} label="通过" tone="ok" />
+            <Stat n={pFail} label="不通过" tone="bad" />
+            {/*
+              第三格优先展示「本台架不适用」：本台架只有风扇+示波器，大量判据
+              在结构上测不了（缺 MCU 故障寄存器 / FG 信号 / 母线电流探头）。
+              这类项如实标为不适用并写明缺什么设备，比混在「未采集」里更利于决策。
+              只有确实不存在不适用项时才退回展示「未采集」。
+            */}
+            {pNa > 0 ? (
+              <Stat n={pNa} label="本台架不适用" tone="mute" />
+            ) : (
+              <Stat n={pMissing} label="未采集" tone="mute" />
+            )}
           </>
         )}
         <InfoTip content={tip} />
@@ -785,7 +1086,25 @@ function VerdictCard({ full }: { full?: boolean }) {
             <Tooltip
               key={r.req.id}
               className="w-full"
-              content={`${r.req.criterion_text}${r.note ? ` · ${r.note}` : r.missing.length ? ` · 缺 ${r.missing.join('、')}` : ''}${jump ? ' · 点此进流程 4 看推荐' : ''}`}
+              content={`${r.req.criterion_text}${
+                /* 台架判据要显示「用了哪个量、值多少」——演示时一眼能看出结论基于本轮实测。
+                   仅在有实测值（used 非空）时展示，阈值/常量不进这一行（见 evaluate.ts）。 */
+                r.used.length
+                  ? ` · 本轮实测：${r.used
+                      .map(
+                        (u) =>
+                          `${u.name} ${
+                            typeof u.value === 'number' ? fmtMeasure(u.value) : String(u.value)
+                          }${u.unit ?? ''}`,
+                      )
+                      .join('、')}`
+                  : ''
+              }${
+                // 不适用项如实写明缺什么测量手段，让「测不了」有据可查（2026-10-08）
+                r.state === 'not_applicable' && r.notApplicableReason
+                  ? ` · 本台架不适用：${r.notApplicableReason}`
+                  : ''
+              }${r.note ? ` · ${r.note}` : r.missing.length ? ` · 缺 ${r.missing.join('、')}` : ''}${jump ? ' · 点此进流程 4 看推荐' : ''}`}
             >
               {jump ? (
                 <button
@@ -901,14 +1220,23 @@ function Progress({ full }: { full?: boolean }) {
   const runPhase = useAppStore((s) => s.runPhase)
   const runProgress = useAppStore((s) => s.runProgress)
   const runRound = useAppStore((s) => s.runRound)
+  const baselineIds = useRequirementBaseline()
   if (!pack) return <Empty text="场景包未加载" />
   const s2 = pack.datasets.package_stats as Record<string, number>
   const hasBatch = typeof s2.attempts_total === 'number'
   const done = hasBatch ? (s2.labeled ?? 0) : waves.length
   const total = hasBatch ? s2.attempts_total : pack.datasets.datasets.length
 
+  // ⚠️ 这行日志此前是**假的**：写「载入需求基线：判据 N 条」，而 N 取的是
+  // 场景包全量条数，与「人确认了哪几条」无关（打了这行反而让人以为读了基线）。
+  // 现在如实分三种说法，并且**只用基线镜像里的真值**。
+  const baselineLine =
+    baselineIds === null
+      ? `[00:00.0] 未读到需求基线（流程 2 未确认）：按场景包全表 ${pack.requirements.requirements.length} 条判`
+      : `[00:00.0] 载入需求基线：本轮纳入 ${baselineIds.length}/${pack.requirements.requirements.length} 条判据`
+
   const log = [
-    `[00:00.0] 载入需求基线：判据 ${pack.requirements.requirements.length} 条`,
+    baselineLine,
     `[00:00.3] 联锁自检：硬件 ${pack.interlocks.interlocks.filter((i) => i.type === '硬件').length} 条由固件阈值保证`,
     `[00:02.0] 采集口径：${Math.round(pack.datasets.datasets[0]?.sample_rate_sa_per_s ?? 0)} Sa/s`,
     ...waves.map(
@@ -958,7 +1286,11 @@ function Progress({ full }: { full?: boolean }) {
 }
 
 export const runCards = {
-  timeseries: WaveformPanel,
+  // ⚠️ 2026-10-06：flow-run 首卡「图表」已从 WaveformPanel（场景包历史波形回放）
+  // 换成 FanTrendPanel（接 /api/fan-tests 实时轮询的风扇趋势）。
+  // WaveformPanel 函数体**保留**（见上方定义），供其他用途或回退；仅取消它在本卡的挂载。
+  // 原因：本卡位置需要展示实时采集趋势，与场景包离线数据集是两类数据。
+  timeseries: FanTrendPanel,
   schematic: SchematicCover,
   verdict: VerdictCard,
   interlock: GateRing,

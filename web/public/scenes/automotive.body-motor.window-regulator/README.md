@@ -50,7 +50,7 @@
 | --- | ---: | --- |
 | `assets/product-photo-nhtsa-fig5-1.png` | 3 271 270 | 由 `nhtsa118-gtl-11-002.pdf` 第 19 页（FIGURE 5.1，2011 NISSAN JUKE S）按 150 dpi 渲染 |
 | `assets/regulator-schematic.png` | 104 613 | 本包手排 SVG 转 PNG 的台架结构简图 |
-| `assets/regulator-schematic.svg` | 6 665 | 上图的矢量源 |
+| `assets/regulator-schematic.svg` | 6 665 | 上图的矢量[源] |
 | `assets/waveforms/normal-up-down-cycle.csv` | 1 368 632 | 正常升降，24 000 行 × 10 列，**合成** |
 | `assets/waveforms/antipinch-trigger.csv` | 1 437 297 | 防夹触发，24 000 行 × 10 列，**合成** |
 | `assets/waveforms/stall-saturation.csv` | 1 387 701 | 堵转饱和，24 000 行 × 10 列，**合成** |
@@ -84,7 +84,7 @@
 
 ```json
 "_source": {
-  "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+  "file": "汽车场景素材-20260919/qc636.txt",
   "locator": "qc636.txt:119-120 5.4.1 b) 「工作电流不大于12A」"
 }
 ```
@@ -93,7 +93,7 @@
 - `locator` 给行号、条款号、PDF 页码或小节标题。
 - 某条结论靠多份材料互证时，`_source` 是数组。
 - 大量条目的 `_source` 指向素材综述文档
-  `/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md`
+  `[源] _调研/B-汽车场景测试案例素材.md`
   的具体行号（`第 N 行：……` 形式）。凡是能直接指到证据原件的，同时给证据原件的路径与条款号。
 - 本次构建**没有任何条目落空**（`_source` 全部非空，生成报告的「未找到项」为空）。
 
@@ -159,7 +159,7 @@
 | --- | --- |
 | `criterion` | **JavaScript 表达式（ECMAScript），求值结果为布尔**。散文式、无可测量量可取的条目为 `null` |
 | `evaluable` | `false` 表示这条不是对测量结果的判定，此时另有 `not_evaluable_reason` 写明卡在哪 |
-| `variables` | 把表达式里每个自由变量映射到确定的取值来源 |
+| `variables` | 把表达式里每个自由变量映射到确定的取值来[源] |
 | `criterion_text` | 人读版本 |
 
 `variables[].source` 四种取值：
@@ -272,7 +272,7 @@ TR-RULE-03 用户手册），`criterion` 为 `null` 并各带一句 `not_evaluab
 | 数据处理 | 从原始时序算出判据需要的派生量（速度、峰值、偏差、纹波计数），以及导出报告 |
 
 `assets/workflows/*.json` 用的是工作流画布组件的**统一内部模型**
-（`{ nodes, edges, meta, variables }`，见 `~/lab/workflow/README.md` §3.1），
+（`{ nodes, edges, meta, variables }`，见 `[源] workflow/README.md` §3.1），
 可直接喂给 `WorkflowCanvas`，不需要经过 `parseWfw`。
 
 `sourceHandle` 承载分支语义：`output` 主干画墨绿实线、`error` 异常出口与 `false` 假支画暗红虚线、
@@ -299,7 +299,7 @@ TR-RULE-03 用户手册），`criterion` 为 `null` 并各带一句 `not_evaluab
 ### 4.8 `experience.json`
 
 18 条，每条 = 现象 `symptom` / 原因 `cause` / 动作 `action` / 结果 `result` / 标签 `tags` /
-证据档位 `evidence_level` / 来源 `_source`。
+证据档位 `evidence_level` / 来[源] `_source`。
 
 与第一个包的分野很清楚：那边的 `evidence_level` 有「台架实测数据」「判定工具输出」两档，
 本场景**一条都没有**，因为没有实物台架。反过来本场景多出「法规条款」「标准状态」「来源状态」三档，
@@ -475,7 +475,7 @@ F_out   = Kt·i·η / k_arm_m         （η 为蜗杆传动机械效率）
 
 ## 八、与峰岹包的对照表
 
-第一个包：`/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/motor.cooling-fan.fortior-fu6832`
+第一个包：`[源] scenes/motor.cooling-fan.fortior-fu6832`
 （电机 / 散热风扇 / FU6832 散热风扇驱动板）。
 
 ### 8.1 六个流程逐格对照
@@ -500,8 +500,8 @@ F_out   = Kt·i·η / k_arm_m         （η 为蜗杆传动机械效率）
 | 主判据量纲 | 转速 rpm、相电流 A、温升 K | 线速度 mm/s、力 N、位移 mm、声压级 dB(A) |
 | 安全属性 | 设备安全（过温、堵转） | **人身安全**（防夹力 100 N，受中美欧三地法规约束） |
 | 耐久口径 | 连续运行小时数 | 开闭循环次数（前门 10 000 次，13 道温湿度工序） |
-| 数据来源 | 示波器实测深存储 | 全部合成，实测代理集只登记不下载 |
-| 判据来源 | 客户内部规程与经验 | 公开标准条款，可被第三方复核 |
+| 数据来[源] | 示波器实测深存储 | 全部合成，实测代理集只登记不下载 |
+| 判据来[源] | 客户内部规程与经验 | 公开标准条款，可被第三方复核 |
 | 判据是否随市场变 | 否 | **是**，同一次采集在中、美、欧是三套判据 |
 | 工作流 | 67 个客户真实 `.wfw` | 0 个，4 条示例占位 |
 | 节点词汇表 | 25 个峰岹客户端专有类型 | 37 个六类抽象类型，与前者零重合 |
@@ -529,7 +529,7 @@ F_out   = Kt·i·η / k_arm_m         （η 为蜗杆传动机械效率）
 ## 九、重新生成
 
 ```bash
-cd /mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/automotive.body-motor.window-regulator
+cd [源] scenes/automotive.body-motor.window-regulator
 python3 _build/build_scene_pack.py
 ```
 

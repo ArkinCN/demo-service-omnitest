@@ -55,7 +55,7 @@ webssh/
 ## 起步
 
 ```bash
-cd ~/lab/webssh
+cd c/components/webssh
 npm install
 cp .env.example .env        # 填 GATEWAY_TOKEN 与私钥路径，见下
 npm run dev:all             # 同时起网关 :8022 与前端 :5173
@@ -65,7 +65,7 @@ npm run dev:all             # 同时起网关 :8022 与前端 :5173
 
 ```ini
 GATEWAY_TOKEN=<一串长随机串>            # 用 openssl rand -hex 16 生成
-FORTIOR_WIN_KEY=/home/zzz/.ssh/fortior_win   # 私钥【文件路径】
+FORTIOR_WIN_KEY=[源] .ssh/fortior_win   # 私钥【文件路径】
 VITE_GATEWAY_TOKEN=<与 GATEWAY_TOKEN 相同>
 ```
 

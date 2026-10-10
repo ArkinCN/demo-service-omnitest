@@ -10,11 +10,20 @@ export const PERMISSION_OPTIONS: { value: PermissionLevel; label: string; hint: 
   { value: 'hardware', label: '可控硬件', hint: '允许启停电机、切换负载、控制仪器' },
 ];
 
+/**
+ * 可选模型。这三个都能在后端的 model_pricing 表里查到（已启用），
+ * 且都通过 upstream_model_id 折到同一家上游：本机是单机版，只有一家上游
+ * （见 local_admin_service.py 的 _SEEDED_MODELS 及其注释），别名行的存在
+ * 只是为了让这些字面量不撞上准入校验。
+ *
+ * 此前这里列的是 deepseek-v4 / claude-opus-5 / qwen3-max，**后端一个都没配**，
+ * 选中就报「模型不可用或未配置」——选项必须与后端实际配置对齐，
+ * 否则用户点得到、用了必错。
+ */
 export const MODEL_OPTIONS: { value: string; label: string }[] = [
-  { value: 'deepseek-v4-pro', label: 'deepseek-v4-pro' },
-  { value: 'deepseek-v4', label: 'deepseek-v4' },
-  { value: 'claude-opus-5', label: 'claude-opus-5' },
-  { value: 'qwen3-max', label: 'qwen3-max' },
+  { value: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
+  { value: 'deepseek-v4-flash', label: 'DeepSeek Flash' },
+  { value: 'deepseek-chat', label: 'DeepSeek Chat' },
 ];
 
 /** 一次工具调用的完整记录（调用 + 结果） */
@@ -58,7 +67,7 @@ export interface Verdict {
   evidenceIds: string[];
 }
 
-/** 依据条目的三类来源 */
+/** 依据条目的三类来[源] */
 export type EvidenceKind = 'procedure' | 'case' | 'document';
 
 export const EVIDENCE_KIND_LABEL: Record<EvidenceKind, string> = {
@@ -77,8 +86,15 @@ export interface EvidenceItem {
   source: string;
   /** 页码或条目号 */
   locator: string;
-  /** 查看原文的目标地址，缺省则按钮禁用 */
+  /** 查看原文的目标地址；本地知识库没有可点的 PDF，缺省时改走 docId 跳知识库页 */
   href?: string;
+  /**
+   * 知识库资料的 doc_id（如 fu6832-datasheet）。
+   * 本地知识库的原文 PDF 未随交付包提供，没有可点的 href，但条目在知识库页里
+   * 是有的——据此跳到 /knowledge 并选中该条目，比显示「原文未接入」有用得多
+   * （那句文案会被误读成「原文没检索到」，实际摘录就在卡片正文里）。
+   */
+  docId?: string;
 }
 
 /** 消息流里的一项 */

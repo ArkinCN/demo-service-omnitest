@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#![源] bin/env python3
 """把两个场景包的同一条流程截图并排拼成一张对照图。
 
 用法：
@@ -29,11 +29,11 @@ PAD = 12
 def font(size: int, bold: bool = False):
     """找一个能渲中文的本机字体；找不到就退回 PIL 默认位图字体。"""
     candidates = [
-        "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc" if bold else
-        "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
-        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-        "/mnt/c/Windows/Fonts/msyhbd.ttc" if bold else "/mnt/c/Windows/Fonts/msyh.ttc",
-        "/mnt/c/Windows/Fonts/simhei.ttf",
+        "[源] noto/NotoSansCJK-Bold.ttc" if bold else
+        "[源] noto/NotoSansCJK-Regular.ttc",
+        "[源] noto/NotoSansCJK-Regular.ttc",
+        "[源] Fonts/msyhbd.ttc" if bold else "[源] Fonts/msyh.ttc",
+        "[源] Fonts/simhei.ttf",
     ]
     for p in candidates:
         if Path(p).exists():

@@ -605,7 +605,7 @@
         "note-pen",
         "package"
       ],
-      "description": "图标名。二十八个取值取自前端 /home/zzz/agent-test-web/src/app/icons.ts 的 COPILOT_ACTION_ICON_NAMES（前 17 个为 W1 冻结，后 11 个为收尾轮补齐）。用表外的名字前端会静默回落到 sparkles。"
+      "description": "图标名。二十八个取值取自前端 [源] app/icons.ts 的 COPILOT_ACTION_ICON_NAMES（前 17 个为 W1 冻结，后 11 个为收尾轮补齐）。用表外的名字前端会静默回落到 sparkles。"
     },
     "flowMention": {
       "type": "string",

@@ -4,7 +4,7 @@
   "generated_by": "_build/build_scene_pack.py",
   "generated_at": "2026-09-20",
   "belongs_to_flow": "F6 测试报告及产出",
-  "template_file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/08b-场景包契约/examples/minimal-scene/assets/report-template/placeholder-report-template.xlsx",
+  "template_file": "./assets/report-template/placeholder-report-template.xlsx",
   "_placeholder": true,
   "cell_model_note": "骨架包用表格模板口径占位：字段按单元格地址定位。新建包若模板是 PDF 报告样张，删掉 template_file 改写 template_source。",
   "group_tiers": [
@@ -37,7 +37,7 @@
       "from_flow": "F6 测试报告及产出",
       "maps_to": null,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/08b-场景包契约/README-场景包契约-v1.1.md",
+        "file": "[源] 08b-场景包契约/README-场景包契约-v1.1.md",
         "locator": "第 10 节 新建第三个场景包的步骤"
       }
     }

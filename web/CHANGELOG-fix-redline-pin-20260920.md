@@ -1,15 +1,15 @@
 # 红线绕过修复：把「调用票」和「批准权」拆开
 
 日期：2026-09-20。触发来源：`07i-交互打通独立核验.md`（第四轮接线的独立核验报告，
-位于 `/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/`）。
+位于 `[源] 09-实验室demo线/20260919-通用Agent测试系统v2.0`）。
 本轮修的是它第十节记下的 P1（严重）、P2 与 P3（中）、P5 与 P4 的一部分（低）。
 
 改动横跨两套工程，**两边都改了**：
 
 | 工程 | 绝对路径 | 角色 |
 | --- | --- | --- |
-| 前端原型 OmniTest | `/home/zzz/agent-test-web/` | 确认卡、store、副驾、走查脚本 |
-| 设备桥 device-bench bridge | `/home/zzz/lab/spike-device-mcp/` | 鉴权分级、台账字段、启动脚本 |
+| 前端原型 OmniTest | `[源] zzz/agent-test-web` | 确认卡、store、副驾、走查脚本 |
+| 设备桥 device-bench bridge | `c/components/spike-device-mcp` | 鉴权分级、台账字段、启动脚本 |
 
 ---
 
@@ -41,7 +41,7 @@ token。于是任何拿到那份构建产物的人都能自己调工具签一张
 - 比较用 `hmac.compare_digest`，常量时间，不用 `==`。两处都改了（调用票那一处顺手一并改）。
 - 没带 PIN 或 PIN 不对一律 **403**，凭据**保持 pending**：不消耗、不作废、不降级。
 - 连续错 5 次锁 60 秒（`BRIDGE_APPROVER_PIN_MAX_FAILS`、`BRIDGE_APPROVER_PIN_LOCK_SECONDS` 可调）。
-  锁定期间 PIN 正确也拒。**没带 PIN 也计一次失败**。计数全进程一份，不按来源 IP 分桶。
+  锁定期间 PIN 正确也拒。**没带 PIN 也计一次失败**。计数全进程一份，不按来[源] IP 分桶。
 - 桥在 `BRIDGE_APPROVER_PIN` 未设置、或与 `BRIDGE_TOKEN` 同值时**拒绝启动**——同值等于没有第二道闸口。
 - 台账多两个字段：`approved_by` 记前端传来的操作者名，`approve_channel` 记 `human_pin`。
 - `GET /health` 与 `GET /devices/{id}/status` 回 `approve_requires_pin` 与 `approver_pin_gate`
@@ -105,7 +105,7 @@ token。于是任何拿到那份构建产物的人都能自己调工具签一张
 | 类型 | `npx tsc -b` | 退出码 0，无输出 |
 | 构建 | `npm run build` | 退出码 0，452 ms；唯一告警是既有的 chunk 体积提示 |
 | lint | `npx oxlint` | **0 error、21 warning**（删掉备份目录前是 43 条，其中 22 条来自那个目录） |
-| 产物不含桥 token | `grep -c "$(grep '^BRIDGE_TOKEN=' ~/lab/spike-device-mcp/.env \| cut -d= -f2-)" dist/assets/*.js` | **0**（递归搜整个 `dist/` 也是 0 个文件命中） |
+| 产物不含桥 token | `grep -c "$(grep '^BRIDGE_TOKEN=' [源] spike-device-mcp/.env \| cut -d= -f2-)" dist/assets/*.js` | **0**（递归搜整个 `dist/` 也是 0 个文件命中） |
 | 产物不含批准 PIN | 同上换 `BRIDGE_APPROVER_PIN` | **0**（递归搜整个 `dist/` 也是 0） |
 | 主线走查 | `WALK_PIN=… BASE=http://localhost:5173 node scripts/walk-wire.mjs` | **12 步全 PASS**，三张确认卡各检出 1 个 PIN 框 |
 
@@ -167,7 +167,7 @@ vite 就能用。它现在只是调用票，泄漏的后果限于「能让桥签
 `/run` 页静置 20 秒实测在线 24 次请求、离线 48 次并伴随 48 条 `net::ERR_CONNECTION_REFUSED`。
 它不影响功能与红线，属观感与控制台噪音问题，留到下一轮收敛成模块级单例订阅。
 
-五、**`.gitignore` 仍不产生保护作用**（核验 P6）：`/home/zzz/agent-test-web/` 不是 git 仓库，
+五、**`.gitignore` 仍不产生保护作用**（核验 P6）：`[源] zzz/agent-test-web` 不是 git 仓库，
 那一行目前是一句无效声明。纳入版本管理时要一并确认 `.env` 与 `dist/` 都被忽略。
 
 六、**真后端那条路径只做了代码核验。** DSH 会话服务本次未起，`api.ts` 改走

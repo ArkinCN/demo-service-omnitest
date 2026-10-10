@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { useNavigate } from 'react-router'
 import {
   Activity,
   Boxes,
@@ -29,7 +30,12 @@ import {
   cn,
 } from '../../components/ui'
 import { getPack, statusOf, type RawPack, type RawRequirement } from '../scene/pack'
-import { ConfirmFooter, Empty, TierTree } from '../shared/bits'
+import { useAppStore } from '../../state/useAppStore'
+import { loadLatestBaseline, persistBaseline } from './baselineApi'
+import { setBaselineIds } from './baselineStore'
+import { ConfigOverview } from '../../app/LeftPanel'
+import { UnifiedConfigPanel } from '../../app/UnifiedConfigPanel'
+import { ConfirmFooter, Empty } from '../shared/bits'
 import { buildTiers, readTiers } from '../shared/tiers'
 import { listPackWorkflows, loadPackWorkflow, type WfEntry } from '../scene/workflows'
 import { WorkflowCanvas } from '../workflow'
@@ -64,6 +70,16 @@ const sel = {
   scene: '',
   ids: new Set<string>(),
   focus: null as string | null,
+  /**
+   * 这个场景的 `ids` 是否已由**服务端基线**接管。
+   *
+   * 为什么要这个标记：`ensureSel`（同步，渲染期跑）与 `applyBaseline`（异步，
+   * 请求回来后跑）都会写 `ids`，无标记时**谁后跑谁赢**。实测症状是
+   * 「解除确认后纳入数从 24 变回 26」——读回的值被全选覆盖。
+   * 置真后 `ensureSel` 不再写 ids，竞态从根上消失。
+   * 换场景包时重置为 false（旧基线不适用于新场景）。
+   */
+  restored: false,
 }
 let selVersion = 0
 const selListeners = new Set<() => void>()
@@ -79,13 +95,44 @@ const subSel = (l: () => void) => {
 }
 const getSelVersion = () => selVersion
 
-/** 需求基线默认把全部判据纳入本轮，取消勾选是「移出基线」的动作 */
+/**
+ * 需求基线默认把全部判据纳入本轮，取消勾选是「移出基线」的动作。
+ *
+ * ⚠️ 只在**换场景包**时重置，且**服务端基线已读回时不再覆盖**。
+ *
+ * 历史坑（两轮）：
+ *   ① 原写法「scene 不同就全选」，而刷新后 `sel.scene` 是空串 → 触发重置
+ *      → 基线被打回全选，人取消的勾选全复活（「刷新又初始化」）。
+ *   ② 加读回后又出现**竞态**：`ensureSel`（同步，在渲染期跑）与
+ *      `applyBaseline`（异步，请求回来后跑）都改 `sel.ids`，谁后跑谁赢。
+ *      实测症状是「解除确认后纳入数变回 26」——读回的值被全选覆盖掉了。
+ * 现在用 `sel.restored` 显式表达「这个场景的基线已被服务端值接管」：
+ * 一旦为真，`ensureSel` 就**不再写 ids**（只补 focus），竞态从根上消失。
+ */
 function ensureSel(pack: RawPack) {
   if (sel.scene === pack.scene.id) return
   sel.scene = pack.scene.id
+  // 换包：基线属于上一个场景，标记作废，允许重新全选
+  sel.restored = false
   sel.ids = new Set(pack.requirements.requirements.map((r) => r.id))
   sel.focus = pack.requirements.requirements[0]?.id ?? null
   bumpSel()
+}
+
+/** 用服务端读回的基线覆盖勾选集。返回是否真的应用了。 */
+function applyBaseline(includedIds: string[]) {
+  const pack = getPack()
+  if (!pack) return false
+  // 只保留场景包里存在的 id：基线可能是旧版场景包落的，多出来的 id 直接丢，
+  // 不往 sel 里塞孤儿键（否则切包时会带过去，表现为「多了几条不存在的判据」）。
+  const known = new Set(pack.requirements.requirements.map((r) => r.id))
+  // ⚠️ 允许读到「空基线」：`included_count = 0` 是合法状态
+  //（人把全部判据都移出本轮），不能因为 `kept` 为空就当成读失败而放弃。
+  sel.ids = new Set(includedIds.filter((id) => known.has(id)))
+  // 显式标记：这个场景的 ids 从此由服务端基线决定，`ensureSel` 不得再覆盖。
+  sel.restored = true
+  bumpSel()
+  return true
 }
 
 export function toggleReq(id: string) {
@@ -268,6 +315,7 @@ const voltShort = (v: string) => VOLT_SHORT[v] ?? (v.length > 4 ? '三档' : v)
 
 function ReqRow({ r }: { r: RawRequirement }) {
   const s = useSel()
+  const confirmed = !!useAppStore((st) => st.confirmed.req)
   const on = s.ids.has(r.id)
   const manual = r.evaluable === false
   const th = thresholdBadge(r)
@@ -279,7 +327,11 @@ function ReqRow({ r }: { r: RawRequirement }) {
       <span className="num block opacity-75">{r.id}</span>
       <span className="block opacity-75">{r.criterion_text}</span>
       {manual ? <span className="block opacity-75">人工判 · {r.not_evaluable_reason}</span> : null}
-      {r._placeholder ? <span className="block opacity-75">待确认 · 源材料未给出阈值</span> : null}
+      {r._placeholder ? (
+        <span className="block opacity-75">
+          {confirmed ? '已确认知悉 · 源材料未给出阈值，本次未补值' : '待确认 · 源材料未给出阈值'}
+        </span>
+      ) : null}
       {statusOf(r) ? <span className="block opacity-75">待核实 · {statusOf(r)}</span> : null}
     </span>
   )
@@ -346,12 +398,150 @@ function ReqRow({ r }: { r: RawRequirement }) {
   )
 }
 
+/**
+ * 刷新后把上次确认的需求基线读回来。
+ *
+ * 与流程 4 的 `useRestoreAdoption`、流程 1 的 `loadLatestSnapshot` 是同一套路：
+ * **不依赖内存**，按场景取最近若干轮，找 `requirement-baseline` 产物。
+ * 读不到（还没确认过）是正常态，不打搅人。
+ *
+ * ⚠️ 不检查 `alive`，改成**幂等回填**（见 flow-tune/panel.tsx 同款说明）。
+ * 本应用开着 `<StrictMode>`，React 会 mount → unmount → remount，
+ * promise 不保证落在哪一次上；用 `alive` 中断就会把成功结果丢掉，
+ * 表现为「请求发了但 store 一直是空的」，且控制台无任何报错。
+ * 回填是幂等赋值，重复执行没有副作用。
+ */
+function useRestoreBaseline(sceneId: string) {
+  const restored = useRef<string | null>(null)
+  useEffect(() => {
+    if (!sceneId || restored.current === sceneId) return
+    void loadLatestBaseline(sceneId)
+      .then((hit) => {
+        if (!hit) return
+        restored.current = sceneId
+        // **只回填勾选集，不碰确认态**（2026-09-28 用户实测反馈修）。
+        //
+        // 原来这里跟着调 `confirmFlow('req')`，于是「服务端有基线产物」
+        // 被当成「本次应显示已确认」——只要历史上确认过一次，
+        // 之后每次进这个页面都是已锁，人没机会自己按一次。
+        // 确认态改由 localStorage 记录决定（见 useAppStore 的 LS_CONFIRMED）：
+        // 人按过就一直是已确认，没按过就保持未确认——与产物在不在无关。
+        applyBaseline(hit.baseline.included_ids)
+        useAppStore.getState().setRunId(hit.runId)
+        // 同一份基线也灌给「跨流程镜像」：流程 3 渲染期要同步读它来定判据行
+        // （见 baselineStore.ts 的说明）。不与界面勾选态共享引用，各持一份数组。
+        //
+        // ⚠️ 但**人主动解除过**（`confirmed.req === false`）时不灌：解除的语义是
+        // 「本轮基线不再有效」，此时被服务端旧产物重新点亮就等于解除没生效。
+        // 与 `Shell.useGlobalBaseline` 同一条判据，两处必须一致。
+        if (useAppStore.getState().confirmed.req !== false) {
+          setBaselineIds([...hit.baseline.included_ids])
+        }
+      })
+      .catch((e: unknown) => {
+        // 网络层真出错要留痕，不静默；但界面按「未确认」显示即可
+        console.warn('[flow-req] 需求基线读回失败（界面按未确认显示）：', e)
+      })
+  }, [sceneId])
+}
+
+/**
+ * 确认基线的落库动作 —— **唯一的入口**。
+ *
+ * 抽成独立 hook 的原因（不是为了好看）：Hooks 不允许条件调用，
+ * 而 `ReqLeftPanel` 在场景包未加载时会提前 `return <Empty>`。
+ * 把 `useCallback` 留在组件里就必须挪到提前返回之前，于是拿不到
+ * `reqs.length` 这类运行期值。抽出来后组件在**有 pack 之后**才调用它，
+ * 依赖值都是现成的，没有 ref、没有 render 期读写（那两类写法
+ * React 编译器会丢弃，3-T/3-V 都栽过）。
+ *
+ * 语义与流程 1「确认并锁定」一致：
+ *   - 单一入口（顶栏那颗只改内存的已按用户要求移除）；
+ *   - 落库成功才置确认态，失败必须可见（不能让人以为存好了）。
+ *
+ * ⚠️ 「确认」只冻结「本轮判哪几条」，**不代表**阈值缺失（`_placeholder`）
+ * 这件事被解决——那是源材料的问题。界面照旧标注，只把措辞从
+ * 「待确认」改成「已确认 · 阈值待补」，不让事实消失。
+ */
+function useConfirmBaseline(opts: {
+  sceneId: string
+  ids: Set<string>
+  total: number
+  onDone: () => void
+}) {
+  const { sceneId, ids, total, onDone } = opts
+  const setNotice = useAppStore((st) => st.setNotice)
+  const [saving, setSaving] = useState(false)
+
+  const run = useCallback(async () => {
+    setSaving(true)
+    try {
+      const { runId, baseline } = await persistBaseline({
+        sceneId,
+        runId: useAppStore.getState().runId,
+        includedIds: [...ids],
+        totalCount: total,
+        operator: useAppStore.getState().benchUser,
+      })
+      useAppStore.getState().setRunId(runId)
+      useAppStore.getState().confirmFlow('req')
+      // 确认成功才灌镜像（失败不灌：没落库的基线不该被下游当成本轮基线）
+      setBaselineIds([...baseline.included_ids])
+      setNotice(
+        `已确认需求基线：纳入 ${baseline.included_count}/${baseline.total_count} 条判据` +
+          `（轮次 ${runId.slice(0, 8)}），已写入轮次产物，后续流程可取用`,
+      )
+      // 跳转下一步：与流程 1「确认并锁定后自动跳转」保持一致
+      onDone()
+    } catch (e) {
+      // 落库失败必须看得见：没存上是没存上，不能让人以为确认好了
+      setNotice(
+        `确认失败（基线未持久化，刷新后会还原）：${e instanceof Error ? e.message : String(e)}`,
+      )
+    } finally {
+      setSaving(false)
+    }
+  }, [sceneId, ids, total, setNotice, onDone])
+
+  return { run, saving }
+}
+
 export function ReqLeftPanel() {
   const pack = getPack()
   const s = useSel()
+  const nav = useNavigate()
+  const sceneId = useAppStore((st) => st.sceneId)
+  const confirmed = !!useAppStore((st) => st.confirmed.req)
+  const setNotice = useAppStore((st) => st.setNotice)
+  const unconfirmFlow = useAppStore((st) => st.unconfirmFlow)
+
+  useRestoreBaseline(sceneId)
+
+  // ⚠️ 所有 hook 必须无条件调用，所以这里**先算默认值、不提前 return**。
+  // 之前把 `useConfirmBaseline` 放在 `if (!pack) return` 之后，
+  // oxlint 的 rules-of-hooks 直接报「Hook is called conditionally」——
+  // 场景包未加载时 hook 数就少一个，React 会破坏调用顺序。
+  const reqs = pack?.requirements.requirements ?? []
+  const total = reqs.length
+  const { run: confirmBaseline, saving } = useConfirmBaseline({
+    sceneId,
+    ids: s.ids,
+    total,
+    onDone: () => nav('/run'),
+  })
+
+  /** 解除确认：回可编辑态。不清勾选值（与流程 1 的「解除确认」同一口径）。 */
+  const release = () => {
+    unconfirmFlow('req')
+    // 解除确认 = 本轮基线不再有效 → 镜像同步清空，
+    // 否则流程 3 会继续按一份「已经被人解除掉的基线」过滤判据。
+    setBaselineIds(null)
+    setNotice('已解除确认：可继续调整纳入范围，改完再点「确认基线」')
+  }
+
+  // hook 全部就位后再做空值分支
   if (!pack) return <Empty text="场景包未加载" />
-  const reqs = pack.requirements.requirements
-  const all = s.ids.size === reqs.length
+  const all = s.ids.size === total
 
   // 一级类收敛到三类（性能 / 工况 / 安全与自检），骨架取自场景包
   // test-requirements.json 的 group_tiers；十个原分类降为二级组，超 5 条的再切三级。
@@ -382,30 +572,52 @@ export function ReqLeftPanel() {
               }}
               className="flex h-[26px] w-[26px] items-center justify-center rounded-tps border border-line bg-white text-t3 transition-colors hover:border-p300 hover:text-p700 [&>svg]:block"
             >
-              {all ? <Square size={13} strokeWidth={1.9} /> : <CheckSquare size={13} strokeWidth={1.9} />}
+              {/*
+                ⚠️ 2026-10-09 用户口径：**图标反映当前选择状态**，不是「点下去会做什么」。
+                此前写反了（全选时显示空框 `Square`、非全选时显示 `CheckSquare`），
+                与人的直觉相反。现改为：
+                  · 全部已选（`all`）→ **打勾 ✓**（`CheckSquare`）
+                  · 未全选 / 全不选 → **空格子**（`Square`）
+                文案（tooltip / aria-label）仍是「点下去会做什么」的动作语义，两者本就该分开。
+              */}
+              {all ? <CheckSquare size={13} strokeWidth={1.9} /> : <Square size={13} strokeWidth={1.9} />}
             </button>
           </Tooltip>
         </div>
       </header>
 
       <div className="fade-b min-h-0 flex-1 overflow-y-auto pb-2">
-        <TierTree
-          flow="req"
-          tiers={tiers}
-          // 一级类只展开第一个，其余折叠（06b 第 1.2 节）
-          defaultOpen={0}
-          itemKey={(r) => r.id}
-          render={(r) => <ReqRow r={r} />}
-          // 组头三态：已选进本轮基线记「已填」，源材料存疑记「待核实」。
-          // 「只能人工判」不是异常，不占暗红名额，它由行尾的空心点与栏底的
-          // 「可自动求值 n/m」交代。
-          flags={(r) => ({
-            filled: s.ids.has(r.id),
-            pending: !!(r._status || r._placeholder),
-          })}
-          tierIcon={(t) => iconOf(t, 15)}
-          groupIcon={(t) => iconOf(t)}
-        />
+        <ConfigOverview
+          key={pack.scene.id}
+          count={total}
+          quick={
+            <>
+              {reqs.slice(0, 3).map((r) => (
+                <div className="config-quick-card" key={r.id}>
+                  <ReqRow r={r} />
+                </div>
+              ))}
+            </>
+          }
+        >
+          <UnifiedConfigPanel
+            flow="req"
+            tiers={tiers}
+            // 一级类只展开第一个，其余折叠（06b 第 1.2 节）
+            defaultOpen={0}
+            itemKey={(r) => r.id}
+            render={(r) => <ReqRow r={r} />}
+            // 组头三态：已选进本轮基线记「已填」，源材料存疑记「待核实」。
+            // 「只能人工判」不是异常，不占暗红名额，它由行尾的空心点与栏底的
+            // 「可自动求值 n/m」交代。
+            flags={(r) => ({
+              filled: s.ids.has(r.id),
+              pending: !!(r._status || r._placeholder),
+            })}
+            tierIcon={(t) => iconOf(t, 15)}
+            groupIcon={(t) => iconOf(t)}
+          />
+        </ConfigOverview>
       </div>
 
       <div className="shrink-0 px-4 pt-2">
@@ -420,12 +632,30 @@ export function ReqLeftPanel() {
           </span>
         </Tooltip>
       </div>
-      <ConfirmFooter
-        label="确认基线"
-        count={s.ids.size}
-        unit="条"
-        hint={`本轮基线纳入 ${s.ids.size} 条判据（共 ${reqs.length} 条），勾选框改的就是这份基线。`}
-      />
+      {/* ──────── 唯一的确认入口（2026-09-28）───────
+          此前顶栏一颗「确认需求基线」（只改内存、不落库）、这里一颗空壳
+          （ConfirmFooter 没传 onClick，点了毫无反应）。两颗都不到位。
+          现在统一到这里：落 requirement-baseline 产物 → 确认态 → 跳转流程 3。
+          确认后按钮变「解除确认」，与流程 1 的形态完全一致（反悔出口保留）。 */}
+      {confirmed ? (
+        <ConfirmFooter
+          label="解除确认"
+          count={s.ids.size}
+          unit="条"
+          variant="secondary"
+          icon="unlock"
+          hint={`基线已确认并写入轮次产物（纳入 ${s.ids.size} / ${reqs.length} 条）。点此解除后可继续调整纳入范围；阈值待补的项不受影响，仍会如实标注。`}
+          onClick={release}
+        />
+      ) : (
+        <ConfirmFooter
+          label={saving ? '确认中…' : '确认基线'}
+          count={s.ids.size}
+          unit="条"
+          hint={`本轮基线纳入 ${s.ids.size} 条判据（共 ${reqs.length} 条），勾选框改的就是这份基线。点击后写入 requirement-baseline 产物并进入流程 3；其中阈值待补的项确认后仍按「阈值待补」跟踪，不会被当成已填。`}
+          onClick={() => void confirmBaseline()}
+        />
+      )}
     </div>
   )
 }
@@ -609,6 +839,9 @@ function WorkflowLibrary({ full }: { full?: boolean }) {
 function CriteriaTable({ full }: { full?: boolean }) {
   const pack = getPack()
   const s = useSel()
+  // 「待确认 → 已确认 · 阈值待补」这个措辞切换要读确认态。
+  // hook 必须无条件调用，所以订阅放在提前 return 之前。
+  const confirmed = !!useAppStore((st) => st.confirmed.req)
   if (!pack) return <Empty text="场景包未加载" />
   const reqs = pack.requirements.requirements
   const picked = reqs.filter((r) => s.ids.has(r.id))
@@ -620,6 +853,8 @@ function CriteriaTable({ full }: { full?: boolean }) {
     const items = reqs.filter((r) => r.category === c)
     return { c, n: items.filter((r) => s.ids.has(r.id)).length, total: items.length }
   })
+
+
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
@@ -640,10 +875,27 @@ function CriteriaTable({ full }: { full?: boolean }) {
             <span className="text-[12px] text-t3">人工判</span>
             <span className="num text-[13px] font-semibold text-t1">{manual}</span>
           </span>
+          {/* 阈值位在源材料里空着 —— 这是**事实标记**，不是「你确认了没」的状态。
+              ⚠️ 确认基线**不会**让它消失：点确认只冻结「本轮判哪几条」，
+              并没有把缺失的阈值补上。让它消失等于把「源材料缺阈值」这件事
+              在后续流程里藏起来（流程 4 判定时无处可查），比留着更危险。
+              所以只改措辞：确认前「待确认」（黄，促人去补），
+              确认后「已确认 · 阈值待补」（灰，明确它已被知悉但仍缺）。
+              2026-09-28 按用户口径调整（原话：点确认要有变化，但事实不能藏）。 */}
           {holes ? (
-            <Badge tone="warn" dot title="阈值位在源材料里空着，需人工确认">
-              待确认 {holes}
-            </Badge>
+            confirmed ? (
+              <Badge
+                tone="neutral"
+                dot
+                title={`已确认知悉：${holes} 条判据的阈值位在源材料里空着，本次确认未补值，后续判定仍需人工复核`}
+              >
+                已确认{holes}
+              </Badge>
+            ) : (
+              <Badge tone="warn" dot title="阈值位在源材料里空着，需人工确认">
+                待确认 {holes}
+              </Badge>
+            )
           ) : null}
           <InfoTip content="此时只列不判：判定要的现场实测量由流程 4 台架采集后才求值，这里只冻结本轮要判哪些条。" />
         </span>

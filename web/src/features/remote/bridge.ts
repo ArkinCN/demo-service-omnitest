@@ -1,13 +1,13 @@
 /* ===========================================================================
    设备桥 HTTP 客户端。
 
-   桥是 ~/lab/spike-device-mcp/bridge.py（FastAPI，默认 127.0.0.1:8031），
+   桥是 [源] spike-device-mcp/bridge.py（FastAPI，默认 127.0.0.1:8031），
    同进程持有 device-bench MCP server，后面经 paramiko SSH 连峰岹（Fortior）
    电机测试 Windows 工控机 SK-20251218QPBB。页面这一侧只认 HTTP + JSON，
    不知道 SSH 的存在。
 
    与 ./api.ts 的分工：
-     · ./api.ts   → SSH 网关（~/lab/webssh，默认 8022），只剩交互式终端一个用途；
+     · ./api.ts   → SSH 网关（c/components/webssh，默认 8022），只剩交互式终端一个用途；
      · ./bridge.ts → 设备桥（8031），画布设备节点状态、分层工具菜单、红线凭据。
    两个后端各有独立的地址与 token，全部经 .env 配置，清单见 .env.example。
 
@@ -21,7 +21,7 @@
    红线纪律：本文件**不导出任何能自行批准的组合函数**。callTool 不带 token 时
    桥一定拒绝执行并回一张 pending 凭据；approveConfirmation 只能由人的点击调用
    （唯一调用点是 src/state/useAppStore.ts 的 approveRedline）。
-   依据：~/lab/spike-device-mcp/README.md 第 3 节、08a-开发接口契约-v1.0.md 第 3 节。
+   依据：[源] spike-device-mcp/README.md 第 3 节、08a-开发接口契约-v1.0.md 第 3 节。
    =========================================================================== */
 import { useEffect, useState } from 'react'
 
@@ -226,6 +226,36 @@ export const rejectConfirmation = (token: string, reason: string) =>
     body: JSON.stringify({ reason }),
   }).then(json<Confirmation>)
 
+/* ----------------------------------------------------------------- 自动化放行 */
+
+// 自动化放行 token：与 APPROVER_PIN 同级秘密，只存在于桥 .env 与前端 dev 环境，
+// 绝不进构建产物（import.meta.env.DEV 在 build 时被替换成 false，整段被消除）。
+const DEV_AUTOMATION_TOKEN: string = import.meta.env.DEV ? (import.meta.env.VITE_AUTOMATION_TOKEN ?? '') : ''
+const AUTOMATION_TOKEN_LS_KEY = 'omnitest.bridge.automation-token'
+
+const automationToken = (): string => {
+  try {
+    return DEV_AUTOMATION_TOKEN || (window.localStorage.getItem(AUTOMATION_TOKEN_LS_KEY) ?? '')
+  } catch {
+    return ''
+  }
+}
+
+/**
+ * 一键自动化测试流程的自动放行（2026-09-30 加）。
+ *
+ * 对应桥的 POST /confirmations/{token}/auto-approve，带 x-automation-token 头。
+ * 这是「自动化的放行权」，与人工批准 PIN（approveConfirmation）是两条独立通道：
+ * 前者记 approve_channel="automation"，后者记 "human_pin"，留痕可审计。
+ * 未配置自动化 token 时桥回 503，这里如实抛出，由编排器记为「环境检查失败」。
+ */
+export const autoApproveConfirmation = (token: string, operator: string) =>
+  fetch(`${BRIDGE_URL}/confirmations/${encodeURIComponent(token)}/auto-approve`, {
+    method: 'POST',
+    headers: { ...headers(), 'x-automation-token': automationToken() },
+    body: JSON.stringify({ operator, note: 'automation-flow' }),
+  }).then(json<Confirmation>)
+
 /* -------------------------------------------------------------------- 订阅 */
 
 export interface BridgeState {
@@ -248,7 +278,7 @@ function explain(e: unknown): string {
       : `本页是构建产物，不内嵌设备桥调用票。在浏览器控制台执行 omnitestSetBridgeToken('<桥的 BRIDGE_TOKEN>') 现场给票；批准红线动作另需桥的批准 PIN，那一项不存浏览器`
   if (/^401/.test(msg)) return `桥拒绝鉴权：VITE_BRIDGE_TOKEN 与桥的 BRIDGE_TOKEN 不一致`
   if (/Failed to fetch|NetworkError|load failed/i.test(msg))
-    return `设备桥 ${BRIDGE_URL} 不可达：先起 ~/lab/spike-device-mcp/run-bridge.sh，或改配 VITE_DEVICE_BRIDGE_URL`
+    return `设备桥 ${BRIDGE_URL} 不可达：先起 [源] spike-device-mcp/run-bridge.sh，或改配 VITE_DEVICE_BRIDGE_URL`
   return `设备桥返回异常：${msg}`
 }
 

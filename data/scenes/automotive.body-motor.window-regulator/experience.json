@@ -48,11 +48,11 @@
       "_status": "待核实（来源为素材综述文档对多份参考设计资料的综合，非任一来源原文）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 350 行：防夹调参清单「防夹生效区间（行程窗口）」行：进入密封压紧段仍生效则无法正常关窗"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 354 行：回缩行程量行"
         }
       ],
@@ -74,11 +74,11 @@
       "_status": "待核实（该文献未确认期刊/会议全名与作者）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 351 行：防夹调参清单「启动段屏蔽时间」行"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 341 行：Research on Anti-pinch Control Strategy of Window Start-up Phase based on Ripple Motor，ResearchGate 2021，https://www.researchgate.net/publication/349300884"
         }
       ],
@@ -100,7 +100,7 @@
       "_status": "待核实（未打开正文逐字确认）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 339 行：Practical pinch detection algorithm for low-cost anti-pinch window control system，IEEE 会议论文，https://ieeexplore.ieee.org/document/1600781"
         }
       ],
@@ -121,11 +121,11 @@
       "evidence_level": "文献综合 + 法规条款",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 349 行：防夹调参清单「防夹力阈值」行：调大逼近或超出 100 N 法规上限，判定不合格"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/gb11552.txt",
+          "file": "[源] 汽车场景素材-20260919/gb11552.txt",
           "locator": "gb11552.txt:440 §4.8.3.1.1 100 N 硬顶"
         }
       ],
@@ -146,15 +146,15 @@
       "evidence_level": "法规条款",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/gb11552.txt",
+          "file": "[源] 汽车场景素材-20260919/gb11552.txt",
           "locator": "gb11552.txt:445-452 §4.8.3.1.2 四选一"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 215 行：GB 11552-2009 回缩后要求四选一"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 216 行：FMVSS 118 回缩后要求二选一（多开 125 mm）"
         }
       ],
@@ -176,11 +176,11 @@
       "_status": "待核实（TI 设计指南本次未打开正文逐字确认）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 352 行：防夹调参清单「纹波计数滤波带宽与迟滞」行"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 146 行：Automotive Brushed-Motor Ripple Counter Reference Design，德州仪器，设计指南 TIDUD30A，https://www.ti.com/lit/ug/tidud30a/tidud30a.pdf"
         }
       ],
@@ -202,11 +202,11 @@
       "_status": "待核实（RDS12VR 资料单 PDF 超 10 MB 抓取失败，特征来自社区条目转述）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 353 行：防夹调参清单「堵转判定电流门限与去抖时间」行"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 343 行：Anti-Pinch Window Lift Reference Design（RDS12VR），恩智浦半导体，https://www.nxp.com/docs/en/fact-sheet/RDS12VRFS.pdf：防夹区外做堵转检测"
         }
       ],
@@ -227,7 +227,7 @@
       "evidence_level": "文献综合",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 353 行：防夹调参清单「堵转判定电流门限与去抖时间」行"
         }
       ],
@@ -248,11 +248,11 @@
       "evidence_level": "厂商文档（已核实）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 373 行：Motor Control Application Framework (MCAF) 文档 5.1.6 节 Current loop tuning，微芯科技 MCAF R7 RC37 文档版本 7.0.2，https://microchiptech.github.io/mcaf-doc/7.0.2/algorithms/foc/tuning.html"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 374 行：同文档「PI 在穿越频率处的相位滞后 φz」行"
         }
       ],
@@ -273,7 +273,7 @@
       "evidence_level": "厂商文档（已核实）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 375 行：MCAF 7.0.2「电流环带宽」行：典型取 PWM 频率的 5 % 至 15 %；约束条件机械时间常数 × 带宽须大于 1"
         }
       ],
@@ -294,7 +294,7 @@
       "evidence_level": "厂商文档（已核实）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 377 行：同一文档另外明确：若正常启动时序跑不通或无法正确切入闭环换相，电流环整定需在开环换相下进行"
         }
       ],
@@ -316,11 +316,11 @@
       "_status": "待核实（UM3259 抓取超时；FAQ 页未逐字确认）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 361 行：UM3259 — STM32 motor control SDK: 6-step firmware sensorless parameter optimization，意法半导体"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 362 行：STM32 Motor Control Frequently Asked Questions：Speed ramp final value 提到最大应用转速的 40 %，Minimum startup output speed 降到 10 %"
         }
       ],
@@ -342,11 +342,11 @@
       "_status": "待核实（两篇均未打开正文逐字确认）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 364 行：How to Reduce Motor Noise with Code-Free, Sensorless FOC，德州仪器，文献号 SLLA567，https://www.ti.com/lit/an/slla567/slla567.pdf"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 365 行：Driving Brushed DC Motors Using PWM Output: Losses and Points to be Noted，罗姆半导体 TechWeb 技术专栏条目 346，https://techweb.rohm.com/product/motor/motor-types/346/"
         }
       ],
@@ -368,11 +368,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 193 行：耐低温特性 5.6.2 / 6.6.2：上升速度 ≥60 mm/s，工作电流放宽到 20 A"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 127 行：常温上升运行速度 80 至 160 mm/s"
         }
       ],
@@ -393,19 +393,19 @@
       "evidence_level": "标准状态（已核实）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 206 行：电磁兼容性 5.12.4：两本引用标准均已换版"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 81 行：GB/T 18655-2025 已代替 GB/T 18655-2018"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 85 行：GB/T 10125-2021 全部代替 GB/T 10125-2012"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 105-110 行：换版预警表"
         }
       ],
@@ -426,11 +426,11 @@
       "evidence_level": "检索结论（已核实）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 286 行：核心结论先说：十三个平台确认为空白"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 429 行：与峰岹案例对照表流程 4 行：合成数据必须在界面标注来源"
         }
       ],
@@ -452,15 +452,15 @@
       "evidence_level": "来源状态（已核实）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 94 行：LV 124：该 PDF 为公网流传的非授权副本"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 95 行：VW 80000：同为非授权副本"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 464 行：OEM 规范通道：内容可信但均为公网流传的非授权副本"
         }
       ],
@@ -483,15 +483,15 @@
       "_status": "「分开选型」是本包从三个量级并存这一事实推出的结论，不是标准原文",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 126 行：堵转力 ≥212 N，力传感器量程选型依据"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 131 行：自锁能力 600 N 保持 5 s"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 166 行：防夹力 100 N"
         }
       ],

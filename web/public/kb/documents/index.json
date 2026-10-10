@@ -70,7 +70,7 @@
       "converter": "docling",
       "sha256": "d46cf11807a4c0b6514c5c285379283bc0f2c0c72255e77f2afbcf9a479d8fc0",
       "bytes": 5792231,
-      "source_path": "/home/zzz/lab/kb-pipeline/input/manuals/FU-AM-FOC方案调试手册-.pdf",
+      "source_path": "[源] manuals/FU-AM-FOC方案调试手册-.pdf",
       "note": null,
       "artifacts": [
         "source.json",
@@ -113,7 +113,7 @@
       "converter": "docling",
       "sha256": "00417909217d92d4adeab4ec35f5e2a23970b7bdc77b12fd772ae0d0736fb173",
       "bytes": 2949191,
-      "source_path": "/home/zzz/lab/kb-pipeline/input/manuals/散热风扇单霍尔方案应用手册.pdf",
+      "source_path": "[源] manuals/散热风扇单霍尔方案应用手册.pdf",
       "note": null,
       "artifacts": [
         "source.json",
@@ -154,7 +154,7 @@
       "converter": "docling",
       "sha256": "4cbaa2503c4c4b85c9f25196ad4116729eb01ce4353fc8d7ad473f33643a8f59",
       "bytes": 4993898,
-      "source_path": "/home/zzz/lab/kb-pipeline/input/manuals/SMO和PLL估算器.pdf",
+      "source_path": "[源] manuals/SMO和PLL估算器.pdf",
       "note": null,
       "artifacts": [
         "source.json",
@@ -195,7 +195,7 @@
       "converter": "docling",
       "sha256": "640f766be2b3b021c22a2507455a84296937d2d22a1d8916193844317bcbdef8",
       "bytes": 1082113,
-      "source_path": "/home/zzz/lab/kb-pipeline/input/manuals/AO估算器.pdf",
+      "source_path": "[源] manuals/AO估算器.pdf",
       "note": null,
       "artifacts": [
         "source.json",
@@ -237,7 +237,7 @@
       "converter": "docling",
       "sha256": "dc6eb72a39b00822004a84ba33cf91cbaebdac5ea747f6eb1d00b140db723cd1",
       "bytes": 1681175,
-      "source_path": "/home/zzz/lab/kb-pipeline/input/manuals/FOC执行逻辑.pdf",
+      "source_path": "[源] manuals/FOC执行逻辑.pdf",
       "note": null,
       "artifacts": [
         "source.json",
@@ -279,7 +279,7 @@
       "converter": "docling",
       "sha256": "3883c3d95108eacea3ca6ff6aef053a78d665e9eef135a280a76d7aa7c921c43",
       "bytes": 268828,
-      "source_path": "/home/zzz/lab/kb-pipeline/input/manuals/OMEGA启动执行逻辑.pdf",
+      "source_path": "[源] manuals/OMEGA启动执行逻辑.pdf",
       "note": null,
       "artifacts": [
         "source.json",
@@ -321,7 +321,7 @@
       "converter": "docling",
       "sha256": "d6110b9e06c420f483ffeddc8c2d2649792fee2d2f48f1b690544a972cb62d3a",
       "bytes": 3341145,
-      "source_path": "/home/zzz/lab/kb-pipeline/input/manuals/有感无感顺逆风启动培训.pdf",
+      "source_path": "[源] manuals/有感无感顺逆风启动培训.pdf",
       "note": null,
       "artifacts": [
         "source.json",
@@ -363,7 +363,7 @@
       "converter": "docling",
       "sha256": "84679c09e0f06b1636d38a4a0273889a917b230634f3123535cf44388008dfcc",
       "bytes": 508663,
-      "source_path": "/home/zzz/lab/kb-pipeline/input/manuals/SMO角度估算的原理介绍和部分寄存器说明.docx",
+      "source_path": "[源] manuals/SMO角度估算的原理介绍和部分寄存器说明.docx",
       "note": "转化失败：docling 2.129.0 的 msword 后端在这份 docx 的 VML 旧式图形上陷入死循环（卡在 msword_backend.py 的 _handle_vml_pictures），已由子进程超时兜底；换 docling 版本或先用 Word 另存为新式 docx 可再试。",
       "artifacts": [
         "source.json",
@@ -404,7 +404,7 @@
       "converter": "docling",
       "sha256": "bdceabb81c9606ef3cea70e222a038e4c471253ed76b79867bde547963f9385b",
       "bytes": 1315257,
-      "source_path": "/home/zzz/lab/kb-pipeline/input/manuals/运行逻辑.docx",
+      "source_path": "[源] manuals/运行逻辑.docx",
       "note": null,
       "artifacts": [
         "source.json",
@@ -446,7 +446,7 @@
       "converter": "docling",
       "sha256": "8a81e7d7c3755fbc03f6f33e2b44d74470ceb5b15a3108ef0fd26a7fa9aa6ad4",
       "bytes": 3750557,
-      "source_path": "/home/zzz/lab/kb-pipeline/input/manuals/8080_bug修改原因汇总_20250414.docx",
+      "source_path": "[源] manuals/8080_bug修改原因汇总_20250414.docx",
       "note": null,
       "artifacts": [
         "source.json",
@@ -487,7 +487,7 @@
       "converter": "docling",
       "sha256": "5e1460fb3694afd71c84a4d24bf2f6acea5a1767fbe5f27a00dac11d10b58717",
       "bytes": 903345,
-      "source_path": "/home/zzz/lab/kb-pipeline/input/manuals/考试题.docx",
+      "source_path": "[源] manuals/考试题.docx",
       "note": null,
       "artifacts": [
         "source.json",
@@ -529,7 +529,7 @@
       "converter": "docling",
       "sha256": "228f97391f9a4490d10720270ee0d0afec59e7dd7fe7d857dc59d3746af0bd09",
       "bytes": 18044043,
-      "source_path": "/home/zzz/lab/kb-pipeline/input/datasheet/MCU-DS-14_FU6832_V2.1_20230621.pdf",
+      "source_path": "[源] datasheet/MCU-DS-14_FU6832_V2.1_20230621.pdf",
       "note": "源文件 18 MB、完整篇幅较长，本原型只转换前 40 页作演示",
       "artifacts": [
         "source.json",
@@ -569,7 +569,7 @@
       "converter": "custom regex parser (02_parse_customer_h.py)",
       "sha256": "df869f93bb6bc6501e3cbbe6b055dac18ec6d41c0e933584d7f07175eb3dc01c",
       "bytes": 41268,
-      "source_path": "/home/zzz/lab/kb-pipeline/input/code/Customer.h",
+      "source_path": "[源] code/Customer.h",
       "note": "转化产物是 params.json（结构化参数表），不是 markdown 切片",
       "artifacts": [
         "params.json"

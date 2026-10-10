@@ -2,7 +2,7 @@
 
 **调研日期**：2026-09-19
 **面向项目**：通用 Agent 测试系统 v2.0（浏览器端、多场景：电机 / 汽车 / 芯片 / 其他可运动产品）
-**需求来源**：`/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/00-用户需求原话-20260919.md`
+**需求来源**：`docs/20260919-通用Agent测试系统v2.0/00-用户需求原话-20260919.md`
 
 **取证口径**：全部 star 数、版本号、最近更新时间、许可证均于 2026-09-19 当日通过 `gh api repos/OWNER/REPO`、`npm view`、PyPI JSON API、bundlephobia API 实测读取，或直接下载包体本地 gzip 实测。**不使用模型记忆估算**。查不到的字段一律标注"待核实"，不填近似值。星标数在调研窗口内存在分钟级微增，属正常波动。
 
@@ -353,7 +353,7 @@ DSH 对未知键静默忽略，不会因为多了 `allowed-tools` 就拒绝整�
 |---|---|---|
 | 单 skill 形态 | `<name>/SKILL.md`，必须是目录 | `<name>/SKILL.md` 或扁平 `<name>.md` |
 | 项目级根目录 | `.claude/skills/` | `.dsh/skills/`（rank 100）、`.agents/skills/`（rank 200） |
-| 用户级根目录 | `~/.claude/skills/` | `~/.dsh/skills`（rank 400）、`~/.agents/skills`（rank 500） |
+| 用户级根目录 | `[源] .claude/skills` | `[源] .dsh/skills`（rank 400）、`[源] .agents/skills`（rank 500） |
 | 自定义根目录 | `--add-dir` | `Config.customSkillDirs`（rank 300）、`bundledSkillDir`（rank 600） |
 | 递归发现 | 支持嵌套 | **不支持** `**/SKILL.md` 递归，只扫根目录直接子项 |
 | 热更新 | 无 | Chokidar watch，增删改名与改 frontmatter 免重启生效 |
@@ -484,7 +484,7 @@ function wheelZoomPlugin({ factor = 0.75 } = {}) {
 
 第一，代码协议是标准 MIT，版权方 webkid GmbH，无附加条款，`@xyflow/react` 的 npm license 字段同为 MIT。
 
-第二，功能不分层收费。官网 Pro 页面明确写 React Flow 是开源 MIT 软件并将永远如此，付费档卖的是示例工程、模板、issue 优先级与技术支持。子流程、自定义节点、序列化全部在开源核心内。
+第二，功能不分层收费。官网 Pro 页面明确写 React Flow 是开[源] MIT 软件并将永远如此，付费档卖的是示例工程、模板、issue 优先级与技术支持。子流程、自定义节点、序列化全部在开源核心内。
 
 第三，唯一实际约束是画布默认渲染一枚指向 reactflow.dev 的角标，官方 remove-attribution 文档写明订阅 Pro 才能去除。这是协议文本之外的商业约定，不是 MIT 许可条件。
 
@@ -611,14 +611,14 @@ shadcn/ui 的社区补位方案实测：MrLightful/shadcn-tree-view（395 star�
 
 | 项目全名 | 仓库或官网 | Star | 最近 push | 版本 | License | 定位 |
 |---|---|---|---|---|---|---|
-| Penpot | https://github.com/penpot/penpot | 60,143 | 2026-09-18 | 2.17.2 | MPL-2.0 | 开源 Figma 替代，出矢量设计稿，不直接出代码 |
+| Penpot | https://github.com/penpot/penpot | 60,143 | 2026-09-18 | 2.17.2 | MPL-2.0 | 开[源] Figma 替代，出矢量设计稿，不直接出代码 |
 | Excalidraw | https://github.com/excalidraw/excalidraw | 132,366 | 2026-09-18 | 0.18.1 | MIT | 手绘风白板，画流程与信息架构 |
 | tldraw | https://github.com/tldraw/tldraw | 50,452 | 2026-09-18 | 5.4.2 | **自有商业许可，非 OSI 开源** | 无限画布 SDK |
-| v0 by Vercel | https://v0.dev | 闭源 | — | SDK `v0-sdk` 0.16.7 | SDK 为 Apache-2.0，服务闭源商用 | 提示词直出 React + Tailwind 代码 |
+| v0 by Vercel | https://v0.dev | 闭[源] | — | SDK `v0-sdk` 0.16.7 | SDK 为 Apache-2.0，服务闭源商用 | 提示词直出 React + Tailwind 代码 |
 
 **许可提示**：tldraw 5.4.2 的 `LICENSE.md` 原文明确禁止在生产环境使用（Not to use the Software in Production Environments），商用需另购。把 tldraw SDK 打进交付给客户的系统属违规，只能当草图网站用。
 
-### 5.4 开源 AI 生成前端页面工具
+### 5.4 开[源] AI 生成前端页面工具
 
 | 项目全名 | 仓库 URL | Star | 最近 push | 版本 | License | 产物 |
 |---|---|---|---|---|---|---|

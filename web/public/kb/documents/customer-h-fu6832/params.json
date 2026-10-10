@@ -12,7 +12,7 @@
     "调优"
   ],
   "source": {
-    "path": "/home/zzz/lab/kb-pipeline/input/code/Customer.h",
+    "path": "[源] code/Customer.h",
     "origin": "10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
     "sha256": "df869f93bb6bc6501e3cbbe6b055dac18ec6d41c0e933584d7f07175eb3dc01c",
     "bytes": 41268,

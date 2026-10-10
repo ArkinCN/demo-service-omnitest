@@ -1,5 +1,6 @@
 // 后端适配层：定义 SSE 事件协议，并提供 mock / DeepSeek Harness 两种实现。
 import type { EvidenceItem, PermissionLevel, Verdict } from './types';
+import { heldEnv } from '../copilot/held';
 import {
   REDLINE_ACTIONS,
   requestRedlineAsync,
@@ -349,15 +350,6 @@ export const mockAdapter: AgentAdapter = {
   },
 };
 
-/** 截图用：不等待，一次性把整段脚本吐完（确认闸门照样生效） */
-export const mockAdapterInstant: AgentAdapter = {
-  id: 'mock-instant',
-  label: '演示回放（即时）',
-  send(req: SendRequest) {
-    return toStream(req, 0);
-  },
-};
-
 // ---------------------------------------------------------------------------
 // 3. dshAdapter —— 对接 DeepSeek Harness Python SDK 的会话流（预留，未联通）
 // ---------------------------------------------------------------------------
@@ -409,18 +401,42 @@ export const dshAdapter: AgentAdapter = {
   id: 'dsh',
   label: 'DeepSeek Harness',
   async *send(req: SendRequest) {
-    const resp = await fetch('/api/agent/stream', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: req.text,
-        model: req.model,
-        permission: req.permission,
-        auto_run: req.autoRun,
-        session_id: req.sessionId,
-      }),
-      signal: req.signal,
-    });
+    let resp: Response;
+    try {
+      // 上下文包：主文档 3.2.2 要求上送，此前前端算出来了却一个字节都没发。
+      // 它决定模型看到的「现在在测什么产品、在哪一步、人选中了什么」——
+      // 「换任务上下文跟着变」这条验收靠的就是它。
+      // 取不到（比如知识库页没挂 ActionDock）就不送，后端按没上送处理，行为不变。
+      const ctx = heldEnv();
+      resp = await fetch('/api/agent/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: req.text,
+          model: req.model,
+          permission: req.permission,
+          auto_run: req.autoRun,
+          session_id: req.sessionId,
+          // 检索工具开关：后端 select_tools() 在缺省/空列表时返回空工具集，
+          // 模型会纯回答、不触发检索，前端就收不到 tool_call/evidence 事件。
+          // permission 只读档只开放只读检索工具，不涉及改动类动作。
+          enabled_tools: ['KnowledgeSearch', 'DocLibrarySearch'],
+          ...(ctx ? { context: ctx } : {}),
+        }),
+        signal: req.signal,
+      });
+    } catch (e) {
+      // fetch 自身抛错（代理未生效、后端没起、CORS、连接被拒）此前会一路向上抛，
+      // 宿主只有 finally 没有 catch，异常被吞掉，界面表现为「发出去一片静默」。
+      // 这里显式转成 error 事件，让失败可见、可归因。
+      const aborted = req.signal?.aborted === true;
+      yield {
+        type: 'done',
+        reason: aborted ? 'aborted' : 'error',
+        message: aborted ? undefined : `请求未送达：${e instanceof Error ? e.message : String(e)}`,
+      };
+      return;
+    }
     if (!resp.ok || !resp.body) {
       yield { type: 'done', reason: 'error', message: `HTTP ${resp.status}` };
       return;
@@ -491,10 +507,4 @@ export const dshAdapter: AgentAdapter = {
     }
     yield { type: 'done', reason: 'complete' };
   },
-};
-
-export const ADAPTERS: Record<string, AgentAdapter> = {
-  mock: mockAdapter,
-  'mock-instant': mockAdapterInstant,
-  dsh: dshAdapter,
 };

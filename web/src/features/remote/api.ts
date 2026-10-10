@@ -1,5 +1,5 @@
 /* ===========================================================================
-   SSH 网关（~/lab/webssh）的 HTTP 客户端。WebSocket 地址也从这里推导。
+   SSH 网关（c/components/webssh）的 HTTP 客户端。WebSocket 地址也从这里推导。
 
    第四轮起页面接两个后端，各有独立地址与 token，全部经 .env 配置：
      · 本文件 → SSH 网关，默认 http://localhost:8022，只剩交互式终端一个用途；

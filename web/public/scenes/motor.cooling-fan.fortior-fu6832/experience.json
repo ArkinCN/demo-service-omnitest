@@ -4,7 +4,7 @@
   "generated_by": "_build/build_scene_pack.py",
   "generated_at": "2026-09-19",
   "belongs_to_flow": "F1 知识库管理（经验性质那一类的样例数据）；被 F4 / F5 在调参时检索命中",
-  "count": 24,
+  "count": 25,
   "evidence_levels": {
     "台架实测数据": "来自 98 次启动故障实验数据包与其分析报告，有实测数字",
     "判定工具输出": "来自判定工具 diagnosis.json / diagnosis_report.md 的结构化结论",
@@ -37,7 +37,7 @@
       "evidence_level": "规程条款",
       "parameters_resolved": true,
       "_source": {
-        "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+        "file": "[源] coolingfan-openloop-debug/SKILL.md",
         "locator": "第 5 节 失败分诊迭代 表 第 1 行"
       },
       "usage": "工艺",
@@ -67,7 +67,7 @@
       "evidence_level": "规程条款",
       "parameters_resolved": true,
       "_source": {
-        "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+        "file": "[源] coolingfan-openloop-debug/SKILL.md",
         "locator": "第 5 节 失败分诊迭代 表 第 2 行"
       },
       "usage": "工艺",
@@ -95,7 +95,7 @@
       "evidence_level": "规程条款",
       "parameters_resolved": true,
       "_source": {
-        "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+        "file": "[源] coolingfan-openloop-debug/SKILL.md",
         "locator": "第 5 节 失败分诊迭代 表 第 3 行"
       },
       "usage": "工艺",
@@ -125,7 +125,7 @@
       "evidence_level": "规程条款",
       "parameters_resolved": true,
       "_source": {
-        "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+        "file": "[源] coolingfan-openloop-debug/SKILL.md",
         "locator": "第 5 节 失败分诊迭代 表 第 4 行"
       },
       "usage": "工艺",
@@ -157,11 +157,11 @@
       "parameters_resolved": true,
       "_source": [
         {
-          "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+          "file": "[源] coolingfan-openloop-debug/SKILL.md",
           "locator": "第 5 节 失败分诊迭代 表 第 5 行"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+          "file": "[源] include/Customer.h",
           "locator": "Customer.h:113 注释「MOTOR_LOOP_RPM 操作範圍: 500~2000」"
         }
       ],
@@ -194,7 +194,7 @@
       "parameters_resolved": false,
       "note": "tags.parameters 的两个宏里只有 SPEED_MODE 能解析到本包的 control-parameters.json（key = speed_mode）。OPENLOOP_ENABLED 宏在本工程 Customer.h:220 确实存在（当前值 0，开环调速禁用），但它不在本包登记的 70 个控制参数里——本包登记的 outloop_enabled 对应的是 OUTLOOP_ENABLED（速度外环使能），与 OPENLOOP_ENABLED（开环调速使能）是两个宏，名字只差一个字母，不可混用。前端按参数检索时 OPENLOOP_ENABLED 这一维检索不到，需先补登记该宏",
       "_source": {
-        "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+        "file": "[源] coolingfan-openloop-debug/SKILL.md",
         "locator": "第 5 节 失败分诊迭代 表 第 6 行"
       },
       "usage": "工艺",
@@ -226,7 +226,7 @@
       "parameters_resolved": false,
       "_status": "待核实：Pole_Pairs 宏在客户头文件 Customer.h:56（#define Pole_Pairs (2)）确实存在，本包也已登记，但登记位置是 product-attributes.json 的电机本体属性（key = pole_pairs，极对数），不在 control-parameters.json 的 70 个可调控制参数里。SPEED_KI 能解析到 control-parameters.json 的 key = speed_ki。极对数是否应补登记为可调参数，待客户确认，确认前本条按未解析处理。",
       "_source": {
-        "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+        "file": "[源] coolingfan-openloop-debug/SKILL.md",
         "locator": "第 5 节 失败分诊迭代 表 第 7 行"
       },
       "usage": "工艺",
@@ -256,7 +256,7 @@
       "evidence_level": "规程条款",
       "parameters_resolved": true,
       "_source": {
-        "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+        "file": "[源] coolingfan-openloop-debug/SKILL.md",
         "locator": "第 5 节 失败分诊迭代 表 第 8 行"
       },
       "usage": "工艺",
@@ -288,11 +288,11 @@
       "parameters_resolved": true,
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包/分析报告-预定位太弱判定-20260812.md",
+          "file": "[源] 20260811_启动故障98次实验与30例对照数据包/分析报告-预定位太弱判定-20260812.md",
           "locator": "第 1.2 节 表「电流绝对峰值」行"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包/分析报告-预定位太弱判定-20260812.md",
+          "file": "[源] 20260811_启动故障98次实验与30例对照数据包/分析报告-预定位太弱判定-20260812.md",
           "locator": "第 0.1 节第 2 条：客户证实全部 98 条都是「预定位太弱」的复现"
         }
       ],
@@ -326,11 +326,11 @@
       "parameters_resolved": true,
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包/01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0010/tool_output/diagnosis_report.md",
+          "file": "[源] tool_output/diagnosis_report.md",
           "locator": "一、诊断结论 与 二、逐项检查 表"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包/01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0010/tool_output/diagnosis.json",
+          "file": "[源] tool_output/diagnosis.json",
           "locator": "verdict / atomic_detectors[]"
         }
       ],
@@ -360,7 +360,7 @@
       "evidence_level": "台架实测数据",
       "parameters_resolved": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包/分析报告-预定位太弱判定-20260812.md",
+        "file": "[源] 20260811_启动故障98次实验与30例对照数据包/分析报告-预定位太弱判定-20260812.md",
         "locator": "第 1.2 节「量化分辨率的问题与单位无关」段"
       },
       "usage": "测试需求",
@@ -389,7 +389,7 @@
       "evidence_level": "台架实测数据",
       "parameters_resolved": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包/分析报告-预定位太弱判定-20260812.md",
+        "file": "[源] 20260811_启动故障98次实验与30例对照数据包/分析报告-预定位太弱判定-20260812.md",
         "locator": "第 0.2 节 一句话结论 与 第 5.4 节"
       },
       "usage": "测试需求",
@@ -417,7 +417,7 @@
       "evidence_level": "台架实测数据",
       "parameters_resolved": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包/分析报告-预定位太弱判定-20260812.md",
+        "file": "[源] 20260811_启动故障98次实验与30例对照数据包/分析报告-预定位太弱判定-20260812.md",
         "locator": "第 0.1 节第 3 条 与 第 0.2 节"
       },
       "usage": "测试需求",
@@ -445,7 +445,7 @@
       "evidence_level": "台架经验",
       "parameters_resolved": true,
       "_source": {
-        "file": "/home/zzz/.claude/projects/-mnt-f-Main-File-2-Projects---/memory/fortior-test-bench-hardware.md",
+        "file": "[源] memory/fortior-test-bench-hardware.md",
         "locator": "「信号定义(方向是关键,易混)」段"
       },
       "usage": "工艺",
@@ -477,7 +477,7 @@
       "parameters_resolved": false,
       "_status": "待核实：FG_PULSE_PERIOD 宏在客户头文件 Customer.h:334（#define FG_PULSE_PERIOD (2)，注释「FG 每轉脈波數量」）确实存在，本包也已登记，但登记位置是 product-attributes.json 的转速信号属性（key = fg_pulse_period，FG 每转脉波数），不在 control-parameters.json 的 70 个可调控制参数里。每转脉冲数是否应补登记为可调参数，待客户确认，确认前本条按未解析处理。",
       "_source": {
-        "file": "/home/zzz/.claude/projects/-mnt-f-Main-File-2-Projects---/memory/fortior-test-bench-hardware.md",
+        "file": "[源] memory/fortior-test-bench-hardware.md",
         "locator": "「示波器接线」段"
       },
       "usage": "工艺",
@@ -506,11 +506,11 @@
       "parameters_resolved": true,
       "_source": [
         {
-          "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-rules/vacuum-flow-discipline.md",
+          "file": "[源] dc-rules/vacuum-flow-discipline.md",
           "locator": "第 9 条铁律"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260917-产品故事与分工v1.0/_调研/A-DebugCopilot场景与知识库取证.md",
+          "file": "[源] _调研/A-DebugCopilot场景与知识库取证.md",
           "locator": "第三节 纪律层 与 第七节 四个缺口"
         }
       ],
@@ -539,7 +539,7 @@
       "evidence_level": "规程条款",
       "parameters_resolved": true,
       "_source": {
-        "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+        "file": "[源] coolingfan-openloop-debug/SKILL.md",
         "locator": "第 1 节 闭环配置定位 与 第 2 节 备份 + 改宏 纪律"
       },
       "usage": "工艺",
@@ -567,7 +567,7 @@
       "evidence_level": "规程条款",
       "parameters_resolved": true,
       "_source": {
-        "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+        "file": "[源] coolingfan-openloop-debug/SKILL.md",
         "locator": "第 1 节 闭环配置定位（宏族探测，跨程序差异核心节）"
       },
       "usage": "工艺",
@@ -596,15 +596,15 @@
       "parameters_resolved": true,
       "_source": [
         {
-          "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+          "file": "[源] coolingfan-openloop-debug/SKILL.md",
           "locator": "第 0 节 前置检查 与 第 4 节 降级模式"
         },
         {
-          "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-rules/vacuum-flow-discipline.md",
+          "file": "[源] dc-rules/vacuum-flow-discipline.md",
           "locator": "第 10 条铁律"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260917-产品故事与分工v1.0/_调研/A-DebugCopilot场景与知识库取证.md",
+          "file": "[源] _调研/A-DebugCopilot场景与知识库取证.md",
           "locator": "第六节「示波器非硬前提（散热风扇可降级；吸尘器四份规程强制）」"
         }
       ],
@@ -633,7 +633,7 @@
       "evidence_level": "规程条款",
       "parameters_resolved": true,
       "_source": {
-        "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+        "file": "[源] coolingfan-openloop-debug/SKILL.md",
         "locator": "第 4 节 证据二 第 3 步"
       },
       "usage": "工艺",
@@ -662,11 +662,11 @@
       "parameters_resolved": true,
       "_source": [
         {
-          "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+          "file": "[源] coolingfan-openloop-debug/SKILL.md",
           "locator": "第 3 节 编译 + 烧录 第 3 步"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/00-用户需求原话-20260919.md",
+          "file": "[源] 20260919-通用Agent测试系统v2.0/00-用户需求原话-20260919.md",
           "locator": "典型流程 2 测试保护原则"
         }
       ],
@@ -700,7 +700,7 @@
       "parameters_resolved": false,
       "note": "tags.parameters 的三个宏名 SquStartCurrent / StartCurrentAddThreshold / RealFOCSwitchSpeed 来自 auto-startup-tune 规程的固定候选表，属吸尘器产品线；本散热风扇工程的 Customer.h / Protect.h / Motor_Protection.h 全量 grep 三者均零命中，本包 70 个控制参数里也没有对应项。语义上最接近的散热风扇宏是MOTOR_START_IQ_CURRENT（启动电流）与 MOTOR_LOOP_RPM（进入闭环转速），但对应关系未经客户确认，本包不做映射。这条经验的方法论（盲试候选有边界、耗尽即 need_human）可迁移，具体宏名不可迁移",
       "_source": {
-        "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/auto-startup-tune/SKILL.md",
+        "file": "[源] auto-startup-tune/SKILL.md",
         "locator": "「## 固定候选」与候选推进小节（第 106 行「need_human 不得继续创建第 11 个候选」）"
       },
       "usage": "工艺",
@@ -728,7 +728,7 @@
       "evidence_level": "规程条款",
       "parameters_resolved": true,
       "_source": {
-        "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/protect-verify-ovp/SKILL.md",
+        "file": "[源] protect-verify-ovp/SKILL.md",
         "locator": "第 2 节 Vbus 复检(强约束)"
       },
       "usage": "工艺",
@@ -757,14 +757,46 @@
       "parameters_resolved": true,
       "_source": [
         {
-          "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/protect-verify-ovp/SKILL.md",
+          "file": "[源] protect-verify-ovp/SKILL.md",
           "locator": "设计约束段"
         },
         {
-          "file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/protect-verify-overspeed/SKILL.md",
+          "file": "[源] protect-verify-overspeed/SKILL.md",
           "locator": "设计前提与「## 中断保护」小节"
         }
       ],
+      "usage": "工艺",
+      "usage_class": "D1 实验沉淀 / D3 对话沉淀"
+    },
+    {
+      "id": "EXP-025",
+      "symptom": "台架按 30/50/70/100% 四档跑，满档指令下发后实测占空比上不去，与命令不符",
+      "cause": "最大输出占空比上限（MOTOR_MAX_DUTY）配置为 0.9，低于满档所需 1.0，固件对超过上限的占空比指令做了钳位",
+      "action": "把最大输出占空比（MOTOR_MAX_DUTY）上调 20%，使配置上限覆盖满档需求，重编重烧后复测",
+      "result": "配置上限覆盖运行档位后，各档实测占空比与命令一致；未覆盖时满档会被钳位，实测必然低于命令值",
+      "tags": {
+        "scene": [
+          "motor",
+          "cooling-fan",
+          "fortior-fu6832"
+        ],
+        "flow": "F5 调优确认及运行",
+        "parameters": [
+          "MOTOR_MAX_DUTY"
+        ],
+        "topic": [
+          "占空比",
+          "输出上限",
+          "调速"
+        ]
+      },
+      "evidence_level": "台架经验",
+      "parameters_resolved": true,
+      "_source": {
+        "file": "[源] include/Customer.h",
+        "locator": "Customer.h:242 (#define MOTOR_MAX_DUTY)，经台架四档实测比对（命令 30/50/70/100%）"
+      },
+      "note": "本条为台架实测派生经验（2026-10-08 补），用于承载 F5「配置上限未覆盖运行档位」的调优闭环：判据 TR-BENCH-05 判不通过时命中本条的候选。",
       "usage": "工艺",
       "usage_class": "D1 实验沉淀 / D3 对话沉淀"
     }

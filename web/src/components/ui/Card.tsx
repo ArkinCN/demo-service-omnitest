@@ -48,10 +48,24 @@ export function PanelHeader({
       )}
     >
       {icon ? <span className="shrink-0 text-p700 [&>svg]:block">{icon}</span> : null}
-      <h2 className="text-[16px] leading-none font-semibold tracking-tight text-t1">{title}</h2>
-      {meta ? <span className="truncate text-[12px] text-t3">{meta}</span> : null}
+      {/* 标题必须 shrink-0 + nowrap：header 是 flex，右侧动作位是 shrink-0，
+          栏宽被压窄（例如右栏 clamp(300px,21vw,400px) 且挂了一枚长 id 徽标）时
+          收缩量会全压到标题上；中文没有词边界，会逐字断行成竖排，并顶破定高
+          44px 与图标、徽标叠在一起。标题是定长短词，永不参与收缩。 */}
+      <h2 className="shrink-0 text-[16px] leading-none font-semibold tracking-tight whitespace-nowrap text-t1">
+        {title}
+      </h2>
+      {meta ? (
+        <span className="min-w-0 truncate text-[12px] text-t3">{meta}</span>
+      ) : null}
       {left}
-      <div className="ml-auto flex shrink-0 items-center gap-1.5">{right}</div>
+      {/* 右侧动作位：可收缩 + min-w-0 + 裁剪。
+          此前这里是 shrink-0，里面又是 Badge（自身 shrink-0、nowrap），
+          当内容比栏宽还长（例如挂了一整条条目 id
+          motor.cooling-fan.fortior-fu6832:DOC-CASE-…）时既不收缩也不裁剪，
+          直接顶出面板圆角边框外。改成可收缩后由子元素自己决定省略策略：
+          Badge 会在下面用 max-w-full + truncate 收成省略号，并挂 title 出全称。 */}
+      <div className="ml-auto flex min-w-0 items-center gap-1.5">{right}</div>
     </header>
   )
 }

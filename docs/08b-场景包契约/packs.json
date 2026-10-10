@@ -1,6 +1,6 @@
 {
   "_note": "validate.py --all 的目录登记表。v1.0 把绝对路径写死在脚本里，换机器即失效（审稿次-8），v1.1 挪到这里。",
-  "scene_pack_root": "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes",
+  "scene_pack_root": "[源] agent-test-web-data/scenes",
   "_env_override": "环境变量 SCENE_PACK_ROOT 覆盖上面这一行；${HERE} 展开为本契约目录。",
   "packs": [
     {

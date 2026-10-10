@@ -1,7 +1,15 @@
 import { Minus, Plus } from 'lucide-react'
 import { cn } from './cn'
 
-/** 数值加减：圆形加减按钮夹着大号数字 + 小号单位 */
+/**
+ * 数值加减：圆形加减按钮夹着大号数字 + 小号单位。
+ *
+ * ⚠️ `value` 允许为 `null`（2026-09-28 新增，为「占位/待现场确认」字段服务）：
+ * 这类字段在场景包里没有初始数值（值是「未知」），但**恰恰最需要人去填**。
+ * 传 null 时输入框显示为空、以 placeholder 提示要填什么，
+ * 而不是像以前那样因为「没有数字」而整行退化成不可编辑的只读文本。
+ * 老调用点都传数字，行为完全不变。
+ */
 export function Stepper({
   value,
   unit,
@@ -14,8 +22,10 @@ export function Stepper({
   className,
   label,
   size = 'md',
+  emptyHint = '待填',
 }: {
-  value: number
+  /** 当前值；null = 还没有值（占位/待现场确认），显示为空输入框 */
+  value: number | null
   unit?: string
   step?: number
   min?: number
@@ -26,6 +36,8 @@ export function Stepper({
   className?: string
   label?: string
   size?: 'sm' | 'md'
+  /** value 为 null 时输入框里的灰字提示 */
+  emptyHint?: string
 }) {
   const clamp = (n: number) => {
     let v = n
@@ -33,7 +45,8 @@ export function Stepper({
     if (max !== undefined) v = Math.min(max, v)
     return Number(v.toFixed(precision))
   }
-  const bump = (dir: 1 | -1) => onChange?.(clamp(value + dir * step))
+  /** 空值时以 0 为基准步进（再被 min 夹住）；有值就正常加减 */
+  const bump = (dir: 1 | -1) => onChange?.(clamp((value ?? 0) + dir * step))
   const d = size === 'sm' ? 22 : 24
 
   const round =
@@ -55,15 +68,22 @@ export function Stepper({
       <span className="inline-flex items-baseline gap-1">
         <input
           aria-label={label}
-          value={value.toFixed(precision)}
+          // null → 空串（受控输入不能给 null，React 会当非受控）
+          value={value === null ? '' : value.toFixed(precision)}
+          placeholder={value === null ? emptyHint : undefined}
           disabled={disabled}
           onChange={(e) => {
-            const n = Number(e.target.value)
+            const raw = e.target.value.trim()
+            // 允许清空（回到「还没填」态），不把空串硬塞成 0——
+            // 0 是一个**有意义的真实值**（如转速 0），不能拿它冒充「未填」。
+            if (raw === '') return
+            const n = Number(raw)
             if (!Number.isNaN(n)) onChange?.(clamp(n))
           }}
           className={cn(
             'num w-[58px] min-w-0 border-0 bg-transparent p-0 text-right font-semibold text-t1 focus:outline-none',
             size === 'sm' ? 'text-[15px]' : 'text-[17px]',
+            value === null && 'text-t3',
           )}
         />
         {unit ? <span className="w-[26px] shrink-0 text-[12px] text-t3">{unit}</span> : null}

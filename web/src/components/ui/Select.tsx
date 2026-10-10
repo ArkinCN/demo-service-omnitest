@@ -18,6 +18,7 @@ export function Select({
   align = 'left',
   size = 'md',
   label,
+  disabled = false,
 }: {
   options: SelectOption[]
   value?: string
@@ -27,13 +28,16 @@ export function Select({
   align?: 'left' | 'right'
   size?: 'sm' | 'md'
   label?: string
+  disabled?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const current = options.find((o) => o.value === value)
 
   useEffect(() => {
-    if (!open) return
+    // disabled 时不允许下拉展开，若有残留展开态则收起
+    if (disabled && open) setOpen(false)
+    if (!open || disabled) return
     const onDoc = (e: MouseEvent) => {
       if (!ref.current?.contains(e.target as Node)) setOpen(false)
     }
@@ -44,7 +48,7 @@ export function Select({
       document.removeEventListener('mousedown', onDoc)
       document.removeEventListener('keydown', onKey)
     }
-  }, [open])
+  }, [open, disabled])
 
   return (
     <div ref={ref} className={cn('relative', className)}>
@@ -53,11 +57,13 @@ export function Select({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={label}
+        disabled={disabled}
         onClick={() => setOpen((v) => !v)}
         className={cn(
           'flex w-full items-center gap-1.5 rounded-tps border bg-white px-2.5 text-left font-medium transition-colors duration-150',
           size === 'sm' ? 'h-[28px] text-[12px]' : 'h-[32px] text-[13px]',
           open ? 'border-p500 text-p700' : 'border-line text-t1 hover:border-p300',
+          disabled && 'cursor-not-allowed opacity-50 hover:border-line hover:text-t1',
         )}
       >
         <span className={cn('truncate', !current && 'text-t3')}>

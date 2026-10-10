@@ -10,7 +10,7 @@
   "_field_docs": {
     "id": "按钮唯一标识，形如 <flowId>.<slug>；前端按它做埋点与折叠记忆，换场景包不得改名。",
     "label": "按钮面上的中文名，不超过 6 个字。",
-    "icon": "图标名，取值必须落在 /home/zzz/agent-test-web/src/app/icons.ts 的 COPILOT_ACTION_ICON_NAMES 之内（W1 Phase A 已冻结为 17 个）。草案原本写的 lucide 组件名保留在 icon_draft 字段里备查。",
+    "icon": "图标名，取值必须落在 [源] app/icons.ts 的 COPILOT_ACTION_ICON_NAMES 之内（W1 Phase A 已冻结为 17 个）。草案原本写的 lucide 组件名保留在 icon_draft 字段里备查。",
     "type": "explain 解释类 / prepare 准备类 / execute 执行类。三类的判定规则见规格文档第 2.1 节。",
     "source": "customer 直接复用客户 dc-skills 规程；ours 我方新写。",
     "skill_ref": "客户规程名或我方规程名；source 为 customer 时填 dc-skills 下的技能标识。",
@@ -63,7 +63,7 @@
     "disabled_when_context_missing": true
   },
   "_derived_from": {
-    "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/06-第三轮改版/06c-copilot-actions.draft.json",
+    "file": "[源] 06-第三轮改版/06c-copilot-actions.draft.json",
     "note": "结构层与编排层原样继承草案；本文件只改内容层（source / skill_ref / prompt / operation）与 icon 映射，并把草案的 kb 键改名为 knowledge（知识库已从流程降级为模块）。"
   },
   "flows": {

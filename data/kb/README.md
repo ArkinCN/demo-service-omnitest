@@ -1,8 +1,8 @@
 # 散热风扇知识库（motor › cooling-fan › fortior-fu6832）
 
 本目录是「文档 → 可用知识」转化流水线的产物，供前端「知识库管理」页直接加载。
-生成脚本在 `~/lab/kb-pipeline/scripts/`，一条命令全量重跑：`bash scripts/run_all.sh`。
-源材料一律只读，复制到 `~/lab/kb-pipeline/input/` 后再转换，原始目录未改动。
+生成脚本在 `[源] kb-pipeline/scripts`，一条命令全量重跑：`bash scripts/run_all.sh`。
+源材料一律只读，复制到 `[源] kb-pipeline/input` 后再转换，原始目录未改动。
 
 ## 一、目录与文件含义
 

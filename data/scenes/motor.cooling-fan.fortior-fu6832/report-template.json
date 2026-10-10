@@ -58,15 +58,15 @@
   "generated_by": "_build/build_scene_pack.py",
   "generated_at": "2026-09-19",
   "belongs_to_flow": "F6 测试报告及产出（模板确认、信息确认）",
-  "template_file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/Fortior_Motor_Checklist_公用模板_7(1).xlsm",
-  "filled_sample_file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+  "template_file": "[源] ClientSoftware/Fortior_Motor_Checklist_公用模板_7(1).xlsm",
+  "filled_sample_file": "[源] 测试数据_20260622/report.xlsm",
   "filler_tool": {
     "name": "writeFile_rust（Fortior Motor Checklist 自动化填充工具）",
-    "path": "/mnt/f/Main/File/2_Projects/峰岹/平台代码/writeFile_rust",
+    "path": "[源] 平台代码/writeFile_rust",
     "purpose": "用 Rust 替代 VBA 宏，把示波器截图按文件名规则插进模板对应单元格，并从 CSV 读转速数据写进 PWM·VSP 性能测试表，同时保留模板里的 VBA 宏",
     "cli": "write-file-rust --template <xlsm> --images <dir> [--csv <csv>] --output <xlsm>",
     "_source": {
-      "file": "/mnt/f/Main/File/2_Projects/峰岹/平台代码/writeFile_rust/README.md",
+      "file": "[源] writeFile_rust/README.md",
       "locator": "功能特性 / CLI 参数 / 图片文件名规则 / CSV 格式说明"
     }
   },
@@ -77,7 +77,7 @@
       "max_column": 6,
       "image_count": 0,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet「測試程式規格表」"
       }
     },
@@ -87,7 +87,7 @@
       "max_column": 12,
       "image_count": 0,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet「PWM·VSP 性能測試」"
       }
     },
@@ -97,7 +97,7 @@
       "max_column": 38,
       "image_count": 35,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet「LV 測試波型」"
       }
     },
@@ -107,7 +107,7 @@
       "max_column": 38,
       "image_count": 36,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet「SV 測試波型」"
       }
     },
@@ -117,7 +117,7 @@
       "max_column": 38,
       "image_count": 35,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet「HV 測試波型」"
       }
     },
@@ -127,7 +127,7 @@
       "max_column": 38,
       "image_count": 0,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet「HP FCOL 波型」"
       }
     },
@@ -137,7 +137,7 @@
       "max_column": 38,
       "image_count": 0,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet「Dell 電流波型」"
       }
     },
@@ -147,7 +147,7 @@
       "max_column": 12,
       "image_count": 0,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet「ON-OFF LV」"
       }
     },
@@ -157,7 +157,7 @@
       "max_column": 12,
       "image_count": 0,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet「ON-OFF SV」"
       }
     },
@@ -167,7 +167,7 @@
       "max_column": 12,
       "image_count": 0,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet「ON-OFF HV」"
       }
     },
@@ -177,7 +177,7 @@
       "max_column": 5,
       "image_count": 0,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet「特殊功能測試項庫」"
       }
     }
@@ -193,7 +193,7 @@
       "filled_in_sample": false,
       "from_flow": "F6 测试报告及产出",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet 測試程式規格表 标签格 B4（实测内容 '客戶名稱'）→ 取值格 C4"
       }
     },
@@ -207,7 +207,7 @@
       "filled_in_sample": false,
       "from_flow": "F2 初始化配置",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet 測試程式規格表 标签格 D4（实测内容 'Model'）→ 取值格 E4"
       }
     },
@@ -221,7 +221,7 @@
       "filled_in_sample": false,
       "from_flow": "F6 测试报告及产出",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet 測試程式規格表 标签格 B5（实测内容 '客戶工程師'）→ 取值格 C5"
       }
     },
@@ -235,7 +235,7 @@
       "filled_in_sample": false,
       "from_flow": "F6 测试报告及产出",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet 測試程式規格表 标签格 D5（实测内容 'Email'）→ 取值格 E5"
       }
     },
@@ -249,7 +249,7 @@
       "filled_in_sample": false,
       "from_flow": "F2 初始化配置",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet 測試程式規格表 标签格 B6（实测内容 '項目名稱'）→ 取值格 C6"
       }
     },
@@ -263,7 +263,7 @@
       "filled_in_sample": false,
       "from_flow": "F6 测试报告及产出",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet 測試程式規格表 标签格 D6（实测内容 '聯繫電話'）→ 取值格 E6"
       }
     },
@@ -277,7 +277,7 @@
       "filled_in_sample": false,
       "from_flow": "F2 初始化配置",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet 測試程式規格表 标签格 B7（实测内容 '韌體版本'）→ 取值格 C7"
       },
       "note": "对应 Customer.h 的 PROJECT_VERSION 宏（当前值 24805_Beta_STDCODE）"
@@ -292,7 +292,7 @@
       "filled_in_sample": false,
       "from_flow": "F2 初始化配置",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet 測試程式規格表 标签格 D7（实测内容 'Inlet 起始位址'）→ 取值格 E7"
       }
     },
@@ -306,7 +306,7 @@
       "filled_in_sample": false,
       "from_flow": "F2 初始化配置",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet 測試程式規格表 标签格 B8（实测内容 'Bootloader'）→ 取值格 C8"
       }
     },
@@ -320,7 +320,7 @@
       "filled_in_sample": false,
       "from_flow": "F2 初始化配置",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet 測試程式規格表 标签格 D8（实测内容 'Outlet 起始位址'）→ 取值格 E8"
       }
     }
@@ -649,15 +649,15 @@
     ],
     "_source": [
       {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "sheet PWM·VSP 性能測試 A3 通過條件、A8:J8 表头、A9 起档位行"
       },
       {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/平台代码/writeFile_rust/README.md",
+        "file": "[源] writeFile_rust/README.md",
         "locator": "「CSV 格式说明 · 列定义」8 列表（README.md:143-152）"
       },
       {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/平台代码/writeFile_rust/src/excel_writer.rs",
+        "file": "[源] src/excel_writer.rs",
         "locator": "excel_writer.rs:160-163 列映射注释与其后的 set_value_number 调用，实测只写 C/E/F/H/I 五列（第 170 行起）"
       }
     ]
@@ -709,11 +709,11 @@
     },
     "_source": [
       {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/平台代码/writeFile_rust/README.md",
+        "file": "[源] writeFile_rust/README.md",
         "locator": "「图片文件名规则」与「电压等级」两节"
       },
       {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260622/report.xlsm",
+        "file": "[源] 测试数据_20260622/report.xlsm",
         "locator": "各波型分页的内嵌图片计数（openpyxl ws._images）"
       }
     ]

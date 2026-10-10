@@ -579,7 +579,7 @@ def gen_experience():
             "台架经验": "来自本项目台架硬件记忆，未成文进规程",
         },
         "schema_note": "每条 = 问题现象 symptom / 原因 cause / 调整动作 action / "
-                       "结果 result / 来源 _source / 标签 tags（场景、流程、参数名、主题）",
+                       "结果 result / 来[源] _source / 标签 tags（场景、流程、参数名、主题）",
         "experiences": items,
     }
     return dump("experience.json", obj)

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import {
   Badge,
+  Button,
   Collapsible,
   EmptyState,
   InfoTip,
@@ -27,9 +28,13 @@ import {
 } from '../../components/ui'
 import { collapseKey, useAppStore } from '../../state/useAppStore'
 import { useFlowActions } from '../redline'
-import { getPack, sourceLine, type RawControlParam, type RawExperience } from '../scene/pack'
+import { loadAdoption } from './adoptApi'
+import { loadLatestVerdicts, type BackendVerdict } from '../flow-run/api'
+import { getPack, sourceLine, type RawControlParam } from '../scene/pack'
 import { evaluateAll, runtimeMeasures, type Evaluated } from '../flow-run/evaluate'
-import { ConfirmFooter, Empty, TierTree } from '../shared/bits'
+import { ConfigOverview } from '../../app/LeftPanel'
+import { UnifiedConfigPanel } from '../../app/UnifiedConfigPanel'
+import { ConfirmFooter, Empty } from '../shared/bits'
 import { demoFilter, type BuiltGroup, type BuiltTier } from '../shared/tiers'
 import { TimeSeriesChart } from '../timeseries'
 import { POWERUP_ANNOTATION, currentThresholds, loadWaves, type Wave } from '../waveforms'
@@ -45,6 +50,15 @@ import { POWERUP_ANNOTATION, currentThresholds, loadWaves, type Wave } from '../
    求出，criterion 判成 false 才算未达标；求不出值的单列「未采集」，既不算通过
    也不算不通过，不进推荐。
    =========================================================================== */
+
+/** 判定状态的中文文案（2026-10-08：抽成查表，避免各处三元链漏掉新状态） */
+const STATE_TEXT: Record<Evaluated['state'], string> = {
+  pass: '通过',
+  fail: '不通过',
+  missing: '未采集',
+  manual: '人工判',
+  not_applicable: '本台架不适用',
+}
 
 /** 标签一律收到 6 字以内，全名进 tooltip */
 function short(s: string, n = 6) {
@@ -87,96 +101,41 @@ function useToggleAdopt() {
       name: c.param.name,
       from: String(fmt(c.current)),
       to: String(fmt(c.suggested)),
+      group: c.param.group,
     })
 }
 
 /* ------------------------------------------------------------ 候选推荐（数据） */
 
-export interface Candidate {
-  exp: RawExperience
-  param: RawControlParam
-  current: number | string | boolean
-  suggested: number | string
-  delta: string
-  /** 建议值相对当前值的方向，用于变化幅度徽标 */
-  dir: 'up' | 'down' | 'none'
-  rationale: string
-}
+// 候选推荐的纯数据逻辑已抽到 ./candidates.ts（computeCandidates/rankOf），
+// 组件与一键自动化的「调优重试」共用同一份实现，避免两处各写一套遍历。
+import { computeCandidates, rankOf, type Candidate, type FailedHint } from './candidates'
+export { computeCandidates, rankOf } from './candidates'
+export type { Candidate, FailedHint } from './candidates'
 
-/** 从经验条目的动作原文里读出调整方向与幅度；读不出就不给数，只给动作原文。 */
-function deriveSuggestion(
-  p: RawControlParam,
-  action: string,
-): { v: number | string; delta: string; dir: Candidate['dir'] } | null {
-  if (typeof p.value !== 'number') return null
-  const pct = /([上下])调\s*(\d+)\s*%/.exec(action)
-  if (pct) {
-    const up = pct[1] === '上'
-    const k = up ? 1 + Number(pct[2]) / 100 : 1 - Number(pct[2]) / 100
-    return {
-      v: Number((p.value * k).toPrecision(4)),
-      delta: `${up ? '+' : '−'}${pct[2]}%`,
-      dir: up ? 'up' : 'down',
-    }
-  }
-  const abs = /上调\s*([\d.]+)\s*~\s*([\d.]+)\s*A/.exec(action)
-  if (abs)
-    return {
-      v: Number((p.value + Number(abs[2])).toFixed(3)),
-      delta: `+${abs[2]} ${p.unit ?? ''}`.trim(),
-      dir: 'up',
-    }
-  const pm = /±\s*(\d+)\s*%/.exec(action)
-  if (pm)
-    return { v: Number((p.value * (1 + Number(pm[1]) / 100)).toPrecision(4)), delta: `±${pm[1]}%`, dir: 'up' }
-  if (/加大|延长|提高/.test(action))
-    return { v: Number((p.value * 1.2).toPrecision(4)), delta: '+20%', dir: 'up' }
-  return null
-}
-
-export function useCandidates(): Candidate[] {
+/**
+ * 候选列表（可选按本轮未达标项优先排序）。
+ *
+ * @param hints 本轮未达标提示。不传时行为与改造前完全一致（保持既有调用点语义）。
+ */
+export function useCandidates(hints?: FailedHint[]): Candidate[] {
   const pack = getPack()
-  return useMemo(() => {
-    if (!pack) return []
-    const byMacro = new Map<string, RawControlParam>()
-    for (const p of pack.controls.parameters) byMacro.set(p.key.toUpperCase(), p)
-    const out: Candidate[] = []
-    for (const e of pack.experience.experiences) {
-      if (!e.tags.flow?.startsWith('F5')) continue
-      for (const m of e.tags.parameters ?? []) {
-        const p = byMacro.get(m.toUpperCase())
-        if (!p || out.some((c) => c.param.key === p.key)) continue
-        const s = deriveSuggestion(p, e.action)
-        out.push({
-          exp: e,
-          param: p,
-          current: p.value ?? '—',
-          suggested: s?.v ?? '人工判定',
-          delta: s?.delta ?? '未给数',
-          dir: s?.dir ?? 'none',
-          rationale: e.action,
-        })
-      }
-    }
-    // 排序口径（06d 第 2.2 节）：证据级为「台架实测数据」的优先，
-    // 「能不能给出具体数值」退为第二排序键。此前按数值排，排第一的是规程条款级的
-    // EXP-001，与本批数据的病因（预定位太弱）对不上。
-    return out.sort(
-      (a, b) =>
-        rankOf(b.exp) - rankOf(a.exp) ||
-        Number(typeof b.suggested === 'number') - Number(typeof a.suggested === 'number'),
-    )
-  }, [pack])
+  // hints 是每次渲染新数组，不能直接进依赖（会无限重算）；用内容指纹做 key
+  const key = hints?.length ? hints.map((h) => h.reqId).sort().join(',') : ''
+  return useMemo(
+    () => (pack ? computeCandidates(pack, hints) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pack, key],
+  )
 }
 
-/** 经验条目的证据级 → 三档序位（只是排序口径，不是概率） */
-const EVIDENCE_RANK: Record<string, number> = {
-  台架实测数据: 3,
-  台架经验: 2,
-  判定工具输出: 2,
-  规程条款: 1,
+/** 从 evaluateAll 的未达标行汇总出「未达标提示」，供候选映射使用。 */
+function failedHintsOf(failed: Evaluated[]): FailedHint[] {
+  return failed.map((r) => ({
+    reqId: r.req.id,
+    candidateTags: (r.req as { candidate_tags?: string[] }).candidate_tags,
+  }))
 }
-const rankOf = (e: RawExperience) => EVIDENCE_RANK[e.evidence_level] ?? 1
 
 /* --------------------------------------------------------------- 判定（数据） */
 
@@ -204,23 +163,74 @@ interface Shortfalls {
   failed: Evaluated[]
   missing: Evaluated[]
   passed: Evaluated[]
+  /** 本台架不具备测量手段的判据（2026-10-08 新增，与 missing 严格区分） */
+  notApplicable: Evaluated[]
 }
 
 function useShortfalls(): Shortfalls {
   const pack = getPack()
   const waves = useWaves()
+  const sceneId = useAppStore((s) => s.sceneId)
+  // 采纳/人工改过的控制参数：判定的 control-parameters 变量要读采纳值，
+  // 否则「改了参数结论不变」（与流程 3 VerdictCard 同一口径）。
+  const overrides = useAppStore((s) => s.overrides)
+  const snapshotValues = useAppStore((s) => s.snapshotValues)
+  // 本轮台架实测（2026-10-08 新增）：由流程 4 跑完实验后 settleRun 写入。
+  // 流程 5 原先只吃离线回放波形，导致未达标项基于历史数据、与本轮实测无关；
+  // 并入后与流程 3 VerdictCard 完全同口径（runMeasures 覆盖 runtimeMeasures，实测优先）。
+  const runMeasures = useAppStore((s) => s.runMeasures)
+  // 流程 3 落的判定表（verdict-table）。读到了就按 req_id 对齐覆盖，让流程 4 的
+  // 「未达标项」真正继承流程 3 的判定；读不到（还没跑过一轮 / 后端没起）就回退
+  // 前端重算，保持旧行为。
+  const [backendVerdicts, setBackendVerdicts] = useState<BackendVerdict[] | null>(null)
+
+  useEffect(() => {
+    if (!sceneId) return
+    void loadLatestVerdicts(sceneId)
+      .then(({ verdicts }) => {
+        // 幂等回填：重复写同一批值无副作用；**不检查 alive**（StrictMode 下
+        // 检查它就是把成功结果丢掉）。空 verdicts 不置位，保持前端重算。
+        if (verdicts.length) setBackendVerdicts(verdicts)
+      })
+      .catch(() => {
+        // 读不到 = 正常态（还没跑过一轮），保持前端重算，不打扰界面
+      })
+  }, [sceneId])
+
   // 演示模式只在 demo_profile 点名的判据上统计，与流程 3 判定卡同一口径
   const rows = useMemo(() => {
     if (!pack) return []
-    const all = evaluateAll(pack, runtimeMeasures(waves, pack))
-    return demoFilter(pack.requirements, 'requirements', all, (r) => r.req.id)
-  }, [pack, waves])
+    // 实测优先：runMeasures（本轮台架）覆盖 runtimeMeasures（离线回放），
+    // 与流程 3 VerdictCard 的 `{...runtimeMeasures(waves,pack), ...runMeasures}` 逐字一致，
+    // 避免两处口径漂移出两份结论。
+    const all = evaluateAll(
+      pack,
+      { ...runtimeMeasures(waves, pack), ...runMeasures },
+      overrides,
+      snapshotValues,
+    )
+    // 有流程 3 的判定表就按 req_id 对齐覆盖（与流程 3 VerdictCard 的 shownRows
+    // 同一算法）；没有就保持前端重算。找不到对应 req 的行不覆盖（保守，不写错）。
+    const merged = backendVerdicts
+      ? (() => {
+          const byId = new Map(backendVerdicts.map((v) => [v.req_id, v]))
+          return all.map((r) => {
+            const b = byId.get(r.req.id)
+            return b ? { ...r, state: b.state, note: b.note ?? r.note, missing: b.missing ?? r.missing } : r
+          })
+        })()
+      : all
+    return demoFilter(pack.requirements, 'requirements', merged, (r) => r.req.id)
+  }, [pack, waves, backendVerdicts, overrides, snapshotValues, runMeasures])
   return {
     waves,
     rows,
     failed: rows.filter((r) => r.state === 'fail'),
     missing: rows.filter((r) => r.state === 'missing'),
     passed: rows.filter((r) => r.state === 'pass'),
+    // 本台架不适用（2026-10-08）：单独分桶，**不进未达标清单、不进推荐**——
+    // 推荐一个"本台架根本测不了"的问题没有意义。
+    notApplicable: rows.filter((r) => r.state === 'not_applicable'),
   }
 }
 
@@ -379,18 +389,78 @@ function missingTiers(missing: Evaluated[]): BuiltTier<Evaluated>[] {
   return [{ id: 'miss', title: '未采集', groups, count: missing.length }]
 }
 
+/**
+ * 刷新后把上次采纳的记录读回来。
+ *
+ * 「刷新仍在」这条验收靠的就是这一步：采纳时写在服务端的 param-change 产物里，
+ * 进流程 4 时按场景取最近一轮读出来，回填到 store，界面上的已采纳列表就回来了。
+ * 读不到（还没采纳过 / 后端没起）就保持为空，不报错——空是正常态，不是故障。
+ * 但**网络层真出错要留一句控制台痕迹**，别静默。
+ *
+ * ⚠️⚠️ 不要用「`alive` 开关 + 守卫」这套写法（踩过两次，2026-09-24 与 09-28）：
+ * 本应用开着 `<StrictMode>`（main.tsx），开发模式下 React 会
+ * **mount → unmount → remount**，且返回的 promise 不保证落在哪一次上。
+ * 于是出现两种失败叠加：
+ *   - 首次 mount 的请求 resolve 时组件已被 unmount → `alive=false` → 结果被丢；
+ *   - 若守卫在别处被置位，remount 又直接 return 不再请求。
+ * 表现都是「**请求发了（或发了好几次），store 里一条都没有**」——
+ * 而控制台没有任何报错，因为这不是错误，是被我们自己丢掉的成功结果。
+ *
+ * 正确做法：**不中断，改成幂等回填**。
+ *   - 请求照发（重复一次的成本只是一次 GET）；
+ *   - **不检查 `alive`**，拿到就写 store——重复写同一批值没有副作用
+ *     （`applyAdopt` 是幂等赋值）；
+ *   - 守卫只用来避免「同一场景反复发请求」，且**只在成功后**置位。
+ * 这样无论 React 挂载几次、promise 落在哪一次，最终 store 一定有数据。
+ */
+function useRestoreAdoption(sceneId: string) {
+  const applyAdopt = useAppStore((s) => s.applyAdopt)
+  const setRunId = useAppStore((s) => s.setRunId)
+  const restored = useRef<string | null>(null)
+  useEffect(() => {
+    if (!sceneId || restored.current === sceneId) return
+    void loadAdoption(sceneId)
+      .then(({ items, runId }) => {
+        // ⚠️ 刻意**不检查 alive**：StrictMode 下检查它就是把成功结果丢掉。
+        // 重复回填是幂等的，不会造成问题。
+        restored.current = sceneId
+        if (runId) setRunId(runId)
+        if (items.length) applyAdopt(items)
+      })
+      .catch((e: unknown) => {
+        // 不清 restored：下一次挂载/切换场景会再试一次，不把失败固化成「已恢复」
+        console.warn('[flow-tune] 采纳记录读回失败（界面按未采纳显示）：', e)
+      })
+  }, [sceneId, applyAdopt, setRunId])
+}
+
 export function TuneLeftPanel() {
   const pack = getPack()
-  const cands = useCandidates()
+  const { failed, missing, passed, rows, notApplicable } = useShortfalls()
+  // 候选按「本轮未达标」优先：命中项排前并标注，使推荐针对本轮问题（2026-10-08）。
+  const cands = useCandidates(failedHintsOf(failed))
   const picked = useAdopted()
   const adopt = useFlowActions()('adopt-back')
   const focusReq = useAppStore((s) => s.focusReq)
   const demo = useAppStore((s) => s.demoMode)
-  const { failed, missing, passed, rows } = useShortfalls()
+  const sceneId = useAppStore((s) => s.sceneId)
+  const adoptAllCandidates = useAppStore((s) => s.adoptAllCandidates)
+  useRestoreAdoption(sceneId)
 
   if (!pack) return <Empty text="场景包未加载" />
 
   const takenList = cands.filter((c) => picked.has(c.param.key))
+  // 一键采纳：把全部推荐参数并入已采纳集（与 RecRow 勾选同一 meta 口径）。
+  const adoptAll = () =>
+    adoptAllCandidates(
+      cands.map((c) => ({
+        key: c.param.key,
+        name: c.param.name,
+        from: String(fmt(c.current)),
+        to: String(fmt(c.suggested)),
+        group: c.param.group,
+      })),
+    )
   const failTier: BuiltTier<Evaluated>[] = [
     {
       id: 'fail',
@@ -410,7 +480,9 @@ export function TuneLeftPanel() {
         {/* 三个大数字退成栏头一行：精简后未达标只有一条，用不着三个 26px 的数（06d 第 3.2 节） */}
         <Tooltip
           className="ml-auto"
-          content={`未达标 ${failed.length} · 已通过 ${passed.length} · 未采集 ${missing.length}；判据表本轮统计 ${rows.length} 条。criterion 真判成 false 的才算未达标；缺现场实测量而求不出值的单列「未采集」，既不算通过也不算不通过，也不进调优推荐。`}
+          content={`未达标 ${failed.length} · 已通过 ${passed.length} · 未采集 ${missing.length}${
+            notApplicable.length ? ` · 本台架不适用 ${notApplicable.length}` : ''
+          }；判据表本轮统计 ${rows.length} 条。criterion 真判成 false 的才算未达标；缺现场实测量而求不出值的单列「未采集」；需要本台架未配置的测量手段的（如 MCU 故障寄存器、FG 转速、母线电流探头）单列「本台架不适用」并写明缺什么——三者都不进调优推荐。`}
         >
           {/* 演示模式只留「未达标几条」这一个数：已通过与未采集两个计数进 tooltip
               与下面的折叠组，不在栏头再摆一遍（06d 第 3.2 节） */}
@@ -433,8 +505,8 @@ export function TuneLeftPanel() {
         <InfoTip
           content={
             focusReq
-              ? `三个数依次是未达标 / 已通过 / 未采集，口径与流程 3 判定卡同一套求值。本次从流程 3 判定卡的判据 ${focusReq} 点进来。`
-              : '三个数依次是未达标 / 已通过 / 未采集，口径与流程 3 判定卡同一套求值。'
+              ? `计数口径与流程 3 判定卡同一套求值：未达标 / 已通过 / 未采集，「本台架不适用」单列不计入前三项。本次从流程 3 判定卡的判据 ${focusReq} 点进来。`
+              : '计数口径与流程 3 判定卡同一套求值：未达标 / 已通过 / 未采集，「本台架不适用」单列不计入前三项。'
           }
         />
       </header>
@@ -445,105 +517,161 @@ export function TuneLeftPanel() {
       ) : null}
 
       <div className="fade-b min-h-0 flex-1 overflow-y-auto pb-2">
-        {/* 一级类只展开第一个「未达标项」；有未达标时强制展开，不许折叠掉 */}
-        {failed.length ? (
-          <TierTree
-            flow="tune"
-            tiers={failTier}
-            defaultOpen={0}
-            lockTier={() => true}
-            itemKey={(r) => r.req.id}
-            flags={() => ({ alert: true })}
-            tierIcon={() => <ListChecks size={15} strokeWidth={1.9} />}
-            groupIcon={() => <StatusDot status="alert" />}
-            render={(r) => (
-              <Tooltip
-                className="w-full"
-                content={`${r.req.id} ${r.req.name} · 要求 ${r.req.criterion_text}`}
-              >
-                <div className="flex min-h-[40px] w-full items-center gap-2 px-4 py-1.5">
-                  <StatusDot status="alert" />
-                  <span className="cursor-help truncate text-[13px] font-medium text-t1">
-                    {short(r.req.name, 10)}
-                  </span>
-                  <span className="num ml-auto shrink-0 text-[12px] text-t3">{r.req.id}</span>
+        <ConfigOverview
+          key={pack.scene.id}
+          count={cands.length + failed.length + missing.length}
+          quick={
+            <>
+              <div className="config-quick-card px-4 py-3">
+                <span className="font-semibold">{failed.length ? '未达标依据' : '判定状态'}</span>
+                <p className="mt-2 text-[12px] text-t2">
+                  未达标 {failed.length} · 未采集 {missing.length}
+                  {notApplicable.length ? ` · 本台架不适用 ${notApplicable.length}` : ''}
+                  。缺少测量不作通过判定。
+                </p>
+                {failed.slice(0, 1).map((r) => (
+                  <details key={r.req.id} className="mt-3 text-[12px]">
+                    <summary className="cursor-pointer font-medium text-alert">{r.req.name} · 查看判据</summary>
+                    <p className="mt-2 leading-relaxed">{r.req.criterion_text}</p>
+                    <span className="num text-t3">{r.req.id}</span>
+                  </details>
+                ))}
+              </div>
+              {cands.slice(0, 2).map((c) => (
+                <div className="config-quick-card" key={c.param.key}>
+                  <RecRow c={c} />
                 </div>
-              </Tooltip>
-            )}
-          />
-        ) : (
-          <Collapsible
-            level={1}
-            icon={<ListChecks size={15} strokeWidth={1.9} />}
-            title="未达标项"
-            storeKey={collapseKey('tune', 'fail')}
-            defaultOpen
-            stat={{ total: 0 }}
-          >
-            <div className="px-4 py-3">
-              {/* 不编数据：本轮 20 条可求值判据一条都没有现场实测量，
-                  「0 条不通过」不是「都合格」，是根本没判。这句话要写在屏幕上，
-                  不能让观众把空态读成通过。回放与候选队列照常保留。 */}
-              <EmptyState
-                icon={<Check size={24} strokeWidth={1.6} />}
-                title="本轮无现场实测，判据未求值"
-                hint={`未采集 ${missing.length} 条：判据要的现场实测量（母线电流、转速、力、位移、声压级）本轮没有采，因此既判不出通过也判不出不通过。屏幕上的时序与候选是既有数据的回放，不是本轮实测。`}
-              />
-            </div>
-          </Collapsible>
-        )}
+              ))}
+              {!cands.length && (
+                <div className="config-quick-card px-4 py-3 text-[13px] text-t2">暂无匹配的调优建议</div>
+              )}
+            </>
+          }
+        >
+          {/* 一级类只展开第一个「未达标项」；有未达标时强制展开，不许折叠掉 */}
+          {failed.length ? (
+            <UnifiedConfigPanel
+              flow="tune"
+              tiers={failTier}
+              defaultOpen={0}
+              lockTier={() => true}
+              itemKey={(r) => r.req.id}
+              flags={() => ({ alert: true })}
+              tierIcon={() => <ListChecks size={15} strokeWidth={1.9} />}
+              groupIcon={() => <StatusDot status="alert" />}
+              render={(r) => (
+                <Tooltip
+                  className="w-full"
+                  content={`${r.req.id} ${r.req.name} · 要求 ${r.req.criterion_text}`}
+                >
+                  <div className="flex min-h-[40px] w-full items-center gap-2 px-4 py-1.5">
+                    <StatusDot status="alert" />
+                    <span className="cursor-help truncate text-[13px] font-medium text-t1">
+                      {short(r.req.name, 10)}
+                    </span>
+                    <span className="num ml-auto shrink-0 text-[12px] text-t3">{r.req.id}</span>
+                  </div>
+                </Tooltip>
+              )}
+            />
+          ) : (
+            <Collapsible
+              level={1}
+              icon={<ListChecks size={15} strokeWidth={1.9} />}
+              title="未达标项"
+              storeKey={collapseKey('tune', 'fail')}
+              defaultOpen
+              stat={{ total: 0 }}
+            >
+              <div className="px-4 py-3">
+                {/* 不编数据：本轮 20 条可求值判据一条都没有现场实测量，
+                    「0 条不通过」不是「都合格」，是根本没判。这句话要写在屏幕上，
+                    不能让观众把空态读成通过。回放与候选队列照常保留。 */}
+                <EmptyState
+                  icon={<Check size={24} strokeWidth={1.6} />}
+                  title="本轮无现场实测，判据未求值"
+                  hint={`未采集 ${missing.length} 条：判据要的现场实测量（母线电流、转速、力、位移、声压级）本轮没有采，因此既判不出通过也判不出不通过。屏幕上的时序与候选是既有数据的回放，不是本轮实测。`}
+                />
+              </div>
+            </Collapsible>
+          )}
 
-        {/* 推荐参数：默认折叠，组内按改动部位切三类 */}
-        {cands.length ? (
-          <TierTree
-            flow="tune"
-            tiers={recTiers(cands)}
-            // 一级类里只有「未达标项」默认展开，推荐与未采集一律折叠
-            defaultOpen={-1}
-            itemKey={(c) => c.param.key}
-            flags={(c) => ({ filled: picked.has(c.param.key) })}
-            tierIcon={() => <Sparkles size={15} strokeWidth={1.9} />}
-            groupIcon={() => <Sliders size={14} strokeWidth={1.9} />}
-            render={(c) => <RecRow c={c} />}
-          />
-        ) : (
-          <Collapsible
-            level={1}
-            icon={<Sparkles size={15} strokeWidth={1.9} />}
-            title="推荐参数"
-            storeKey={collapseKey('tune', 'rec')}
-            defaultOpen={false}
-            stat={{ total: 0 }}
-          >
-            <div className="px-4 py-3">
-              <EmptyState icon={<Sparkles size={24} strokeWidth={1.6} />} title="经验库无可对上的项" />
-            </div>
-          </Collapsible>
-        )}
+          {/* 推荐参数：默认折叠，组内按改动部位切三类。
+              「一键采纳」按钮挂在「推荐参数」分类 tab 右侧（tierRight 插槽）：
+              点一下把全部推荐参数并入已采纳集，免去逐条勾选，便于直接进下一步。 */}
+          {cands.length ? (
+            <UnifiedConfigPanel
+              flow="tune"
+              tiers={recTiers(cands)}
+              // 一级类里只有「未达标项」默认展开，推荐与未采集一律折叠
+              defaultOpen={-1}
+              itemKey={(c) => c.param.key}
+              flags={(c) => ({ filled: picked.has(c.param.key) })}
+              tierIcon={() => <Sparkles size={15} strokeWidth={1.9} />}
+              groupIcon={() => <Sliders size={14} strokeWidth={1.9} />}
+              tierRight={(tier) =>
+                tier.id === 'rec' ? (
+                  <Tooltip
+                    content={
+                      takenList.length === cands.length
+                        ? `推荐参数 ${cands.length} 项已全部勾选`
+                        : `勾选全部 ${cands.length} 项推荐参数（已选 ${takenList.length} 项）`
+                    }
+                  >
+                    <Button
+                      size="sm"
+                      variant="default"
+                      icon={<Check size={13} strokeWidth={2.4} />}
+                      onClick={adoptAll}
+                      disabled={takenList.length === cands.length}
+                      data-action="adopt-all"
+                    >
+                      一键采纳
+                    </Button>
+                  </Tooltip>
+                ) : null
+              }
+              render={(c) => <RecRow c={c} />}
+            />
+          ) : (
+            <Collapsible
+              level={1}
+              icon={<Sparkles size={15} strokeWidth={1.9} />}
+              title="推荐参数"
+              storeKey={collapseKey('tune', 'rec')}
+              defaultOpen={false}
+              stat={{ total: 0 }}
+            >
+              <div className="px-4 py-3">
+                <EmptyState icon={<Sparkles size={24} strokeWidth={1.6} />} title="经验库无可对上的项" />
+              </div>
+            </Collapsible>
+          )}
 
-        {/* 未采集：按缺哪个实测量归并，不截断 */}
-        {missing.length ? (
-          <TierTree
-            flow="tune"
-            tiers={missingTiers(missing)}
-            defaultOpen={-1}
-            itemKey={(r) => r.req.id}
-            tierIcon={() => <CircleDashed size={15} strokeWidth={1.9} />}
-            groupIcon={() => <CircleDashed size={14} strokeWidth={1.9} />}
-            render={(r) => (
-              <Tooltip
-                className="w-full"
-                content={`${r.req.id} ${r.req.name} · 缺 ${r.missing.join('、')}`}
-              >
-                <div className="flex min-h-[36px] w-full items-center gap-2 px-4 py-1">
-                  <StatusDot status="na" />
-                  <span className="cursor-help truncate text-[13px] text-t2">{short(r.req.name, 10)}</span>
-                  <span className="num ml-auto shrink-0 text-[12px] text-t3">缺 {r.missing.length}</span>
-                </div>
-              </Tooltip>
-            )}
-          />
-        ) : null}
+          {/* 未采集：按缺哪个实测量归并，不截断 */}
+          {missing.length ? (
+            <UnifiedConfigPanel
+              flow="tune"
+              tiers={missingTiers(missing)}
+              defaultOpen={-1}
+              itemKey={(r) => r.req.id}
+              tierIcon={() => <CircleDashed size={15} strokeWidth={1.9} />}
+              groupIcon={() => <CircleDashed size={14} strokeWidth={1.9} />}
+              render={(r) => (
+                <Tooltip
+                  className="w-full"
+                  content={`${r.req.id} ${r.req.name} · 缺 ${r.missing.join('、')}`}
+                >
+                  <div className="flex min-h-[36px] w-full items-center gap-2 px-4 py-1">
+                    <StatusDot status="na" />
+                    <span className="cursor-help truncate text-[13px] text-t2">{short(r.req.name, 10)}</span>
+                    <span className="num ml-auto shrink-0 text-[12px] text-t3">缺 {r.missing.length}</span>
+                  </div>
+                </Tooltip>
+              )}
+            />
+          ) : null}
+        </ConfigOverview>
       </div>
 
       {/* 底部悬浮：本轮将写回的宏 + 主按钮 */}
@@ -655,9 +783,11 @@ function WaveOverlay({ full }: { full?: boolean }) {
 const QUEUE_CAP = 10
 
 function CandidateQueue({ full }: { full?: boolean }) {
-  const cands = useCandidates()
+  const { failed } = useShortfalls()
+  const cands = useCandidates(failedHintsOf(failed))
   const picked = useAdopted()
   const demo = useAppStore((s) => s.demoMode)
+  const hitCount = cands.filter((c) => c.hitsFailed).length
   if (!cands.length) return <EmptyState icon={<Layers size={24} strokeWidth={1.5} />} title="无候选" />
   const cur = cands.findIndex((c) => !picked.has(c.param.key))
   // 放大态逐个铺满 10 个槽位；卡内空间有限，只铺命中的候选，空槽压成一行，
@@ -704,7 +834,11 @@ function CandidateQueue({ full }: { full?: boolean }) {
                 {c ? (
                   <Tooltip
                     className="min-w-0 flex-1"
-                    content={`${c.param.name}（${c.param.key.toUpperCase()}） · ${c.exp.id} ${c.rationale}`}
+                    content={`${c.param.name}（${c.param.key.toUpperCase()}） · ${c.exp.id} ${c.rationale}${
+                      c.hitsFailed
+                        ? ` · 命中本轮未达标：${(c.hitReqIds ?? []).join('、')}`
+                        : ' · 来自规程固定候选表（本轮未命中）'
+                    }`}
                   >
                     <span className="flex min-w-0 items-center gap-2">
                       <span
@@ -715,6 +849,12 @@ function CandidateQueue({ full }: { full?: boolean }) {
                       >
                         {paramShort(c.param)}
                       </span>
+                      {/* 命中本轮未达标：如实标出来，让「为什么推荐它」有据可查 */}
+                      {c.hitsFailed ? (
+                        <Badge tone="soft" className="shrink-0">
+                          命中
+                        </Badge>
+                      ) : null}
                       <span className="num ml-auto shrink-0 text-[12px] text-t3">{c.delta}</span>
                     </span>
                   </Tooltip>
@@ -740,9 +880,16 @@ function CandidateQueue({ full }: { full?: boolean }) {
           {cands.length}
           <span className="text-t3">/{QUEUE_CAP}</span>
         </span>
+        {hitCount ? (
+          <span className="num text-[12px] text-p700">命中本轮 {hitCount}</span>
+        ) : null}
         {lite ? null : <span className="text-[12px] text-t3">上限 10 · 耗尽转人工</span>}
         <InfoTip
-          content="固定候选表出自客户端规程 auto-startup-tune（AItior 安装目录 resources/data/dc-skills/auto-startup-tune/SKILL.md，「## 固定候选」小节）：盲试最多 10 个候选，每个候选只偏离基线一个轴；跑完仍不行判 need_human 转人工，不得创建第 11 个候选，也不得自行扩大搜索区间（经验条目 EXP-022）。表内三个宏名属吸尘器产品线，在本散热风扇工程里零命中，因此本包不做映射，槽位只按本场景匹配得出的候选填。"
+          content={`候选来自经验库中流程为「F5 调优确认及运行」的条目，按证据级排序（台架实测数据 > 台架经验/判定工具输出 > 规程条款）。${
+            hitCount
+              ? `本轮已按未达标项优先排序：${hitCount} 条命中（标「命中」），命中的候选建议直接针对本轮判出的问题。`
+              : '本轮无未达标项命中，以下为可用候选清单。'
+          }固定候选表口径出自客户端规程 auto-startup-tune（盲试最多 10 个候选，每个只偏离基线一个轴；耗尽仍不行判 need_human 转人工，不得创建第 11 个候选）。`}
         />
       </div>
     </div>
@@ -841,10 +988,12 @@ function EvidencePanel({ full }: { full?: boolean }) {
 
 function VerdictCard({ full }: { full?: boolean }) {
   const pack = getPack()
-  const { rows, failed, missing, passed } = useShortfalls()
+  const { rows, failed, missing, passed, notApplicable } = useShortfalls()
   if (!pack) return <Empty text="场景包未加载" />
   const judged = passed.length + failed.length
-  const list = full ? rows : [...failed, ...passed, ...missing].slice(0, 5)
+  // 不适用项排在未采集之前：它是「有明确结论」的项（已说明缺什么设备），
+  // 混在未采集后面会让人以为还有悬而未决的判据（2026-10-08）。
+  const list = full ? rows : [...failed, ...passed, ...notApplicable, ...missing].slice(0, 5)
 
   // 环：可求值判据里已经判出结果的占比。左栏已经给过三个大数字，这里换成环 + 中心数，
   // 同一条信息不在一屏里用同一种形态说第二遍。
@@ -895,10 +1044,20 @@ function VerdictCard({ full }: { full?: boolean }) {
         <span className="flex min-w-0 flex-1 flex-col gap-1">
           <Legend n={passed.length} label="通过" tone="ok" />
           <Legend n={failed.length} label="不通过" tone="bad" />
-          <Legend n={missing.length} label="未采集" tone="mute" />
+          {/* 优先展示「本台架不适用」：本台架只有风扇+示波器，多数判据结构上测不了。
+              这类项已写明缺什么设备，比笼统的「未采集」更利于决策（2026-10-08）。 */}
+          {notApplicable.length ? (
+            <Legend n={notApplicable.length} label="本台架不适用" tone="mute" />
+          ) : (
+            <Legend n={missing.length} label="未采集" tone="mute" />
+          )}
         </span>
         <InfoTip
           content={`已求值 ${judged} / ${pack.requirements.evaluable_count} 条可求值判据，全表 ${rows.length} 条。${
+            notApplicable.length
+              ? `「本台架不适用」${notApplicable.length} 条：缺 MCU 故障寄存器 / FG 转速信号 / 母线电流探头 / 程控电源等测量手段，逐条 tooltip 写明缺什么，不参与通过统计。`
+              : ''
+          }${
             judged === 0
               ? '本轮一条都判不了：判据要的现场实测量（母线电流、转速、力、位移、声压级）得由台架传感器现场采，本轮只回放了登记进包的曲线，不拿别的数顶替。'
               : ''
@@ -917,15 +1076,17 @@ function VerdictCard({ full }: { full?: boolean }) {
             key={r.req.id}
             className="w-full"
             content={`${r.req.id} ${r.req.name} · ${r.req.criterion_text}${
-              r.missing.length ? ` · 缺 ${r.missing.join('、')}` : ''
+              r.state === 'not_applicable' && r.notApplicableReason
+                ? ` · 本台架不适用：${r.notApplicableReason}`
+                : r.missing.length
+                  ? ` · 缺 ${r.missing.join('、')}`
+                  : ''
             }`}
           >
             <div className="flex w-full items-center gap-2 border-b border-line-soft py-[5px] last:border-b-0">
               <StatusDot status={r.state === 'pass' ? 'done' : r.state === 'fail' ? 'alert' : 'na'} />
               <span className="cursor-help truncate text-[12.5px] text-t1">{short(r.req.name, 12)}</span>
-              <span className="num ml-auto shrink-0 text-[12px] text-t3">
-                {r.state === 'pass' ? '通过' : r.state === 'fail' ? '不通过' : r.state === 'missing' ? '未采集' : '人工判'}
-              </span>
+              <span className="num ml-auto shrink-0 text-[12px] text-t3">{STATE_TEXT[r.state]}</span>
             </div>
           </Tooltip>
         ))}

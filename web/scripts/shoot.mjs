@@ -20,7 +20,7 @@ mkdirSync(OUT, { recursive: true })
 const exe = globSync(`${process.env.HOME}/.cache/puppeteer/chrome/*/chrome-linux64/chrome`)
   .sort()
   .at(-1)
-if (!exe) throw new Error('本机未找到 Chrome：~/.cache/puppeteer/chrome/*/chrome-linux64/chrome')
+if (!exe) throw new Error('本机未找到 Chrome：[源] chrome-linux64/chrome')
 
 const ROUTES = [
   ['kb', '/kb'],

@@ -8,11 +8,13 @@
    窄条与抽屉的外形、Props 签名与 W1 落的占位一致，没有改。
    =========================================================================== */
 import { useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router'
 import { ChevronRight } from 'lucide-react'
 import { Badge, Drawer, EmptyState } from '../../components/ui'
 import { KNOWLEDGE_ICON } from '../../app/icons'
 import { KNOWLEDGE_USAGE_LABEL, type FlowId, type KnowledgeUsage } from '../../data/types'
 import { knowledgeForFlow, useKnowledge, type KnowledgeEntry } from './data'
+import { useAppStore } from '../../state/useAppStore'
 
 export interface KnowledgeDrawerProps {
   flow: FlowId
@@ -73,6 +75,7 @@ function Group({ usage, items }: { usage: KnowledgeUsage; items: KnowledgeEntry[
 }
 
 export function KnowledgeDrawer({ flow, count, children }: KnowledgeDrawerProps) {
+  const nav = useNavigate()
   const [open, setOpen] = useState(false)
   const { entries } = useKnowledge()
   const Icon = KNOWLEDGE_ICON.usage
@@ -94,9 +97,21 @@ export function KnowledgeDrawer({ flow, count, children }: KnowledgeDrawerProps)
         >
           查看
         </button>
+        {/* 「上传」= **上传一个文件到知识库**（用户明确的口径，2026-09-24 更正）。
+            此前写法变过两次，记下来免得再走回头路：
+              ① 最早：没有任何 onClick，点了没反应；
+              ② 上一轮改成 `nav('/knowledge')` —— 那是「跳转到知识库入口」，
+                 不是用户要的「在这里上传」。用户指出「写错了」。
+              ③ 现在：置一个跨页信号 + 跳到知识库页，那一页看到信号**直接开上传面板**，
+                 人立刻就能选文件，不用再自己找入口。 */}
         <button
           type="button"
           aria-label="上传知识"
+          title="上传一份资料到知识库"
+          onClick={() => {
+            useAppStore.getState().requestKbUpload(true)
+            nav('/knowledge')
+          }}
           className="flex h-5 items-center gap-1 rounded-tps px-1.5 text-[11px] text-t2 transition-colors hover:bg-white hover:text-p700"
         >
           <Upload size={12} strokeWidth={1.9} />

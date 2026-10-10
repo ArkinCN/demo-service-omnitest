@@ -304,7 +304,7 @@
       ],
       "note": "枚举型参数，取值集合见 options；min/max/step 不适用",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:119 (#define MOTOR_START_MODE)"
       }
     },
@@ -326,7 +326,7 @@
       "value_shell": "I_Value(x)",
       "note": "范围 0.1~20 A 取自 coolingfan-openloop-debug 规程 inputs 映射表；分诊动作：过流 −20%，起不来 +0.1~0.2 A",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:143 (#define MOTOR_START_IQ_CURRENT)"
       }
     },
@@ -346,7 +346,7 @@
       "editable": true,
       "note": "Customer.h 注释：Open-Omega 启动操作范围 500~2000；方波启动为 100~800。规程口径为「只读记录，仅切闭环失败分诊命中时才动，幅度 ±20%」",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:139 (#define MOTOR_LOOP_RPM)"
       }
     },
@@ -365,7 +365,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:153 (#define MOTOR_MIN_SMO_SPEED)"
       }
     },
@@ -385,7 +385,7 @@
       "editable": true,
       "value_shell": "_Q12(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:141 (#define MOTOR_START_DQKP)"
       }
     },
@@ -405,7 +405,7 @@
       "editable": true,
       "value_shell": "_Q15(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:142 (#define MOTOR_START_DQKI)"
       }
     },
@@ -424,7 +424,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:145 (#define MOTOR_START_TIMES)"
       }
     },
@@ -444,7 +444,7 @@
       "editable": true,
       "value_shell": "_Q15(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:132 (#define MOTOR_OPEN_ACC)"
       }
     },
@@ -463,7 +463,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:134 (#define MOTOR_OPEN_ACC_CNT)"
       }
     },
@@ -482,7 +482,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:135 (#define MOTOR_OMEGA_RAMP_ACC)"
       }
     },
@@ -502,7 +502,7 @@
       "editable": true,
       "value_shell": "_Q15(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:136 (#define MOTOR_OMEGA_ACC_MIN)"
       }
     },
@@ -522,7 +522,7 @@
       "editable": true,
       "value_shell": "_Q15(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:137 (#define MOTOR_OMEGA_ACC_END)"
       }
     },
@@ -542,7 +542,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:102 (#define MOTOR_ALIGN_ENABLED)"
       }
     },
@@ -563,7 +563,7 @@
       "value_shell": "_Q15(x)",
       "note": "98 次启动故障实验注入的就是本参数偏弱（align_weak）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:104 (#define MOTOR_ALIGNMENT_DOUT)"
       }
     },
@@ -582,7 +582,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:105 (#define MOTOR_ALIGNMENT_DEGREES)"
       }
     },
@@ -601,7 +601,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:106 (#define MOTOR_ALIGNMENT_TIMES)"
       }
     },
@@ -622,7 +622,7 @@
       "range_estimated": true,
       "note": "Customer.h 未给 ATO_BW 的范围注释；min/max 借 SPD_BW 的 [5 ~ 40] 并放宽到 100 覆盖 ATO_BW_RUN1~4 的实配值（30/53/65/65），属推定区间",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:147 (#define ATO_BW)"
       }
     },
@@ -641,7 +641,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:148 (#define ATO_BW_RUN)"
       }
     },
@@ -660,7 +660,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:149 (#define ATO_BW_RUN1)"
       }
     },
@@ -679,7 +679,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:150 (#define ATO_BW_RUN2)"
       }
     },
@@ -698,7 +698,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:151 (#define ATO_BW_RUN3)"
       }
     },
@@ -717,7 +717,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:152 (#define ATO_BW_RUN4)"
       }
     },
@@ -736,7 +736,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:146 (#define SPD_BW)"
       }
     },
@@ -756,7 +756,7 @@
       "editable": true,
       "note": "仅 SMOTHECOMP_ENABLED = 1 时生效，当前为 0",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:79 (#define SMOTHECOMP_DEGREES)"
       }
     },
@@ -776,7 +776,7 @@
       "editable": true,
       "value_shell": "_Q12(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:155 (#define MOTOR_RUN_DQKP)"
       }
     },
@@ -796,7 +796,7 @@
       "editable": true,
       "value_shell": "_Q15(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:156 (#define MOTOR_RUN_DQKI)"
       }
     },
@@ -816,7 +816,7 @@
       "editable": true,
       "value_shell": "I_Value(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:157 (#define MOTOR_RUN_IQ_CURRENT)"
       }
     },
@@ -836,7 +836,7 @@
       "editable": true,
       "value_shell": "_Q15(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:159 (#define DOUT_MAX)"
       }
     },
@@ -856,7 +856,7 @@
       "editable": true,
       "value_shell": "_Q15(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:160 (#define QOUT_MAX)"
       }
     },
@@ -876,7 +876,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:175 (#define OUTLOOP_ENABLED)"
       }
     },
@@ -897,7 +897,7 @@
       "value_shell": "_Q12(x)",
       "note": "规程分诊：稳态转速振荡（3 次极差 > 3%）时 SKP −20%，一次只动一项",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:188 (#define SPEED_KP)"
       }
     },
@@ -918,7 +918,7 @@
       "value_shell": "_Q15(x)",
       "note": "规程分诊：稳态转速偏差超容限但稳定时 SKI +20%",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:189 (#define SPEED_KI)"
       }
     },
@@ -938,7 +938,7 @@
       "editable": true,
       "value_shell": "_Q15(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:190 (#define SPEED_KD)"
       }
     },
@@ -958,7 +958,7 @@
       "editable": true,
       "value_shell": "I_Value(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:193 (#define SOUT_MIN)"
       }
     },
@@ -978,7 +978,7 @@
       "editable": true,
       "value_shell": "I_Value(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:194 (#define SOUT_MAX)"
       }
     },
@@ -998,7 +998,7 @@
       "editable": true,
       "note": "吸尘器规程里的 LOOP_TIME 在本散热风扇工程对应 SPEED_REFRESH_TIMES；本工程无 LOOP_TIME 宏",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:176 (#define SPEED_REFRESH_TIMES)"
       }
     },
@@ -1017,7 +1017,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:177 (#define SPEED_JERK_TIMES)"
       }
     },
@@ -1036,7 +1036,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:178 (#define SPEED_JERK_MAX_VALUE)"
       }
     },
@@ -1055,7 +1055,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:179 (#define SPEED_DEC)"
       }
     },
@@ -1076,7 +1076,7 @@
       "editable": true,
       "note": "min/max 取自 Customer.h「PWM 寬頻支援: 10hz ~ 90khz」注释中的 kHz 量级上下限",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:69 (#define PWM_FREQUENCY)"
       }
     },
@@ -1097,7 +1097,7 @@
       "range_estimated": true,
       "note": "Customer.h 未给死区范围注释，min/max 为按 MIN_WIND_TIME/PWM_MIN_WIDTH 量级推定的可调区间",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:70 (#define PWM_DEADTIME)"
       }
     },
@@ -1117,7 +1117,7 @@
       "editable": true,
       "note": "仅 HW_SHUNT_MODE 为 DUAL_SHUNT / THREE_SHUNT 时有效；本工程为 SINGLE_SHUNT",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:72 (#define PWM_DT_OFFSET)"
       }
     },
@@ -1136,7 +1136,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:73 (#define PWM_MIN_WIDTH)"
       }
     },
@@ -1156,7 +1156,7 @@
       "editable": true,
       "note": "时间换算 41.67 ns × TRGDLY_POSITION，正数为延迟",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:88 (#define TRGDLY_POSITION)"
       }
     },
@@ -1186,7 +1186,7 @@
       ],
       "note": "枚举型参数，取值集合见 options；min/max/step 不适用",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:74 (#define SVPWM_MODE)"
       }
     },
@@ -1221,7 +1221,7 @@
       ],
       "note": "枚举型参数，取值集合见 options；min/max/step 不适用。coolingfan-openloop-debug 规程要求改成 NONEMODE 做速度闭环调试",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:198 (#define SPEED_MODE)"
       }
     },
@@ -1241,7 +1241,7 @@
       "editable": true,
       "note": "coolingfan-openloop-debug 的「闭环目标转速」写入目标宏族之一",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:200 (#define NONEMODE_SPEED)"
       }
     },
@@ -1261,7 +1261,7 @@
       "editable": true,
       "value_shell": "_Q15(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:241 (#define MOTOR_MIN_DUTY)"
       }
     },
@@ -1281,7 +1281,7 @@
       "editable": true,
       "value_shell": "_Q15(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:242 (#define MOTOR_MAX_DUTY)"
       }
     },
@@ -1301,7 +1301,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:281 (#define MOTOR_TAILWIND_ENABLED)"
       }
     },
@@ -1320,7 +1320,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:282 (#define MOTOR_TAILWIND_DETECT_MIN_SPEED)"
       }
     },
@@ -1339,7 +1339,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:284 (#define MOTOR_TAILWIND_DETECT_TIMES)"
       }
     },
@@ -1359,7 +1359,7 @@
       "editable": true,
       "value_shell": "_Q12(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:288 (#define TAILWIND_DQKP)"
       }
     },
@@ -1379,7 +1379,7 @@
       "editable": true,
       "value_shell": "_Q15(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:289 (#define TAILWIND_DQKI)"
       }
     },
@@ -1400,7 +1400,7 @@
       "range_estimated": true,
       "note": "Customer.h 未给范围，min/max 按 Q15 全量程推定",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:290 (#define TAILWIND_START_UQ)"
       }
     },
@@ -1420,7 +1420,7 @@
       "editable": true,
       "value_shell": "I_Value(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:291 (#define TAILWIND_START_IQ_CURRENT)"
       }
     },
@@ -1439,7 +1439,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:287 (#define TAILWIND_START_ANGLE)"
       }
     },
@@ -1459,7 +1459,7 @@
       "editable": true,
       "note": "HEADWIND_IQ_BRAKE_ENABLED = 1 时不得高于 IQ_BRAKE_START_SPEED",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:294 (#define HEADWIND_LOWSPEED_THRESHOLD)"
       }
     },
@@ -1478,7 +1478,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:295 (#define HEADWIND_BRAKE_TIME_BASE)"
       }
     },
@@ -1497,7 +1497,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:296 (#define HEADWIND_ALIGNMENT_TIMES)"
       }
     },
@@ -1517,7 +1517,7 @@
       "editable": true,
       "value_shell": "_Q15(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:297 (#define HEADWIND_ALIGNMENT_DOUT)"
       }
     },
@@ -1537,7 +1537,7 @@
       "editable": true,
       "value_shell": "I_Value(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:298 (#define HEADWIND_START_IQ_CURRENT)"
       }
     },
@@ -1556,7 +1556,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:302 (#define IQ_BRAKE_START_SPEED)"
       }
     },
@@ -1576,7 +1576,7 @@
       "editable": true,
       "value_shell": "_Q12(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:303 (#define IQ_BRAKE_DQKP)"
       }
     },
@@ -1596,7 +1596,7 @@
       "editable": true,
       "value_shell": "_Q15(x)",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:304 (#define IQ_BRAKE_DQKI)"
       }
     },
@@ -1615,7 +1615,7 @@
       ],
       "editable": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:314 (#define IQ_BRAKE_START_DEGREES)"
       }
     },
@@ -1650,7 +1650,7 @@
       ],
       "note": "枚举型参数，取值集合见 options；min/max/step 不适用",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:422 (#define CURRENT_LIMITER_MODE)"
       }
     },
@@ -1671,7 +1671,7 @@
       "value_below_min": true,
       "note": "源注释范围写作 [1.0 ~ HW_BOARD_CURR_MAX]。上限 15.625 A 是按 Parameter.h:42 的公式 HW_BOARD_CURR_MAX = HW_ADC_REF / 2.0 / HW_AMPGAIN / HW_RSHUNT 实算得出：HW_ADC_REF = 5.0 V（Parameter.h:106，因 Customer.h:87 HW_ADC_REF_TYPE = REF_5V0）、HW_AMPGAIN = 16（Customer.h:86 GAIN_16）、HW_RSHUNT = 0.01 Ω（Customer.h:85），5.0 / 2 / 16 / 0.01 = 15.625。实配值 0.6 A 低于源注释自己写的下限 1.0 A，源材料自身不一致，按原样登记并置 value_below_min: true，前端不得把 0.6 当成落在合法区间内的值",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:423 (#define CURRENT_LIMITER_THRESHOLD)"
       }
     },
@@ -1706,7 +1706,7 @@
       ],
       "note": "枚举型参数，取值集合见 options；min/max/step 不适用",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:439 (#define POWER_LIMITER_MODE)"
       }
     },
@@ -1726,7 +1726,7 @@
       "editable": true,
       "note": "上限 MAX_PWOER（源注释原文拼写）在本工程头文件未定义",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:440 (#define POWER_LIMITER_THRESHOLD)"
       }
     }

@@ -2,13 +2,15 @@
    场景包原始数据的加载与类型。
 
    数据源（整目录已复制进 public/scenes/<sceneId>/）：
-   /mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/motor.cooling-fan.fortior-fu6832/
+   [源] scenes/motor.cooling-fan.fortior-fu6832
    字段含义见该目录下的 README.md。
 
    壳层的 ScenePackage（src/data/types.ts）是 UI 契约，只覆盖左栏参数与卡槽；
    各功能卡片要用的明细（61 份文档、24 条经验、70 项控制参数、67 条工作流…）
    走本模块直接读原始 JSON，不经壳层契约压扁。
    =========================================================================== */
+
+import { fetchJson } from '../shared/fetchJson'
 
 export interface SourceRef {
   file: string
@@ -89,6 +91,24 @@ export interface RawRequirement {
   flows?: string[]
   /** evaluable 为 false 时，为什么写不出布尔表达式 */
   not_evaluable_reason?: string
+  /**
+   * 该判据关联的调优候选标签（2026-10-08 新增，仅台架派生判据使用）。
+   *
+   * 用途：流程 5 判出「未达标」后，据此把对应的经验候选标为「命中本轮未达标」，
+   * 让推荐针对本轮问题而不是一张静态清单。写的是控制参数 key 或语义标签，
+   * 与经验条目的 `tags.parameters` 比对。
+   */
+  candidate_tags?: string[]
+  /**
+   * 本台架是否具备测量该判据的手段（2026-10-08 新增，仅台架判据使用）。
+   *
+   * `false` 表示台架物理上采不到该判据所需的量（如缺 MCU 故障寄存器读通道、
+   * 缺红外测速、缺母线电流探头）——这不是"没采到"，是"没这个能力"，故判
+   * `not_applicable` 而非 `missing`，并必须配 `bench_inapplicable_reason` 说明缺什么。
+   */
+  bench_applicable?: boolean
+  /** `bench_applicable:false` 时必填：为什么本台架测不了（缺哪台设备） */
+  bench_inapplicable_reason?: string
   _status?: string
   _placeholder?: boolean
   note?: string
@@ -366,13 +386,9 @@ const FILES = [
 ] as const
 
 async function getJson(url: string): Promise<unknown | null> {
-  try {
-    const r = await fetch(url, { cache: 'force-cache' })
-    if (!r.ok) return null
-    return (await r.json()) as unknown
-  } catch {
-    return null
-  }
+  // 2026-10-08：改用统一的 fetchJson。此前这里写死 `cache: 'force-cache'`，
+  // 导致改了场景包 JSON、重启前后端后界面仍读旧副本（见 fetchJson 模块头说明）。
+  return fetchJson(url)
 }
 
 /* ======================================================================= 归一化

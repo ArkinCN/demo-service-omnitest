@@ -31,7 +31,7 @@ const toNodes = (): Node<CanvasNodeData>[] =>
   }))
 
 const EDGE_STYLE = {
-  // 与 ~/agent-test-web WorkflowCanvas.edgeStyle 同口径：主干墨绿实线 1.5，弱化链路浅绿虚线 1
+  // 与 c/ WorkflowCanvas.edgeStyle 同口径：主干墨绿实线 1.5，弱化链路浅绿虚线 1
   physical: { type: 'smoothstep', style: { stroke: '#2e5e45', strokeWidth: 1.5 } },
   data: { type: 'default', animated: true, style: { stroke: '#a8c5b5', strokeWidth: 1, strokeDasharray: '6 4' } },
 } as const

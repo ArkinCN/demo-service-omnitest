@@ -57,7 +57,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[o for o in os.environ.get(
         "BRIDGE_CORS_ORIGIN", "http://localhost:5173,http://localhost:3080").split(",") if o],
-    allow_headers=["content-type", "x-bridge-token", "x-approver-pin"],
+    allow_headers=["content-type", "x-bridge-token", "x-approver-pin", "x-automation-token"],
     allow_methods=["GET", "POST", "OPTIONS"],
 )
 
@@ -73,7 +73,7 @@ class PinGate:
 
     连续错 MAX_FAILS 次锁 LOCK_SECONDS 秒；锁定期间即使 PIN 正确也一律拒。
     任何一次成功都把失败计数清零。计数是全进程一份——这是一台单人用的台架桥，
-    按来源 IP 分桶只会给攻击者留下换源绕过的口子。
+    按来[源] IP 分桶只会给攻击者留下换源绕过的口子。
     """
 
     def __init__(self) -> None:
@@ -262,6 +262,44 @@ async def approve(
     PIN_GATE.check(x_approver_pin)
     try:
         return REGISTRY.approve(token, body.operator, channel="human_pin").public()
+    except KeyError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+@app.post("/confirmations/{token}/auto-approve", dependencies=[Depends(auth)])
+async def auto_approve(
+    token: str,
+    body: Approval,
+    x_automation_token: str | None = Header(default=None),
+) -> dict:
+    """一键自动化测试流程的自动放行通道（2026-09-30 加）。
+
+    红线**没有被废**，只是多开了一条受独立 token 保护的自动化通道：
+      · x-bridge-token 证明请求来自我们的页面（同 approve）；
+      · x-automation-token 证明「这是自动化流程在放行」，其值取自桥 .env 的
+        BRIDGE_AUTOMATION_TOKEN，绝不进浏览器包（与 APPROVER_PIN 同级秘密）。
+    通过后凭据 approve_channel 记 "automation"（区别于 human_pin），留痕可审计。
+
+    安全边界：
+      · 未配置 BRIDGE_AUTOMATION_TOKEN → 本端点恒 503，自动化无法无 PIN 放行；
+      · token 缺失或不对 → 403，凭据留在 pending，不消耗、不降级；
+      · 只放行「已在 pending 的凭据」，仍受 redeem 的 tool/参数指纹约束——
+        自动化能做的，只是把人现场敲 PIN 这一步换成「持有自动化 token」。
+    """
+    if not config.AUTOMATION_TOKEN:
+        raise HTTPException(
+            503,
+            "桥未配置 BRIDGE_AUTOMATION_TOKEN，自动化自动放行关闭；"
+            "如需一键自动化真下发设备，请在桥 .env 配置该 token。",
+        )
+    if not x_automation_token or not hmac.compare_digest(
+        x_automation_token.encode("utf-8"), config.AUTOMATION_TOKEN.encode("utf-8")
+    ):
+        raise HTTPException(403, "缺 x-automation-token 头或自动化 token 不正确，凭据保持 pending")
+    try:
+        return REGISTRY.approve(token, body.operator or "automation", channel="automation").public()
     except KeyError as exc:
         raise HTTPException(404, str(exc)) from exc
     except ValueError as exc:

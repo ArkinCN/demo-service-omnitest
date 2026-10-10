@@ -63,7 +63,7 @@
 
 ```json
 "_source": {
-  "file": "/mnt/f/.../CoolingFan_Program/Software/User/include/Customer.h",
+  "file": "[源] include/Customer.h",
   "locator": "Customer.h:139 (#define MOTOR_LOOP_RPM)"
 }
 ```
@@ -157,7 +157,7 @@
 |---|---|
 | `evaluable` | 这条能不能真的求出布尔值。本包 20 条 true、6 条 false |
 | `criterion` | JavaScript 语法的判据表达式；散文式、取不到标志位的条目为 `null` |
-| `variables` | 表达式里每个自由变量映射到确定的取值来源 |
+| `variables` | 表达式里每个自由变量映射到确定的取值来[源] |
 | `not_evaluable_reason` | `evaluable` 为 false 时写明卡在哪 |
 
 `variables` 的 `source` 四种取值，每种都能解析到一个确定目标：
@@ -213,7 +213,7 @@
 
 ### 4.8 `experience.json`
 
-24 条。每条 = 问题现象 `symptom` / 原因 `cause` / 调整动作 `action` / 结果 `result` / 来源 `_source` / 标签 `tags`。
+24 条。每条 = 问题现象 `symptom` / 原因 `cause` / 调整动作 `action` / 结果 `result` / 来[源] `_source` / 标签 `tags`。
 
 `tags` 三个维度：`scene`（三级分类）、`flow`（属哪个流程）、`parameters`（涉及哪些参数宏名），另有 `topic` 主题词。前端做「按参数检索经验」时直接用 `tags.parameters`。
 
@@ -339,7 +339,7 @@
 ## 八、重新生成
 
 ```bash
-cd /mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/motor.cooling-fan.fortior-fu6832
+cd [源] scenes/motor.cooling-fan.fortior-fu6832
 python3 _build/build_scene_pack.py
 ```
 

@@ -13,6 +13,7 @@
    =========================================================================== */
 import { listWorkflows, loadWorkflow, registerNodeGroups, NODE_TYPE_GROUP } from '../workflow'
 import type { NodeGroupId, WorkflowIndexEntry, WorkflowModel } from '../workflow'
+import { fetchJson } from '../shared/fetchJson'
 import type { RawPack } from './pack'
 
 /** 列表条目在两种来源下的统一形状 */
@@ -80,7 +81,10 @@ export async function listPackWorkflows(pack: RawPack): Promise<WfEntry[]> {
       name: w.name,
       group: w.group.name,
       voltage: w.voltage_level_name || w.voltage_level || '—',
-      // file_path 是源目录的绝对路径，站点里要的是包根之下的相对路径
+      // file_path 是**包根之下的相对路径**（形如 ./assets/xxx.wfw，2026-09-23
+      // 由 Linux 绝对路径改来）。这里靠 split('/assets/') 取后半段再拼包前缀，
+      // 所以场景包里的 file_path **必须保留 /assets/ 分隔符**，改动前先确认。
+      // 取不到后半段（包外登记的条目）就给空串，调用方会跳过它。
       assetPath: w.file_path.split('/assets/')[1] ? `assets/${w.file_path.split('/assets/')[1]}` : '',
       nodeCount: w.node_count,
       edgeCount: w.edge_count,
@@ -116,14 +120,14 @@ export async function loadPackWorkflow(pack: RawPack, w: WfEntry): Promise<Workf
   const hit = assetCache.get(url)
   if (hit) return hit
 
-  const res = await fetch(url, { cache: 'force-cache' })
-  if (!res.ok) return null
-  const raw = (await res.json()) as {
+  // 2026-10-08：改用统一 fetchJson（原 force-cache 会读旧副本，见 fetchJson 模块头）
+  const raw = await fetchJson<{
     nodes: { id: string; type: string; label: string; group: string; params?: Record<string, unknown>; position?: { x: number; y: number } | null }[]
     edges: { id: string; source: string; target: string; sourceHandle?: string; targetHandle?: string }[]
     meta?: Record<string, unknown>
     variables?: unknown[]
-  }
+  }>(url)
+  if (!raw) return null
   const toGroup = groupMapperOf(pack)
   const model: WorkflowModel = {
     nodes: (raw.nodes ?? []).map((n) => ({

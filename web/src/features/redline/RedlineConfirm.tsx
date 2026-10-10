@@ -8,7 +8,7 @@
    接了设备桥时，卡上多一行凭据信息：桥已经拒绝执行并签发了一张 pending 凭据，
    「确认执行」做的事是调 POST /confirmations/{token}/approve 把它批到 approved，
    再带票重调工具。所以这张卡不是前端自己加的一层礼貌询问，而是后端明确拒绝
-   之后必须走的一步。依据：~/lab/spike-device-mcp/README.md 第 3 节。
+   之后必须走的一步。依据：[源] spike-device-mcp/README.md 第 3 节。
 
    2026-09-20 起卡上多一个批准 PIN 输入框。理由：桥的调用票（VITE_BRIDGE_TOKEN）
    会被打进浏览器包，光有它谁都能自签自批；批准权因此另立一份只在桥服务端的秘密
@@ -37,7 +37,10 @@ export function RedlineConfirm() {
 
   if (!req) return null
   const Icon = req.danger ? AlertOctagon : ShieldCheck
-  const needPin = Boolean(req.confirmToken)
+  // ⚠️ 急停（emergency）**免现场 PIN**（2026-10-05 用户口径「来不及」）：
+  // 仍弹这张卡防误触，但不显示 PIN 框、不要求输入；点「确认执行」直接走
+  // 自动化放行 token（approveRedline 内部据 req.emergency 分流）。
+  const needPin = Boolean(req.confirmToken) && !req.emergency
   const canApprove = !busy && (!needPin || pin.trim().length > 0)
   const submit = () => {
     if (!canApprove) return
@@ -139,9 +142,11 @@ export function RedlineConfirm() {
         ) : null}
 
         <p className="text-[12px] leading-5 text-t3">
-          {req.confirmToken
-            ? '点「确认执行」等于在设备桥上人工批准这张凭据：凭据单次使用、180 秒过期、绑定工具名与参数指纹，批准后才允许带票执行；台账会把这次放行记成 human_pin。'
-            : '设备桥未接入，本次只驱动页面回放，不向台架下发任何控制命令。'}
+          {req.emergency
+            ? '急停为安全动作，**免现场 PIN**（来不及敲）：点「确认执行」即走安全放行通道切断驱动输出，台账记 emergency_auto。现场仍须保留物理急停回路。'
+            : req.confirmToken
+              ? '点「确认执行」等于在设备桥上人工批准这张凭据：凭据单次使用、180 秒过期、绑定工具名与参数指纹，批准后才允许带票执行；台账会把这次放行记成 human_pin。'
+              : '设备桥未接入，本次只驱动页面回放，不向台架下发任何控制命令。'}
         </p>
 
         {error ? (

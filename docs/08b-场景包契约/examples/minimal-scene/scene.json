@@ -17,7 +17,7 @@
       "name": "骨架产品"
     },
     "_source": {
-      "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/08b-场景包契约/README-场景包契约-v1.1.md",
+      "file": "[源] 08b-场景包契约/README-场景包契约-v1.1.md",
       "locator": "第 10 节 新建第三个场景包的步骤"
     }
   },
@@ -26,7 +26,7 @@
     "chip": "不锁定主控。本包只演示字段形状，不登记任何真实器件。",
     "control_scheme": "不适用。新建场景包时把这三个字段换成真实产品的全名、主控与控制方案。",
     "_source": {
-      "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/08b-场景包契约/README-场景包契约-v1.1.md",
+      "file": "[源] 08b-场景包契约/README-场景包契约-v1.1.md",
       "locator": "第 10 节 新建第三个场景包的步骤"
     }
   },
@@ -49,7 +49,7 @@
       "render": "1×1 灰色占位 PNG，由本契约目录的建包脚本生成。新建包时换成真实图片并填实际像素尺寸。",
       "_placeholder": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/08b-场景包契约/README-场景包契约-v1.1.md",
+        "file": "[源] 08b-场景包契约/README-场景包契约-v1.1.md",
         "locator": "第 10 节 新建第三个场景包的步骤"
       }
     }
@@ -81,7 +81,7 @@
     }
   ],
   "_source": {
-    "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/08b-场景包契约/README-场景包契约-v1.1.md",
+    "file": "[源] 08b-场景包契约/README-场景包契约-v1.1.md",
     "locator": "第 10 节 新建第三个场景包的步骤"
   }
 }

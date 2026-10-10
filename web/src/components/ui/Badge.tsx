@@ -39,9 +39,16 @@ export function Badge({
   }[tone]
   return (
     <span
-      title={title}
+      // 悬停出全称：徽标正文可能被省略号截断（见下），全称必须能从 title 读到。
+      // 调用方显式传 title 时以调用方为准，避免把业务说明覆盖掉。
+      // children 若是字符串就直接用作全称，是节点（如带计数的复合内容）则只能靠调用方传。
+      title={title ?? (typeof children === 'string' ? children : undefined)}
       className={cn(
-        'inline-flex h-[20px] shrink-0 items-center gap-1.5 rounded-full border px-2 text-[12px] leading-none font-medium whitespace-nowrap',
+        // min-w-0 + max-w-full：允许在 flex 行里被压窄，且不超过父容器。
+        // 原来是 shrink-0 + nowrap：既不收缩也不裁剪，长 id 会顶出面板边框。
+        // 现在 shrink-0 只作为「父容器宽松时不主动拉伸」的默认值，
+        // 需要收缩的父容器（如 PanelHeader 的右侧位）会把 shrink 覆盖回来。
+        'inline-flex h-[20px] min-w-0 max-w-full shrink items-center gap-1.5 overflow-hidden rounded-full border px-2 text-[12px] leading-none font-medium whitespace-nowrap',
         mono && 'num',
         tones[tone],
         className,
@@ -49,7 +56,12 @@ export function Badge({
     >
       {dot ? <span className={cn('h-[6px] w-[6px] shrink-0 rounded-full', dotColor)} /> : null}
       {icon ? <span className="shrink-0 [&>svg]:block">{icon}</span> : null}
-      {children}
+      {/* 正文自己承担省略：flex 子项默认 min-width:auto 会撑破父级，
+          必须 min-w-0 + truncate 才能真的出省略号而不再溢出。
+          用 flex-1 而不是固定宽度：定宽徽标（如 EntryRow 的 w-[76px]）
+          外层 justify-center 需要正文作为可伸缩项才能真正居中，
+          宽裕时也不影响原本的自适应宽度。 */}
+      <span className="min-w-0 flex-1 truncate">{children}</span>
     </span>
   )
 }
@@ -57,9 +69,9 @@ export function Badge({
 /** 来源标记：小圆点色标，不写字（悬停出全称） */
 export function SourceTag({ source, title }: { source: ParamSource; title?: string }) {
   const map: Record<ParamSource, { cls: string; name: string }> = {
-    文档: { cls: 'bg-p600', name: '来源 文档' },
-    人工: { cls: 'bg-warn', name: '来源 人工' },
-    建议: { cls: 'bg-p300', name: '来源 建议' },
+    文档: { cls: 'bg-p600', name: '来文档' },
+    人工: { cls: 'bg-warn', name: '来人工' },
+    建议: { cls: 'bg-p300', name: '来建议' },
   }
   const s = map[source] ?? map['文档']
   return (

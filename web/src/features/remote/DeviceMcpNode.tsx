@@ -1,11 +1,11 @@
 /* ===========================================================================
    设备 MCP 节点的两个视图：画板上的节点体、放大态。
 
-   第四轮把数据源从 SSH 网关（~/lab/webssh，8022，GET /probe/bench）换成设备桥
-   （~/lab/spike-device-mcp/bridge.py，8031，GET /devices 与 /devices/{id}/status）。
+   第四轮把数据源从 SSH 网关（c/components/webssh，8022，GET /probe/bench）换成设备桥
+   （[源] spike-device-mcp/bridge.py，8031，GET /devices 与 /devices/{id}/status）。
    换的理由是桥一次就给全节点要的三样东西：设备元信息、live/mock 模式、按层分组
    的工具清单；网关那条只回一个布尔量，节点上除了「通/不通」什么都显示不了。
-   依据：~/lab/spike-device-mcp/README.md 第 5 节、08c-部署联调与演示SOP-v1.0.md 第 1.2 节。
+   依据：[源] spike-device-mcp/README.md 第 5 节、08c-部署联调与演示SOP-v1.0.md 第 1.2 节。
 
    SSH 网关保留，但只剩「命令行会话」一个用途，即放大态里那个终端。
    =========================================================================== */

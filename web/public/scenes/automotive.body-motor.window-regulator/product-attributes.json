@@ -204,7 +204,7 @@
       ],
       "note": "有刷直流，机械换向。这是与场景一（无刷直流 / 永磁同步，电子换向）最根本的差异。",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 437 行：与峰岹案例的技术差异表「电机类型」行"
       }
     },
@@ -235,11 +235,11 @@
       "note": "电刷与换向器机械换向，因此电流里天然带换向纹波，纹波频率正比于转速——这正是纹波计数测速的物理基础。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 437 行：技术差异表「电机类型」行"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 146 行：TI 纹波计数参考设计 TIDA-01421：纹波与换向器极一一对应"
         }
       ]
@@ -258,11 +258,11 @@
       "note": "有刷直流电机不做无刷意义上的极对数配置，控制器不需要该参数，故标 not_applicable。与之对应的可配量是换向器极数（每转纹波数 = 2N，N 为绕组对数），见 control-parameters.json 的 ripple_pulses_per_rev。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 439 行：技术差异表「位置反馈」行：霍尔锁存脉冲计数，或电流纹波计数"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 146 行：纹波频率对应换向器极数，为 2N"
         }
       ]
@@ -294,11 +294,11 @@
       "note": "TIDA-01389 用两颗 DRV5013-Q1 锁存霍尔构成位置编码（带宽 30 kHz）；无霍尔方案走电流纹波计数。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 140 行：TIDA-01389 两颗 DRV5013-Q1 锁存霍尔，带宽 30 kHz"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 146 行：TI 车规有刷电机纹波计数参考设计"
         }
       ]
@@ -330,7 +330,7 @@
       "note": "示例值。征求意见稿只规定性能不规定结构，具体机型由产品图样定。蜗杆减速是升降器实现自锁（5.5 条 600 N / 5 mm）的常见做法，但本包没有任何一份材料明文写这一点，不得当结论用。",
       "_placeholder": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 131 行：自锁能力 5.5 条：托架中心垂直施加 600 N 保持 5 s，下降量 ≤5 mm"
       }
     },
@@ -357,11 +357,11 @@
       "note": "本场景固定 12 V 系统。24 V 档留给商用车衍生机型，判据需整套换表。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 122 行：工作电压范围 5.4.1 a) 9 V 至 16 V"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 231 行：ISO 16750-2:2023 电压代码 C：12 V 系统 9 至 16 V"
         }
       ]
@@ -380,15 +380,15 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:117-118 5.4.1 a) 「升降器在9V～16V 电压下应运行平稳」"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 122 行：工作电压范围 5.4.1 a)"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 231 行：ISO 16750-2:2023 代码 C = 9 至 16 V（已核实）"
         }
       ]
@@ -406,11 +406,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:117-118 5.4.1 a)"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 122 行：工作电压范围"
         }
       ]
@@ -429,11 +429,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:284 6.1 b) 「试验电压：（13.5±0.3）V」"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 123 行：试验电压 6.1 b)"
         }
       ]
@@ -450,7 +450,7 @@
       "group": "电气额定",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+        "file": "[源] 汽车场景素材-20260919/qc636.txt",
         "locator": "qc636.txt:284 6.1 b)"
       }
     },
@@ -468,11 +468,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:284 6.1 b) 「接线电阻为：（0.15±0.02）Ω」"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 123 行：接线电阻 0.15 ± 0.02 Ω"
         }
       ]
@@ -491,11 +491,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:127-128 5.4.1 f) 「升降器的启动电压应不大于9V」"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 130 行：启动电压 5.4.1 f)"
         }
       ]
@@ -547,11 +547,11 @@
       "note": "代码 C = 12 V 系统 9 至 16 V。玻璃升降器与刮水电动机均落在此档。已核实。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 231 行：ISO 16750-2:2023 供电电压代码表 C 行"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/ls16750_2.pdf",
+          "file": "[源] 汽车场景素材-20260919/ls16750_2.pdf",
           "locator": "ISO 16750-2:2023 正式预览件开放正文页 供电电压代码表"
         }
       ]
@@ -570,11 +570,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:119-120 5.4.1 b) 「工作电流不大于12A」"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 124 行：工作电流上限 5.4.1 b)"
         }
       ]
@@ -591,7 +591,7 @@
       "group": "工作电流",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 192 行：耐高温特性 5.6.1 / 6.6.1 判据行"
       }
     },
@@ -607,7 +607,7 @@
       "group": "工作电流",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 192 行：耐高温特性 5.6.1 / 6.6.1 判据行"
       }
     },
@@ -624,7 +624,7 @@
       "note": "低温下润滑脂黏度上升、阻力增大，电流上限随之从 12 A 放宽到 20 A。",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 193 行：耐低温特性 5.6.2 / 6.6.2 判据行"
       }
     },
@@ -640,7 +640,7 @@
       "group": "工作电流",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 193 行：耐低温特性 5.6.2 / 6.6.2 判据行"
       }
     },
@@ -658,15 +658,15 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:119-120 5.4.1 b) 「堵转电流不大于28A」"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 125 行：堵转电流上限 5.4.1 b)"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 161 行：堵转电流 ≤28 A（常温）；80 ℃ ≤29 A；−30 ℃ ≤30 A"
         }
       ]
@@ -683,7 +683,7 @@
       "group": "工作电流",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 161 行：堵转电流温度分档"
       }
     },
@@ -699,7 +699,7 @@
       "group": "工作电流",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 161 行：堵转电流温度分档"
       }
     },
@@ -717,11 +717,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:121-122 5.4.1 c) 「升降器堵转力应不小于212N」"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 126 行：堵转力 5.4.1 c)"
         }
       ]
@@ -738,7 +738,7 @@
       "group": "机械性能",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 192 行：耐高温特性判据行「堵转力 ≥164 N」"
       }
     },
@@ -754,7 +754,7 @@
       "group": "机械性能",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 193 行：耐低温特性判据行「堵转力 ≥190 N」"
       }
     },
@@ -772,11 +772,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:142-144 5.5 「施加600N负载时，不应损坏，玻璃托架下降量不大于5mm」"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 131 行：自锁能力 5.5"
         }
       ]
@@ -793,7 +793,7 @@
       "group": "机械性能",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 191 行：自锁性 5.5 / 6.5「垂直向下 600 N 保持 5 s」"
       }
     },
@@ -810,11 +810,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:142-144 5.5"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 131 行：自锁能力 5.5"
         }
       ]
@@ -833,15 +833,15 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:123-124 5.4.1 d) 「上升运行速度应在80mm/s～160mm/s 之间」"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 127 行：上升运行速度 5.4.1 d)"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 440 行：技术差异表「主判据量纲」行"
         }
       ]
@@ -859,11 +859,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:123-124 5.4.1 d)"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 127 行：上升运行速度"
         }
       ]
@@ -881,11 +881,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:123-124 5.4.1 d) 「下降运行速度应不大于200mm/s」"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 128 行：下降运行速度 5.4.1 d)"
         }
       ]
@@ -902,7 +902,7 @@
       "group": "运行速度",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 193 行：耐低温特性判据行「上升速度 ≥60 mm/s」"
       }
     },
@@ -918,7 +918,7 @@
       "group": "运行速度",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 193 行：耐低温特性判据行「下降速度 ≥70 mm/s」"
       }
     },
@@ -935,11 +935,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:125-126 5.4.1 e) 「工作噪音应小于60dB（A）」"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 129 行：工作噪音 5.4.1 e)"
         }
       ]
@@ -958,11 +958,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:326-328 6.4.1 e) 工作噪音试验测点"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 129 行：声学测点：电机出力轴正上方 300 mm"
         }
       ]
@@ -979,7 +979,7 @@
       "group": "声学",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+        "file": "[源] 汽车场景素材-20260919/qc636.txt",
         "locator": "qc636.txt:325-326 「在背景噪音低于测试噪音10dB（A）的环境中进行测试」"
       }
     },
@@ -996,7 +996,7 @@
       "note": "示例值。征求意见稿只按「下止点到上止点」定义行程、不给具体数字，实际值由产品图样定。这个数只用来让前端的位移轴有刻度，不得当判据。",
       "_placeholder": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+        "file": "[源] 汽车场景素材-20260919/qc636.txt",
         "locator": "qc636.txt:312-314 6.4.1 d) 「测量玻璃托架从下止点到上止点的运行时间和行程」"
       }
     },
@@ -1013,7 +1013,7 @@
       "note": "模拟工装配重的设定依据。具体数值随车型玻璃与密封条变，本包不给数。",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 133 行：额定负载计算式 6.1 d)"
       }
     },
@@ -1029,7 +1029,7 @@
       "group": "结构与行程",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 133 行：额定负载计算式 6.1 d)"
       }
     },
@@ -1056,15 +1056,15 @@
       "note": "前门与后门的耐久循环数不同（前门 10 000、后门 5 000），VW 80000 M-06 的机械冲击次数也按门位分档（驾驶员门 100 000 次、前排乘客门与后门 50 000 次）。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 196 行：耐久性（电动，前门）累计 10 000 个循环周期"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 197 行：耐久性（电动，后门）累计 5 000 个循环周期"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 242 行：VW 80000 M-06 冲击次数按安装位置分档"
         }
       ]
@@ -1083,11 +1083,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt 6.1 c) 常温定义"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 132 行：常温定义 6.1 c)"
         }
       ]
@@ -1147,11 +1147,11 @@
       "note": "代码 C = −40 / 65 ℃。已核实。注意与 QC/T 626 征求意见稿的 −30 / 80 ℃ 档不重合，两套温度口径并存时必须显式选一套，不能混用。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 238 行：ISO 16750-4:2023 工作温度代码 A 至 J"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/iso16750-4.pdf",
+          "file": "[源] 汽车场景素材-20260919/iso16750-4.pdf",
           "locator": "ISO 16750-4:2023 正式预览件 工作温度代码表"
         }
       ]
@@ -1169,7 +1169,7 @@
       "note": "放置 2 h 后在该温度下空载不堵转运行 5 个工作循环。",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 192 行：耐高温特性 5.6.1 / 6.6.1 条件列"
       }
     },
@@ -1185,7 +1185,7 @@
       "group": "环境与等级",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 193 行：耐低温特性 5.6.2 / 6.6.2 条件列"
       }
     },
@@ -1216,15 +1216,15 @@
       "note": "车门上的玻璃升降器属 VW 80000 M-04 谱型 D（簧上质量挂装件）：宽带随机振动，每轴 8 h，加速度均方根 30.8 m/s²。已核实。QC/T 626 征求意见稿自己引的是 QC/T 413-2002 的扫频振动条件。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 240 行：VW 80000 机械试验 M-04 谱型 D"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 194 行：耐振动性 5.7 / 6.7 按 QC/T 413-2002"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/vw80000.pdf",
+          "file": "[源] 汽车场景素材-20260919/vw80000.pdf",
           "locator": "VW 80000 Issue 2022-12 机械试验 M-04 章节"
         }
       ]
@@ -1242,11 +1242,11 @@
       "note": "峰值 300 m/s²、6 ms 半正弦。驾驶员车门 100 000 次、前排乘客门与后门 50 000 次。已核实。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 242 行：VW 80000 机械试验 M-06 连续机械冲击"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/vw80000.pdf",
+          "file": "[源] 汽车场景素材-20260919/vw80000.pdf",
           "locator": "VW 80000 Issue 2022-12 机械试验 M-06 章节"
         }
       ]
@@ -1283,11 +1283,11 @@
       "_placeholder": true,
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 246-251 行：AEC-Q100 Rev J1 温度等级与关键应力条件表"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/q100.pdf",
+          "file": "[源] 汽车场景素材-20260919/q100.pdf",
           "locator": "AEC-Q100 Rev J1（2026-03-24）温度等级表"
         }
       ]
@@ -1320,15 +1320,15 @@
       "_placeholder": true,
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 203 行：防水性 5.12.1 / 6.12.1 表 9 喷水条件"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 83 行：GB/T 4208-2017 外壳防护等级（IP 代码）"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 84 行：GB/T 30038 车用版 IP 代码，增设 IPX9K"
         }
       ]

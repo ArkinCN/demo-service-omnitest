@@ -3,9 +3,9 @@
 针对「多场景 Agent 测试系统」C 区面板的独立验证工程。只验证三件事：**滚轮整体缩放**、
 **统一画板仿物理连接**、**右侧工具条拖入节点**，外加设备以 MCP 节点形态出现在画板上。
 对应 2026-09-19 录音意见 R-03 / R-04 / R-07 / R-17（原话见
-`/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/00b-用户录音意见原话-20260919-2121.md`）。
+`docs/20260919-通用Agent测试系统v2.0/00b-用户录音意见原话-20260919-2121.md`）。
 
-本工程**不修改**现有前端原型 `~/agent-test-web` 下的任何文件。
+本工程**不修改**现有前端原型 `c/` 下的任何文件。
 
 ---
 
@@ -18,10 +18,10 @@
 
 ### 1. 它在本项目里已经是既有技术栈，边际成本为零
 
-`~/agent-test-web/package.json` 已经依赖 `@xyflow/react` 12.11.6，
-`~/agent-test-web/src/features/workflow/components/WorkflowCanvas.tsx` 用它渲染了 68 个客户 `.wfw` 工作流。
+`c/package.json` 已经依赖 `@xyflow/react` 12.11.6，
+`[源] components/WorkflowCanvas.tsx` 用它渲染了 68 个客户 `.wfw` 工作流。
 C 区现在既不能缩放也不能拖入，原因不是"没有能力"，而是
-`~/agent-test-web/src/app/ResourcePanel.tsx` 里的 `CanvasView` 走的是另一套实现——
+`[源] app/ResourcePanel.tsx` 里的 `CanvasView` 走的是另一套实现——
 绝对定位的 `<div>` 加一层手画 `<svg>` 连线，压根没接 React Flow。
 所以这不是引入新依赖，是把已经付过的账用起来。
 
@@ -33,7 +33,7 @@ C 区现在既不能缩放也不能拖入，原因不是"没有能力"，而是
 | 不含 React Flow（只留方案 B） | 50.8 KB | 1.8 KB |
 | **React Flow 增量** | **约 61 KB** | **约 2.4 KB** |
 
-这 63 KB 在 `~/agent-test-web` 里已经被工作流画布付掉了，C 区复用它不再增加一个字节。
+这 63 KB 在 `c/` 里已经被工作流画布付掉了，C 区复用它不再增加一个字节。
 
 ### 2. 用户要的三种交互全部开箱，不需要自己实现
 
@@ -60,14 +60,14 @@ React Flow 的自定义节点就是一个普通 React 组件，外框、描边�
 
 兼容性实测：本 spike 跑在 **Vite 5.4.21 + React 18.3.1 + TypeScript 5.6**，`tsc -b` 零报错，构建通过。
 `@xyflow/react` 的 peerDependencies 写的是 `react: ">=17"`，宿主工程的 React 19.2 同样在范围内
-（`~/agent-test-web` 的工作流画布已经在 React 19 下跑了 68 个工作流，是活的证据）。
+（`c/` 的工作流画布已经在 React 19 下跑了 68 个工作流，是活的证据）。
 
 ---
 
 ## 二、怎么跑
 
 ```bash
-cd ~/lab/spike-canvas
+cd [源] lab/spike-canvas
 npm install
 npm run dev            # http://localhost:5300
 ```
@@ -92,7 +92,7 @@ npm run shots          # 产物落到 shots/
 
 ## 三、截图
 
-目录 `~/lab/spike-canvas/shots/`：
+目录 `[源] spike-canvas/shots`：
 
 | 文件 | 内容 |
 | --- | --- |
@@ -124,7 +124,7 @@ npm run shots          # 产物落到 shots/
 | `bench` | 测试台架 | 台架控制 | MCP | 风机测试台架（SSH · 172.25.5.166:8963） |
 | `scope` | 示波器 | 波形采集 | MCP | Rigol DS1104Z（SSH · VISA 直连） |
 | `workflow` | 工作流 | 测试编排 | — | 变速稳态工作流 |
-| `datasource` | 数据源 | 知识库 / 数据集 | — | 芯片知识库 |
+| `datasource` | 数据[源] | 知识库 / 数据集 | — | 芯片知识库 |
 
 R-17 的落法：设备就是画板上一个普通节点，右上角一枚 `MCP` 标签说明它是 MCP 节点；
 后台链路是 SSH 这件事只以一行灰字写在卡底（"SSH · 172.25.5.166:8963"），
@@ -142,11 +142,11 @@ R-17 的落法：设备就是画板上一个普通节点，右上角一枚 `MCP`
 
 ---
 
-## 五、怎么嵌回 `~/agent-test-web`
+## 五、怎么嵌回 `c/`
 
 ### 5.1 替换哪个组件
 
-替换目标是 **`~/agent-test-web/src/app/ResourcePanel.tsx` 里的 `CanvasView` 函数**（该文件第 19–91 行那一段），
+替换目标是 **`[源] app/ResourcePanel.tsx` 里的 `CanvasView` 函数**（该文件第 19–91 行那一段），
 它现在的实现是绝对定位 `<div>` 加手画 `<svg>` 直线，既不能缩放也不能拖入。
 `ResourcePanel` 外层的「网格 / 画布」分段控件、`ToolRail` 挂载位置、`Modal` 放大浮层都不动。
 
@@ -179,7 +179,7 @@ R-17 的落法：设备就是画板上一个普通节点，右上角一枚 `MCP`
 
 3. **共用节点卡的底层样式类**。`WorkflowNodeCard.tsx`（工作流节点）与 `DeviceNodeCard.tsx`（设备节点）
    字段不同，不能合并成一个组件，但它们的外框、描边、选中态、`<Handle>` 尺寸应当来自同一份 CSS。
-   建议把 `~/agent-test-web/src/features/workflow/styles/workflow.css` 里 `.wf-node`、`.wf-handle`
+   建议把 `[源] styles/workflow.css` 里 `.wf-node`、`.wf-handle`
    这两条规则提成 `.flow-node` / `.flow-handle` 放进共享样式文件，两边各自只加自己的内容层类名。
 
 反过来，统一画板里的「工作流」节点被双击展开时，应当直接复用 `WorkflowCanvas` 渲染该工作流的内部步骤图。
@@ -190,13 +190,13 @@ R-17 的落法：设备就是画板上一个普通节点，右上角一枚 `MCP`
 场景包真实源目录（不是 `40_工程/agent-test-web-data/scenes/`，实测该路径不存在）：
 
 ```
-/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/<sceneId>/
+c-data/scenes<sceneId>/
 ```
 
 现有两个场景：`motor.cooling-fan.fortior-fu6832` 与 `automotive.body-motor.window-regulator`。
 每个场景是一个目录下的 11 份 JSON（`scene.json`、`workflows.json`、`documents.json`、
 `control-parameters.json`、`test-requirements.json` 等），整目录被复制到
-`~/agent-test-web/public/scenes/<sceneId>/` 供前端 `loadScene()` 读取。
+`./scenes/<sceneId>/` 供前端 `loadScene()` 读取。
 
 **建议新增第 12 份文件 `canvas.json`**，与其他 JSON 平级，而不是塞进 `scene.json` 的 `flows` 里。
 理由：画布拓扑是跨流程复用的（同一套台架接线在流程 2 到流程 6 都一样），
@@ -230,7 +230,7 @@ R-17 的落法：设备就是画板上一个普通节点，右上角一枚 `MCP`
 }
 ```
 
-对应要改的宿主类型：`~/agent-test-web/src/data/types.ts` 第 139–142 行那个
+对应要改的宿主类型：`[源] data/types.ts` 第 139–142 行那个
 `canvas?: { nodes: {id: CardId, x, y, w, h}[], links: {...}[] }` 应当废弃——
 它把节点 id 绑成了 `CardId`（卡片库的 id），而画板上的设备节点根本不是卡片。
 新结构里 `id` 是自由字符串，`kind` 决定外观，节点与卡片的关联另用可选字段 `cardId` 表达。
@@ -253,7 +253,7 @@ R-17 的落法：设备就是画板上一个普通节点，右上角一枚 `MCP`
    考虑到"仿物理连接"的语义是反映真实接线而不是让用户随便连，这条可能本来就不该开，但需要确认。
 3. **没有删除节点 / 撤销**。拖错了只能刷新。
 4. **没有小地图**。`WorkflowCanvas` 用了 `<MiniMap>`；节点上到十几个以后统一画板大概也需要，但会占掉右下角。
-5. **节点位置是手写死的坐标**，没有自动布局。`~/agent-test-web/src/features/workflow/lib/layout.ts`
+5. **节点位置是手写死的坐标**，没有自动布局。`[源] lib/layout.ts`
    里已有基于 dagre 的 `layoutModel()`，但物理接线图用分层自动布局反而会破坏"台架在中间、设备在两侧"的空间直觉，
    建议坐标就由场景包给定。
 

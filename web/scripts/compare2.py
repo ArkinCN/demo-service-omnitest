@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#![源] bin/env python3
 """v2 收尾对照图：左电机包、右汽车包，两张 1920×1080 各缩到 960 宽横向拼成 1920 宽。
    先跑 scripts/shootfinal.mjs 出 final-run.png 与 final-auto-run.png，再跑本脚本。
      python3 scripts/compare2.py
@@ -21,10 +21,10 @@ dr.line([(W, BAND), (W, h + BAND)], fill='#C8C5BD', width=2)
 dr.line([(0, BAND - 1), (2 * W, BAND - 1)], fill='#C8C5BD', width=1)
 # 标题给中文产品名（读者一眼知道是什么被测件），场景包标识降为同行小字
 CJK = [
-    '/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc',
-    '/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc',
-    '/mnt/c/Windows/Fonts/msyhbd.ttc',
-    '/mnt/c/Windows/Fonts/msyh.ttc',
+    '[源] noto/NotoSansCJK-Bold.ttc',
+    '[源] noto/NotoSansCJK-Bold.ttc',
+    '[源] Fonts/msyhbd.ttc',
+    '[源] Fonts/msyh.ttc',
 ]
 
 
@@ -37,7 +37,7 @@ def font(size, bold=True):
                 continue
     try:
         name = 'DejaVuSans-Bold.ttf' if bold else 'DejaVuSans.ttf'
-        return ImageFont.truetype(f'/usr/share/fonts/truetype/dejavu/{name}', size)
+        return ImageFont.truetype(f'[源] dejavu/{name}', size)
     except OSError:
         return None
 

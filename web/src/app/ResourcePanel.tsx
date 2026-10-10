@@ -49,6 +49,11 @@ export function ResourcePanel({ flow, scene }: { flow: FlowId; scene: ScenePacka
   const view = useFlowView(flow, scene)
   const setView = useAppStore((s) => s.setCanvasView)
   const [open, setOpen] = useState<CardInstance | null>(null)
+  // 自动化运行态：只用来在面板角上挂一枚轻提示。
+  // ⚠️ 真正的进度/结果全屏浮层在 Shell 层挂载（features/automation/AutomationRunOverlay），
+  // 本组件**不再订阅 stages/currentStageId**——老实现订阅它们渲染「右上大屏」，
+  // 且挂载条件就是 running，跑完立刻卸载，人看不到结果（2026-10-05 已退役）。
+  const autoRunning = useAppStore((s) => s.automationRunStatus === 'running')
 
   const registered = useMemo(() => getPanelCards(flow), [flow])
   const regById = useMemo(() => new Map(registered.map((r) => [r.id, r])), [registered])
@@ -87,7 +92,16 @@ export function ResourcePanel({ flow, scene }: { flow: FlowId; scene: ScenePacka
   }
 
   return (
-    <Panel>
+    /* relative：给运行态角标做定位基准（Panel 自身没有 relative） */
+    <Panel className="relative">
+      {/* 自动化运行态轻提示：真正的进度/结果由全屏浮层（Shell 层挂载）承担。
+          这里只留一枚角标，让「面板本身」也知道正在跑，不与浮层抢信息。 */}
+      {autoRunning ? (
+        <div className="pointer-events-none absolute right-3 bottom-3 z-10 flex items-center gap-1.5 rounded-full border border-ink bg-surface/95 px-2.5 py-1 text-[11.5px] text-t2 shadow-tp2">
+          <span className="automation-pulse h-[6px] w-[6px] rounded-full bg-ink" />
+          自动化测试进行中
+        </div>
+      ) : null}
       <PanelHeader
         icon={<Layers size={17} strokeWidth={1.9} />}
         title="面板"
@@ -116,7 +130,11 @@ export function ResourcePanel({ flow, scene }: { flow: FlowId; scene: ScenePacka
               style={{
                 gap: 'clamp(12px, 0.9vw, 16px)',
                 gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-                gridTemplateRows: '1.4fr 1fr',
+                // 行高给下限（2026-10-09）：原 '1.4fr 1fr' 在矮视口下被算成 73px/52px，
+                // hero 卡只剩 136px，绘图区 21px —— 曲线与三根纵轴全都看不见
+                //（实测 tooltip 都抓不到）。220px 是「卡头 + 读数行 + 三轴 + 底部滑块」
+                // 的最小可读高度；容器不够高时它会溢出，而不是把图表压没。
+                gridTemplateRows: 'minmax(220px, 1.4fr) minmax(140px, 1fr)',
               }}
             >
               {gridSlots.map((c, i) => (

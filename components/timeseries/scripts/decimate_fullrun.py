@@ -14,8 +14,8 @@ import time
 import numpy as np
 import pandas as pd
 
-SRC = "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260627/fullrun_v2b_20260627.csv"
-DST = "/home/zzz/lab/timeseries/public/data/fullrun_v2b_decimated.csv"
+SRC = "测试数据_20260627/fullrun_v2b_20260627.csv"
+DST = "./data/fullrun_v2b_decimated.csv"
 BUCKETS = 2000  # 2000 buckets x (min,max) = 4000 rendered points
 
 

@@ -142,7 +142,7 @@
       "editable": true,
       "group": "电机本体",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:56 (#define Pole_Pairs)"
       }
     },
@@ -157,7 +157,7 @@
       "editable": true,
       "group": "电机本体",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:57 (#define RS)"
       }
     },
@@ -172,7 +172,7 @@
       "editable": true,
       "group": "电机本体",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:58 (#define LD)"
       }
     },
@@ -188,7 +188,7 @@
       "group": "电机本体",
       "note": "源文件写作 #define LQ (LD)，取值跟随 LD",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:59 (#define LQ)"
       }
     },
@@ -203,7 +203,7 @@
       "editable": true,
       "group": "电机本体",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:60 (#define Ke)"
       }
     },
@@ -219,7 +219,7 @@
       "group": "电机本体",
       "note": "典型值 = 电机最高转速 × 2",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:65 (#define MOTOR_SPEED_BASE)"
       }
     },
@@ -234,7 +234,7 @@
       "group": "电机本体",
       "note": "枚举 FORWARD 正转 / BACKWARD 反转",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:98 (#define MOTOR_DIRECTION)"
       }
     },
@@ -250,7 +250,7 @@
       "group": "转速规格",
       "note": "SPEED_MODE 为 PWMMODE 时有效",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:243 (#define MOTOR_MIN_SPEED)"
       }
     },
@@ -266,7 +266,7 @@
       "group": "转速规格",
       "note": "SPEED_MODE 为 PWMMODE 时有效",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:244 (#define MOTOR_MAX_SPEED)"
       }
     },
@@ -282,7 +282,7 @@
       "group": "转速规格",
       "note": "源材料未单独给「额定转速」，此处按 MOTOR_MAX_SPEED 暂取，待客户确认",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:244 (#define MOTOR_MAX_SPEED)"
       },
       "_placeholder": true
@@ -299,7 +299,7 @@
       "group": "电压规格",
       "note": "源材料无「额定电压」明文。依据：归档工作流把母线设到 12.5 V；Protect.h 过压 18.0 V / 欠压 7.0 V 的窗口也指向 12 V 级母线。数值待客户确认",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/SPEEDTEST.wfw",
+        "file": "[源] WORKINGflow/SPEEDTEST.wfw",
         "locator": "definition.nodes[hid_preset_voltage_set].data.paramValues.voltage = 12.5"
       },
       "_placeholder": true
@@ -315,7 +315,7 @@
       "editable": false,
       "group": "芯片规格",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Document/MCU-DS-14_FU6832_V2.1_20230621.pdf",
+        "file": "[源] Document/MCU-DS-14_FU6832_V2.1_20230621.pdf",
         "locator": "PDF 第 56 页 表5-2 全局电气特性「VCC 工作电压 单电源高压模式」"
       }
     },
@@ -330,7 +330,7 @@
       "editable": false,
       "group": "芯片规格",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Document/MCU-DS-14_FU6832_V2.1_20230621.pdf",
+        "file": "[源] Document/MCU-DS-14_FU6832_V2.1_20230621.pdf",
         "locator": "PDF 第 56 页 表5-2 全局电气特性「VCC 工作电压 单电源高压模式」"
       }
     },
@@ -345,7 +345,7 @@
       "editable": false,
       "group": "芯片规格",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Document/MCU-DS-14_FU6832_V2.1_20230621.pdf",
+        "file": "[源] Document/MCU-DS-14_FU6832_V2.1_20230621.pdf",
         "locator": "PDF 第 56 页 表5-1 绝对最大额定值「VCC 相对VSS 的电压」"
       }
     },
@@ -360,7 +360,7 @@
       "editable": false,
       "group": "芯片规格",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Document/MCU-DS-14_FU6832_V2.1_20230621.pdf",
+        "file": "[源] Document/MCU-DS-14_FU6832_V2.1_20230621.pdf",
         "locator": "PDF 第 56 页 表5-1 绝对最大额定值「工作时环境温度TA」（PyMuPDF 抽文实测该行与「工作时结温TJ」「储存温度」「VCC 相对VSS 的电压」同属表5-1，旧 locator 写作表5-2 有误）"
       }
     },
@@ -375,7 +375,7 @@
       "editable": false,
       "group": "芯片规格",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Document/MCU-DS-14_FU6832_V2.1_20230621.pdf",
+        "file": "[源] Document/MCU-DS-14_FU6832_V2.1_20230621.pdf",
         "locator": "PDF 第 56 页 表5-1「工作时结温TJ」"
       }
     },
@@ -390,7 +390,7 @@
       "editable": false,
       "group": "芯片规格",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Document/MCU-DS-14_FU6832_V2.1_20230621.pdf",
+        "file": "[源] Document/MCU-DS-14_FU6832_V2.1_20230621.pdf",
         "locator": "PDF 第 56 页 表5-2「IVCC工作电流」典型值"
       }
     },
@@ -405,7 +405,7 @@
       "editable": false,
       "group": "芯片规格",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Document/MCU-DS-14_FU6832_V2.1_20230621.pdf",
+        "file": "[源] Document/MCU-DS-14_FU6832_V2.1_20230621.pdf",
         "locator": "PDF 第 56 页 表5-2「IVCC工作电流」最大值"
       }
     },
@@ -421,7 +421,7 @@
       "group": "电流规格",
       "note": "源材料无「额定电流」明文。此处按运行阶段 Q 轴初始电流 I_Value(0.6) 暂取，待客户确认",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:157 (#define MOTOR_RUN_IQ_CURRENT)"
       },
       "_placeholder": true
@@ -436,7 +436,7 @@
       "editable": false,
       "group": "采样链路",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:83 (#define HW_SHUNT_MODE)"
       }
     },
@@ -452,7 +452,7 @@
       "group": "采样链路",
       "note": "源注释建议值 0.02 ~ 0.005。与原理图交叉核对一致：标准方案原理图上 RS1、RS2 各 0.02R/1206/1%，两只并联得 0.01 Ω",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:85 (#define HW_RSHUNT)"
       }
     },
@@ -467,7 +467,7 @@
       "group": "采样链路",
       "note": "枚举 GAIN_2 / GAIN_4 / GAIN_8 / GAIN_16 / GAIN_32",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:86 (#define HW_AMPGAIN)"
       }
     },
@@ -481,7 +481,7 @@
       "editable": false,
       "group": "采样链路",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:92 (#define HW_RV_MODE)"
       }
     },
@@ -496,7 +496,7 @@
       "editable": true,
       "group": "采样链路",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:93 (#define RV1)"
       }
     },
@@ -511,7 +511,7 @@
       "editable": true,
       "group": "采样链路",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:94 (#define RV2)"
       }
     },
@@ -526,7 +526,7 @@
       "group": "转速信号",
       "note": "枚举 NO_TYPE / RD_TYPE / FG_TYPE",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:329 (#define ROTATE_SIGNAL_TYPE)"
       }
     },
@@ -541,7 +541,7 @@
       "editable": true,
       "group": "转速信号",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/客户材料/AI_散热风扇开发资料/AI_散热风扇开发资料/CoolingFan_Program/Software/User/include/Customer.h",
+        "file": "[源] include/Customer.h",
         "locator": "Customer.h:334 (#define FG_PULSE_PERIOD)"
       }
     },
@@ -557,7 +557,7 @@
       "group": "机械",
       "note": "缺口：本地源材料（Customer.h、数据手册、原理图、调研文档 A/B）均无风扇机械尺寸，需向客户索取",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260917-产品故事与分工v1.0/_调研/A-DebugCopilot场景与知识库取证.md",
+        "file": "[源] _调研/A-DebugCopilot场景与知识库取证.md",
         "locator": "第六节「跑通散热风扇一条流程的输入」——界面只填 5 项，不含机械尺寸"
       },
       "_placeholder": true
@@ -574,7 +574,7 @@
       "group": "机械",
       "note": "缺口：同上",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260917-产品故事与分工v1.0/_调研/A-DebugCopilot场景与知识库取证.md",
+        "file": "[源] _调研/A-DebugCopilot场景与知识库取证.md",
         "locator": "第六节「跑通散热风扇一条流程的输入」——界面只填 5 项，不含机械尺寸"
       },
       "_placeholder": true

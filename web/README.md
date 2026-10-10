@@ -4,14 +4,14 @@
 
 本仓只做**应用壳与设计系统**：A/B/C/D 四个大块的骨架、六条流程路由、UI 基础组件、场景包数据契约与扩展注册表。各流程内部的真实功能组件（时序图、工作流画布、知识库树等）由别的 agent 在 `src/features/<name>/` 下实现并注册进来，壳层不需要改动。
 
-实现依据：`/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/01-设计规格-信息架构与页面.md`（下称《设计规格》）。业务逻辑见同目录 `02-业务逻辑说明-六个流程.md`，用户原始要求见 `00-用户需求原话-20260919.md`。
+实现依据：`docs/20260919-通用Agent测试系统v2.0/01-设计规格-信息架构与页面.md`（下称《设计规格》）。业务逻辑见同目录 `02-业务逻辑说明-六个流程.md`，用户原始要求见 `00-用户需求原话-20260919.md`。
 
 ---
 
 ## 1. 跑起来
 
 ```bash
-cd ~/agent-test-web
+cd c/web
 npm install
 npm run dev      # http://localhost:5173
 npm run build    # tsc -b && vite build，必须零错误
@@ -21,7 +21,7 @@ npm run lint     # oxlint
 技术栈：Vite 8 + React 19 + TypeScript 6 + Tailwind CSS 4（`@theme` 令牌）+ react-router 7 + zustand。
 
 截图基准 1600×1000，采集脚本 `scripts/shoot.mjs`（playwright + 本机
-`~/.cache/puppeteer/chrome/*/chrome-linux64/chrome`，不额外下载浏览器），产物见 `shots/`：
+`[源] chrome-linux64/chrome`，不额外下载浏览器），产物见 `shots/`：
 
 ```bash
 npm run build && npm run preview -- --port 4173
@@ -72,7 +72,7 @@ src/
 │   ├── flow-kb/ flow-init/ flow-req/ flow-run/ flow-tune/ flow-report/
 │   │                       六条流程各自的左栏与卡片
 │   ├── timeseries/ workflow/ agent-chat/ remote/
-│   │                       从 ~/lab/ 整目录搬进来的四个组件（本体未改）
+│   │                       从 c/components/ 整目录搬进来的四个组件（本体未改）
 │   └── flow-run/evaluate.ts 判据求值：criterion + variables，缺实测量就标未采集
 ├── registry/index.tsx      扩展注册表：registerPanelCard / registerLeftPanel / registerAssistant
 ├── state/useAppStore.ts    zustand：当前产品、参数覆盖值、确认与锁定、全局状态
@@ -92,7 +92,7 @@ public/
 scripts/
 ├── shoot.mjs               两个场景包 × 六路由 + 四张放大态的截图采集
 ├── compare.py              两个场景包同一流程并排拼图（PIL）
-└── buildIndex.mjs          由 .wfw 目录重建 workflows.json（来自 ~/lab/workflow）
+└── buildIndex.mjs          由 .wfw 目录重建 workflows.json（来自 c/components/workflow）
 ```
 
 ---
@@ -310,7 +310,7 @@ PREFIX=wip node scripts/shootfinal.mjs    # 改到一半时出一套 wip-*.png �
 ### 7.1 场景包（六条流程的全部真实数据）
 
 **两个场景包，同构不同型**。源目录
-`/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/`，
+`c-data/scenes`，
 各是一个目录下的 10 份 JSON 加 `assets/`，整目录复制进 `public/scenes/<sceneId>/`
 （排除 `_build/`）。字段含义见各自目录自带的 `README.md`。
 
@@ -322,9 +322,9 @@ PREFIX=wip node scripts/shootfinal.mjs    # 改到一半时出一套 wip-*.png �
 重新同步：
 
 ```bash
-D=/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes
+D=c-data/scenes
 for s in motor.cooling-fan.fortior-fu6832 automotive.body-motor.window-regulator; do
-  rsync -a --delete "$D/$s/" ~/agent-test-web/public/scenes/$s/ --exclude '_build/'
+  rsync -a --delete "$D/$s/" ./scenes/$s/ --exclude '_build/'
 done
 ```
 
@@ -368,19 +368,19 @@ done
 
 ### 7.2 工作流文件
 
-`~/lab/workflow/public/data/` → `public/data/`：`workflows.json`（索引）与 `wfw/**` 共 68 个 `.wfw`
+`./data/` → `public/data/`：`workflows.json`（索引）与 `wfw/**` 共 68 个 `.wfw`
 明文 UTF-8 JSON。场景包登记 67 条（58 主 + 9 子），本地多出的一个是 `SCOPETEST_时序采集_v1.wfw`，
 界面上两个数都标了出处，没有对齐成同一个数。索引重建用 `node scripts/buildIndex.mjs`。
 
 ### 7.3 知识库流水线产物（`public/kb/`）
 
-源目录 `/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/kb/`，
+源目录 `c-data/kb`，
 整目录复制进 `public/kb/`，**排除 `figures/` 大图、`content.md` 与 `source.json`**
 （前端只要索引、切片与参数表，780 KB 对 20 MB）：
 
 ```bash
 rsync -a --delete \
-  "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/kb/" ~/agent-test-web/public/kb/ \
+  "c-data/kb" ./kb/ \
   --exclude 'figures/' --exclude '*/figures/**' --exclude 'content.md' --exclude 'source.json'
 ```
 
@@ -391,7 +391,7 @@ rsync -a --delete \
 | `documents/customer-h-fu6832/params.json` | 203 条宏，含上下限、单位、分组 | 备用，当前由场景包的 `product-attributes.json` 顶着 |
 | `search-samples.json` | 5 条查询的 Top 命中，带文档标题、章节路径、页码与片段 | 流程 1「检索样例」卡：点查询 → 出命中段落 → 标页码 |
 | `experience/index.json` | 38 条经验（实验沉淀 30 + 规程沉淀 8）+ `caveats` | 流程 1 经验库卡 |
-| `experience/taxonomy.json` | 三个正交维度：所属流程 / 问题类型 / 沉淀方式 | 经验库卡的筛选维度来源 |
+| `experience/taxonomy.json` | 三个正交维度：所属流程 / 问题类型 / 沉淀方式 | 经验库卡的筛选维度来[源] |
 
 两条口径分开说，不并成一个数：
 
@@ -415,12 +415,12 @@ rsync -a --delete \
 四个组件整目录复制进 `src/features/<name>/`，**组件本体基本没改**；宿主侧的适配都放在
 `src/features/flow-*/` 与 `src/features/scene/`、`src/features/waveforms/` 里。
 
-| 组件 | 来源 | 依赖 | 集成时改了什么 |
+| 组件 | 来[源] | 依赖 | 集成时改了什么 |
 | --- | --- | --- | --- |
-| 时序曲线 | `~/lab/timeseries/src/features/timeseries/` | `uplot` | 组件零改动。宿主给 `series.color` 显式取色——组件按 `status` 取色依赖首帧的 CSS 变量，首帧拿不到会退回中性调色板，合格/不合格就分不出来 |
-| 工作流画布 | `~/lab/workflow/src/features/workflow/` | `@xyflow/react`、`dagre` | 组件零改动。它的 `styles/workflow.css` 里 `.wf-root` 是整页演示壳（`100vh` 三栏网格），嵌进卡槽会撑破版面，因此在 `src/features/flow-req/wf-embed.css` 里加了 `.wf-embed` 覆盖，只留色板变量；缩略态另加 `.wf-thumb` 收起小地图与控制条 |
-| 助手对话 | `~/lab/agent-chat/src/features/agent-chat/` | 无 | 组件零改动。自带的 `mockAdapter` 只有一段固定脚本，不贴六条流程，因此新写了 `src/features/copilot/adapter.ts`（把脚本抽成数据，同一套 `AgentEvent` 协议）与 `scripts.ts`（六段脚本，数值路径全部取自当前场景包）。改动类动作照样走人工确认闸门 |
-| 远程设备 | `~/lab/webssh/src/features/remote/` | `@xterm/xterm`、`@xterm/addon-fit` | 组件零改动。网关未起时 `probeDevice` 失败即置离线态并给出起网关的命令 |
+| 时序曲线 | `[源] features/timeseries` | `uplot` | 组件零改动。宿主给 `series.color` 显式取色——组件按 `status` 取色依赖首帧的 CSS 变量，首帧拿不到会退回中性调色板，合格/不合格就分不出来 |
+| 工作流画布 | `[源] features/workflow` | `@xyflow/react`、`dagre` | 组件零改动。它的 `styles/workflow.css` 里 `.wf-root` 是整页演示壳（`100vh` 三栏网格），嵌进卡槽会撑破版面，因此在 `src/features/flow-req/wf-embed.css` 里加了 `.wf-embed` 覆盖，只留色板变量；缩略态另加 `.wf-thumb` 收起小地图与控制条 |
+| 助手对话 | `[源] features/agent-chat` | 无 | 组件零改动。自带的 `mockAdapter` 只有一段固定脚本，不贴六条流程，因此新写了 `src/features/copilot/adapter.ts`（把脚本抽成数据，同一套 `AgentEvent` 协议）与 `scripts.ts`（六段脚本，数值路径全部取自当前场景包）。改动类动作照样走人工确认闸门 |
+| 远程设备 | `[源] features/remote` | `@xterm/xterm`、`@xterm/addon-fit` | 组件零改动。网关未起时 `probeDevice` 失败即置离线态并给出起网关的命令 |
 
 壳层侧改了三处，都是为了让真组件能用：
 
@@ -457,7 +457,7 @@ rsync -a --delete \
   提到了第 2 槽。
 - **工作流画布放大态不再被 `fitViewOptions.minZoom` 裁切**：`WorkflowCanvas` 新增
   `fitViewOptions` prop（默认仍是 `{padding:0.12, minZoom:0.6, maxZoom:1.1}`），
-  宿主在放大态传 `{minZoom:0.2}`。`~/lab/workflow` 的原件没动，改的是本仓的副本。
+  宿主在放大态传 `{minZoom:0.2}`。`c/components/workflow` 的原件没动，改的是本仓的副本。
 - **报告表头不再编造机型**：原先 `seed()` 硬写 `FU6832N-Diode-VSP-V1.0`，已删；
   该格显示「由上游流程带入」，左栏计数如实算 0/10。
 - **未达标项不再写死**：流程 5 改为复用 `flow-run/evaluate.ts` 逐条求值，只有
@@ -655,7 +655,7 @@ cp .env.example .env
 起设备桥：
 
 ```bash
-cd ~/lab/spike-device-mcp
+cd c/components/spike-device-mcp
 cp .env.example .env      # 填 FORTIOR_WIN_KEY、BRIDGE_TOKEN、BRIDGE_APPROVER_PIN
 ./run-bridge.sh           # 监听 127.0.0.1:8031；探一次 /health，再自动 connect 一次台架
 ```
@@ -673,7 +673,7 @@ cp .env.example .env      # 填 FORTIOR_WIN_KEY、BRIDGE_TOKEN、BRIDGE_APPROVER
 页面上看不到任何错误，只会显示「未连通」。所以要联设备桥就用 `npm run dev` 的 5173，
 或者去桥那侧把端口加进 `BRIDGE_CORS_ORIGIN`。
 
-设备桥的接口清单与红线机制见 `~/lab/spike-device-mcp/README.md` 第 3 节与第 6 节；
+设备桥的接口清单与红线机制见 `[源] spike-device-mcp/README.md` 第 3 节与第 6 节；
 前端调用点全部收在 `src/features/remote/bridge.ts` 一个文件里。
 
 ### 10.2 设备节点读什么
@@ -721,15 +721,15 @@ C 区右侧工具条下半截按桥返回的三层分组渲染工具：连接层
 ### 10.4 走一遍
 
 ```bash
-cd ~/lab/spike-device-mcp && ./run-bridge.sh     # 桥已在 8031 监听则跳过
-cd ~/agent-test-web && npm run dev               # 必须是 5173，见 10.1 的 CORS 说明
+cd c/components/spike-device-mcp && ./run-bridge.sh     # 桥已在 8031 监听则跳过
+cd c/ && npm run dev               # 必须是 5173，见 10.1 的 CORS 说明
 BASE=http://localhost:5173 node scripts/walk-wire.mjs
 ```
 
 走查脚本要批准 PIN，从环境变量 `WALK_PIN` 读（脚本不接受写死的默认值）：
 
 ```bash
-WALK_PIN=$(grep '^BRIDGE_APPROVER_PIN=' ~/lab/spike-device-mcp/.env | cut -d= -f2-) \
+WALK_PIN=$(grep '^BRIDGE_APPROVER_PIN=' [源] spike-device-mcp/.env | cut -d= -f2-) \
   BASE=http://localhost:5173 node scripts/walk-wire.mjs
 ```
 
@@ -769,6 +769,6 @@ WALK_PIN=$(grep '^BRIDGE_APPROVER_PIN=' ~/lab/spike-device-mcp/.env | cut -d= -f
 
 ```bash
 npm run build
-grep -c "$(grep '^BRIDGE_TOKEN=' ~/lab/spike-device-mcp/.env | cut -d= -f2-)" dist/assets/*.js   # 调用票仍会命中，属预期
-grep -c "$(grep '^BRIDGE_APPROVER_PIN=' ~/lab/spike-device-mcp/.env | cut -d= -f2-)" dist/assets/*.js   # 必须为 0
+grep -c "$(grep '^BRIDGE_TOKEN=' [源] spike-device-mcp/.env | cut -d= -f2-)" dist/assets/*.js   # 调用票仍会命中，属预期
+grep -c "$(grep '^BRIDGE_APPROVER_PIN=' [源] spike-device-mcp/.env | cut -d= -f2-)" dist/assets/*.js   # 必须为 0
 ```

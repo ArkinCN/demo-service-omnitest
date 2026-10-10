@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/zzz/lab/dsh-plugins/hooks/pretooluse_motor_current.py",
+            "command": "[源] hooks/pretooluse_motor_current.py",
             "timeout": 15
           }
         ]

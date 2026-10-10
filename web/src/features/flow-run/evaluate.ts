@@ -17,9 +17,14 @@ import type { Wave } from '../waveforms'
    规矩：凡是有 runtime.measure 变量拿不到的，一律判「未采集」并列出缺哪几个，
    不拿别的数顶替、不给结论。一条判据只要有一个量没采到，它就既不是通过也不是
    不通过——这条在调优流程里同样成立，未采集的项不进未达标清单、不进推荐。
+
+   第五种状态「本台架不适用」（2026-10-08 新增，见 declaredNotApplicable）：
+   场景包可显式声明某判据在本台架无测量手段（bench_applicable:false + 原因），
+   求值时短路返回 not_applicable，与 missing 严格区分——不给"本该能测却没测到"
+   的误导，也不进未达标清单与推荐。
    =========================================================================== */
 
-export type VerdictState = 'pass' | 'fail' | 'missing' | 'manual'
+export type VerdictState = 'pass' | 'fail' | 'missing' | 'manual' | 'not_applicable'
 
 export interface Evaluated {
   req: RawRequirement
@@ -33,6 +38,33 @@ export interface Evaluated {
   /** 结论是怎么来的，逐字写在卡面 tooltip 上，不让观众自己猜 */
   note?: string
   error?: string
+  /**
+   * 「本台架不适用」的具体原因（2026-10-08 新增）。
+   *
+   * 与 `missing` 的区别（必须守住，不能混）：
+   *   · missing        = 「本该采到却没采到」——暗示采集链路可能有问题，要查；
+   *   · not_applicable = 「本台架结构上不具备该测量手段」——需要加装设备，不是故障。
+   * 两者对决策的含义完全不同，混用会误导。故此原因取自场景包的显式声明，不由运行时推断。
+   */
+  notApplicableReason?: string
+}
+
+/**
+ * 场景包声明「本台架不具备该测量手段」时，求值前先短路返回。
+ *
+ * 为什么用**显式声明**而不是运行时推断（如"缺测且阈值不可达"）：
+ * 推断会随本轮数据波动，同一判据时而不适用、时而未采集，结论不可复现，
+ * 演示与验收都站不住。声明一次、稳定复现，且原因可追溯到缺哪台设备。
+ *
+ * 诚实底线：本函数只**读**声明，不判断"该不该不适用"——是否不适用由场景包
+ * 依据实际台架配置写死，代码不替业务做这个决定。
+ */
+function declaredNotApplicable(req: RawRequirement): string | null {
+  const r = req as RawRequirement & { bench_applicable?: boolean; bench_inapplicable_reason?: string }
+  if (r.bench_applicable === false) {
+    return r.bench_inapplicable_reason || '本台架未配置该项测量手段'
+  }
+  return null
 }
 
 type Scalar = number | boolean | string | (number | string)[]
@@ -90,6 +122,7 @@ function resolve(
   name: string,
   v: { source: string; ref?: string; value?: unknown },
   measures: Record<string, number>,
+  controlValues: Record<string, number | string>,
 ): Scalar | undefined {
   switch (v.source) {
     case 'threshold':
@@ -97,14 +130,62 @@ function resolve(
     case 'constant':
       return toScalar(v.value)
     case 'control-parameters': {
-      // ref 形如 control-parameters.<key>
+      // ref 形如 control-parameters.<key>，key 是 control-parameters.json 的 parameters[].key。
+      // 判据要的「当前配置值」必须**优先读采纳/人工改过的值**，否则改了参数、判定结论
+      // 永远不变（这是「改了再测还是不通过」的根因之一）。采纳值由 controlValues 传入
+      // （已在 evaluateAll 里按回落链 run.cp.* → init.cp.* 取好），这里只做一层查表，
+      // 查不到才回落到场景包原值。
       const key = (v.ref ?? '').split('.').pop() ?? name
+      if (controlValues[key] !== undefined) return toScalar(controlValues[key])
       const p = pack.controls.parameters.find((x) => x.key === key)
       return toScalar(p?.value)
     }
     default:
+      // runtime.measure 的常规取数：只认真采到的 measures，采不到就是 undefined → 未采集。
+      //
+      // 唯一例外（target_rpm）：场景包 test-requirements.json 的 runtime_measures.target_rpm
+      // 自述 obtained_by =「NONEMODE 下等于 control-parameters.nonemode_speed；PWMMODE 下由
+      // 占空比查调速曲线得到」。这是场景包设计上就规定的取值规则，接入它不是编数据：
+      //   - 本轮真采到 target_rpm → 直接用（优先级最高，真机才有）；
+      //   - 没采到、但 speed_mode 为 NONEMODE → 回落读 controlValues.nonemode_speed（采纳/人工
+      //     改过的「无调速模式目标转速」），这样改 nonemode_speed 重测，TR-START-02 结论会真实变化；
+      //   - speed_mode 为 PWMMODE/VSPMODE 或没配 nonemode_speed → 保持未采集（调速曲线数据不在
+      //     本仓库，不编一个占空比换算值）。
+      if (name === 'target_rpm') {
+        const mode = controlValues.speed_mode
+        if (mode === 'NONEMODE' && controlValues.nonemode_speed !== undefined) {
+          return toScalar(controlValues.nonemode_speed)
+        }
+      }
       return toScalar(measures[name])
   }
+}
+
+/**
+ * 把 store 里的 overrides / snapshotValues 映射成「控制参数 key → 当前生效值」。
+ *
+ * overrides 的键是 `${flow}.${group}.${sub}.${item}`（控制参数即 `run.cp.<group>.<key>`），
+ * 而判据 variables 里 control-parameters 只带参数 key（如 `nonemode_speed`），不带 group。
+ * 所以这里遍历场景包参数，逐个按回落链取当前值：
+ *   本流程 override（run.cp.*）→ 上游 init 内存（init.cp.*）→ 上游 init 快照（init.cp.*）
+ * 与 useAppStore.resolveParamKey 同一套回落口径（不回查 getPack，纯由传入数据算），
+ * 但独立实现、不 import store，保持本文件纯函数、可单测。
+ */
+export function controlValueMap(
+  pack: RawPack,
+  overrides?: Record<string, number | string>,
+  snapshotValues?: Record<string, number | string>,
+): Record<string, number | string> {
+  const out: Record<string, number | string> = {}
+  if (!overrides && !snapshotValues) return out
+  for (const p of pack.controls.parameters) {
+    const own = `run.cp.${p.group}.${p.key}`
+    const up = `init.cp.${p.group}.${p.key}`
+    if (overrides && overrides[own] !== undefined) out[p.key] = overrides[own]
+    else if (overrides && overrides[up] !== undefined) out[p.key] = overrides[up]
+    else if (snapshotValues && snapshotValues[up] !== undefined) out[p.key] = snapshotValues[up]
+  }
+  return out
 }
 
 /**
@@ -142,9 +223,24 @@ function varsIn(clause: string, names: string[]): string[] {
   return names.filter((n) => new RegExp(`\\b${n}\\b`).test(clause))
 }
 
-export function evaluateAll(pack: RawPack, measures: Record<string, number>): Evaluated[] {
+export function evaluateAll(
+  pack: RawPack,
+  measures: Record<string, number>,
+  /** 采纳/人工改过的控制参数值（store.overrides，键 run.cp.* / init.cp.*） */
+  overrides?: Record<string, number | string>,
+  /** 已读回的配置快照值（store.snapshotValues，键 init.cp.*），换页/刷新后仍在 */
+  snapshotValues?: Record<string, number | string>,
+): Evaluated[] {
   const legend = pack.requirements.runtime_measures ?? {}
+  // control-parameters 变量要读采纳值：先按回落链把 store 值映射成 key→value。
+  const controlValues = controlValueMap(pack, overrides, snapshotValues)
   return pack.requirements.requirements.map<Evaluated>((req) => {
+    // 本台架不适用：场景包显式声明优先于一切求值（含 evaluable 检查）。
+    // 这类判据不是"判不了"，是"本台架没有测量它的手段"——按 missing 展示会误导决策。
+    const naReason = declaredNotApplicable(req)
+    if (naReason) {
+      return { req, state: 'not_applicable', used: [], missing: [], notApplicableReason: naReason }
+    }
     if (req.evaluable === false || !req.criterion || !req.variables) {
       return { req, state: 'manual', used: [], missing: [] }
     }
@@ -152,7 +248,7 @@ export function evaluateAll(pack: RawPack, measures: Record<string, number>): Ev
     const used: Evaluated['used'] = []
     const missing: string[] = []
     for (const [name, v] of Object.entries(req.variables)) {
-      const value = resolve(pack, req, name, v, measures)
+      const value = resolve(pack, req, name, v, measures, controlValues)
       if (value === undefined) {
         missing.push(legend[name]?.name ?? v.desc ?? name)
         continue

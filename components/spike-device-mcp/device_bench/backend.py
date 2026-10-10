@@ -207,3 +207,130 @@ class BenchBackend:
         fg1 = fg2 * 2.19
         jit = lambda v: v * (1 + random.uniform(-0.004, 0.004))  # noqa: E731
         return f"FG2={jit(fg2):.6E} FG1={jit(fg1):.6E}"
+
+
+class LocalVisaBackend:
+    """本机直连示波器后端（pyvisa-py，纯 Python VISA，不依赖 NI-VISA）。
+
+    与 `BenchBackend`（SSH 到工控机）是**平级的两条路**，由 `config.BENCH_BACKEND`
+    二选一。设备直接插本机 USB 时走这条：不再 SSH 去跑客户 exe，而是用 pyvisa-py
+    的 usbtmc 后端直发 SCPI 给 RIGOL DS1104Z。
+
+    接口对齐 `BenchBackend` 里的那几个（mode / connected / snapshot / connect /
+    disconnect），外加一个 `query(cmd)` 供观测层发 SCPI 查询。
+
+    ⚠️ 诚实边界：
+      - pyvisa-py 的 usbtmc 后端需要示波器 USB 驱动切成 WinUSB（Zadig），且设备插上，
+        否则 `list_resources()` 为空、连接会失败。失败时如实报错，**绝不降级成 mock
+        假装有数据**（mock 只在显式 force_mock 时出现，且由上层 _envelope 标 mock_warning）。
+      - SCPI 命令基于 RIGOL DS1000Z 公开协议 + 台架通道接线约定，真机到场后须校准。
+    """
+
+    def __init__(self) -> None:
+        self._resource_name = config.VISA_RESOURCE
+        self._rm = None
+        self._inst = None
+        self._mode: Mode = "unknown"
+        self._last_error: str | None = None
+
+    @property
+    def mode(self) -> Mode:
+        return self._mode
+
+    @property
+    def connected(self) -> bool:
+        return self._inst is not None
+
+    def snapshot(self) -> dict:
+        return {
+            "device_id": "scope",
+            "name": "RIGOL DS1104Z Plus 示波器（本机直连）",
+            "model": "DS1104Z Plus · VISA over USB",
+            "kind": "instrument",
+            "target": self._resource_name or "(未配置 VISA_RESOURCE)",
+            "connected": self.connected,
+            "mode": self._mode,
+            "hostname": None,
+            "connected_at": None,
+            "uptime_s": None,
+            "last_error": self._last_error,
+            "backend": "local-visa",
+        }
+
+    def connect(self, force_mock: bool = False) -> dict:
+        if force_mock:
+            self._mode = "mock"
+            self._last_error = "force_mock=true，调用方明确要求 mock"
+            return self.snapshot()
+
+        if not self._resource_name:
+            self._mode = "unknown"
+            self._last_error = (
+                "未配置 VISA_RESOURCE（示波器资源名）。本机直连前需："
+                "① 示波器 USB 驱动切成 WinUSB（Zadig）；② 设 VISA_RESOURCE=USB0::...::INSTR"
+            )
+            return self.snapshot()
+
+        try:
+            import pyvisa  # 延迟导入：ssh 路径不需要它
+
+            self._rm = pyvisa.ResourceManager("@py")  # 纯 Python 后端，不依赖 NI-VISA
+            # 列出资源，确认目标存在
+            resources = self._rm.list_resources()
+            if self._resource_name not in resources:
+                self._mode = "unknown"
+                self._last_error = (
+                    f"VISA_RESOURCE={self._resource_name} 未在设备列表中找到。"
+                    f"当前可见资源：{resources or '（空）'}"
+                )
+                return self.snapshot()
+            self._inst = self._rm.open_resource(
+                self._resource_name,
+                open_timeout=config.VISA_QUERY_TIMEOUT_MS,
+                query_delay=0.1,
+            )
+            self._inst.timeout = config.VISA_QUERY_TIMEOUT_MS
+            # 握手：*IDN? 确认真是示波器
+            idn = self._inst.query("*IDN?").strip()
+            self._mode = "live"
+            self._last_error = None
+            self._idn = idn
+        except Exception as exc:  # noqa: BLE001 —— 连接失败如实记录，不降级 mock
+            self._inst = None
+            self._mode = "unknown"
+            self._last_error = f"{type(exc).__name__}: {exc}"
+        return self.snapshot()
+
+    def disconnect(self) -> dict:
+        if self._inst is not None:
+            try:
+                self._inst.close()
+            except Exception:  # noqa: BLE001
+                pass
+        self._inst = None
+        self._rm = None
+        self._mode = "unknown"
+        return self.snapshot()
+
+    def query(self, cmd: str) -> str:
+        """发一条 SCPI 查询，返回原始响应字符串。未连接时抛错（由调用方如实呈现）。"""
+        if self._inst is None:
+            raise RuntimeError(
+                f"示波器未连接（last_error={self._last_error or '未尝试连接'}）"
+            )
+        return self._inst.query(cmd).strip()
+
+    def query_binary(self, cmd: str) -> bytes:
+        """发一条二进制查询（如 :WAVeform:DATA?），返回剥掉 IEEE488.2 头后的数据字节。"""
+        if self._inst is None:
+            raise RuntimeError(
+                f"示波器未连接（last_error={self._last_error or '未尝试连接'}）"
+            )
+        raw = self._inst.query_binary_values(
+            cmd, datatype="B", is_big_endian=True, container=bytes
+        )
+        if isinstance(raw, bytes):
+            return raw
+        if isinstance(raw, (list, tuple)):
+            return bytes(raw)
+        return b""

@@ -25,11 +25,11 @@
     ],
     "_source": [
       {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 286 行：核心结论先说：十三个平台确认为空白"
       },
       {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 466 行：数据集平台（13 个）检索通道表"
       }
     ]
@@ -47,7 +47,7 @@
       "mode": "registered_only",
       "note": "本次调研中离「汽车低压执行器」结构最近的真实集——雨刮、车窗、座椅电机正是有刷直流。**本包只登记，未下载。**",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 297 行：第一层真实实测表 CARTIF 行（已核实）"
       }
     },
@@ -62,7 +62,7 @@
       "mode": "registered_only",
       "note": "真实车用数据，但采样率只有 2 Hz，且被测件是永磁同步机不是有刷直流，只能做工况级慢速时序的参照，做不了本场景的电流波形判据。**本包只登记，未下载。**",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 294 行：第一层真实实测表 Electric Motor Temperature 行（已核实）"
       }
     },
@@ -76,7 +76,7 @@
       "mode": "registered_only",
       "note": "若本案例属商业交付，该许可证是硬约束，不能用。登记在此是为了让「许可证审查」这一步在知识库里有据可查。",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 299 行：第一层真实实测表 帕德博恩轴承数据中心 行"
       }
     }
@@ -96,11 +96,11 @@
     ],
     "_source": [
       {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 308 行：已明确排除清单"
       },
       {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 305-306 行：存疑条目表"
       }
     ]
@@ -112,7 +112,7 @@
       "mode": "generated_into_pack",
       "synthetic": true,
       "_placeholder": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/automotive.body-motor.window-regulator/assets/waveforms/normal-up-down-cycle.csv",
+      "file_path": "./assets/waveforms/normal-up-down-cycle.csv",
       "file_size_bytes": 1368632,
       "row_count": 24000,
       "columns": [
@@ -189,19 +189,19 @@
       "note": "时间轴照 QC/T 626 征求意见稿 6.9.1 注 3 的耐久单循环波形排：上升 3.5 s → 上止点堵转 1 s → 断电停 4 s → 下降。可直接喂给 WR-WF-001 与 WR-WF-004 做回放。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 286 行：汽车低压执行器电机的专用公开波形数据集，在十三个平台上确认为空白"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 314 行：gym-electric-motor（帕德博恩大学，MIT）：直流电机模型与可配参数"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 325 行：参数锚点：工作电流 ≤12 A、堵转电流 ≤28 A、堵转力 ≥212 N、上升速度 80–160 mm/s、工作电压 9–16 V"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/automotive.body-motor.window-regulator/_build/gen_waveforms.py",
+          "file": "[源] _build/gen_waveforms.py",
           "locator": "模块 docstring 与 PROFILES 里对应的 profile 函数"
         }
       ]
@@ -212,7 +212,7 @@
       "mode": "generated_into_pack",
       "synthetic": true,
       "_placeholder": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/automotive.body-motor.window-regulator/assets/waveforms/antipinch-trigger.csv",
+      "file_path": "./assets/waveforms/antipinch-trigger.csv",
       "file_size_bytes": 1437297,
       "row_count": 24000,
       "columns": [
@@ -289,19 +289,19 @@
       "note": "障碍物用刚度 10 N/mm 的半刚性试验棒建模（GB 11552-2009 §4.8.3.1.3 的测量工具刚度），夹持力 = 刚度 × 侵入量。pinch_force_n 列是给 TR-PINCH-01 判据直接取数用的。phase 列标出 UP → PINCH_CONTACT → PINCH_DETECTED → RETRACT → RETRACT_DONE 五相。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 286 行：汽车低压执行器电机的专用公开波形数据集，在十三个平台上确认为空白"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 314 行：gym-electric-motor（帕德博恩大学，MIT）：直流电机模型与可配参数"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 325 行：参数锚点：工作电流 ≤12 A、堵转电流 ≤28 A、堵转力 ≥212 N、上升速度 80–160 mm/s、工作电压 9–16 V"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/automotive.body-motor.window-regulator/_build/gen_waveforms.py",
+          "file": "[源] _build/gen_waveforms.py",
           "locator": "模块 docstring 与 PROFILES 里对应的 profile 函数"
         }
       ]
@@ -312,7 +312,7 @@
       "mode": "generated_into_pack",
       "synthetic": true,
       "_placeholder": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/automotive.body-motor.window-regulator/assets/waveforms/stall-saturation.csv",
+      "file_path": "./assets/waveforms/stall-saturation.csv",
       "file_size_bytes": 1387701,
       "row_count": 24000,
       "columns": [
@@ -387,19 +387,19 @@
       "note": "**本条刻意不启用堵转保护**，目的是录出完整的饱和平台，用来标定 control-parameters.json 的 stall_current_threshold（默认 24 A）与stall_debounce_time。真实台架上这样跑会撞上 SI-HW-03（堵转持续时间上限 30 s），本条 5.3 s 的堵转在限内，但不得把这条数据当成「允许长时间堵转」的依据。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 286 行：汽车低压执行器电机的专用公开波形数据集，在十三个平台上确认为空白"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 314 行：gym-electric-motor（帕德博恩大学，MIT）：直流电机模型与可配参数"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 325 行：参数锚点：工作电流 ≤12 A、堵转电流 ≤28 A、堵转力 ≥212 N、上升速度 80–160 mm/s、工作电压 9–16 V"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/automotive.body-motor.window-regulator/_build/gen_waveforms.py",
+          "file": "[源] _build/gen_waveforms.py",
           "locator": "模块 docstring 与 PROFILES 里对应的 profile 函数"
         }
       ]

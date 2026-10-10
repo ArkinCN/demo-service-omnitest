@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router'
 import {
   Activity,
   Boxes,
@@ -17,7 +18,6 @@ import {
   Radar,
   Ruler,
   Sliders,
-  Upload,
   Wand2,
   Waves,
   Zap,
@@ -29,7 +29,6 @@ import {
   EmptyState,
   Input,
   Select,
-  SoftCard,
   SourceTag,
   StatusDot,
   Stepper,
@@ -53,19 +52,31 @@ import {
   type RawInterlock,
   type RawPack,
 } from '../scene/pack'
-import { ConfirmFooter, Empty, TierTree } from '../shared/bits'
+import { ConfigOverview } from '../../app/LeftPanel'
+import { UnifiedConfigPanel } from '../../app/UnifiedConfigPanel'
+import { ConfirmFooter, Empty } from '../shared/bits'
 import { buildTiers, readTiers, type BuiltGroup, type BuiltTier, type Flags } from '../shared/tiers'
 import { simp } from '../shared/zh'
-import { probeDevice, type ConnState } from '../remote'
+// BENCH_PULL_DIR：台架取图目录，从 .env 读（见 remote/device.ts）。
+// 界面文案要用它，但**不从这里另读一份**——同一份配置两处读必然走偏。
+// BENCH_HOST 同理：界面上显示的台架地址也取同一份配置，未配置时显示「未配置」，
+// 不把客户内网地址写回交付代码（2026-09-24 补：此前本文件里还留着 172.25.5.166）。
+import { BENCH_HOST, BENCH_PULL_DIR, probeDevice, type ConnState } from '../remote'
+import { applySnapshot, loadLatestSnapshot, persistSnapshot } from './snapshotApi'
+import { createTask, readStoredTaskId, writeStoredTaskId } from './taskApi'
 
 /* ===========================================================================
    流程 2 · 初始化配置（v2 视觉，对齐流程 4 样板页）
 
-   左栏：本体属性 8 组折叠（product-attributes.json 29 项），顶部「随传随用」
-         上传条，参数行 = 来源圆点 + 短标签 + 大字值 + 圆形加减。
+   左栏：本体属性 8 组折叠（product-attributes.json 29 项），
+         参数行 = 来源圆点 + 短标签 + 大字值 + 圆形加减。
    卡片：产品示意图（hero，真图铺满）/ 原理图·文档读取 / 工程树 /
          安全联锁 / 台架实况。
    数据来源一律取场景包原始 JSON，本轮只改视觉，不改数据逻辑。
+
+   注意：本页**没有**上传入口。资料上传统一走左栏顶部知识条上的「上传」
+   （开面板 → 五阶段转化）。此前这里另有一条「随传随用/选文件」，
+   与它重复，已按用户要求移除（2026-09-24）。
    =========================================================================== */
 
 /** 标签一律收到 6 字以内，全名进 tooltip */
@@ -104,11 +115,25 @@ function AttrRow({ a }: { a: RawAttribute }) {
   const touched = useAppStore((s) => s.touched[key])
   const setParam = useAppStore((s) => s.setParam)
   const value = override ?? (a.not_applicable ? '不适用' : a.value)
-  // 极小值（电感 4.2e-5 H）与长单位（V/kRPM）塞不进步进器，这类退回大字只读显示，
-  // 全名、量程与单位仍在 tooltip 里，不丢信息。
-  const compact =
-    String(typeof a.value === 'number' ? a.value : '').length <= 7 && (a.unit ?? '').length <= 4
-  const editable = !a.not_applicable && a.editable && typeof a.value === 'number' && compact
+
+  /**
+   * ⚠️ **占位值（`_placeholder`）必须可编辑**（2026-09-28 用户实测反馈修）。
+   *
+   * 原判据是 `typeof a.value === 'number' && compact`，而占位字段在场景包里的值
+   * 往往是**字符串「未知」**（实测 `fan_thickness.value = "未知"`、
+   * `fan_outer_size.value = "未知"`），于是 `editable` 为 false——
+   * 界面上只显示「未知」，**没有任何输入控件**。
+   *
+   * 这是本项目里最荒谬的一处逻辑漏洞：**占位字段恰恰是最需要人现场填的**，
+   * 却因为「没有初始数字值」被锁成只读。场景包对这些项明确标着 `editable: true`
+   * （允许人改），是我们自己的判据把它挡掉了。
+   *
+   * 修法：可编辑性**只看场景包的 `a.editable`**，不看当前值是不是数字。
+   * 占位项给可输入的起点（Stepper 的 `value` 为 null 时显示空、placeholder 提示）。
+   */
+  const wantsEdit = !a.not_applicable && a.editable !== false
+  // 有数字就用数字做起点；占位/未知则给 null（空输入框），由人填
+  const stepperValue = typeof value === 'number' ? value : null
 
   const detail = (
     <span className="block space-y-1">
@@ -119,8 +144,15 @@ function AttrRow({ a }: { a: RawAttribute }) {
         {a.unit ? ` · ${a.unit}` : ''}
       </span>
       <span className="block opacity-75">{sourceLine(a._source) || '源材料未登记出处'}</span>
+      {/* ⚠️ 占位项要分清「人已填」与「还没填」（2026-09-28）：
+          人填过值后再写「待确认」是说不通的（用户实测反馈过）。
+          填过的改为「已确认」，只留「这个值是现场给的、不是源材料的」这层信息。 */}
       {a._placeholder ? (
-        <span className="block">待确认：源材料没给这一项，当前值是占位，需现场实测或由客户确认</span>
+        touched ? (
+          <span className="block">已确认：源材料没给这一项，当前值由现场填写</span>
+        ) : (
+          <span className="block">待现场确认：源材料没给这一项，需现场实测或由客户确认</span>
+        )
       ) : null}
       {statusOf(a) ? <span className="block opacity-75">待核实 · {statusOf(a)}</span> : null}
     </span>
@@ -132,10 +164,11 @@ function AttrRow({ a }: { a: RawAttribute }) {
         <span className="flex min-w-0 items-center gap-1.5">
           <SourceTag source={touched ? '人工' : a._placeholder ? '建议' : '文档'} />
           <span className="cursor-help truncate text-[13px] font-medium text-t1">{short(a.name)}</span>
-          {a._placeholder ? (
+          {/* 小圆点只给「还没填」的占位项——填过的就不再是待办 */}
+          {a._placeholder && !touched ? (
             <span
               className="h-[6px] w-[6px] shrink-0 rounded-full bg-t3/45"
-              aria-label="待确认"
+              aria-label="待现场确认"
             />
           ) : null}
         </span>
@@ -153,11 +186,11 @@ function AttrRow({ a }: { a: RawAttribute }) {
             value={String(value)}
             onChange={(v) => setParam(key, v)}
           />
-        ) : editable ? (
+        ) : wantsEdit ? (
           <Stepper
             size="sm"
             label={a.name}
-            value={Number(value)}
+            value={stepperValue}
             unit={a.unit ?? undefined}
             step={a.step ?? 1}
             min={a.min ?? undefined}
@@ -185,7 +218,11 @@ function ParamRow({ p }: { p: RawControlParam }) {
   const touched = useAppStore((s) => s.touched[key])
   const setParam = useAppStore((s) => s.setParam)
   const value = override ?? (p.not_applicable ? '不适用' : p.value)
-  const editable = !p.not_applicable && p.editable && typeof p.value === 'number'
+  // 与 AttrRow 同一判据：可编辑性只看场景包的 `editable`，不看当前值是不是数字。
+  // 控制参数目前没有占位项（实测 70 项都有数字值），但口径保持一致，
+  // 免得将来包里有占位项时又出现「最该填的那行填不了」。
+  const editable = !p.not_applicable && p.editable !== false
+  const stepperValue = typeof value === 'number' ? value : null
 
   const detail = (
     <span className="block space-y-1">
@@ -222,7 +259,7 @@ function ParamRow({ p }: { p: RawControlParam }) {
           <Stepper
             size="sm"
             label={p.name}
-            value={Number(value)}
+            value={stepperValue}
             unit={p.unit ?? undefined}
             step={p.step ?? 1}
             min={p.min ?? undefined}
@@ -256,13 +293,69 @@ type Leaf =
   | { k: 'field'; id: string; g: string; f: RawHeaderField }
   | { k: 'info'; id: string; g: string; label: string; value: string; hint: string; pending?: boolean }
 
-const leafFlags = (x: Leaf): Flags => {
-  if (x.k === 'attr')
-    return { filled: !x.a._placeholder && x.a.value !== null, pending: !!(x.a._status || x.a._placeholder) }
-  if (x.k === 'param') return { filled: x.p.value !== null, pending: !!x.p._status, alert: !!x.p.value_below_min }
+/**
+ * 「这一项算不算已填」——组头 `n/m` 的唯一判据。
+ *
+ * ⚠️ 判据演进（2026-09-28 用户拍板，第三轮口径定稿）：
+ *
+ * 旧判据是 `!_placeholder && value !== null`——**把 `_placeholder` 项直接排除**。
+ * 后果：源材料没给值、但**人已经填上**的那 3 项（额定转速 / 额定母线电压 /
+ * 整机额定相电流）永远不计入。用户实测反馈「我页面里 5 个都有值了也没写 5/5」，
+ * 指的就是这个——**填了不算数，数字当然不动**。
+ *
+ * 现判据（用户原话：「改为有数值就算」）：
+ *   - **只看有没有一个有意义的数值**，不看它来自源材料还是人工填的；
+ *   - 取值时**覆盖值优先**（`override ?? 源值`），否则人填的值不参与判断；
+ *   - **`null` / 空串 / 「未知」都不算有数值**。
+ *     最后这条很关键：`fan_thickness`、`fan_outer_size` 在场景包里的值是
+ *     **字符串「未知」**，若把它当"有值"，这两项**人没填也会显示已填**，`5/5` 虚高。
+ *
+ * ⚠️ 用户最初还提过「改回原值就不 +1」，随后明确**废除该条**（「采用1废除2」）：
+ * 现在**不做**「值与源值比较」这层判断——填过且是有效数值即算。
+ *
+ * 注：本函数需要读 `overrides`，因此由调用方传入覆盖值解析器，保持纯函数。
+ */
+const isMeaningfulValue = (v: unknown): boolean => {
+  if (v === null || v === undefined) return false
+  if (typeof v === 'number') return Number.isFinite(v)
+  if (typeof v === 'boolean') return true
+  const s = String(v).trim()
+  return s !== '' && s !== '未知' && s !== '—' && s !== '-'
+}
+
+const leafFlags = (x: Leaf, override?: unknown): Flags => {
+  if (x.k === 'attr') {
+    const v = override ?? x.a.value
+    return { filled: isMeaningfulValue(v), pending: !!(x.a._status || x.a._placeholder) }
+  }
+  if (x.k === 'param') {
+    const v = override ?? x.p.value
+    return { filled: isMeaningfulValue(v), pending: !!x.p._status, alert: !!x.p.value_below_min }
+  }
   if (x.k === 'ilk') return { filled: true, pending: !!x.i._status }
   if (x.k === 'field') return { filled: !!x.f.sample_value }
   return { filled: !x.pending, pending: x.pending }
+}
+
+/**
+ * 叶子的 `paramKey` 四段键 —— **必须与 `AttrRow` / `ParamRow` / `FieldRow`
+ * 里 `setParam(key, ...)` 用的那个键逐字一致**，否则组头读的是另一个格子，
+ * 人填了值组头却不动。
+ *
+ * 三类的段位取自各自行组件的现有实现（`paramKey(flow, kind, group, name)`）：
+ *   - 本体属性  `init.pa.<a.group>.<a.key>`
+ *   - 控制参数  `init.cp.<p.group>.<p.key>`
+ *   - 报告表头  `init.rp.header.<f.key>`（字段行固定用 `header` 作组名）
+ * 其它类型（联锁 / 信息行）不参与覆盖，返回空串，查表必然取不到 → 不传 override。
+ *
+ * ⚠️ 这里是**第二处**手写这四段键，与行组件是重复信息。若将来改键结构，
+ * 两处必须同改（本页没有统一的键构造函数导出，所以只能靠这条注释约束）。
+ */
+function leafKeyOf(x: Leaf): string {
+  if (x.k === 'attr') return paramKey('init', 'pa', x.a.group, x.a.key)
+  if (x.k === 'param') return paramKey('init', 'cp', x.p.group, x.p.key)
+  if (x.k === 'field') return paramKey('init', 'rp', 'header', x.f.key)
+  return ''
 }
 
 function FieldRow({ f }: { f: RawHeaderField }) {
@@ -376,7 +469,7 @@ function benchTier(pack: RawPack): BuiltTier<Leaf> {
           id: 'bench-host',
           g: '台架',
           label: '台架工控机',
-          value: '172.25.5.166',
+          value: BENCH_HOST || '未配置',
           hint: '流程 1 只核对设备在不在，不建会话、不下发动作；实际接入在流程 3。',
         },
         {
@@ -462,13 +555,172 @@ function outputTier(pack: RawPack): BuiltTier<Leaf> {
 
 export function InitLeftPanel() {
   const pack = getPack()
+  const nav = useNavigate()
   const locked = !!useAppStore((s) => s.confirmed.init)
-  const confirmFlow = useAppStore((s) => s.confirmFlow)
+  /**
+   * 订阅「人改过哪些参数」。
+   *
+   * ⚠️ 为什么要**订阅**而不是 `getState().touched` 读一次：
+   * 「待现场确认」徽标要随人填值**实时减少**。用 `getState()` 只在本次渲染时取一份，
+   * store 后来变了组件也不会重渲染，徽标数字就还是旧的——
+   * 那正是用户遇到的问题（「改了但数字不动」）的同类成因。
+   * 这里返回的是对象引用，zustand 按引用比较，`setParam` 每次都会换新对象，
+   * 所以能稳定触发重渲染。
+   */
+  // ⚠️ `touched` 是 `Record<string, true>`（**普通对象，不是 Set/Map**），
+  // 判存在要用 `in` / 取值，不能写 `.has()`（本轮写成 `.has()` 报了
+  // `Type 'Boolean' has no call signatures`，因为 `obj.has` 不存在）。
+  const touchedKeys = useAppStore((s) => s.touched)
+  /**
+   * 订阅人工覆盖值。组头「已填 n/m」要按**覆盖后的实际值**判断
+   *（用户拍板：「改为有数值就算」），所以必须读 `overrides` 而不能只看源材料。
+   * 与 `touched` 同一理由：**订阅**而非 `getState()`，否则填值后组头数字不刷新。
+   */
+  const overrides = useAppStore((s) => s.overrides)
   const unconfirmFlow = useAppStore((s) => s.unconfirmFlow)
+  const setNotice = useAppStore((s) => s.setNotice)
+  const sceneId = useAppStore((s) => s.sceneId)
+  /**
+   * **唯一的落库入口**：确认并锁定 = 保存全部参数 + 锁定基线（2026-09-28 合并）。
+   *
+   * 落的快照带 `locked: true`，且 `buildSnapshot` 会把**三类参数**都写进去
+   * （本体属性 `init.pa.*` + 控制参数 `init.cp.*` + 报告表头 `init.rp.*`），
+   * 后续流程（调优/报告）据此取用。原「保存参数」按钮已按用户要求并入这里。
+   *
+   * 失败必须可见：写不进库时**不能**标成已锁定——否则人以为锁好了，
+   * 刷新后参数全丢、流程状态还骗人。
+   */
+  const [locking, setLocking] = useState(false)
+
+  /** 确保有一条任务记录并记下任务号（刷新后据此读回标题）。已有则沿用。 */
+  const ensureTask = useCallback(async () => {
+    if (readStoredTaskId(sceneId) != null) return
+    const t = await createTask({
+      title: pack?.scene?.product?.name || '初始化配置',
+      scene_id: sceneId,
+      version: 'v1',
+    })
+    writeStoredTaskId(sceneId, t.id)
+  }, [sceneId, pack])
+
+  const confirmAndSnapshot = useCallback(async () => {
+    setLocking(true)
+    try {
+      await ensureTask()
+      const { runId, snapshot } = await persistSnapshot({
+        sceneId,
+        operator: useAppStore.getState().benchUser,
+        locked: true, // ← 唯一入口：从此只有这一种落库方式
+      })
+      /**
+       * ⚠️ 必须把 runId 记进 store（2026-09-28 补）。
+       *
+       * 此前这里没记，于是**下游流程拿不到「本轮」是哪个**：
+       * 流程 2 的「确认基线」调 `resolveBaselineRunId(sceneId, runId)` 时
+       * runId 为 null，只能退化成「新建一轮」——结果同一个场景里
+       * 每点一次确认就多一个**没有产物的空轮次**，
+       * 而按契约 requirement-baseline 应与 config-snapshot 挂在**同一轮**上
+       * （主文档 4.1 收发关系表：一轮带多份产物）。
+       * 实测证据：脚本连点两次确认后，轮次列表里多出两个 kinds=[] 的空轮。
+       */
+      useAppStore.getState().setRunId(runId)
+      useAppStore.getState().confirmFlow('init')
+      /**
+       * ⚠️ 数字口径：**回执也用菜单口径**（2026-09-28 用户第三轮反馈定稿）。
+       *
+       * 演进：先报快照条数 109 → 与菜单的 75 打架（用户点出「一共 75 条却确认了 109 条」）；
+       * 改成两边都写 109 并解释「29 + 70 + 10 的构成」→ 用户仍觉得啰嗦
+       * （原话：「本地属性 29 是不用写进去提示的，既然菜单写的 75 项就按照菜单为准」）。
+       * 定稿：**回执只报菜单口径 + 轮次号**，不拆构成、不出现第二个数字。
+       * 快照里那份 `product_attributes.length` 仍然真实存在（落库内容不变），
+       * 只是**不再拿来当界面上要念给用户看的数**。
+       */
+      // 回执报「锁定了几项 + 哪一轮」——人是靠这个确认没漏存的。
+      // 项数用**快照真实写入条数**：这是「存了几项」的准确答案，
+      // 且不可能与按钮口径打架——按钮显示的 `total` 是菜单口径，
+      // 用户已明确「以菜单为准」，所以这里只报轮次号 + 如实报落库条数，
+      // **不再拆解构成**（用户否掉了「本体属性 29」那种写法）。
+      setNotice(
+        `已确认并锁定：${snapshot.product_attributes.length} 项已写入配置快照（轮次 ${runId.slice(0, 8)}），后续流程可取用`,
+      )
+      // 与流程 2「确认基线后跳流程 3」、流程 4「采纳后跳流程 3」保持同一种体验（用户拍板）。
+      nav('/requirements')
+    } catch (e) {
+      // 落盘失败必须看得见：锁没锁上是两回事，不能让人以为锁好了。
+      // ⚠️ 失败时**不跳转**——跳走会让人以为确认成功了。
+      setNotice(`确认失败（数据未持久化，刷新后会丢）：${e instanceof Error ? e.message : String(e)}`)
+    } finally {
+      setLocking(false)
+    }
+  }, [sceneId, setNotice, ensureTask, nav])
+
+  /**
+   * ⚠️ 2026-09-28 用户的决定：**「保存参数」与「确认并锁定」合并成一个入口**。
+   *
+   * 此前是两条独立的路（`saveDraft` 落 `locked:false`、`confirmAndSnapshot`
+   * 落 `locked:true`），理由是「存参数」与「锁基线」语义不同。
+   * 但实际用起来，人改完参数要找两个按钮、容易只点一个，
+   * 且**两个入口各写一套快照口径**本身就是漂移源。
+   * 现在统一为：**唯一的落库入口就是「确认并锁定」**，
+   * 它一次把初始化页的**全部参数**（本体属性 + 控制参数 + 报告表头）
+   * 落进同一份 `config-snapshot`（带 `locked:true`），供后续流程取用。
+   * 「解除确认」仍在（允许反悔再编辑），但不再是「另一种保存」。
+   */
+
+  /**
+   * 挂载时按场景读回最近一份配置快照，把参数与「已确认」恢复出来。
+   *
+   * 这段原先挂在已被移除的那个「保存」条里，条子按用户要求删掉后必须搬到这儿——
+   * 否则刷新后没人回填，等于把刚补好的持久化又拆了。
+   * 读不到（还没落过）是正常态，不报错；失败只留控制台痕。
+   */
+  useEffect(() => {
+    if (!pack) return
+    void loadLatestSnapshot(sceneId)
+      .then((hit) => {
+        if (!hit) return
+        // 不检查 alive（StrictMode 下会丢成功结果，见 flow-tune 同款说明）；
+        // 回填是幂等的，重复执行没有副作用。
+        applySnapshot(hit.snapshot)
+        // 把「快照在哪一轮」也记进 store：刷新后下游流程（流程 2 的确认基线）
+        // 才能复用**同一轮**，而不是各自新建空轮次（2026-09-28 补，见 confirmAndSnapshot 注释）。
+        useAppStore.getState().setRunId(hit.runId)
+      })
+      .catch((e: unknown) => {
+        console.warn('[flow-init] 配置快照读回失败，参数按未保存显示：', e)
+      })
+  }, [sceneId, pack])
+
   if (!pack) return <Empty text="场景包未加载" />
 
   const attrs = pack.attributes.attributes
-  const holes = attrs.filter((a) => a._placeholder).length
+  /**
+   * 「待现场确认」的条数 = **源材料没给值、且人还没填过**的条数。
+   *
+   * ⚠️ 口径演进（2026-09-28 用户拍板）：
+   *
+   * 原实现是 `attrs.filter((a) => a._placeholder).length`——**纯静态统计**，
+   * 数的是场景包 JSON 里 `_placeholder: true` 有几条。问题是它是**常量**：
+   * 人把值填上了，`overrides` 里有值了，但 `a._placeholder` 仍是 `true`，
+   * 于是徽标数字**永远不动**。用户实测反馈：「怎么我已经修改并锁定了占位还是 0 没有变成 1」。
+   *
+   * 这确实说不通：人填了值，界面还说它「没确认」。
+   * 现在改为**按「人是否填过值」算**（用户选定的口径）：
+   *   - 填过的（`touched` 里有这个键）→ 从计数里减掉，并显示为「已确认」
+   *   - 全填完 → 徽标自动消失
+   *
+   * 语义随之更准：它表达的是「**还有几项没着落**」，
+   * 而不是「源材料当初缺几项」（后者是历史事实，人补完也不该继续算作待办）。
+   */
+  const holes = attrs.filter((a) => {
+    if (!a._placeholder) return false
+    // 人填过这一项 → 不再计入「待现场确认」
+    return !touchedKeys[paramKey('init', 'pa', a.group, a.key)]
+  }).length
+  /** 已补上有值的占位项数（人填过了）——用于「已补 N」提示，让人看到自己的进度 */
+  const holesFilled = attrs.filter(
+    (a) => a._placeholder && touchedKeys[paramKey('init', 'pa', a.group, a.key)],
+  ).length
 
   // 一 · 被测对象：骨架取自场景包 product-attributes.json 的 group_tiers，不写死在代码里
   const objTiers = buildTiers<Leaf>(
@@ -503,7 +755,19 @@ export function InitLeftPanel() {
     ilkTier,
     outputTier(pack),
   ].filter((t) => t.groups.length > 0)
+  /** 左栏菜单项数。**这是按钮与提示唯一使用的数字**（用户拍板：以菜单为准） */
   const total = tiers.reduce((n, t) => n + t.count, 0)
+  /** 「常用配置」卡片：取前 3 个可编辑属性作快捷入口（与「更多配置」同一套 renderLeaf 渲染） */
+  const quickAttrs = attrs
+    .filter(
+      (a) =>
+        !a.not_applicable &&
+        a.editable !== false &&
+        (a.options?.length ||
+          (typeof a.value === 'number' && String(a.value).length <= 7 && (a.unit ?? '').length <= 4)),
+    )
+    .slice(0, 3)
+
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
@@ -512,64 +776,124 @@ export function InitLeftPanel() {
         <h2 className="text-[16px] leading-none font-semibold tracking-tight text-t1">初始化配置</h2>
         <span className="num text-[12px] text-t3">{total}</span>
         <div className="ml-auto flex items-center gap-1.5">
-          <Badge tone="neutral" mono title={`${holes} 项是占位值，源材料确实没给，已标「待确认」`}>
-            占位 {holes}
-          </Badge>
+          {/* ⚠️ 措辞与口径（2026-09-28 用户拍板）：
+              「占位」→ **「待现场确认」**（与 tooltip 描述用词一致，意思更直白）；
+              数字 = **源材料没给、且人还没填**的条数（人填过就从计数里减掉）。
+              全填完徽标**自动消失**——那说明这一轮没有待办了。
+              另有「已补 N」在下方提示：让人看得见自己的进度，
+              而不是只看到一个「还有几个没弄」的负数。 */}
+          {holes ? (
+            <Badge
+              tone="neutral"
+              mono
+              title={`${holes} 项在源材料里没有值、且尚未填写，需现场实测或由客户确认${holesFilled ? `（已补 ${holesFilled} 项）` : ''}`}
+            >
+              待现场确认 {holes}
+            </Badge>
+          ) : null}
         </div>
       </header>
 
-      {/* 随传随用：拖一份文档进来即刻参与回填 */}
-      <div className="shrink-0 px-3 pt-2.5 pb-1">
-        <Tooltip content="把数据手册、Customer.h、原理图或测试记录直接拖进来，读完即参与本页属性回填；源材料没写的项一律留空，不拿别处的数顶替。">
-          <SoftCard className="flex h-[38px] cursor-pointer items-center gap-2 px-2.5 transition-colors hover:bg-p100/70">
-            <Upload size={14} strokeWidth={1.9} className="shrink-0 text-p600" />
-            <span className="text-[12.5px] font-medium text-t2">随传随用</span>
-            <span className="ml-auto shrink-0">
-              <Button size="sm" variant="default" icon={<FileText size={13} strokeWidth={1.9} />}>
-                选文件
-              </Button>
-            </span>
-          </SoftCard>
-        </Tooltip>
-      </div>
+      {/* 「随传随用 / 选文件」上传条已按用户要求移除（2026-09-24）。
+          它和左栏顶部的「上传」（知识条上那枚，走完整的五阶段转化链路）
+          功能重复，两条并排反而让人不知道该用哪个。
+          真正上传资料的入口只有一处：知识条上的「上传」。
+          ------------------------------------------------------------
+          此前这里还有一条「产品名称 + 保存」，同样因与底部「确认配置」
+          重复而移除（见下方注释）。 */}
+
+      {/* 「产品名称 + 保存」条已按用户要求移除（2026-09-24）。它原本是阶段 2
+          的保存闭环演示件，但页面底部「确认配置」本身就是落库动作，
+          两条并排会让人不知道该按哪个。产品名仍显示在顶部标题与上面那行里。 */}
 
       <div className="fade-b min-h-0 flex-1 overflow-y-auto pb-2">
-        <TierTree
-          flow="init"
-          tiers={tiers}
-          // 一级类只展开第一个，其余折叠（06b 第 1.2 节）
-          defaultOpen={0}
-          itemKey={(x) => x.id}
-          render={renderLeaf}
-          flags={leafFlags}
-          tierIcon={(t) => iconOf(t, 15)}
-          groupIcon={(t) => iconOf(t)}
-        />
+        <ConfigOverview
+          key={pack.scene.id}
+          count={total}
+          quick={
+            <>
+              {quickAttrs.map((a) => (
+                <div className="config-quick-card" key={a.key}>
+                  {renderLeaf({ k: 'attr', id: a.key, g: a.group, a })}
+                </div>
+              ))}
+            </>
+          }
+        >
+          <UnifiedConfigPanel
+            flow="init"
+            tiers={tiers}
+            // 一级类只展开第一个，其余折叠（06b 第 1.2 节）
+            defaultOpen={0}
+            itemKey={(x) => x.id}
+            render={renderLeaf}
+            // 「已填 n/m」要**把人工覆盖值算进来**（2026-09-28 用户拍板：
+            // 「改为有数值就算」）。`overrides` 以 `paramKey` 拼出的四段键索引：
+            // 本体属性 `init.pa.<组>.<键>`、控制参数 `init.cp.<组>.<键>`、
+            // 报告表头 `init.rp.header.<键>`。取不到就是没有覆盖，回落源材料值。
+            flags={(x) => leafFlags(x, overrides[leafKeyOf(x)])}
+            tierIcon={(t) => iconOf(t, 15)}
+            groupIcon={(t) => iconOf(t)}
+          />
+        </ConfigOverview>
       </div>
 
-      {locked ? (
-        <footer className="shrink-0 border-t border-line-soft bg-white/85 px-4 py-3 backdrop-blur">
-          <Tooltip content="解除后本体属性可再编辑，下游流程的基线同步失效。" className="w-full">
-            <Button
-              block
-              size="lg"
-              variant="secondary"
-              icon={<Lock size={15} strokeWidth={2} />}
-              onClick={() => unconfirmFlow('init')}
+      <footer className="shrink-0 border-t border-line-soft bg-white/85 px-4 py-3 backdrop-blur">
+        {/* ──────── 单一入口（2026-09-28 合并）───────
+            此前是两个按钮：「保存参数」（落 locked:false）+「确认并锁定」
+            （落 locked:true）。用户要求合并成一个——
+            点「确认并锁定」= **保存全部参数 + 锁定基线**，一次做完。
+            落下的那份 config-snapshot 带 locked:true 且含三类参数
+            （本体属性 + 控制参数 + 报告表头），后续流程据此取用。
+
+            「解除确认」保留：它是「反悔再编辑」的出口，不是「另一种保存」。
+            解除后参数仍留在界面与快照里（不清值），只是不再标为已锁定。 */}
+        <div className="flex items-center gap-2">
+          {/* ⚠️ 数字口径（2026-09-28 三轮用户反馈后定稿）：
+              **以左栏菜单的项数为准**（用户原话：「既然菜单写的 75 项就按照菜单为准」），
+              且**不在提示里拆解「本地属性 29 项」这类内部构成**——
+              用户原话：「本地属性 29 是不用写进去提示的」。
+
+              演进过程：曾用 `lockedCount`（快照条数 109）导致「菜单 75 却显示 109」，
+              再改成两边都写 109 并解释构成，仍嫌啰嗦。定稿：
+              **按钮与提示都只报菜单口径的 `total`**，提示里不再出现内部构成拆解。
+              快照实际写入条数仍在落库回执里报（那是「存了几项」的答案，
+              给需要核对的人看），但**不摆在按钮上**，避免与菜单数字打架。 */}
+          {locked ? (
+            <Tooltip
+              content={`已确认并锁定（轮次快照已写入，后续流程可取用）。解除后可再编辑，下游基线同步失效。`}
+              className="flex-1"
             >
-              解除确认 · {attrs.length} 项
-            </Button>
-          </Tooltip>
-        </footer>
-      ) : (
-        <ConfirmFooter
-          label="确认配置"
-          count={total}
-          unit="项"
-          hint={`五类共 ${total} 项，其中本体属性 ${attrs.length} 项；占位 ${holes} 项在确认后仍按「待确认」跟踪。`}
-          onClick={() => confirmFlow('init')}
-        />
-      )}
+              <Button
+                block
+                size="lg"
+                variant="secondary"
+                icon={<Lock size={15} strokeWidth={2} />}
+                onClick={() => unconfirmFlow('init')}
+              >
+                解除确认 · {total} 项
+              </Button>
+            </Tooltip>
+          ) : (
+            <span className="flex-1">
+              <ConfirmFooter
+                label={locking ? '锁定中…' : '确认并锁定'}
+                count={total}
+                unit="项"
+                hint={
+                  `一次保存并锁定全部参数：菜单共 ${total} 项。` +
+                  (holes
+                    ? `其中 ${holes} 项源材料没给值、你还没填（已补 ${holesFilled} 项）——` +
+                      `这些项**不阻塞锁定**，会继续按「待现场确认」跟踪。`
+                    : `源材料缺的项已全部补齐。`) +
+                  `点击后写入配置快照（locked:true）并进入流程 2。`
+                }
+                onClick={() => void confirmAndSnapshot()}
+              />
+            </span>
+          )}
+        </div>
+      </footer>
     </div>
   )
 }
@@ -1106,12 +1430,12 @@ function BenchLive({ full }: { full?: boolean }) {
     {
       icon: Monitor,
       name: '台架工控机',
-      meta: '172.25.5.166',
+      meta: BENCH_HOST || '未配置',
       status: (online ? 'done' : 'empty') as 'done' | 'empty',
       text: online ? '在线' : '未接入',
       hint: online
         ? '网关 :8022 在线，可开 SSH 会话与远程取图。'
-        : '网关未启动，流程 2 不需要连台架；起法：cd ~/lab/webssh && npm run gateway，端口 8022。',
+        : '网关未启动，流程 2 不需要连台架；起法：cd c/components/webssh && npm run gateway，端口 8022。',
     },
     ...instrumentsOf(pack)
       .slice(0, full ? 3 : 2)
@@ -1150,7 +1474,7 @@ function BenchLive({ full }: { full?: boolean }) {
         className="w-full"
         content={
           online
-            ? '最近一次取图来自台架工控机 C:\\fc_pull，点开可看全图。'
+            ? `最近一次取图来自台架工控机${BENCH_PULL_DIR ? ` ${BENCH_PULL_DIR}` : ''}，点开可看全图。`
             : '网关未启动，本场景包里也没有留档的台架截图，这里是占位框——不拿别处的图冒充台架实况。'
         }
       >

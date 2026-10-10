@@ -1,6 +1,6 @@
 # 部署、联调与演示标准作业程序 v1.1
 
-适用对象：负责把「多场景 Agent 测试系统」页面原型（工程 `~/agent-test-web`，React + Vite + TypeScript）搭起来并在评审现场演示 5 分钟的开发同事与演示者。
+适用对象：负责把「多场景 Agent 测试系统」页面原型（工程 `c/`，React + Vite + TypeScript）搭起来并在评审现场演示 5 分钟的开发同事与演示者。
 
 ## 代码快照时刻
 
@@ -9,11 +9,11 @@
 | 项 | 值 |
 | --- | --- |
 | 核对时刻 | 2026-09-20 09:34 CST |
-| 前端原型最后落盘 | `/home/zzz/agent-test-web/src/` 下最新文件时间戳 **2026-09-20 09:28** |
-| 版本控制 | Gitee 私有仓 `https://gitee.com/zhangjy-george/agent-test-system`，本地工作副本 `/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-system/`，前端原型对应其中的 `web/` |
+| 前端原型最后落盘 | `c/src` 下最新文件时间戳 **2026-09-20 09:28** |
+| 版本控制 | Gitee 私有仓 `https://gitee.com/zhangjy-george/agent-test-system`，本地工作副本 `[源] 40_工程/agent-test-system`，前端原型对应其中的 `web/` |
 | 已入库的最新提交 | `f5d318d`，2026-09-20 凌晨的第三轮结构性改版 |
-| **尚未入库的部分** | **本文引用的是 `/home/zzz/agent-test-web` 这份工作区，今天白天的三轮修复尚未同步提交进该仓**，所以本文只能记快照时刻，不能给提交号 |
-| 控件文案比对源 | `/home/zzz/agent-test-web/shots5/` 下 15 张交互走查截图，出图时刻 2026-09-20 09:28 至 09:32 |
+| **尚未入库的部分** | **本文引用的是 `[源] zzz/agent-test-web` 这份工作区，今天白天的三轮修复尚未同步提交进该仓**，所以本文只能记快照时刻，不能给提交号 |
+| 控件文案比对[源] | `c/shots5` 下 15 张交互走查截图，出图时刻 2026-09-20 09:28 至 09:32 |
 
 **一条硬约束：演示前一天必须重跑一遍第零节的源码核对与 `scripts/walk-wire.mjs` 走查，核对本文与当日代码是否仍然一致。**
 
@@ -23,14 +23,14 @@
 
 ```bash
 # 一、源码核对：这三项任何一项的输出变了，第零节就要重写
-cd ~/agent-test-web
+cd c/
 grep -n "onClick" src/app/TopBar.tsx
 grep -c "disabled: true" src/data/flows.ts      # 期望 0
 grep -n "interlockPending" src/state/useAppStore.ts
 
 # 二、端到端走查：12 步全过才算第三节分镜表仍然成立
-cd ~/lab/spike-device-mcp && ./run-bridge.sh    # 桥已在 8031 监听则跳过
-cd ~/agent-test-web && npm run dev              # 必须是 5173，见第 1.2 节的跨域说明
+cd c/components/spike-device-mcp && ./run-bridge.sh    # 桥已在 8031 监听则跳过
+cd c/ && npm run dev              # 必须是 5173，见第 1.2 节的跨域说明
 BASE=http://localhost:5173 node scripts/walk-wire.mjs
 ```
 
@@ -38,9 +38,9 @@ BASE=http://localhost:5173 node scripts/walk-wire.mjs
 
 口径基准三份：
 
-- 页面形态与流程编号以 `/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/03-主文档-多场景Agent测试系统页面原型与业务逻辑-v3.1.md` 为准（**五流程**：1 初始化配置、2 测试需求确认、3 启动测试及结果分析、4 调优确认及运行、5 测试报告及产出，外加知识库基础模块）。v1.0 指的是 v3.0，两版逐行比对只有三处增量——版本号、修订记录、新增的「参数构成」小节与 6.3 节——五流程、页面形态、控件文案三项零差异，仅版本指针需要更新。
-- 分镜故事线取自 `/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/06-第三轮改版/06d-案例简化与demo故事线.md` 第 2.3 节。该文写作时用的是旧的六流程编号，其「流程 4」即本文的流程 3，「流程 5」即本文的流程 4，「流程 6」即本文的流程 5。本文一律用新编号。
-- 启动命令与环境坑取自 `/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/09-开发交付包-v3.0/README.md` 第三节与第五节、`/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/05-交接文档-给接手模型-v1.2.md` 第 4 节，以及第四轮新增的 `/home/zzz/agent-test-web/README.md` 第 10 节「交互与设备桥」。
+- 页面形态与流程编号以 `docs/20260919-通用Agent测试系统v2.0/03-主文档-多场景Agent测试系统页面原型与业务逻辑-v3.1.md` 为准（**五流程**：1 初始化配置、2 测试需求确认、3 启动测试及结果分析、4 调优确认及运行、5 测试报告及产出，外加知识库基础模块）。v1.0 指的是 v3.0，两版逐行比对只有三处增量——版本号、修订记录、新增的「参数构成」小节与 6.3 节——五流程、页面形态、控件文案三项零差异，仅版本指针需要更新。
+- 分镜故事线取自 `[源] 06-第三轮改版/06d-案例简化与demo故事线.md` 第 2.3 节。该文写作时用的是旧的六流程编号，其「流程 4」即本文的流程 3，「流程 5」即本文的流程 4，「流程 6」即本文的流程 5。本文一律用新编号。
+- 启动命令与环境坑取自 `[源] 09-开发交付包-v3.0/README.md` 第三节与第五节、`docs/20260919-通用Agent测试系统v2.0/05-交接文档-给接手模型-v1.2.md` 第 4 节，以及第四轮新增的 `c/README.md` 第 10 节「交互与设备桥」。
 
 v1.1 相对 v1.0 的修订范围：按 `08a08c-审稿意见.md` 的 34 条意见逐条处置，处置表在文末第八节。改动集中在五处——第零节按当前代码整节重写、三形态的健康检查判据全部换成能区分成功与失败的、分镜表按 `scripts/walk-wire.mjs` 的 12 步重排、第 3.2 节三处硬伤按代码现状重判、第六节 8 条待核对按审稿结论结案。
 
@@ -56,9 +56,9 @@ v1.0 第零节的地基是「顶栏动作条的全部按钮没有点击行为」
 
 | v1.0 的说法 | 当前实测 | 证据 |
 | --- | --- | --- |
-| `TopBar.tsx` 第 214 行起渲染的 `Button` 没有挂 `onClick` | 已挂 | `/home/zzz/agent-test-web/src/app/TopBar.tsx:236` 原文 `onClick={b.onClick}`，`bind` 来自 `:133` 的 `useFlowActions()` |
+| `TopBar.tsx` 第 214 行起渲染的 `Button` 没有挂 `onClick` | 已挂 | `[源] app/TopBar.tsx:236` 原文 `onClick={b.onClick}`，`bind` 来自 `:133` 的 `useFlowActions()` |
 | `flows.ts` 第 62 至 67 行把 `disabled` 硬编码为 `true` | 已移除 | `grep -c "disabled: true" src/data/flows.ts` 输出 **0**。第 61 至 62 行现为注释：「置灰不再写死：由 useAppStore 里安全闸门的勾选数现算……行为表在 src/features/redline/flowActions.ts。」 |
-| 左栏底部悬浮确认按钮没有行为 | 已接 | `/home/zzz/agent-test-web/src/features/flow-run/panel.tsx:472` 原文 `onClick={bind('start').disabled ? undefined : bind('start').onClick}`，与顶栏共用同一行为表 |
+| 左栏底部悬浮确认按钮没有行为 | 已接 | `[源] flow-run/panel.tsx:472` 原文 `onClick={bind('start').disabled ? undefined : bind('start').onClick}`，与顶栏共用同一行为表 |
 
 新的打法一句话：**页面动作条就是操作路径，助手按钮带是讲解与备料路径，两者分工而不是互为替身。** 红线动作只能人点这条口径，现在由代码本身保证——六个红线动作经 `useRedlineGate` 一律弹确认卡，桥在线时还要拿设备桥签发的一次性凭据，模型这一侧无论如何调不到批准接口。
 
@@ -79,7 +79,7 @@ v1.0 第零节的地基是「顶栏动作条的全部按钮没有点击行为」
 | 5 测试报告 | 预览 | 打开报告预览 |
 | 5 测试报告 | 导出 | 走红线确认卡 |
 
-**第二类 · 有真实行为但按条件置灰，5 颗**。置灰理由是代码现算的，悬停提示逐字抄自 `/home/zzz/agent-test-web/src/features/redline/flowActions.ts`：
+**第二类 · 有真实行为但按条件置灰，5 颗**。置灰理由是代码现算的，悬停提示逐字抄自 `[源] redline/flowActions.ts`：
 
 | 流程 | 按钮文案 | 什么时候灰 | 悬停提示原文 |
 | --- | --- | --- | --- |
@@ -114,11 +114,11 @@ v1.0 第零节的地基是「顶栏动作条的全部按钮没有点击行为」
 
 | 环节 | 事实 | 位置 |
 | --- | --- | --- |
-| 徽章读什么 | `const pending = useAppStore((s) => s.interlockPending)` | `/home/zzz/agent-test-web/src/app/TopBar.tsx:128` |
+| 徽章读什么 | `const pending = useAppStore((s) => s.interlockPending)` | `[源] app/TopBar.tsx:128` |
 | 渲什么 | `pending` 非零时显示数字并把盾形图标染成警示色，为零时显示文字「就绪」 | `TopBar.tsx:211-214` |
-| `interlockPending` 初值 | `0`，不是 `2` | `/home/zzz/agent-test-web/src/state/useAppStore.ts:258` |
+| `interlockPending` 初值 | `0`，不是 `2` | `[源] state/useAppStore.ts:258` |
 | 有没有 setter | **有两个** | `toggleGate`（`useAppStore.ts:291`）与 `setGateTotal`（`:295`），公式都是 `Math.max(0, gateTotal - gateAcked.length)` |
-| 闸门总数从哪来 | 场景包登记的条数，写进 store | `/home/zzz/agent-test-web/src/features/flow-run/panel.tsx:264` 的 `setGateTotal(gateItems.length)` |
+| 闸门总数从哪来 | 场景包登记的条数，写进 store | `[源] flow-run/panel.tsx:264` 的 `setGateTotal(gateItems.length)` |
 
 截图两路互证：`shots5/online-1-gate-empty.png` 上闸门 `0/9`、顶栏徽章读数 **9**；`shots5/online-2-gate-green.png` 上闸门 `9/9 ● 全绿`、顶栏徽章变成文字 **「就绪」**。**徽章确实跟着勾选走。**
 
@@ -146,23 +146,23 @@ v1.0 第零节的地基是「顶栏动作条的全部按钮没有点击行为」
 
 | 交互 | 源码位置 | 点下去发生什么 |
 | --- | --- | --- |
-| 顶栏五流程步骤切换、知识库按钮 | `/home/zzz/agent-test-web/src/app/TopBar.tsx` | 路由跳转 |
+| 顶栏五流程步骤切换、知识库按钮 | `[源] app/TopBar.tsx` | 路由跳转 |
 | 顶栏「演示 / 全量」分段控件 | 同上，`Segmented` 组件，`ariaLabel="演示模式"` | 切展示面过滤，选择持久化到 localStorage |
 | 顶栏场景包切换（级联选择器） | 同上，`ProductCascader` | 换场景包 |
-| 左栏各级折叠组展开与收起 | `/home/zzz/agent-test-web/src/features/shared/bits.tsx` 的 `Collapsible` | 展开二级内容 |
-| 流程 3 左栏安全闸门逐条勾选 | `/home/zzz/agent-test-web/src/features/flow-run/panel.tsx:255` 的 `toggleGate` | 勾选计数写进 store，同步驱动左栏计数、动作条「启动测试」的置灰、顶栏盾形徽章三处 |
+| 左栏各级折叠组展开与收起 | `[源] shared/bits.tsx` 的 `Collapsible` | 展开二级内容 |
+| 流程 3 左栏安全闸门逐条勾选 | `[源] flow-run/panel.tsx:255` 的 `toggleGate` | 勾选计数写进 store，同步驱动左栏计数、动作条「启动测试」的置灰、顶栏盾形徽章三处 |
 | 时序曲线图例的曲线开关 | 同上第 544 行 | 显隐单条曲线 |
-| C 区画板缩放、复位、缩略导航 | `/home/zzz/agent-test-web/src/features/canvas/` | 画布内容缩放，外框尺寸不变 |
-| 知识库三轴筛选与分页 | `/home/zzz/agent-test-web/src/features/knowledge/` | 列表重算、面包屑同步 |
-| 助手预置动作按钮带 | `/home/zzz/agent-test-web/src/features/copilot/ActionBar.tsx` | 脚本化回放一段对话，执行类弹人工确认闸门 |
+| C 区画板缩放、复位、缩略导航 | `[源] features/canvas` | 画布内容缩放，外框尺寸不变 |
+| 知识库三轴筛选与分页 | `[源] features/knowledge` | 列表重算、面包屑同步 |
+| 助手预置动作按钮带 | `[源] copilot/ActionBar.tsx` | 脚本化回放一段对话，执行类弹人工确认闸门 |
 
 另有三处 v1.0 未登记、第四轮新接上的：
 
 | 交互 | 源码位置 | 点下去发生什么 |
 | --- | --- | --- |
-| 判定卡上的未达标行 | `/home/zzz/agent-test-web/src/features/flow-run/panel.tsx` 的 `data-testid="verdict-fail-row"` | 跳流程 4，并把该项设为聚焦项，左栏出现「来自流程 3 判定卡的未达标项 TR-START-01」 |
-| 流程 4 候选队列的单选 | `/home/zzz/agent-test-web/src/features/flow-tune/panel.tsx:302` 的 `toggleAdopt` | 勾中后「参数变更」卡计数变化，动作条「采纳并回到启动测试」解灰 |
-| 报告页「归档到知识库」 | `/home/zzz/agent-test-web/src/features/flow-report/panel.tsx:956` | 走红线确认卡。该动作按设计不上动作条，只留在「产物留档」卡内 |
+| 判定卡上的未达标行 | `[源] flow-run/panel.tsx` 的 `data-testid="verdict-fail-row"` | 跳流程 4，并把该项设为聚焦项，左栏出现「来自流程 3 判定卡的未达标项 TR-START-01」 |
+| 流程 4 候选队列的单选 | `[源] flow-tune/panel.tsx:302` 的 `toggleAdopt` | 勾中后「参数变更」卡计数变化，动作条「采纳并回到启动测试」解灰 |
+| 报告页「归档到知识库」 | `[源] flow-report/panel.tsx:956` | 走红线确认卡。该动作按设计不上动作条，只留在「产物留档」卡内 |
 
 ---
 
@@ -177,14 +177,14 @@ v1.0 第零节的地基是「顶栏动作条的全部按钮没有点击行为」
 前置条件三项：
 
 - Node 与 npm 可用。交付包实测环境为 Node v24.14.0、npm 11.16.0。
-- 工程放在 **Linux 家目录**，不要放在 `/mnt/` 开头的 Windows 挂载盘。挂载盘上 `npm install` 与 Vite 构建极慢，这一条写在交接文档第 4.3 节。现成工程在 `~/agent-test-web`。
+- 工程放在 **Linux 家目录**，不要放在 `/mnt/` 开头的 Windows 挂载盘。挂载盘上 `npm install` 与 Vite 构建极慢，这一条写在交接文档第 4.3 节。现成工程在 `c/`。
 - 端口 5173 空闲。
 
 启动顺序（5 步）：
 
 ```bash
 # 步骤 1 · 进工程
-cd ~/agent-test-web
+cd c/
 
 # 步骤 2 · 装依赖（首次或依赖有变动时才需要）
 npm install --no-audit --no-fund
@@ -243,13 +243,13 @@ http://localhost:5173/?mode=full                                   强制全量�
 
 ### 1.2 形态二 · mock 设备
 
-在形态一之上，另起设备接入验证工程 `~/lab/spike-device-mcp`，让它以 mock 模式运行。
+在形态一之上，另起设备接入验证工程 `c/components/spike-device-mcp`，让它以 mock 模式运行。
 
-**v1.0 在这里写「这个设备桥没有接进页面」，该说法已作废。** 第四轮把桥接进了页面：设备节点的状态、分层工具菜单、六个红线动作的凭据全部走 8031，客户端收在 `/home/zzz/agent-test-web/src/features/remote/bridge.ts` 一个文件里。**形态二现在有页面增量**——设备节点会显示真实的工具数与 `live`／`mock` 模式，红线确认卡上会出现设备桥签发的 `confirm_token`。
+**v1.0 在这里写「这个设备桥没有接进页面」，该说法已作废。** 第四轮把桥接进了页面：设备节点的状态、分层工具菜单、六个红线动作的凭据全部走 8031，客户端收在 `[源] remote/bridge.ts` 一个文件里。**形态二现在有页面增量**——设备节点会显示真实的工具数与 `live`／`mock` 模式，红线确认卡上会出现设备桥签发的 `confirm_token`。
 
 `VITE_GATEWAY_URL`（默认 `http://localhost:8022`，即上一轮的 webssh 网关）第四轮起只剩一个用途：设备节点放大态里那个 xterm 终端。不起网关不影响设备节点状态。
 
-**一条会让人白折腾半小时的跨域约束，先说在前面。** 桥默认只放行 `http://localhost:5173` 与 `http://localhost:3080` 两个来源（`/home/zzz/lab/spike-device-mcp/bridge.py:37-38`）。前端跑在 `npm run preview` 的 4173 或 4199 端口时，浏览器**直接拦掉所有桥请求，页面上看不到任何错误**，只显示「网关未连通」。要联设备桥就用 `npm run dev` 的 5173，或者去桥那侧把端口加进 `BRIDGE_CORS_ORIGIN`。
+**一条会让人白折腾半小时的跨域约束，先说在前面。** 桥默认只放行 `http://localhost:5173` 与 `http://localhost:3080` 两个来源（`[源] spike-device-mcp/bridge.py:37-38`）。前端跑在 `npm run preview` 的 4173 或 4199 端口时，浏览器**直接拦掉所有桥请求，页面上看不到任何错误**，只显示「网关未连通」。要联设备桥就用 `npm run dev` 的 5173，或者去桥那侧把端口加进 `BRIDGE_CORS_ORIGIN`。
 
 前置条件三项：
 
@@ -261,7 +261,7 @@ http://localhost:5173/?mode=full                                   强制全量�
 
 ```bash
 # 步骤 1 · 建虚拟环境并装依赖。必须显式指定官方源，清华镜像对这批包返回 403
-cd ~/lab/spike-device-mcp
+cd c/components/spike-device-mcp
 uv venv -p 3.12 .venv
 VIRTUAL_ENV=.venv UV_INDEX_URL=https://pypi.org/simple \
   uv pip install fastapi uvicorn paramiko pydantic mcp
@@ -274,7 +274,7 @@ VIRTUAL_ENV=.venv UV_INDEX_URL=https://pypi.org/simple \
 sed -i "s|^BRIDGE_TOKEN=.*|BRIDGE_TOKEN=$(openssl rand -hex 16)|" .env
 
 #   2c 【想真跑 mock 就必须做这一条】清掉私钥路径。
-#      .env.example 第 3 行自带 FORTIOR_WIN_KEY=/home/zzz/.ssh/fortior_win，
+#      .env.example 第 3 行自带 FORTIOR_WIN_KEY=[源] .ssh/fortior_win，
 #      而该私钥在本机真实存在且权限正确，不清掉的话桥会静默连上真台架。
 sed -i "s|^FORTIOR_WIN_KEY=.*|FORTIOR_WIN_KEY=|" .env
 
@@ -282,7 +282,7 @@ sed -i "s|^FORTIOR_WIN_KEY=.*|FORTIOR_WIN_KEY=|" .env
 ./run-bridge.sh
 
 # 步骤 4 · 健康检查
-set -a; . ~/lab/spike-device-mcp/.env; set +a
+set -a; . [源] spike-device-mcp/.env; set +a
 curl -s http://127.0.0.1:8031/health
 curl -s -H "x-bridge-token: $BRIDGE_TOKEN" http://127.0.0.1:8031/devices | head -c 400
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8031/devices   # 不带 token
@@ -295,7 +295,7 @@ curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8031/devices   # 不�
 - **`status.mode` 应为 `mock` 或 `unknown`，`connected` 为 `false`。若返回 `live`，说明步骤 2c 没做，`.env` 里的私钥路径还在——这时你跑的已经是形态三，不是形态二。** 实测过一次：私钥未清时 `/devices` 直接回 `"mode":"live"`、`"target":"administrator@172.25.5.166:5011"`。
 - 不带 token 的 `/devices` 返回 `401`，响应体 `{"detail":"bad token"}`。
 
-**关于「强制 mock 开关」，说清楚免得找。** 桥**没有** `FORCE_MOCK` 或 `MOCK_ONLY` 一类的环境变量开关，全仓零命中。`mode` 的判定只有三条路径（`/home/zzz/lab/spike-device-mcp/device_bench/backend.py`）：
+**关于「强制 mock 开关」，说清楚免得找。** 桥**没有** `FORCE_MOCK` 或 `MOCK_ONLY` 一类的环境变量开关，全仓零命中。`mode` 的判定只有三条路径（`[源] device_bench/backend.py`）：
 
 | 值 | 触发条件 | 位置 |
 | --- | --- | --- |
@@ -315,7 +315,7 @@ mock 模式下每条返回带 `mode` 字段，另额外带 `mock_warning`，不�
 
 前置条件五项：
 
-- 台架 SSH 私钥 `~/.ssh/fortior_win` 已就位，权限 600。私钥不在交付包内，需向上游索取；`.env` 里填的是**文件路径**，不是私钥本体。
+- 台架 SSH 私钥 `[源] .ssh/fortior_win` 已就位，权限 600。私钥不在交付包内，需向上游索取；`.env` 里填的是**文件路径**，不是私钥本体。
 - 网络能到 `172.25.5.166:5011`（路由器把外部 5011 转发到该 Windows 机的 22 端口，用户 `administrator`，主机名 `SK-20251218QPBB`）。
 - 示波器 Rigol DS1104Z Plus 经 USB 接在台架机上，NI-VISA 已装。通道定义：CH1 电流探头夹 48 V 母线、CH2 接 FG1（电气换相反馈）、CH3 接 FG2（红外机械转速脉冲，1 脉冲/转）、CH4 接 PWM1（驱动被测风扇）。PWM2 驱动逆风风扇，一般不抓。
 - 示波器没有被别的进程独占。占锁的两个常见元凶是台架上正在跑的客户软件 `altior-ai.exe`，以及遗留的裸 PowerShell 进程。
@@ -325,7 +325,7 @@ mock 模式下每条返回带 `mode` 字段，另额外带 `mock_warning`，不�
 
 ```bash
 # 步骤 1 · 定义远控别名
-SSHK='ssh -i /home/zzz/.ssh/fortior_win -o PreferredAuthentications=publickey -o IdentitiesOnly=yes \
+SSHK='ssh -i [源] .ssh/fortior_win -o PreferredAuthentications=publickey -o IdentitiesOnly=yes \
       -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=12 \
       administrator@172.25.5.166 -p 5011'
 
@@ -336,11 +336,11 @@ $SSHK "hostname"
 $SSHK "tasklist | findstr /I \"altior-ai dll-bridge powershell\""
 
 # 步骤 4 · 把私钥路径写进桥配置并重启桥
-sed -i "s|^FORTIOR_WIN_KEY=.*|FORTIOR_WIN_KEY=/home/zzz/.ssh/fortior_win|" ~/lab/spike-device-mcp/.env
-cd ~/lab/spike-device-mcp && ./run-bridge.sh
+sed -i "s|^FORTIOR_WIN_KEY=.*|FORTIOR_WIN_KEY=[源] .ssh/fortior_win|" [源] spike-device-mcp/.env
+cd c/components/spike-device-mcp && ./run-bridge.sh
 
 # 步骤 5 · 健康检查三：桥是否真连上台架
-set -a; . ~/lab/spike-device-mcp/.env; set +a
+set -a; . [源] spike-device-mcp/.env; set +a
 curl -s -H "x-bridge-token: $BRIDGE_TOKEN" \
      -X POST http://127.0.0.1:8031/devices/bench/tools/connect \
      -H 'content-type: application/json' -d '{"arguments":{}}'
@@ -358,22 +358,22 @@ curl -s -H "x-bridge-token: $BRIDGE_TOKEN" \
 - 步骤 5 返回 `"mode": "live"`、`"hostname": "SK-20251218QPBB"`。返回 `"mode": "mock"` 说明私钥路径没生效或 SSH 不通，回步骤 2。
 - 步骤 6 电机未转时返回 `9.9E37`，桥会把它识别为「VISA 无有效测量」并判成电机未转或探头未接，**不会**把这个数当频率报出去。电机转起来后应返回 FG1 与 FG2 的频率、换算转速与比值。注意实测比值恒为约 2.19，不是理论的 2.00，这一点见第三节对镜 5 的处理口径。
 
-**页面侧要不要显示「网关已连通」，是另一件事。** 页面设备节点的徽章文案只有「网关已连通」与「网关未连通」两档（`~/agent-test-web/src/features/remote/DeviceMcpNode.tsx` 第 32 行），数据源是 8022 端口的 webssh 网关而非 8031 设备桥。要让它显示「网关已连通」，得另起 webssh 网关并给前端配 token：
+**页面侧要不要显示「网关已连通」，是另一件事。** 页面设备节点的徽章文案只有「网关已连通」与「网关未连通」两档（`[源] remote/DeviceMcpNode.tsx` 第 32 行），数据源是 8022 端口的 webssh 网关而非 8031 设备桥。要让它显示「网关已连通」，得另起 webssh 网关并给前端配 token：
 
 ```bash
 # 另起网关（该分支已被交付包标为「建议废弃，仅供参考」，此处只为点亮页面徽章）
-cd ~/lab/webssh && { [ -f .env ] || cp .env.example .env; }   # 不覆盖已有配置；填 GATEWAY_TOKEN 与 FORTIOR_WIN_KEY
+cd c/components/webssh && { [ -f .env ] || cp .env.example .env; }   # 不覆盖已有配置；填 GATEWAY_TOKEN 与 FORTIOR_WIN_KEY
 npm run gateway                               # 端口 8022
 
 # 前端必须有同一串 token，否则 probe 被 401，节点恒显示「网关未连通」
-cat > ~/agent-test-web/.env <<'EOF'
+cat > c/.env <<'EOF'
 VITE_GATEWAY_URL=http://localhost:8022
-VITE_GATEWAY_TOKEN=与 ~/lab/webssh/.env 里的 GATEWAY_TOKEN 完全一致
+VITE_GATEWAY_TOKEN=与 [源] webssh/.env 里的 GATEWAY_TOKEN 完全一致
 EOF
 # 改完 .env 必须重启 npm run dev，Vite 不热加载环境变量
 ```
 
-**v1.0 说「`~/agent-test-web` 当前没有 `.env`」，已作废。** 第四轮新增了 `/home/zzz/agent-test-web/.env.example` 模板与 `.env` 本体（后者已被 `.gitignore` 排除，不入库）。四个变量的完整含义：
+**v1.0 说「`c/` 当前没有 `.env`」，已作废。** 第四轮新增了 `c/.env.example` 模板与 `.env` 本体（后者已被 `.gitignore` 排除，不入库）。四个变量的完整含义：
 
 | 变量 | 模板默认值 | 谁在用 | 不配会怎样 |
 | --- | --- | --- | --- |
@@ -443,7 +443,7 @@ EOF
 
 | # | 检查项 | 怎么验 | 通过判据 |
 | --- | --- | --- | --- |
-| I1 | 端到端交互链路全通 | `cd ~/agent-test-web && BASE=http://localhost:5173 node scripts/walk-wire.mjs` | 12 步全部打 PASS，末行无报错退出。产物 13 张截图落 `~/agent-test-web/shots5/`。**第 3 步（闸门全绿后「启动测试」解灰）若失败，脚本会主动 `process.exit(1)`，不会静默放过** |
+| I1 | 端到端交互链路全通 | `cd c/ && BASE=http://localhost:5173 node scripts/walk-wire.mjs` | 12 步全部打 PASS，末行无报错退出。产物 13 张截图落 `c/shots5`。**第 3 步（闸门全绿后「启动测试」解灰）若失败，脚本会主动 `process.exit(1)`，不会静默放过** |
 
 跑这一项要先起设备桥（第 1.2 节），否则红线确认卡上拿不到 `confirm_token`——但卡本身照弹，走查仍会过，只是演示时少了「凭据由桥签发」这一层证据。
 
@@ -467,7 +467,7 @@ EOF
 
 全程 300 秒，9 镜。三条阅读约定：
 
-- **控件**一律用页面上的实际文案，全部与 `~/agent-test-web/shots5/` 下的截图逐字核过，核对时刻 2026-09-20 09:34。
+- **控件**一律用页面上的实际文案，全部与 `c/shots5` 下的截图逐字核过，核对时刻 2026-09-20 09:34。
 - **兜底**是该镜没出现预期结果时当场怎么办。v1.1 的兜底全部按当前代码重写——v1.0 那套「按钮点不动，改口讲视觉证据」的兜底已经整体作废。
 - **走查步**一列标出该镜对应 `scripts/walk-wire.mjs` 的第几步。脚本 12 步覆盖镜 1 到镜 9 的全部操作，**演示前跑一遍脚本就等于把分镜彩排了一遍**。脚本第 3 步（闸门全绿后启动解灰）没有截图，它是一次纯断言。
 
@@ -481,13 +481,13 @@ EOF
 | 4 | 35 | 步 4、步 5 前半 | 流程 3（`/run`） | 点动作条的「启动测试」 | 弹出确认卡，标题「确认执行 · 启动测试」，副标「红线动作 · 确认人 张工」；正文「启动被测电机：台架会真的转起来。红线动作，未带 confirm_token，已拒绝执行」；「参数」一行「duty_percent=60 · duration_s=10（设备桥绑定的参数指纹）」；「凭据」一行是 `ct_` 开头的真实令牌，后面挂徽标「设备桥已签发」；卡底说明「点「确认执行」等于在设备桥上人工批准这张凭据：凭据单次使用、180 秒过期、绑定工具名与参数指纹，批准后才允许带票执行。」；两颗按钮「取消」「确认执行」 | 这一步会真的改变被测对象状态，所以要你点，不是我点 | 凭据一行为空、徽标不是「设备桥已签发」，说明桥没起或被跨域拦了。**确认卡照弹，演示照走**——卡上会写「设备桥未接入，本次只驱动页面回放，不向台架下发任何控制命令」，这句话本身就是要讲的口径：红线纪律不因为桥没起就松掉 |
 | 5 | 40 | 步 5 后半 | 流程 3（`/run`） | 点「确认执行」；等约 3 秒；讲「时序曲线」与「判定卡」 | 助手状态徽标转「执行中」、输入区发送按钮变「停止」；「执行进度与日志」卡读数 `98 已标注 / 101`，下方状态条；判定卡出结论 **「1 条不通过 · 已判 1」**，下面一行「● 起动成功率 ｜ 不通过 ｜ ›」，该行可点；时序曲线图例两条「● TRY-0009 PASS」「● TRY-0010 FAIL」 | 判据要的现场实测量由台架传感器现场采，本轮回放的是 2026-08-11 那批 98 次启动实验的标注数据，通过 67 次、要求 100 次，这一条就是不通过 | 判定卡仍显示「通过 0 ｜ 不通过 0 ｜ 未采集 6」，说明跑的是修复前的代码，按第 3.2 节硬伤一的旧讲法兜底。时序曲线只出一条时，检查是否被图例开关关掉了。放大态标题副文写「登记 5 条·本轮回放 3 条」，与首屏两条不一致，别当场念这句 |
 | 6 | 30 | 步 6 | 流程 3 → 流程 4（`/run` → `/tune`） | **点判定卡上「起动成功率 不通过」那一行** | 路由跳到 `/tune`；流程 4 左栏抬头「未达标与推荐」「1 条未达标」，下面一行小字「来自流程 3 判定卡的未达标项 TR-START-01」；「推荐参数 1/6」与「未采集 0/5」两组；C 区四张卡，版面是上排「历史对比」与「候选队列」、下排「知识库依据」与「参数变更」 | 失败那条的相电流峰值明显高于成功那条，98 次台架复现里这是预定位太弱的典型形态 | 判定卡行点不动时改用顶栏步骤条第 4 格「调优运行」，左栏会少那行「来自流程 3 判定卡的未达标项」小字，其余一致。**口播指卡时按上排左右、下排左右的顺序指**，不要按「历史对比、知识库依据、候选队列、参数变更」念——那是 v1.0 写错的顺序，会指到隔壁那张 |
-| 7 | 35 | 讲解镜，无走查步 | 流程 4（`/tune`） | 讲「知识库依据」卡；再展开左栏「推荐参数 1/6」一段 | 知识库依据卡第一行「98 次台架复现…」，行尾两枚徽标「台架实测数据」与「EXP-009」，卡内另有一行「另 4 条」；候选队列第一条「预定位 D … +20%」，下方「另有候选 5」，卡底「6/10」带信息图标；左栏推荐参数逐行给出改动前后值，如「预定位 D … 0.06 → 0.072 ＋20%」 | 候选按证据级排队，台架实测数据那一级排在规程条款前面，一次只动一项。采纳与写回都要你点，我不写回也不触发重跑 | 第一行不是 EXP-009 时，说明跑的不是当前代码。排序口径写在 `/home/zzz/agent-test-web/src/features/flow-tune/panel.tsx:160-178`，「台架实测数据」权重 3，数值能否给出退为第二排序键 |
+| 7 | 35 | 讲解镜，无走查步 | 流程 4（`/tune`） | 讲「知识库依据」卡；再展开左栏「推荐参数 1/6」一段 | 知识库依据卡第一行「98 次台架复现…」，行尾两枚徽标「台架实测数据」与「EXP-009」，卡内另有一行「另 4 条」；候选队列第一条「预定位 D … +20%」，下方「另有候选 5」，卡底「6/10」带信息图标；左栏推荐参数逐行给出改动前后值，如「预定位 D … 0.06 → 0.072 ＋20%」 | 候选按证据级排队，台架实测数据那一级排在规程条款前面，一次只动一项。采纳与写回都要你点，我不写回也不触发重跑 | 第一行不是 EXP-009 时，说明跑的不是当前代码。排序口径写在 `[源] flow-tune/panel.tsx:160-178`，「台架实测数据」权重 3，数值能否给出退为第二排序键 |
 | 8 | 35 | 步 7、步 8、步 9 | 流程 4（`/tune`）→ 流程 3（`/run`） | 在「候选队列」或左栏推荐参数里勾选第一条；点动作条的「采纳并回到启动测试」；在弹出的确认卡上点「确认执行」 | 勾选后「参数变更」卡变成「1 项已采纳 · 待写回」，下面一行 `MOTOR_ALIGNMENT_DOUT 0.06 → 0.072`；左栏底部按钮变成「确认采纳 · 1 项」；动作条「采纳并回到启动测试」由灰转深绿；点下后弹第二张红线确认卡（写回参数属六个红线动作之一）；确认后路由回 `/run` | 写回要你点，我不写回也不触发重跑 | 勾选后按钮不解灰，悬停应看到「先在推荐参数里勾选要采纳的项」——看到这句说明勾选没生效，改点左栏推荐参数行右端的圆点。确认卡不弹说明该动作没进红线表，当场说明「写回参数在代码里登记为红线动作，正常应当弹卡」 |
 | 9 | 35 | 步 10、步 11 | 流程 5 测试报告（`/report`） | 点顶栏步骤条第 5 格「测试报告」；点动作条「生成报告」；再点「导出」 | 顶栏步骤条第 4 格变成勾；左栏「报告信息 0/10」「● 待补 4」，下面一张卡「Fortior_Motor_Checklist_…」「11 分页 · 10 节」「2026-09-19」；C 区五张卡「报告预览」「产物留档」「判定卡」「历史对比」「模板字段」；报告预览底注「首页 / 共 11 页 · 图位 106」；产物留档四行——「波形 CSV 3 份 2.9 MB」「波形截图 图位 106 张 待采集」「判定 JSON 6 条 待导出」「报告文件 report.xlsm 未生成」，卡底另有一颗「归档到知识库」；点「导出」后弹第三张红线确认卡 | 报告已按模板生成，导出与归档仍须人点并确认 | 「生成报告」点后 C 区不变，检查控制台是否报 `report-template.json` 取数失败。**报告预览里的数值点不回原始轮次是已知缺口**（轮次产物存储未实现，见下方说明），讲解词须照实说：现在讲的是设计口径不是已实现能力。导出确认卡弹出后**点「取消」收尾**，不要真导出——走查脚本第 11 步也是这么做的 |
 
 **一条贯穿全场的口径**：三张红线确认卡（镜 4 启动、镜 8 写回参数、镜 9 导出）是这场演示最该讲的东西。它们证明的不是「界面上有个确认弹窗」，而是**批准接口只挂在设备桥的 HTTP 面上、不做成 MCP 工具，模型能调到的东西里没有任何一个能把凭据从 `pending` 推到 `approved`**。被追问「它会不会自己把电机转起来」时，切形态二的终端，展示 `evidence/08`、`evidence/09`、`evidence/11`、`evidence/12`、`evidence/14` 五份取证：无凭据拒、未批准拒、批准后放行、重放拒、改参数拒。
 
-**「缺口 G-02」是什么**：指轮次产物存储未实现这一条缺口，编号出自 `05-交接文档-给接手模型-v1.2.md` 的缺口清单。表现是上下文包里 `lastRun.artifacts` 与 `history.runs` 两个字段恒为 `null`（`/home/zzz/agent-test-web/src/features/copilot/context.ts:122`、`:203`），后果是报告预览里的引用链点不回原始轮次。接口层的建议形态写在 `08a-开发接口契约-v1.1.md` 第 1.4.7 节。
+**「缺口 G-02」是什么**：指轮次产物存储未实现这一条缺口，编号出自 `05-交接文档-给接手模型-v1.2.md` 的缺口清单。表现是上下文包里 `lastRun.artifacts` 与 `history.runs` 两个字段恒为 `null`（`[源] copilot/context.ts:122`、`:203`），后果是报告预览里的引用链点不回原始轮次。接口层的建议形态写在 `08a-开发接口契约-v1.1.md` 第 1.4.7 节。
 
 ### 3.2 形态依赖与硬伤标注
 
@@ -501,7 +501,7 @@ v1.0 的现状描述是：流程 3 判定卡的 6 条判据全部「未采集」
 
 **当前实测：已不成立。** 判定卡现在出的是「1 条不通过 · 已判 1」，不通过的那条是「起动成功率」。
 
-修复方式写在 `/home/zzz/agent-test-web/CHANGELOG-fix-r14-20260920.md`：`/home/zzz/agent-test-web/src/features/flow-run/evaluate.ts` 的 `runtimeMeasures()` 接入了 2026-08-11 那批 98 次启动实验的真实标注数据（通过 67 次、要求 100 次），同时把判据求值改成合取式短路——`fault_flag` 与 `fg2_rpm_min_observed` 两个子句仍未采集，但 `pass_count === required_pass` 这一项已经为假，合取式整体判假，不必等齐全部子句。
+修复方式写在 `c/CHANGELOG-fix-r14-20260920.md`：`[源] flow-run/evaluate.ts` 的 `runtimeMeasures()` 接入了 2026-08-11 那批 98 次启动实验的真实标注数据（通过 67 次、要求 100 次），同时把判据求值改成合取式短路——`fault_flag` 与 `fg2_rpm_min_observed` 两个子句仍未采集，但 `pass_count === required_pass` 这一项已经为假，合取式整体判假，不必等齐全部子句。
 
 **这条修复直接决定镜 5、镜 6、镜 7 三镜能不能按主线讲**。因果链现在是完整的：流程 3 判出一条不通过 → 点那一行跳流程 4 → 流程 4 左栏显示「来自流程 3 判定卡的未达标项 TR-START-01」。
 
@@ -515,13 +515,13 @@ v1.0 的现状描述是：代码侧排序已改成证据级优先，但助手气
 
 > 候选按证据级排队，台架实测数据那一级排在规程条款前面，一次只动一项。采纳与写回都要你点，我不写回也不触发重跑。
 
-与代码口径一致。修复位置是 `/home/zzz/agent-test-web/src/features/copilot/scripts.ts`，同一次改动还把 `topExp` 从「取场景包登记顺序第一条」改成「按证据级排序取首条」，所以知识库依据卡第一行现在是 EXP-009 而不是 EXP-001。
+与代码口径一致。修复位置是 `[源] copilot/scripts.ts`，同一次改动还把 `topExp` 从「取场景包登记顺序第一条」改成「按证据级排序取首条」，所以知识库依据卡第一行现在是 EXP-009 而不是 EXP-001。
 
 #### 硬伤三 · 业务文档里的 2.01 —— 仍在，演示前必须处理
 
 这一条 v1.0 说的三处仍未清。
 
-现状：`02-业务逻辑说明-六个流程-v1.0.md` 第 383 行与第 559 行、`01-设计规格-信息架构与页面-v1.0.md` 第 761 行，三处仍写「电气与机械转速频率比实测 2.01、阈值 2.00 ± 0.05、通过」。台架实测记录在 `/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/交接/峰岹硬件测试_交接文档.md` 第 76 至 82 行，记的是 2.19、全档恒定、系统性高于理论值约 9.5%、成因待客户确认。按真实数这一条判的是不通过。同目录的 `02-业务逻辑说明-六个流程.md` 与 `02-业务逻辑说明-六个流程-草稿发布版.md` 已把该数改标为「示意取」，两处 v1.0 未清，且交付包 `09-开发交付包-v3.0/docs/` 下放的正是未清的 v1.0。
+现状：`02-业务逻辑说明-六个流程-v1.0.md` 第 383 行与第 559 行、`01-设计规格-信息架构与页面-v1.0.md` 第 761 行，三处仍写「电气与机械转速频率比实测 2.01、阈值 2.00 ± 0.05、通过」。台架实测记录在 `交接/峰岹硬件测试_交接文档.md` 第 76 至 82 行，记的是 2.19、全档恒定、系统性高于理论值约 9.5%、成因待客户确认。按真实数这一条判的是不通过。同目录的 `02-业务逻辑说明-六个流程.md` 与 `02-业务逻辑说明-六个流程-草稿发布版.md` 已把该数改标为「示意取」，两处 v1.0 未清，且交付包 `09-开发交付包-v3.0/docs/` 下放的正是未清的 v1.0。
 
 **责任人与截止时刻**：文档线负责人，演示前一天完成。**这是第二节检查单之外唯一一项必须在演示前完成的前置任务**，因为它不在页面上，检查单查不出来。
 
@@ -554,7 +554,7 @@ v1.0 的现状描述是：代码侧排序已改成证据级优先，但助手气
 | 所有接口 401 | `/health` 通、其余 401 | 除 `/health` 外全部要 `x-bridge-token` 头，补上 |
 | `connect` 返回 `mode: mock` 而非 `live` | 返回里有 `mock_warning` | 查 `.env` 的 `FORTIOR_WIN_KEY` 是否指向真实存在的私钥文件；经 MCP stdio 传输调用时还须在客户端配置的 `env` 段显式透传该变量，SDK 默认只给子进程一套最小环境 |
 | 人批准过的凭据失效 | 报「状态为 consumed」或找不到 token | 凭据单次使用、180 秒过期、绑定工具名与参数指纹，且**存在进程内存里，桥一重启全部丢失**。重新走一遍申请与批准 |
-| 页面设备节点恒显示「网关未连通」 | 8031 桥是好的，但页面不变 | 页面读的是 8022 的 webssh 网关，不是 8031。按第 1.3 节补 `~/agent-test-web/.env` 并重启 `npm run dev` |
+| 页面设备节点恒显示「网关未连通」 | 8031 桥是好的，但页面不变 | 页面读的是 8022 的 webssh 网关，不是 8031。按第 1.3 节补 `c/.env` 并重启 `npm run dev` |
 
 ### 4.3 台架
 
@@ -587,14 +587,14 @@ v1.0 的现状描述是：代码侧排序已改成证据级优先，但助手气
 
 | 产物 | 从哪取 | 存到哪 |
 | --- | --- | --- |
-| 页面截图 | 演示后重跑截图脚本，见下方命令；**产物落 `~/agent-test-web/shots2/`**（`scripts/shootfinal.mjs:11` 的默认值是 `shots2`，不是 `shots`；要改目录传环境变量 `OUTDIR`） | 复制到 `09-实验室demo线/20260919-通用Agent测试系统v2.0/03-截图/` 下按日期新建的批次子目录，不要覆盖 `final-*` 那一批 |
+| 页面截图 | 演示后重跑截图脚本，见下方命令；**产物落 `c/shots2`**（`scripts/shootfinal.mjs:11` 的默认值是 `shots2`，不是 `shots`；要改目录传环境变量 `OUTDIR`） | 复制到 `09-实验室demo线/20260919-通用Agent测试系统v2.0/03-截图/` 下按日期新建的批次子目录，不要覆盖 `final-*` 那一批 |
 | 前端控制台日志 | 浏览器开发者工具「控制台」导出 | 同批次子目录，文件名带日期 |
-| 设备桥运行日志 | `~/lab/spike-device-mcp/evidence/bridge.log`；MCP 传输日志在同目录 `mcp-http.log` | 同批次子目录 |
+| 设备桥运行日志 | `[源] evidence/bridge.log`；MCP 传输日志在同目录 `mcp-http.log` | 同批次子目录 |
 
 截图脚本（`preview` 会占住终端，必须放后台再跑截图）：
 
 ```bash
-cd ~/agent-test-web
+cd c/
 
 # 先确认 4173 空闲，否则下面那行 until 会死循环等一个别人占着的端口
 ss -ltnp | grep 4173 && echo "4173 被占，换一个：加 --port 4199 并同步改下面两行"
@@ -609,20 +609,20 @@ node scripts/shootfinal.mjs          # 出图 22 张，落 shots2/
 
 1. **`npm run build` 可能给出幻影报错**。工作区里若残留过期的 `tsconfig.tsbuildinfo`，会报形如 `error TS2304: Cannot find name 'OPERATOR'` 的错，而代码本身没问题。处置是删掉根目录的 `tsconfig.tsbuildinfo` 后 `npx tsc -b --force`，再跑 build。第四节故障表让人「类型错误时先 `npm run build` 拿到完整报错」，在这种状态下拿到的是假报错。
 2. **4173 不在设备桥的跨域白名单里**，所以这一批截图跑的是纯回放，设备节点显示「未连通」，属预期。要拍联桥的图用 `scripts/walk-wire.mjs`，它跑在 5173 上，产物落 `shots5/`。
-3. 脚本不另下浏览器，复用 `~/.cache/puppeteer/chrome/*/chrome-linux64/chrome`，该缓存不存在时脚本直接失败。
+3. 脚本不另下浏览器，复用 `[源] chrome-linux64/chrome`，该缓存不存在时脚本直接失败。
 
 ### 5.2 红线动作审计记录在哪
 
 **页面侧不产生审计记录。** 助手的人工确认闸门只把确认人回填到那张工具调用卡片上（`ToolCallCard.tsx` 的「确认人」字段），刷新页面即丢，不落盘。
 
-**桥侧有结构化审计。** 凭据的签发、批准、核销写在 `~/lab/spike-device-mcp/device_bench/confirm.py` 里，查询走桥的接口：
+**桥侧有结构化审计。** 凭据的签发、批准、核销写在 `[源] device_bench/confirm.py` 里，查询走桥的接口：
 
 ```bash
-set -a; . ~/lab/spike-device-mcp/.env; set +a
+set -a; . [源] spike-device-mcp/.env; set +a
 # 全部凭据，含已处理的
 curl -s -H "x-bridge-token: $BRIDGE_TOKEN" \
      'http://127.0.0.1:8031/confirmations?include_done=true' \
-     > ~/lab/spike-device-mcp/evidence/audit-$(date +%Y%m%d-%H%M).json
+     > [源] evidence/audit-$(date +%Y%m%d-%H%M).json
 ```
 
 **演示结束前必须导出这一份，因为凭据只存在进程内存里，桥一停就全没了。** 导出后连同 `evidence/16-confirmations-audit-trail.json` 一起归档。
@@ -633,8 +633,8 @@ curl -s -H "x-bridge-token: $BRIDGE_TOKEN" \
 
 ```bash
 # 停桥与 MCP 传输
-kill "$(cat ~/lab/spike-device-mcp/.bridge.pid)"  2>/dev/null
-kill "$(cat ~/lab/spike-device-mcp/.mcphttp.pid)" 2>/dev/null
+kill "$(cat [源] spike-device-mcp/.bridge.pid)"  2>/dev/null
+kill "$(cat [源] spike-device-mcp/.mcphttp.pid)" 2>/dev/null
 
 # 停前端：在占住的终端里 Ctrl-C；preview 若放了后台
 pkill -f 'vite preview'
@@ -656,8 +656,8 @@ v1.0 列了 8 项待核对。**审稿当场核掉 7 项、部分核掉 1 项，�
 | --- | --- | --- | --- |
 | 1 | 时序放大态副文「登记 5 条·本轮回放 3 条」与首屏两条不一致 | **确认不一致，不改代码，演示绕开** | `final-zoom-timeseries.png` 放大态内实际只画两条（`CH1 相电流·TRY-0009`、`CH1 相电流·TRY-0010`），副文确与画面矛盾。镜 5 兜底列已写「别当场念这句」 |
 | 2 | 顶栏盾形徽章的读数 | **结案：徽章读真实状态，跟着勾选走** | 见第 0.3 节。`TopBar.tsx:128` 读 `interlockPending`，该字段由 `toggleGate`（`useAppStore.ts:291`）与 `setGateTotal`（`:295`）按 `gateTotal - gateAcked.length` 实时算出，初值 0 不是 2。截图两路互证 |
-| 3 | 助手底部模型下拉、权限三档、免确认开关是否可交互 | **结案：三者都可交互** | `/home/zzz/agent-test-web/src/features/agent-chat/components/Composer.tsx:138` 的 `onChange={(e) => props.onModel(e.target.value)}`、`:160` 的 `onClick={() => props.onPermission(p.value)}`、`:168` 的 `onChange={(e) => props.onAutoRun(e.target.checked)}` |
-| 4 | 候选队列单选是否真能选中并联动「参数变更」卡 | **结案：能，有状态回写** | `/home/zzz/agent-test-web/src/features/flow-tune/panel.tsx:302` 的 `toggleAdopt`。`shots5/online-7-adopt-picked.png` 实拍：勾中后参数变更卡变成「1 项已采纳 · 待写回」，左栏底部按钮变成「确认采纳 · 1 项」 |
+| 3 | 助手底部模型下拉、权限三档、免确认开关是否可交互 | **结案：三者都可交互** | `[源] components/Composer.tsx:138` 的 `onChange={(e) => props.onModel(e.target.value)}`、`:160` 的 `onClick={() => props.onPermission(p.value)}`、`:168` 的 `onChange={(e) => props.onAutoRun(e.target.checked)}` |
+| 4 | 候选队列单选是否真能选中并联动「参数变更」卡 | **结案：能，有状态回写** | `[源] flow-tune/panel.tsx:302` 的 `toggleAdopt`。`shots5/online-7-adopt-picked.png` 实拍：勾中后参数变更卡变成「1 项已采纳 · 待写回」，左栏底部按钮变成「确认采纳 · 1 项」 |
 | 5 | 报告预览数值是否真能点回原始轮次 | **结案：不能，是设计口径不是已实现能力** | 轮次产物存储未实现，`lastRun.artifacts` 与 `history.runs` 恒为 `null`（`context.ts:122`、`:203`）。镜 9 讲解词已按此照实说 |
 | 6 | 「阈值溯源」还是「阅值溯源」 | **结案：是「阈值溯源」** | 两包 `copilot-actions.json` 均为「阈值溯源」，`grep -o "[阈阅]值溯源"` 各命中 1 次、全为「阈」。截图 8 倍放大字形为「门」内含「或」 |
 | 7 | 玻璃升降器包在演示模式下是否同样正常 | **部分结案：渲染正常，但读数与散热风扇包全不同** | 11 份 JSON 实测全部可取，`final-auto-init.png` 与 `final-auto-run.png` 渲染正常。对照读数已单列在第 2.5 节 |
@@ -671,7 +671,7 @@ v1.0 列了 8 项待核对。**审稿当场核掉 7 项、部分核掉 1 项，�
 | --- | --- | --- | --- |
 | A | `walk-wire.mjs` 12 步在演示当天的代码上是否仍全过 | 该脚本 2026-09-20 09:18 才落盘，只跑过一轮 | 第二节检查项 I1 |
 | B | 镜 8 的第二张红线确认卡（写回参数）与镜 9 的第三张（导出）在人手操作下是否与脚本走查一致 | 走查是脚本点的，人手点的时序可能不同 | 演示前手动走一遍镜 8 与镜 9 |
-| C | 桥重启后凭据全丢，演示中途若重启过桥，镜 4 的凭据行会变空 | 凭据只存进程内存 | 演示开始前确认桥进程未重启过，`cat ~/lab/spike-device-mcp/.bridge.pid` 对 `ss -ltnp \| grep 8031` |
+| C | 桥重启后凭据全丢，演示中途若重启过桥，镜 4 的凭据行会变空 | 凭据只存进程内存 | 演示开始前确认桥进程未重启过，`cat [源] spike-device-mcp/.bridge.pid` 对 `ss -ltnp \| grep 8031` |
 
 ---
 
@@ -679,7 +679,7 @@ v1.0 列了 8 项待核对。**审稿当场核掉 7 项、部分核掉 1 项，�
 
 ### 7.1 读了什么
 
-文档，全部在 `/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/` 下：
+文档，全部在 `[源] 09-实验室demo线/20260919-通用Agent测试系统v2.0` 下：
 
 | 组 | 文件与范围 |
 | --- | --- |
@@ -688,7 +688,7 @@ v1.0 列了 8 项待核对。**审稿当场核掉 7 项、部分核掉 1 项，�
 | 硬伤三取证 | `02-业务逻辑说明-六个流程-v1.0.md` 与 `02-业务逻辑说明-六个流程.md`，按 `2.01` 定位到的四处 |
 | 本轮审稿与对照 | `08a08c-审稿意见.md` 全文 579 行；`08a-开发接口契约-v1.1.md` 的第 1.2、3.4、6.8 三节 |
 
-前端工程 `/home/zzz/agent-test-web`（只读，未改动任何文件），按职责分四组：
+前端工程 `[源] zzz/agent-test-web`（只读，未改动任何文件），按职责分四组：
 
 | 组 | 文件与范围 |
 | --- | --- |
@@ -699,13 +699,13 @@ v1.0 列了 8 项待核对。**审稿当场核掉 7 项、部分核掉 1 项，�
 
 另读：`scripts/walk-wire.mjs` 全文并抄出 12 步；`scripts/shootfinal.mjs` 与 `shootextra.mjs` 的 `OUTDIR` 默认值；`CHANGELOG-wire-20260920.md`、`CHANGELOG-fix-r14-20260920.md`、`CHANGELOG-fix-visual-20260920.md` 三份全文；`README.md` 第 10 节「交互与设备桥」全文；`.env.example` 全文；`package.json` 的 scripts 段。
 
-设备接入工程 `/home/zzz/lab/spike-device-mcp`（只读）：`README.md` 全文、`.env.example` 全文、`bridge.py` 的 CORS 与鉴权段、`device_bench/backend.py` 的 `connect()` 与 `snapshot()`、`run-bridge.sh`、`evidence/` 目录清单。
+设备接入工程 `c/components/spike-device-mcp`（只读）：`README.md` 全文、`.env.example` 全文、`bridge.py` 的 CORS 与鉴权段、`device_bench/backend.py` 的 `connect()` 与 `snapshot()`、`run-bridge.sh`、`evidence/` 目录清单。
 
-旧网关工程 `/home/zzz/lab/webssh`（只读）：`.env.example`、`package.json` 的 scripts 段、`gateway/server.js` 的 `/probe/:id` 路由与 CORS 段。
+旧网关工程 `c/components/webssh`（只读）：`.env.example`、`package.json` 的 scripts 段、`gateway/server.js` 的 `/probe/:id` 路由与 CORS 段。
 
 台架侧：加载 `fortior-test-bench` skill，取 SSH 连接方式、示波器型号与四通道定义、FG1/FG2/PWM 信号定义、三种采集模式与踩坑清单。
 
-截图侧：对 `/home/zzz/agent-test-web/shots5/` 下 15 张逐张做图像抄录，其中四张做了完整读图核对（`online-1-gate-empty.png`、`online-2-gate-green.png`、`online-4-redline-confirm.png`、`online-7-adopt-picked.png`、`online-10-report.png`）。另沿用 v1.0 对 `03-截图/` 下 16 张 `final-*.png` 的抄录结果。**源码与截图两路互相印证：第三节分镜表里的控件文案、读数与徽标文字全部取两路一致的部分；两路有出入的写进兜底列或第六节。**
+截图侧：对 `c/shots5` 下 15 张逐张做图像抄录，其中四张做了完整读图核对（`online-1-gate-empty.png`、`online-2-gate-green.png`、`online-4-redline-confirm.png`、`online-7-adopt-picked.png`、`online-10-report.png`）。另沿用 v1.0 对 `03-截图/` 下 16 张 `final-*.png` 的抄录结果。**源码与截图两路互相印证：第三节分镜表里的控件文案、读数与徽标文字全部取两路一致的部分；两路有出入的写进兜底列或第六节。**
 
 ### 7.2 用了哪些关键词
 
@@ -721,7 +721,7 @@ v1.0 列了 8 项待核对。**审稿当场核掉 7 项、部分核掉 1 项，�
 
 ### 7.3 查了没有结果的
 
-1. `FORCE_MOCK` 与 `MOCK_ONLY` 在 `/home/zzz/lab/spike-device-mcp/` 全仓**零命中**——桥没有强制 mock 的环境变量开关，这是第 1.2 节那条结论的依据。
+1. `FORCE_MOCK` 与 `MOCK_ONLY` 在 `c/components/spike-device-mcp` 全仓**零命中**——桥没有强制 mock 的环境变量开关，这是第 1.2 节那条结论的依据。
 2. `src/features/flow-req/panel.tsx` 里 `useFlowActions` 零命中——流程 2 的面板完全没接动作条行为表，这是第 0.2 节「流程 2 三颗恒置灰」的依据。
 3. `src/features/remote/bridge.ts` 里 `AbortController`、`signal`、`timeout` 三词零命中——六条桥请求一律无超时。桥不可达时靠浏览器自身的连接超时兜底，时长不可控。
 4. 客户软件规程原始件 `resources/data/dc-skills/auto-startup-tune/SKILL.md` 在本地不存在，这一条沿用 06d 第 7.3 节的结论，本文未重复检索。
@@ -732,7 +732,7 @@ v1.0 列了 8 项待核对。**审稿当场核掉 7 项、部分核掉 1 项，�
 
 ## 八、审稿意见处置表
 
-审稿意见原件：`/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/08a08c-审稿意见.md`，共 34 条（阻断 7、主要 14、次要 13），其中针对本文的 15 条列在下表，针对 `08a-开发接口契约-v1.1.md` 的 19 条在那份文档的第 7 节。
+审稿意见原件：`docs/20260919-通用Agent测试系统v2.0/08a08c-审稿意见.md`，共 34 条（阻断 7、主要 14、次要 13），其中针对本文的 15 条列在下表，针对 `08a-开发接口契约-v1.1.md` 的 19 条在那份文档的第 7 节。
 
 ### 8.1 阻断级 3 条
 
@@ -753,7 +753,7 @@ v1.0 列了 8 项待核对。**审稿当场核掉 7 项、部分核掉 1 项，�
 | 主-11 | 镜 6 的 C 区四张卡列举顺序与实际版面不符 | 已改 | 镜 6「屏幕应出现什么」一栏改为按版面写：上排「历史对比」与「候选队列」、下排「知识库依据」与「参数变更」；兜底列另加一句「口播指卡时按上排左右、下排左右的顺序指」并点名 v1.0 的顺序会指到隔壁那张 |
 | 主-12 | 「写回只改数值外壳括号内的数字…」在截图上不存在 | 已改 | 该句从镜 8「屏幕应出现什么」一栏**整句删除**。镜 8 改为按 `online-7-adopt-picked.png` 与 `online-8-adopt-confirm.png` 实拍写：参数变更卡「1 项已采纳 · 待写回」、左栏底部「确认采纳 · 1 项」 |
 | 主-13 | 第二节检查单是散热风扇包专属，未标注 | 已改 | 检查单抬头加一句「全表读数以散热风扇包为准」，并新增第 2.5 节给出玻璃升降器包的五项对照读数（知识库徽标 101、参数 5、闸门 0/11 三组、时序三条、四枚执行类按钮标「本场景未开放」）。v1.0 第六节那条「切场景包后重跑第二节检查单」随之结案 |
-| 主-14 | 截图产物目录写错 | 已改 | 第 5.1 节改为 `~/agent-test-web/shots2/`，并注明默认值出自 `scripts/shootfinal.mjs:11`、要改目录传 `OUTDIR`。同时补了三条已知坑：`tsconfig.tsbuildinfo` 残留会给出幻影类型报错、4173 不在桥的跨域白名单里、Chrome 缓存不存在时脚本直接失败 |
+| 主-14 | 截图产物目录写错 | 已改 | 第 5.1 节改为 `c/shots2`，并注明默认值出自 `scripts/shootfinal.mjs:11`、要改目录传 `OUTDIR`。同时补了三条已知坑：`tsconfig.tsbuildinfo` 残留会给出幻影类型报错、4173 不在桥的跨域白名单里、Chrome 缓存不存在时脚本直接失败 |
 
 主-1 至 主-8 八条针对 08a，见那份文档第 7 节。
 

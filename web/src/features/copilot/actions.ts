@@ -1,4 +1,5 @@
 import type { CopilotAction, FlowId, ModuleId } from '../../data/types'
+import { fetchJson } from '../shared/fetchJson'
 
 /* ===========================================================================
    助手预置动作的数据层。
@@ -78,15 +79,10 @@ export function loadActions(sceneId: string): Promise<ActionsFile> {
   const hit = cache.get(sceneId)
   if (hit) return hit
   const task = (async () => {
-    try {
-      const r = await fetch(`/scenes/${sceneId}/copilot-actions.json`, { cache: 'force-cache' })
-      if (!r.ok) return FALLBACK
-      const f = (await r.json()) as ActionsFile
-      if (!f || typeof f !== 'object' || !f.flows) return FALLBACK
-      return f
-    } catch {
-      return FALLBACK
-    }
+    // 2026-10-08：改用统一 fetchJson（原 force-cache 会读旧副本，见 fetchJson 模块头）
+    const f = await fetchJson<ActionsFile>(`/scenes/${sceneId}/copilot-actions.json`)
+    if (!f || typeof f !== 'object' || !f.flows) return FALLBACK
+    return f
   })()
   cache.set(sceneId, task)
   return task

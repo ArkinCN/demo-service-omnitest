@@ -2,18 +2,22 @@
    知识库数据取数层。
 
    第三轮把知识库从流程 1 降级为模块，原 src/data/loadScene.ts 的 kbFlow()
-   已下架，知识库的数据一律从这里取。取数口径：
+   已下架，知识库的数据一律从这里取。
 
-   - 归属轴（场景 › 子类 › 产品类型）取 public/scenes/index.json 的三级目录，
-     按 sceneId 反查出这一条的三级中文名；
-   - 来源轴（文档 / 经验）按数据落在哪份文件上分：documents.json 是文档，
-     experience.json 是经验；
-   - 用途轴（产品说明书 / 测试需求 / 工艺）读两份 JSON 里每条新补的 usage
-     字段。落位依据与逐条落位表见同目录 usage-placement.md。
+   ⚠️ 2026-09-24 起**取数改走服务端**（主文档阶段 3 验收 6）：
+   此前这里直接 fetch 场景包的 documents.json + experience.json，三轴分类
+   只做在前端，服务端的 kb_entries 表形同虚设——CRUD 改的是表、列表读的是
+   JSON，两套并存必然漂移（项目里已因这类双源吃过亏）。现在定死：
+       **库是唯一权威源，场景包只作导入源**（导入脚本
+       `c/backend/scripts/import_kb_from_scenes.py`）。
+   场景包 index.json 这路保留，只用来把 sceneId 反查成三级中文名，
+   因为服务端按归属中文名过滤，不带 sceneId 字段。
 
-   知识库流水线产物（public/kb/documents/index.json）与场景包是两路登记，
-   按 src/features/scene/kb.ts 文件头的约定不并表：这里只用它给已转化的文档
-   补页数与切片数，条目本身仍以场景包登记为准。
+   切后计数必须与切前一致（散热风扇包 85 条、用途轴 8/12/65），
+   有脚本守着：`python scripts/verify_kb_counts.py`（双向比对，不是靠眼睛）。
+
+   ⚠️ 取数失败**不回退静态 JSON**。回退等于又变回两套源，而且人看不出
+   自己看的是旧数据。失败就报出来，界面上写明原因。
    =========================================================================== */
 import { useEffect, useSyncExternalStore } from 'react'
 import type {
@@ -23,6 +27,7 @@ import type {
   KnowledgeUsage,
 } from '../../data/types'
 import { useAppStore } from '../../state/useAppStore'
+import { fetchJson } from '../shared/fetchJson'
 
 /** 一条知识条目。三轴取值同时挂在同一条上。 */
 export interface KnowledgeEntry {
@@ -118,20 +123,13 @@ interface CatalogNode {
   children?: CatalogNode[]
 }
 
-interface KbDocLite {
-  title: string
-  pages: number | null
-  chunks: number
-}
-
 /* ------------------------------------------------------------------ 取值映射 */
 
-/** 场景包 JSON 里的 usage 是中文三值，壳层契约是三个英文码 */
-const USAGE_CODE: Record<string, KnowledgeUsage> = {
-  产品说明书: 'spec',
-  测试需求: 'requirement',
-  工艺: 'process',
-}
+/**
+ * 用途轴的中文三值 → 英文码的映射**已移到服务端**（导入脚本
+ * `import_kb_from_scenes.py` 的 USAGE_CODE，口径与这里原来的完全一致）。
+ * 前端只做三值校验，不再自己翻译一遍——两处翻译迟早会不一致。
+ */
 
 /** 场景包的流程编号 ↔ 壳层流程标识。F1 是已下架的知识库流程，不落任何流程页 */
 const FLOW_OF_CODE: Record<string, FlowId> = {
@@ -151,18 +149,9 @@ const flowsOf = (labels: string[]): FlowId[] => {
   return out
 }
 
-/** 场景包里 usage 缺失时不猜：退回「工艺」并挂复核标记，界面上看得见 */
-const usageOf = (v: string | undefined): [KnowledgeUsage, boolean] =>
-  v && USAGE_CODE[v] ? [USAGE_CODE[v], false] : ['process', true]
-
 async function getJson<T>(url: string): Promise<T | null> {
-  try {
-    const r = await fetch(url, { cache: 'force-cache' })
-    if (!r.ok) return null
-    return (await r.json()) as T
-  } catch {
-    return null
-  }
+  // 2026-10-08：改用统一 fetchJson（原 force-cache 会读旧副本，见 fetchJson 模块头）
+  return fetchJson<T>(url)
 }
 
 /** 在三级目录里按 sceneId 反查出这一条的三级中文名 */
@@ -179,74 +168,115 @@ function ownerOf(catalog: CatalogNode[] | undefined, sceneId: string): [string, 
 
 const cache = new Map<string, Promise<KnowledgeEntry[]>>()
 const ready = new Map<string, KnowledgeEntry[]>()
+/** 取数失败的原因，按场景包存。空表示这一包取数正常。 */
+const errors = new Map<string, string>()
 
-/** 取某个场景包下的全部知识条目：documents.json 的文档 + experience.json 的经验。 */
+/* ------------------------------------------------------------ 服务端条目型 */
+
+/** 后端 KbEntryRead 的形状（app/schemas/kb_entry.py）。字段一律下划线命名。 */
+interface ServerEntry {
+  entry_key: string
+  version: number
+  origin: string
+  title: string
+  usage: string
+  owner_l1: string
+  owner_l2: string
+  owner_l3: string
+  content: Record<string, unknown>
+  status: string
+  change_reason: string
+}
+
+/** content 里存的是场景包里的原始条目，按 origin 分两种形状 */
+type Content = Partial<RawDoc> & Partial<RawExp> & { pages?: number | null; chunks?: number }
+
+const USAGE_OK: KnowledgeUsage[] = ['spec', 'requirement', 'process']
+
+/** 服务端三轴值 → 前端枚举；不在三值内时回落 process 并标待复核（与导入脚本同口径） */
+const usageFromServer = (v: string): [KnowledgeUsage, boolean] =>
+  USAGE_OK.includes(v as KnowledgeUsage) ? [v as KnowledgeUsage, false] : ['process', true]
+
+function toEntry(e: ServerEntry): KnowledgeEntry {
+  const c = (e.content ?? {}) as Content
+  const [usage, fallback] = usageFromServer(e.usage)
+  const owner: [string, string, string] = [e.owner_l1, e.owner_l2, e.owner_l3]
+  const isDoc = e.origin === 'doc'
+  return {
+    id: e.entry_key,
+    title: e.title,
+    usage,
+    origin: isDoc ? 'doc' : 'experience',
+    owner,
+    usageClass: c.usage_class,
+    needsReview: fallback || !!c.usage_review,
+    docType: c.type,
+    conversion: c.conversion_status_label ?? c.conversion_status,
+    converted: !['not_converted', '未转化', '未取得'].includes(c.conversion_status ?? ''),
+    sizeBytes: c.size_bytes ?? null,
+    path: c.exists ? (c.path ?? null) : null,
+    url: c.url,
+    note: c.note,
+    status: c._status,
+    usedBy: isDoc
+      ? flowsOf(c.used_in_flows ?? [])
+      : flowsOf(c.tags?.flow ? [String(c.tags.flow)] : []),
+    summary: isDoc ? c.note : c.action,
+    evidenceLevel: c.evidence_level,
+    pages: c.pages ?? null,
+    chunks: c.chunks,
+    case: isDoc
+      ? undefined
+      : {
+          symptom: c.symptom ?? e.title,
+          cause: c.cause ?? '',
+          action: c.action ?? '',
+          result: c.result ?? '',
+        },
+  }
+}
+
+/**
+ * 从服务端取某个场景包下的全部知识条目。
+ *
+ * 归属用三级中文名过滤：库里两个场景包是并存的，只按 l3 过滤才不会把
+ * 另一个产品的条目算进来（导入时已按「场景包:原 id」做 key，不会串号，
+ * 但过滤仍要显式带上归属）。
+ */
 export function loadKnowledge(sceneId: string): Promise<KnowledgeEntry[]> {
   const hit = cache.get(sceneId)
   if (hit) return hit
   const task = (async () => {
-    const [docs, exps, index, kb] = await Promise.all([
-      getJson<{ documents: RawDoc[] }>(`/scenes/${sceneId}/documents.json`),
-      getJson<{ experiences: RawExp[] }>(`/scenes/${sceneId}/experience.json`),
-      getJson<{ catalog: CatalogNode[] }>('/scenes/index.json'),
-      getJson<{ documents: KbDocLite[] }>('/kb/documents/index.json'),
-    ])
+    // 服务端按归属中文名过滤，所以先把 sceneId 反查成三级名
+    const index = await getJson<{ catalog: CatalogNode[] }>('/scenes/index.json')
     const owner = ownerOf(index?.catalog, sceneId)
-    const pipeline = new Map<string, KbDocLite>()
-    for (const d of kb?.documents ?? []) pipeline.set(d.title, d)
 
-    const out: KnowledgeEntry[] = []
-
-    for (const d of docs?.documents ?? []) {
-      const [usage, fallback] = usageOf(d.usage)
-      const line = pipeline.get(d.title)
-      out.push({
-        id: d.id,
-        title: d.title,
-        usage,
-        origin: 'doc',
-        owner,
-        usageClass: d.usage_class,
-        needsReview: fallback || !!d.usage_review,
-        docType: d.type,
-        conversion: d.conversion_status_label ?? d.conversion_status,
-        converted: !['not_converted', '未转化', '未取得'].includes(d.conversion_status),
-        sizeBytes: d.size_bytes,
-        path: d.exists ? d.path : null,
-        url: d.url,
-        note: d.note,
-        status: d._status,
-        usedBy: flowsOf(d.used_in_flows ?? []),
-        summary: d.note,
-        pages: line?.pages,
-        chunks: line?.chunks,
-      })
+    const r = await fetch(
+      `/api/kb/entries?owner=${encodeURIComponent(owner[2])}&limit=500`,
+      { headers: { 'Content-Type': 'application/json' } },
+    )
+    if (!r.ok) throw new Error(`知识库取数失败 HTTP ${r.status}`)
+    const body = (await r.json()) as {
+      success: boolean
+      message: string
+      data: { items: ServerEntry[] }
     }
+    if (!body.success) throw new Error(body.message || '知识库取数失败')
 
-    for (const e of exps?.experiences ?? []) {
-      const [usage, fallback] = usageOf(e.usage)
-      const t = e.tags ?? {}
-      const flow = String(t.flow ?? t['流程'] ?? '')
-      out.push({
-        id: e.id,
-        title: e.symptom,
-        usage,
-        origin: 'experience',
-        owner,
-        usageClass: e.usage_class,
-        needsReview: fallback || !!e.usage_review,
-        evidenceLevel: e.evidence_level,
-        status: e._status,
-        usedBy: flowsOf(flow ? [flow] : []),
-        summary: e.action,
-        case: { symptom: e.symptom, cause: e.cause, action: e.action, result: e.result },
-      })
-    }
-
+    const out = (body.data?.items ?? []).map(toEntry)
     ready.set(sceneId, out)
+    errors.delete(sceneId)
     listeners.forEach((l) => l())
     return out
-  })()
+  })().catch((e: unknown) => {
+    // 不回退静态 JSON：那等于又变回两套源，而且人看不出自己在看旧数据。
+    // 留痕后向上抛，由 useKnowledge 把错误交给界面显示。
+    const msg = e instanceof Error ? e.message : String(e)
+    errors.set(sceneId, msg)
+    console.error('[knowledge] 服务端取数失败：', msg)
+    listeners.forEach((l) => l())
+    throw e
+  })
   cache.set(sceneId, task)
   return task
 }
@@ -309,17 +339,29 @@ const subscribe = (l: () => void) => {
 }
 
 /** 当前场景包的知识条目。组件里用这一个就够，取数与缓存都在里面。 */
-export function useKnowledge(): { entries: KnowledgeEntry[]; loading: boolean } {
+export function useKnowledge(): {
+  entries: KnowledgeEntry[]
+  loading: boolean
+  /** 取数失败的原因；正常时为 null。界面必须把它显示出来，不许静默。 */
+  error: string | null
+} {
   const sceneId = useAppStore((s) => s.sceneId)
   const entries = useSyncExternalStore(
     subscribe,
     () => ready.get(sceneId) ?? EMPTY,
     () => EMPTY,
   )
+  const error = useSyncExternalStore(
+    subscribe,
+    () => errors.get(sceneId) ?? null,
+    () => null,
+  )
   useEffect(() => {
-    void loadKnowledge(sceneId)
+    // 取数失败会抛，这里接住是为了不让 React 报未处理拒绝；
+    // 原因已经记进 errors，界面拿得到。
+    void loadKnowledge(sceneId).catch(() => undefined)
   }, [sceneId])
-  return { entries, loading: !ready.has(sceneId) }
+  return { entries, loading: !ready.has(sceneId) && !errors.has(sceneId), error }
 }
 
 /** 当前场景包的知识条目总数（会随取数落地自动重渲）。供顶栏按钮用。 */

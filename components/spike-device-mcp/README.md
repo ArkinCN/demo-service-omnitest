@@ -156,7 +156,7 @@ flowchart TD
 - 只有 `POST /confirmations/{token}/approve` 要 PIN，其余接口不变。
 - 比较用 `hmac.compare_digest`（常量时间），不用 `==`。
 - 没带 PIN、PIN 不对一律 **403**，凭据**保持 pending**：不消耗、不作废、不降级，人可以带正确 PIN 重来。
-- 连续错 `BRIDGE_APPROVER_PIN_MAX_FAILS` 次（默认 5）锁 `BRIDGE_APPROVER_PIN_LOCK_SECONDS` 秒（默认 60）。锁定期间 PIN 正确也拒。计数全进程一份，不按来源 IP 分桶——按 IP 分等于给换源留口子。**没带 PIN 也计一次失败**，所以空手撞五次同样会锁。
+- 连续错 `BRIDGE_APPROVER_PIN_MAX_FAILS` 次（默认 5）锁 `BRIDGE_APPROVER_PIN_LOCK_SECONDS` 秒（默认 60）。锁定期间 PIN 正确也拒。计数全进程一份，不按来[源] IP 分桶——按 IP 分等于给换源留口子。**没带 PIN 也计一次失败**，所以空手撞五次同样会锁。
 - 批准成功后凭据上多两个字段：`approved_by` 记前端传来的操作者名，`approve_channel` 记 `human_pin`。台账因此能分清「有人现场敲过 PIN」与别的放行方式；前端那条「演示自动放行」的旁路已于同日删除（独立核验 P2）。
 - 桥在 `BRIDGE_APPROVER_PIN` 未设置、或与 `BRIDGE_TOKEN` 同值时**拒绝启动**，与 `BRIDGE_TOKEN` 缺失时同样处理。同值等于没有第二道闸口。
 - `GET /health` 与 `GET /devices/{id}/status` 会回 `approve_requires_pin: true` 与 `approver_pin_gate`（是否锁定、还剩几秒），便于前端把 403 解释清楚。
@@ -176,9 +176,9 @@ flowchart TD
 
 ---
 
-## 4. 与 `~/lab/webssh` 的关系
+## 4. 与 `c/components/webssh` 的关系
 
-`~/lab/webssh` 是上一轮做的独立 SSH 页面：浏览器里一个 xterm.js 全屏终端，经 Node 网关（`ssh2` + `ws`）连同一台台架机。本 spike **没有改动它的任何文件**。
+`c/components/webssh` 是上一轮做的独立 SSH 页面：浏览器里一个 xterm.js 全屏终端，经 Node 网关（`ssh2` + `ws`）连同一台台架机。本 spike **没有改动它的任何文件**。
 
 ### 建议：废弃独立页面，保留它的 SSH 连接与安全设计
 
@@ -247,9 +247,9 @@ flowchart TD
 
 ```jsonc
 { "mcpServers": { "device-bench": {
-    "command": "/home/zzz/lab/spike-device-mcp/.venv/bin/python",
+    "command": "[源] bin/python",
     "args": ["-m", "device_bench.server", "--transport", "stdio"],
-    "env": { "FORTIOR_WIN_KEY": "/home/zzz/.ssh/fortior_win" } } } }
+    "env": { "FORTIOR_WIN_KEY": "[源] .ssh/fortior_win" } } } }
 ```
 
 注意 `env` 必须显式给。MCP SDK 默认只给 stdio 子进程一套最小环境，会把私钥路径这类变量滤掉，结果 server 连不上台架、静默降级 mock——这个坑本 spike 踩过，见 `mcp_client_check.py` 里的 `passthru`。
@@ -259,7 +259,7 @@ flowchart TD
 ## 6. 起来跑
 
 ```bash
-cd ~/lab/spike-device-mcp
+cd c/components/spike-device-mcp
 cp .env.example .env                      # 填 FORTIOR_WIN_KEY、BRIDGE_TOKEN、BRIDGE_APPROVER_PIN
 # BRIDGE_TOKEN 用 openssl rand -hex 16 生成
 # BRIDGE_APPROVER_PIN 同样随机生成，且必须与 BRIDGE_TOKEN 不同值；两者同值桥会拒绝启动
@@ -332,7 +332,7 @@ curl -s -X POST localhost:8031/devices/bench/tools/connect \
 | `00-versions.txt` | 依赖版本 | mcp 2.2.0 / paramiko 5.0.0 / fastapi 0.141.1 |
 | `01-devices.json` | 画布节点要的数据齐不齐 | 2 台设备，13 个工具，三组齐备 |
 | `02-connect-live.json` | 真能 SSH 上台架 | `mode: live`，`hostname: SK-20251218QPBB` |
-| `03-status-live.json` | 徽章数据源 | `connected: true` |
+| `03-status-live.json` | 徽章数据[源] | `connected: true` |
 | `04-read_fg-live.json` | 真台架读 FG | `FG2=9.9E37 FG1=9.9E37`，判为电机未转，非通信故障 |
 | `05-read_pwm-live.json` | 真台架读 PWM | `OPEN_FAIL`，如实标 `status: unavailable` 并给出两类成因 |
 | `06-tail_log-live.json` | 真台架读日志 | 11 行，中文正常，文件路径确认为 MotorDebug 而非 Altior |

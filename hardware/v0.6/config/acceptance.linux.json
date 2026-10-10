@@ -1,0 +1,9 @@
+{
+  "_comment": "Linux overlay：serial.port 按实际设备名改（/dev/ttyUSB0 或 /dev/serial/by-id/...）；scope.resource 留空 → 运行时按 VID/PID 自动枚举。使用：export FAN_CONFIG_PATH=acceptance.linux.json",
+  "serial": {
+    "port": "/dev/ttyUSB0"
+  },
+  "scope": {
+    "resource": ""
+  }
+}

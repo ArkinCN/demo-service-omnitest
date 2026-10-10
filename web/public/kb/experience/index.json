@@ -78,7 +78,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0002",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0002/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0001/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -143,7 +143,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0007",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0007/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0002/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -208,7 +208,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0010",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0010/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0003/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -273,7 +273,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0011",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0011/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0004/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -338,7 +338,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0012",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0012/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0005/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -403,7 +403,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0015",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0015/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0006/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -468,7 +468,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0021",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0021/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0007/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -533,7 +533,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0022",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0022/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0008/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -598,7 +598,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0026",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0026/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0009/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -663,7 +663,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0031",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0031/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0010/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -728,7 +728,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0035",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0035/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0011/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -793,7 +793,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0037",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0037/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0012/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -858,7 +858,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0038",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0038/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0013/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -923,7 +923,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0041",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0041/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0014/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -988,7 +988,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0049",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0049/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0015/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -1053,7 +1053,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0056",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0056/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0016/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -1118,7 +1118,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0064",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0064/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0017/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -1183,7 +1183,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0070",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0070/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0018/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -1248,7 +1248,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0072",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0072/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0019/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -1313,7 +1313,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0075",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0075/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0020/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -1378,7 +1378,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0077",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0077/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0021/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -1443,7 +1443,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0078",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0078/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0022/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -1508,7 +1508,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0085",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0085/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0023/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -1573,7 +1573,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0089",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0089/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0024/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -1638,7 +1638,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0090",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0090/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0025/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -1703,7 +1703,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0094",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0094/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0026/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -1768,7 +1768,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0096",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0096/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0027/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -1833,7 +1833,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0097",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0097/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0028/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -1898,7 +1898,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0099",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0099/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0029/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -1963,7 +1963,7 @@
         "attempt_path": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0101",
         "waveform": "01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0101/capture/CH1_原始波形.csv",
         "diagnosis_report": "02_30例工具增强结果/cases/CF-L-0030/tool_output/diagnosis_report.md",
-        "package": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包"
+        "package": "[源] 数据/20260811_启动故障98次实验与30例对照数据包"
       },
       "tags": {
         "scenario": "motor",
@@ -2011,9 +2011,9 @@
         "attempt_path": null,
         "waveform": null,
         "diagnosis_report": null,
-        "sop_file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+        "sop_file": "[源] coolingfan-openloop-debug/SKILL.md",
         "sop_section": "## 5. 失败分诊迭代（最多 3 轮）· 现象分诊表",
-        "cross_reference": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260917-产品故事与分工v1.0/_调研/A-DebugCopilot场景与知识库取证.md（二、规程层第 7 类：散热风扇 1 份 coolingfan-openloop-debug，带 8 现象分诊表）"
+        "cross_reference": "[源] _调研/A-DebugCopilot场景与知识库取证.md（二、规程层第 7 类：散热风扇 1 份 coolingfan-openloop-debug，带 8 现象分诊表）"
       },
       "tags": {
         "scenario": "motor",
@@ -2061,9 +2061,9 @@
         "attempt_path": null,
         "waveform": null,
         "diagnosis_report": null,
-        "sop_file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+        "sop_file": "[源] coolingfan-openloop-debug/SKILL.md",
         "sop_section": "## 5. 失败分诊迭代（最多 3 轮）· 现象分诊表",
-        "cross_reference": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260917-产品故事与分工v1.0/_调研/A-DebugCopilot场景与知识库取证.md（二、规程层第 7 类：散热风扇 1 份 coolingfan-openloop-debug，带 8 现象分诊表）"
+        "cross_reference": "[源] _调研/A-DebugCopilot场景与知识库取证.md（二、规程层第 7 类：散热风扇 1 份 coolingfan-openloop-debug，带 8 现象分诊表）"
       },
       "tags": {
         "scenario": "motor",
@@ -2111,9 +2111,9 @@
         "attempt_path": null,
         "waveform": null,
         "diagnosis_report": null,
-        "sop_file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+        "sop_file": "[源] coolingfan-openloop-debug/SKILL.md",
         "sop_section": "## 5. 失败分诊迭代（最多 3 轮）· 现象分诊表",
-        "cross_reference": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260917-产品故事与分工v1.0/_调研/A-DebugCopilot场景与知识库取证.md（二、规程层第 7 类：散热风扇 1 份 coolingfan-openloop-debug，带 8 现象分诊表）"
+        "cross_reference": "[源] _调研/A-DebugCopilot场景与知识库取证.md（二、规程层第 7 类：散热风扇 1 份 coolingfan-openloop-debug，带 8 现象分诊表）"
       },
       "tags": {
         "scenario": "motor",
@@ -2159,9 +2159,9 @@
         "attempt_path": null,
         "waveform": null,
         "diagnosis_report": null,
-        "sop_file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+        "sop_file": "[源] coolingfan-openloop-debug/SKILL.md",
         "sop_section": "## 5. 失败分诊迭代（最多 3 轮）· 现象分诊表",
-        "cross_reference": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260917-产品故事与分工v1.0/_调研/A-DebugCopilot场景与知识库取证.md（二、规程层第 7 类：散热风扇 1 份 coolingfan-openloop-debug，带 8 现象分诊表）"
+        "cross_reference": "[源] _调研/A-DebugCopilot场景与知识库取证.md（二、规程层第 7 类：散热风扇 1 份 coolingfan-openloop-debug，带 8 现象分诊表）"
       },
       "tags": {
         "scenario": "motor",
@@ -2209,9 +2209,9 @@
         "attempt_path": null,
         "waveform": null,
         "diagnosis_report": null,
-        "sop_file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+        "sop_file": "[源] coolingfan-openloop-debug/SKILL.md",
         "sop_section": "## 5. 失败分诊迭代（最多 3 轮）· 现象分诊表",
-        "cross_reference": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260917-产品故事与分工v1.0/_调研/A-DebugCopilot场景与知识库取证.md（二、规程层第 7 类：散热风扇 1 份 coolingfan-openloop-debug，带 8 现象分诊表）"
+        "cross_reference": "[源] _调研/A-DebugCopilot场景与知识库取证.md（二、规程层第 7 类：散热风扇 1 份 coolingfan-openloop-debug，带 8 现象分诊表）"
       },
       "tags": {
         "scenario": "motor",
@@ -2259,9 +2259,9 @@
         "attempt_path": null,
         "waveform": null,
         "diagnosis_report": null,
-        "sop_file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+        "sop_file": "[源] coolingfan-openloop-debug/SKILL.md",
         "sop_section": "## 5. 失败分诊迭代（最多 3 轮）· 现象分诊表",
-        "cross_reference": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260917-产品故事与分工v1.0/_调研/A-DebugCopilot场景与知识库取证.md（二、规程层第 7 类：散热风扇 1 份 coolingfan-openloop-debug，带 8 现象分诊表）"
+        "cross_reference": "[源] _调研/A-DebugCopilot场景与知识库取证.md（二、规程层第 7 类：散热风扇 1 份 coolingfan-openloop-debug，带 8 现象分诊表）"
       },
       "tags": {
         "scenario": "motor",
@@ -2309,9 +2309,9 @@
         "attempt_path": null,
         "waveform": null,
         "diagnosis_report": null,
-        "sop_file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+        "sop_file": "[源] coolingfan-openloop-debug/SKILL.md",
         "sop_section": "## 5. 失败分诊迭代（最多 3 轮）· 现象分诊表",
-        "cross_reference": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260917-产品故事与分工v1.0/_调研/A-DebugCopilot场景与知识库取证.md（二、规程层第 7 类：散热风扇 1 份 coolingfan-openloop-debug，带 8 现象分诊表）"
+        "cross_reference": "[源] _调研/A-DebugCopilot场景与知识库取证.md（二、规程层第 7 类：散热风扇 1 份 coolingfan-openloop-debug，带 8 现象分诊表）"
       },
       "tags": {
         "scenario": "motor",
@@ -2359,9 +2359,9 @@
         "attempt_path": null,
         "waveform": null,
         "diagnosis_report": null,
-        "sop_file": "/mnt/d/Users/zjyyb/AppData/Local/AItior/resources/data/dc-skills/coolingfan-openloop-debug/SKILL.md",
+        "sop_file": "[源] coolingfan-openloop-debug/SKILL.md",
         "sop_section": "## 5. 失败分诊迭代（最多 3 轮）· 现象分诊表",
-        "cross_reference": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260917-产品故事与分工v1.0/_调研/A-DebugCopilot场景与知识库取证.md（二、规程层第 7 类：散热风扇 1 份 coolingfan-openloop-debug，带 8 现象分诊表）"
+        "cross_reference": "[源] _调研/A-DebugCopilot场景与知识库取证.md（二、规程层第 7 类：散热风扇 1 份 coolingfan-openloop-debug，带 8 现象分诊表）"
       },
       "tags": {
         "scenario": "motor",

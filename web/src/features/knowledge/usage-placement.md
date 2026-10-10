@@ -1,6 +1,6 @@
 # 用途轴逐条落位表（W2 产出）
 
-数据源：`/home/zzz/agent-test-web/public/scenes/<sceneId>/documents.json` 与 `experience.json`。
+数据源：`./scenes/<sceneId>/documents.json` 与 `experience.json`。
 落位裁决依据：《07-第三轮实施计划-并行派工.md》第三节第 3 条，以及
 《06a-知识分类体系与资产归类.md》第一节体系与第二节资产归类总表。
 

@@ -291,11 +291,11 @@
       "note": "三地法规都不强制配备防夹，只在配备时规定性能。因此这个开关本身就是流程 3 要与用户确认的分支条件：关掉则整条防夹判据链不执行，改走 GB 11552-2009 §4.8.2 的无防夹替代要求（开口 ≤4 mm 才允许关闭、遥控作用距离 ≤6 m 或可直接看见时 ≤11 m、一键关闭仅限驾驶员侧与天窗）。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 221 行：三地法规都不强制要求配备防夹功能"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 219 行：无防夹功能时的替代要求 GB 11552-2009 §4.8.2"
         }
       ]
@@ -317,15 +317,15 @@
       "note": "法规上限 100 N 是硬顶，不是目标值：实测必须在超过 100 N 之前回缩，所以固件门限要留裕量。调大逼近或超出 100 N 判不合格；调小则误触发率升高，正常密封阻力被误判为夹持。默认 80 N 是本包给的裕量示例值。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 349 行：防夹调参清单「防夹力阈值」行"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 166 行：防夹力 GB 11552-2009 §4.8.3.1.1 已核实"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/gb11552.txt",
+          "file": "[源] 汽车场景素材-20260919/gb11552.txt",
           "locator": "gb11552.txt:440 「在夹紧力大于100N 之前，该装置应回缩」"
         }
       ]
@@ -347,15 +347,15 @@
       "note": "法规下沿 4 mm，对应幼儿手指宽度。下沿高于 4 mm 即不合规。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 350 行：防夹生效区间（行程窗口）行"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 71 行：Federal Register E9-21042：4 mm 对应幼儿手指"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/gb11552.txt",
+          "file": "[源] 汽车场景素材-20260919/gb11552.txt",
           "locator": "gb11552.txt:440 「开口从200mm 到4mm 范围内」"
         }
       ]
@@ -377,11 +377,11 @@
       "note": "法规上沿 200 mm，对应第 95 百分位成年男性头部最大宽度。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 350 行：防夹生效区间行"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 71 行：Federal Register E9-21042：200 mm 对应第 95 百分位成年男性头部最大宽度"
         }
       ]
@@ -426,15 +426,15 @@
       "note": "按目标市场选：PLUS_50MM 与 ROD_200MM_PASS 与 INITIAL_POSITION 与 TILT_MAX_ANGLE 是 GB 11552-2009 §4.8.3.1.2 的四选一；PLUS_125MM 与 INITIAL_POSITION 是 FMVSS 118 的二选一。选 PLUS_50MM 则同时满足中欧、不满足美国。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/gb11552.txt",
+          "file": "[源] 汽车场景素材-20260919/gb11552.txt",
           "locator": "gb11552.txt:445-452 §4.8.3.1.2.1 至 4.8.3.1.2.4 四选一"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 215 行：GB 11552-2009 回缩后要求四选一"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 216 行：FMVSS 118 回缩后要求二选一"
         }
       ]
@@ -456,11 +456,11 @@
       "note": "默认 60 mm 是本包给的裕量示例值（法规底线 50 mm）。调大无合规风险但用户体验差；低于 50 mm 或未达法规要求的位置之一即不合规。目标美国市场时该值需 ≥125 mm。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 354 行：防夹调参清单「回缩行程量」行"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/gb11552.txt",
+          "file": "[源] 汽车场景素材-20260919/gb11552.txt",
           "locator": "gb11552.txt:448 「比开始回缩时的位置至少多开50mm 的位置」"
         }
       ]
@@ -505,19 +505,19 @@
       "_status": "待核实（各判据的出处论文本次未打开正文逐字确认）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 338 行：Automatic Threshold on Current based Anti-pinch Mechanism for Power Windows"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 339 行：Practical pinch detection algorithm：基于转矩变化率"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 340 行：Power Window Anti-Pinch Control Based on Hall Pulse Signal and Mechanical Power"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 343 行：恩智浦 RDS12VR：霍尔与电流采样双判据"
         }
       ]
@@ -540,7 +540,7 @@
       "note": "示例值。窗口太短则纹波与换向噪声进入斜率计算，太长则夹持响应滞后、力峰值可能已越过 100 N。源材料只给出「电流突变门限的自适应设定方法」这一定性描述，没有给窗口长度的数值，本包按 2 kHz 采样下 40 个点取 20 ms 作起点。range_estimated 表示 5 至 100 ms 这个区间是本包推定的，不是源材料给的。",
       "_placeholder": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 338 行：电流突变门限的自适应设定方法；阈值随工况自整定"
       }
     },
@@ -562,7 +562,7 @@
       "note": "示例值，与本包合成波形 assets/waveforms/antipinch-trigger.csv 的注入幅度配套。真实值必须在实物台架上按 100 N 反推标定。",
       "_placeholder": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 338 行：电流突变门限的自适应设定方法"
       }
     },
@@ -585,11 +585,11 @@
       "_placeholder": true,
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 351 行：防夹调参清单「启动段屏蔽时间」行"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 341 行：基于纹波电机的车窗启动阶段防夹控制策略研究"
         }
       ]
@@ -612,7 +612,7 @@
       "note": "示例值。去抖用，与 current_slope_window 一起决定最坏响应延迟。",
       "_placeholder": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 349-354 行：防夹调参清单（本文档的综合，非任一来源原文）"
       }
     },
@@ -634,7 +634,7 @@
       "note": "示例值。进入密封压紧段前降速，避免把密封阻力的电流上翘误判成夹持。这个位置必须高于防夹生效区间下沿 4 mm，否则法规要求的最后 4 mm 内无防夹保护。",
       "_placeholder": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 350 行：防夹生效区间：进入密封压紧段仍生效则无法正常关窗"
       }
     },
@@ -656,7 +656,7 @@
       "note": "示例值。降速后仍须满足上升速度 80 至 160 mm/s 的全程判据，或在判据里显式排除软停段——这一点标准没写，是台架口径要与客户确认的事。",
       "_placeholder": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 127 行：上升运行速度 80 至 160 mm/s"
       }
     },
@@ -679,11 +679,11 @@
       "_placeholder": true,
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 352 行：纹波计数滤波带宽与迟滞行"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 342 行：TI TIDUD30A：纹波提取的高通/带通滤波参数、比较器迟滞、脉冲整形门限"
         }
       ]
@@ -706,7 +706,7 @@
       "note": "示例值。同上，出处只给了参数名与作用，没给数值。",
       "_placeholder": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 342 行：TI TIDUD30A 比较器迟滞"
       }
     },
@@ -728,7 +728,7 @@
       "note": "示例值。等于 2N，N 为绕组对数。有刷直流电机用这个量代替无刷电机的极对数。",
       "_placeholder": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 146 行：纹波频率对应换向器极数，为 2N（N 为绕组对数）"
       }
     },
@@ -750,7 +750,7 @@
       "note": "示例值。两颗锁存霍尔正交输出，可辨向。TIDA-01389 用的 DRV5013-Q1 带宽 30 kHz。",
       "_placeholder": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 140 行：TIDA-01389：两颗 DRV5013-Q1 锁存霍尔构成位置编码，带宽 30 kHz"
       }
     },
@@ -780,7 +780,7 @@
       ],
       "note": "每次上止点堵转后把累计位置清零，抵消纹波计数的长期漂移。耐久试验的单循环波形本身就包含上止点堵转 1 s，正好提供归零时机。",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 200 行：耐久单循环波形 6.9.1 注 3：起始位置 → 上止点堵转 1 s 停 4 s → …"
       }
     },
@@ -802,11 +802,11 @@
       "note": "升降器正常工作是全占空比直驱，PWM 主要用在软启动斜坡与软停降速两段。台架做速度一致性复现时可用它把上升速度压进 80 至 160 mm/s 区间。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 145 行：英飞凌 MOTIX TLE985x：12 V 电机控制片上系统，自适应栅极电流控制"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 127 行：上升运行速度判据区间"
         }
       ]
@@ -830,11 +830,11 @@
       "_placeholder": true,
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 375 行：电流环带宽典型取 PWM 频率的 5 % 至 15 %（20 kHz PWM 对应 1 至 3 kHz）"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 129 行：工作噪音 <60 dB(A)"
         }
       ]
@@ -858,11 +858,11 @@
       "_placeholder": true,
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 365 行：罗姆 TechWeb 条目 346：死区的必要性与死区导致的损耗"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 364 行：TI SLLA567：自动死区补偿、PWM 调制方式对声学表现的影响"
         }
       ]
@@ -885,7 +885,7 @@
       "note": "示例值。斜坡越长浪涌越小、启动段屏蔽时间可以越短，两个参数要一起调。",
       "_placeholder": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 361 行：UM3259：对齐与启动、单段或多段加速斜坡；大惯量电机先缓斜坡后陡斜坡"
       }
     },
@@ -916,7 +916,7 @@
       "note": "示例值。两种方式对电流纹波形态影响很大，会直接改变纹波计数的可用性——换调制方式后纹波滤波带宽与迟滞必须重标。本包没有材料指明实际方案取哪种。",
       "_placeholder": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 140 行：TIDA-01389：DRV8703-Q1 栅极驱动器，驱动能力 15 A，耐压 47 V"
       }
     },
@@ -937,11 +937,11 @@
       "note": "必须低于堵转电流上限 28 A 才能在越限前动作。调大则遇障后仍继续加力、力峰值超标；调小则到达上止点被误判为夹持、无法关到位。默认 24 N 留 4 A 裕量是本包给的示例。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 353 行：堵转判定电流门限与去抖时间行"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 125 行：堵转电流上限 ≤28 A"
         }
       ]
@@ -965,11 +965,11 @@
       "_placeholder": true,
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 353 行：堵转判定电流门限与去抖时间行"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 343 行：RDS12VR：防夹区外做堵转检测"
         }
       ]
@@ -993,15 +993,15 @@
       "_status": "已核实但取自备选产品标准（QC/T 29090-2023 刮水电动机 4.18/5.18），玻璃升降器的对应条款是耐久预处理的上止点堵转 1 s，两者不是一回事",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 270 行：QC/T 29090-2023 堵转 4.18 / 5.18：试验电压下连续通电 30 s 堵转"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 198 行：耐久试验预处理：托架升至上止点堵转 1 s"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 200 行：耐久单循环波形：上止点堵转 1 s 停 4 s"
         }
       ]
@@ -1025,11 +1025,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 202 行：耐过负载操作强度 5.11.1 / 6.11.1：施加 16.5 V，跑 10 个工作循环"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 156 行：过压保护判据 6.11.1"
         }
       ]
@@ -1053,7 +1053,7 @@
       "note": "示例值。必须低于启动电压判据 9 V，否则 9 V 启动试验会被自家欠压保护挡掉。8.5 V 是按这个约束反推的，不是标准给的数。",
       "_placeholder": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 130 行：启动电压 5.4.1 f) ≤9 V"
       }
     },
@@ -1075,11 +1075,11 @@
       "note": "必须高于 −30 ℃ 堵转电流上限 30 A，否则低温堵转试验会被保护挡掉；同时要低于 H 桥驱动能力（TIDA-01389 为 15 A，该方案就需要另配功率级）。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 161 行：堵转电流 −30 ℃ 时 ≤30 A"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 140 行：TIDA-01389 驱动能力 15 A"
         }
       ]
@@ -1102,7 +1102,7 @@
       "note": "示例值。征求意见稿只规定热保护的行为时序（首次启动循环数、恢复时间、再启动循环数），不规定跳闸温度，实际由 PTC 或热敏开关的选型决定。",
       "_placeholder": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 162 行：热保护（首次启动 / 恢复 / 再启动）表 5"
       }
     },
@@ -1123,7 +1123,7 @@
       "note": "判据是「不少于」：热保护必须撑过 30 个循环才允许动作。",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 162 行：热保护表 5：−40 ℃ 与常温首次启动 ≥30 循环"
       }
     },
@@ -1143,7 +1143,7 @@
       "editable": true,
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 162 行：热保护表 5：80 ℃ 首次启动 ≥15 循环"
       }
     },
@@ -1164,7 +1164,7 @@
       "note": "判据是「不大于」：60 s 内必须能恢复。与首次启动循环数方向相反，一个要「够久才跳」、一个要「够快才回」，两头夹住热保护元件的选型窗口。",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 162 行：热保护表 5：恢复 ≤60 s"
       }
     },
@@ -1184,7 +1184,7 @@
       "editable": true,
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 162 行：热保护表 5：80 ℃ 恢复 ≤100 s"
       }
     },
@@ -1204,7 +1204,7 @@
       "editable": true,
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 162 行：热保护表 5：再启动 ≥2 循环"
       }
     },
@@ -1225,11 +1225,11 @@
       "note": "10.8 V 到 −4.0 V，持续 60 s（若继电器在极性反接时切断供电则改为 8 ms），3 个循环。LV 124 / VW 80000 试验 E-15 原文明确要求反极性期间不得触发任何安全相关功能，并点名电动车窗、天窗、起动机——这是本场景直接对号入座的条款。已核实。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 160 行：反极性 LV 124 / VW 80000 试验 E-15"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/lv124.pdf",
+          "file": "[源] 汽车场景素材-20260919/lv124.pdf",
           "locator": "MBN LV 124-1: 2013-03 试验 E-15 反极性"
         }
       ]
@@ -1251,7 +1251,7 @@
       "note": "由相位裕度与 PI 相位滞后两项设计指标反算，不直接给数。MCAF 文档里的变量名是 motor.idCtrl.kp / motor.iqCtrl.kp。有刷直流单环电流控制没有 d/q 分解，只保留一路，但整定方法论可直接套用。",
       "_placeholder": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 371 行：Microchip MCAF 7.0.2 电流环整定参数表「电流环比例增益 Kp」行"
       }
     },
@@ -1272,7 +1272,7 @@
       "note": "同上。变量名 motor.idCtrl.ki / motor.iqCtrl.ki。决定向给定值收敛的速度。",
       "_placeholder": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 372 行：Microchip MCAF 7.0.2 电流环整定参数表「电流环积分增益 Ki」行"
       }
     },
@@ -1292,7 +1292,7 @@
       "editable": true,
       "note": "MCAF 默认 80°，实测后推荐 50° 至 70°，本包取中值 60°。调小则 Kp 与 Ki 同时变大，响应更快但超调风险升高；调大则增益下降、稳定性提高、带宽降低。已核实。",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 373 行：Microchip MCAF 7.0.2「相位裕度 φm」行"
       }
     },
@@ -1312,7 +1312,7 @@
       "editable": true,
       "note": "MCAF 默认 45°，实测后推荐 8° 至 20°，低于 5° 不建议，本包取 14°。调小则 Kp 变大、Ki 变小，短期响应改善。已核实。",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 374 行：Microchip MCAF 7.0.2「PI 在穿越频率处的相位滞后 φz」行"
       }
     },
@@ -1332,7 +1332,7 @@
       "editable": true,
       "note": "典型取 PWM 频率的 5 % 至 15 %（20 kHz PWM 对应 1 至 3 kHz）；良好整定目标约为采样率的 1/10。约束条件：机械时间常数 × 带宽须大于 1。已核实。",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 375 行：Microchip MCAF 7.0.2「电流环带宽」行"
       }
     },
@@ -1362,7 +1362,7 @@
       ],
       "note": "MCAF 文档明确：若正常启动时序跑不通或无法正确切入闭环换相，电流环整定需在开环换相下进行。这条直接规定了「先整定电流环、再调开闭环切换」。已核实。",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 377 行：同一文档另外明确：先整定电流环、再调开闭环切换"
       }
     },
@@ -1383,7 +1383,7 @@
       "editable": true,
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 123 行：试验电压 6.1 b) 13.5 ± 0.3 V"
       }
     },
@@ -1403,7 +1403,7 @@
       "editable": true,
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 123 行：接线电阻 0.15 ± 0.02 Ω"
       }
     },
@@ -1424,7 +1424,7 @@
       "note": "仪器选型门槛，不是被测件判据。",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 134 行：仪器精度 6.1 a)：电源纹波峰峰值 ≤100 mV"
       }
     },
@@ -1456,15 +1456,15 @@
       "note": "GB 11552-2009 与 UN ECE R21 取 (10 ± 0.5) N/mm；FMVSS 118 的 25 至 200 mm 试棒取 20 N/mm（该值待核实）。刚度直接改变力-位移关系，换市场必须换棒，否则 100 N 的判定点会偏。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/gb11552.txt",
+          "file": "[源] 汽车场景素材-20260919/gb11552.txt",
           "locator": "gb11552.txt:449 「测量工具的刚度应为(10±0.5)N/mm」"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 215 行：GB 11552-2009 试验棒刚度 (10 ± 0.5) N/mm"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 216 行：FMVSS 118 试验棒刚度 20 N/mm（待核实）"
         }
       ]
@@ -1485,7 +1485,7 @@
       "editable": true,
       "note": "用于验证 ROD_200MM_PASS 这一档回缩后位置：回缩后开口须能让直径 200 mm 的半刚性柱状试验棒穿过。已核实。",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/gb11552.txt",
+        "file": "[源] 汽车场景素材-20260919/gb11552.txt",
         "locator": "gb11552.txt:445-446 §4.8.3.1.2.1 「允许穿过开口放置直径200mm 的半刚性柱状试验棒的位置」"
       }
     },
@@ -1507,11 +1507,11 @@
       "note": "耐久试验的 13 道工序要在这个参数上按表 7 走位：常温 3000 次 → 80 ℃ 1500 → 60 ℃/90 %RH 2500 → 10 ℃/95 %RH 1000 → −30 ℃ 1000 → 常温 1000。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 196 行：耐久性（电动，前门）5.9.1 / 6.9.1 表 7 的 13 道工序"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 132 行：常温定义 23 ± 2 ℃"
         }
       ]
@@ -1535,11 +1535,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 196 行：前门累计 10 000 个循环周期"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 197 行：后门累计 5 000 个循环周期"
         }
       ]
@@ -1561,7 +1561,7 @@
       "note": "单循环波形：起始位置 → 上止点堵转 1 s 停 4 s → 1/3 位置 → 下止点堵转 1 s 停 4 s，末次停 60 s。试验中允许对电机风冷或水冷。",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 200 行：耐久单循环波形 6.9.1 注 3"
       }
     },
@@ -1581,7 +1581,7 @@
       "editable": true,
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 200 行：耐久单循环波形 6.9.1 注 3"
       }
     },
@@ -1602,7 +1602,7 @@
       "note": "92.5 % 蒸馏水或去离子水 + 7.5 % 粉尘；粉尘按 ISO 12103-1 取 50 % A2 + 50 % A4。各温度段之间喷洒。",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 199 行：耐久泥水配比 6.9.1 注"
       }
     },
@@ -1623,7 +1623,7 @@
       "note": "孔径 φ1.2 mm、孔数 40、喷水量 20 L/min、时间 30 min。判据是拆机后电机内部不应进水。",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 203 行：防水性 5.12.1 / 6.12.1 表 9"
       }
     },
@@ -1655,11 +1655,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 204 行：绝缘介电强度 5.12.2 / 6.12.2"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 163 行：绝缘介电强度判据"
         }
       ]
@@ -1690,7 +1690,7 @@
       ],
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 204 行：绝缘介电强度 5.12.2 / 6.12.2"
       }
     },
@@ -1712,11 +1712,11 @@
       "note": "本包合成波形用的就是 2000 Sa/s × 12 s = 24000 行，与场景一的示波器深存储导出口径（2000 Sa/s、24000 行）刻意对齐，好让前端的时序组件不用改。真实台架若要做纹波计数，采样率须远高于纹波频率，2 kHz 只够看包络不够数纹波。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/automotive.body-motor.window-regulator/assets/waveforms",
+          "file": "./assets/waveforms",
           "locator": "本包三条合成 CSV 的生成参数，见 _build/gen_waveforms.py"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 146 行：纹波频率正比于实际转速"
         }
       ]
@@ -1740,11 +1740,11 @@
       "_placeholder": true,
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 126 行：堵转力 ≥212 N，力传感器量程选型依据"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 131 行：自锁能力：600 N 保持 5 s"
         }
       ]
@@ -1766,7 +1766,7 @@
       "note": "仪器选型门槛。自锁判据的 5 mm 下降量要靠它测。",
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 134 行：仪器精度 6.1 a)：长度器具最小刻度 ≤0.05 mm"
       }
     },
@@ -1786,7 +1786,7 @@
       "editable": true,
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 134 行：仪器精度 6.1 a)：扭矩仪最小刻度 ≤0.01 N·m"
       }
     }

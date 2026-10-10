@@ -396,28 +396,28 @@ export default function App() {
                 <tr>
                   <td>public/data/faithful_norm1200.csv</td>
                   <td className="source-note">
-                    /mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260701/faithful_norm1200.csv
+                    测试数据_20260701/faithful_norm1200.csv
                   </td>
                   <td>原样复制</td>
                 </tr>
                 <tr>
                   <td>public/data/attempt_TRY-0009_PASS.csv</td>
                   <td className="source-note">
-                    /mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包/01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0009/capture/CH1_上电时刻归一化.csv
+                    [源] capture/CH1_上电时刻归一化.csv
                   </td>
                   <td>原样复制，标签 PASS</td>
                 </tr>
                 <tr>
                   <td>public/data/attempt_TRY-0010_FAIL.csv</td>
                   <td className="source-note">
-                    /mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包/01_实验原始数据/batch_20260811_113726_010/attempts/TRY-0010/capture/CH1_上电时刻归一化.csv
+                    [源] capture/CH1_上电时刻归一化.csv
                   </td>
                   <td>原样复制，标签 FAIL，用例 CF-L-0003</td>
                 </tr>
                 <tr>
                   <td>public/data/fullrun_v2b_decimated.csv</td>
                   <td className="source-note">
-                    /mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260627/fullrun_v2b_20260627.csv（101 MB，未复制入库）
+                    测试数据_20260627/fullrun_v2b_20260627.csv（101 MB，未复制入库）
                   </td>
                   <td>scripts/decimate_fullrun.py 抽稀 3,000,000 → 4,000 点</td>
                 </tr>

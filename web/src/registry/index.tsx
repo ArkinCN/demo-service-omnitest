@@ -67,7 +67,7 @@ const modulePages = new Map<ModuleId, ComponentType>()
 const canvasNodes = new Map<CanvasNodeType, CanvasNodeRegistration>()
 const copilotActions = new Map<FlowId | ModuleId, CopilotAction[]>()
 const leftPanels = new Map<FlowId, LeftPanelRegistration>()
-const assistants = new Map<FlowId, LeftPanelRegistration['component']>()
+const assistants = new Map<FlowId, AssistantComponent>()
 
 let version = 0
 const listeners = new Set<() => void>()
@@ -91,11 +91,19 @@ export function registerLeftPanel(
   bump()
 }
 
-/** 注册某条流程的 D 区助手对话（整块替换默认演示对话） */
-export function registerAssistant(
-  flow: FlowId,
-  component: LeftPanelRegistration['component'],
-) {
+/**
+ * 注册某条流程的 D 区助手对话（整块替换默认演示对话）。
+ *
+ * 组件除了 flow / scene，还会收到壳层带的 onCollapse（可选）。类型在这里一并
+ * 声明出来，注册方才能把它透传给自己的实现——否则类型上收窄，实际拿到了也传不下去。
+ */
+export type AssistantComponent = ComponentType<{
+  flow: FlowId
+  scene: ScenePackage
+  onCollapse?: () => void
+}>
+
+export function registerAssistant(flow: FlowId, component: AssistantComponent) {
   assistants.set(flow, component)
   bump()
 }
@@ -147,9 +155,17 @@ export function hasAssistant(flow: FlowId) {
   return assistants.has(flow)
 }
 
+/**
+ * 渲染注册进来的助手。
+ *
+ * onCollapse 要原样透传给组件：它由壳层（FlowScreen）提供，用来在助手头部
+ * 挂一枚「收起」。此前这里的 props 类型只声明了 flow / scene，虽然运行时
+ * 传进来的对象带着 onCollapse，但类型上被裁掉，组件里读不到 → 收起键不渲染。
+ * 契约里补上这个可选字段，注册方与壳层就对得上了。
+ */
 export function renderAssistant(
   flow: FlowId,
-  props: { flow: FlowId; scene: ScenePackage },
+  props: { flow: FlowId; scene: ScenePackage; onCollapse?: () => void },
 ): ReactNode {
   const c = assistants.get(flow)
   return c ? createElement(c, props) : null

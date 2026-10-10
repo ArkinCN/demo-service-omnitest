@@ -378,7 +378,7 @@ def gen_workflows():
                 "true": "条件分支真支",
                 "false": "条件分支假支，画暗红虚线",
             },
-            "_source": src(os.path.expanduser("~/lab/workflow/README.md"),
+            "_source": src(os.path.expanduser("[源] workflow/README.md"),
                            "§2.2 结构层、§2.3 坑 2（sourceHandle 承载分支语义）、"
                            "§3.1 统一内部模型 WorkflowModel"),
         },
@@ -830,7 +830,7 @@ def gen_experience():
         },
         "evidence_level_counts": levels,
         "schema_note": "每条 = 问题现象 symptom / 原因 cause / 调整动作 action / "
-                       "结果 result / 标签 tags / 证据档位 evidence_level / 来源 _source。"
+                       "结果 result / 标签 tags / 证据档位 evidence_level / 来[源] _source。"
                        "与场景一的差别：场景一的经验大多来自客户台架实测与成文规程，"
                        "本场景的经验全部来自公开文献与标准条款，一条实测都没有——"
                        "这正是「公开标准驱动」与「客户私有经验驱动」两类知识库的分野。",

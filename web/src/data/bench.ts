@@ -2,7 +2,7 @@
    台架通道映射常量。
 
    口径来源：涵道逆风台架 SK-20251218QPBB 的实测接线，记录在
-   /home/zzz/.claude/skills/fortior-test-bench/SKILL.md 第 42 至 51 行。
+   [源] fortior-test-bench/SKILL.md 第 42 至 51 行。
    与《业务逻辑说明 · 六个流程 v1.0》第 3.2 节给的「通道一至四依次接
    FG1 / FG2 / PWM1 / PWM2」不一致，两套口径打架，本轮按实测这一套落，
    并在界面上一律带「待客户确认」标记，不许默默选一套当定论。

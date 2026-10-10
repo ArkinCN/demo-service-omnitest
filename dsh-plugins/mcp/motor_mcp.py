@@ -1,9 +1,9 @@
-#!/usr/bin/env python3
+#![源] bin/env python3
 """motor-mcp — stub MCP server for ASIC motor control (stdio transport).
 
 Contract source of truth (copied, not invented):
-  /mnt/f/Main/File/2_Projects/峰岹/平台代码-脱敏版/app/src-tauri/src/vibe_testing_mcp/tools/types.rs
-  /mnt/f/Main/File/2_Projects/峰岹/平台代码-脱敏版/app/src-tauri/src/vibe_testing_mcp/tools/motor.rs
+  [源] tools/types.rs
+  [源] tools/motor.rs
 
 Four tools, all taking the required string `debugger_exe` (absolute path to
 the ASIC CLI debugger executable), exactly as the Rust MotorDebuggerArgs struct

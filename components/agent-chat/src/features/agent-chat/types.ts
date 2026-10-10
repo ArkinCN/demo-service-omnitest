@@ -58,7 +58,7 @@ export interface Verdict {
   evidenceIds: string[];
 }
 
-/** 依据条目的三类来源 */
+/** 依据条目的三类来[源] */
 export type EvidenceKind = 'procedure' | 'case' | 'document';
 
 export const EVIDENCE_KIND_LABEL: Record<EvidenceKind, string> = {

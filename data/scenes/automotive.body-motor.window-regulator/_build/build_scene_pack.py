@@ -50,7 +50,7 @@ def main():
     print("渲染图片资产")
     print("=" * 86)
     for p, s in render_assets.build():
-        print("  %-46s %s" % (os.path.basename(p), s if s else "源 PDF 缺失，未生成"))
+        print("  %-46s %s" % (os.path.basename(p), s if s else "[源] PDF 缺失，未生成"))
 
     rows = []
     for name, fn in ORDER:

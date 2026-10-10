@@ -5,8 +5,8 @@
   "generated_at": "2026-09-19",
   "belongs_to_flow": "F3 测试需求确认（工作流一步步运转、可调整）+ F4 启动测试及结果分析（执行）",
   "source_roots": [
-    "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow",
-    "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/子流程/子流程"
+    "[源] WORKINGflow/WORKINGflow",
+    "[源] 子流程/子流程"
   ],
   "total": 67,
   "count_by_group": {
@@ -66,7 +66,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/HEADWINDTEST/difSpeedHEADWINDTEST .wfw",
+      "file_path": "[源] HEADWINDTEST/difSpeedHEADWINDTEST .wfw",
       "file_size_bytes": 18738,
       "gzip": false,
       "format_version": "1.0.0",
@@ -136,7 +136,7 @@
       "purpose": "在涵道内用前置风扇制造逆风，验证被测风扇的逆风识别、制动与重启；含循环回归。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/HEADWINDTEST/difSpeedHEADWINDTEST .wfw",
+        "file": "[源] HEADWINDTEST/difSpeedHEADWINDTEST .wfw",
         "locator": "definition.nodes 长度 = 13，definition.edges 长度 = 19，metadata.name / metadata.tags"
       }
     },
@@ -151,7 +151,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/HEADWINDTEST/difSpeedHEADWINDTEST_SUB.wfw",
+      "file_path": "[源] HEADWINDTEST/difSpeedHEADWINDTEST_SUB.wfw",
       "file_size_bytes": 27545,
       "gzip": false,
       "format_version": "1.0.0",
@@ -181,7 +181,7 @@
       "purpose": "在涵道内用前置风扇制造逆风，验证被测风扇的逆风识别、制动与重启；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/HEADWINDTEST/difSpeedHEADWINDTEST_SUB.wfw",
+        "file": "[源] HEADWINDTEST/difSpeedHEADWINDTEST_SUB.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -196,7 +196,7 @@
       "voltage_level": "HV",
       "voltage_level_name": "高压",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OPENCLOSEPOWER/HV/HV_OpenClosePower.wfw",
+      "file_path": "[源] HV/HV_OpenClosePower.wfw",
       "file_size_bytes": 27079,
       "gzip": false,
       "format_version": "1.0.0",
@@ -271,7 +271,7 @@
       "purpose": "反复通断母线电源，验证上电启动与下电停机的可靠性；在高压下执行；带示波器采集，自动出报告，含循环回归。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OPENCLOSEPOWER/HV/HV_OpenClosePower.wfw",
+        "file": "[源] HV/HV_OpenClosePower.wfw",
         "locator": "definition.nodes 长度 = 14，definition.edges 长度 = 19，metadata.name / metadata.tags"
       }
     },
@@ -286,7 +286,7 @@
       "voltage_level": "HV",
       "voltage_level_name": "高压",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OPENCLOSEPOWER/HV/HV_OpenClosePower_SUB.wfw",
+      "file_path": "[源] HV/HV_OpenClosePower_SUB.wfw",
       "file_size_bytes": 36725,
       "gzip": false,
       "format_version": "1.0.0",
@@ -316,7 +316,7 @@
       "purpose": "反复通断母线电源，验证上电启动与下电停机的可靠性；在高压下执行；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OPENCLOSEPOWER/HV/HV_OpenClosePower_SUB.wfw",
+        "file": "[源] HV/HV_OpenClosePower_SUB.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -331,7 +331,7 @@
       "voltage_level": "LV+SV+HV",
       "voltage_level_name": "三档电压串跑（LV、SV、HV）",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OPENCLOSEPOWER/HV_SV_LV_OPENCLOSEPOWER.wfw",
+      "file_path": "[源] OPENCLOSEPOWER/HV_SV_LV_OPENCLOSEPOWER.wfw",
       "file_size_bytes": 95199,
       "gzip": false,
       "format_version": "1.0.0",
@@ -366,7 +366,7 @@
       "purpose": "反复通断母线电源，验证上电启动与下电停机的可靠性；在三档电压串跑（LV、SV、HV）下执行。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OPENCLOSEPOWER/HV_SV_LV_OPENCLOSEPOWER.wfw",
+        "file": "[源] OPENCLOSEPOWER/HV_SV_LV_OPENCLOSEPOWER.wfw",
         "locator": "definition.nodes 长度 = 8，definition.edges 长度 = 7，metadata.name / metadata.tags"
       }
     },
@@ -381,7 +381,7 @@
       "voltage_level": "LV",
       "voltage_level_name": "低压",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OPENCLOSEPOWER/LV/LV_OpenClosePower.wfw",
+      "file_path": "[源] LV/LV_OpenClosePower.wfw",
       "file_size_bytes": 27081,
       "gzip": false,
       "format_version": "1.0.0",
@@ -456,7 +456,7 @@
       "purpose": "反复通断母线电源，验证上电启动与下电停机的可靠性；在低压下执行；带示波器采集，自动出报告，含循环回归。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OPENCLOSEPOWER/LV/LV_OpenClosePower.wfw",
+        "file": "[源] LV/LV_OpenClosePower.wfw",
         "locator": "definition.nodes 长度 = 14，definition.edges 长度 = 19，metadata.name / metadata.tags"
       }
     },
@@ -471,7 +471,7 @@
       "voltage_level": "LV",
       "voltage_level_name": "低压",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OPENCLOSEPOWER/LV/LV_OpenClosePower_SUB.wfw",
+      "file_path": "[源] LV/LV_OpenClosePower_SUB.wfw",
       "file_size_bytes": 36790,
       "gzip": false,
       "format_version": "1.0.0",
@@ -501,7 +501,7 @@
       "purpose": "反复通断母线电源，验证上电启动与下电停机的可靠性；在低压下执行；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OPENCLOSEPOWER/LV/LV_OpenClosePower_SUB.wfw",
+        "file": "[源] LV/LV_OpenClosePower_SUB.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -516,7 +516,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OPENCLOSEPOWER/OPENCLOSEPOWER_ThrVol.wfw",
+      "file_path": "[源] OPENCLOSEPOWER/OPENCLOSEPOWER_ThrVol.wfw",
       "file_size_bytes": 116193,
       "gzip": false,
       "format_version": "1.0.0",
@@ -546,7 +546,7 @@
       "purpose": "反复通断母线电源，验证上电启动与下电停机的可靠性。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OPENCLOSEPOWER/OPENCLOSEPOWER_ThrVol.wfw",
+        "file": "[源] OPENCLOSEPOWER/OPENCLOSEPOWER_ThrVol.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -561,7 +561,7 @@
       "voltage_level": "SV",
       "voltage_level_name": "标准电压",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OPENCLOSEPOWER/SV/SV_OpenClosePower.wfw",
+      "file_path": "[源] SV/SV_OpenClosePower.wfw",
       "file_size_bytes": 27079,
       "gzip": false,
       "format_version": "1.0.0",
@@ -636,7 +636,7 @@
       "purpose": "反复通断母线电源，验证上电启动与下电停机的可靠性；在标准电压下执行；带示波器采集，自动出报告，含循环回归。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OPENCLOSEPOWER/SV/SV_OpenClosePower.wfw",
+        "file": "[源] SV/SV_OpenClosePower.wfw",
         "locator": "definition.nodes 长度 = 14，definition.edges 长度 = 19，metadata.name / metadata.tags"
       }
     },
@@ -651,7 +651,7 @@
       "voltage_level": "SV",
       "voltage_level_name": "标准电压",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OPENCLOSEPOWER/SV/SV_OpenClosePower_SUB.wfw",
+      "file_path": "[源] SV/SV_OpenClosePower_SUB.wfw",
       "file_size_bytes": 36859,
       "gzip": false,
       "format_version": "1.0.0",
@@ -681,7 +681,7 @@
       "purpose": "反复通断母线电源，验证上电启动与下电停机的可靠性；在标准电压下执行；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OPENCLOSEPOWER/SV/SV_OpenClosePower_SUB.wfw",
+        "file": "[源] SV/SV_OpenClosePower_SUB.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -696,7 +696,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OTHERTEST/BUSVOLTAGEDOWN.wfw",
+      "file_path": "[源] OTHERTEST/BUSVOLTAGEDOWN.wfw",
       "file_size_bytes": 21438,
       "gzip": false,
       "format_version": "1.0.0",
@@ -756,7 +756,7 @@
       "purpose": "母线电压跌落、示波器采集与整机全项串跑等专项流程；带示波器采集，自动出报告。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OTHERTEST/BUSVOLTAGEDOWN.wfw",
+        "file": "[源] OTHERTEST/BUSVOLTAGEDOWN.wfw",
         "locator": "definition.nodes 长度 = 9，definition.edges 长度 = 12，metadata.name / metadata.tags"
       }
     },
@@ -771,7 +771,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OTHERTEST/BUSVOLTAGEDOWN_SUB.wfw",
+      "file_path": "[源] OTHERTEST/BUSVOLTAGEDOWN_SUB.wfw",
       "file_size_bytes": 31224,
       "gzip": false,
       "format_version": "1.0.0",
@@ -801,7 +801,7 @@
       "purpose": "母线电压跌落、示波器采集与整机全项串跑等专项流程；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OTHERTEST/BUSVOLTAGEDOWN_SUB.wfw",
+        "file": "[源] OTHERTEST/BUSVOLTAGEDOWN_SUB.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -816,7 +816,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OTHERTEST/SCOPETEST.wfw",
+      "file_path": "[源] OTHERTEST/SCOPETEST.wfw",
       "file_size_bytes": 33393,
       "gzip": false,
       "format_version": "1.0.0",
@@ -876,7 +876,7 @@
       "purpose": "母线电压跌落、示波器采集与整机全项串跑等专项流程；带示波器采集，自动出报告。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OTHERTEST/SCOPETEST.wfw",
+        "file": "[源] OTHERTEST/SCOPETEST.wfw",
         "locator": "definition.nodes 长度 = 11，definition.edges 长度 = 17，metadata.name / metadata.tags"
       }
     },
@@ -891,7 +891,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OTHERTEST/SCOPETEST_SUB.wfw",
+      "file_path": "[源] OTHERTEST/SCOPETEST_SUB.wfw",
       "file_size_bytes": 41478,
       "gzip": false,
       "format_version": "1.0.0",
@@ -921,7 +921,7 @@
       "purpose": "母线电压跌落、示波器采集与整机全项串跑等专项流程；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OTHERTEST/SCOPETEST_SUB.wfw",
+        "file": "[源] OTHERTEST/SCOPETEST_SUB.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -936,7 +936,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OTHERTEST/WholeTest.wfw",
+      "file_path": "[源] OTHERTEST/WholeTest.wfw",
       "file_size_bytes": 846565,
       "gzip": false,
       "format_version": "1.0.0",
@@ -976,7 +976,7 @@
       "purpose": "母线电压跌落、示波器采集与整机全项串跑等专项流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/OTHERTEST/WholeTest.wfw",
+        "file": "[源] OTHERTEST/WholeTest.wfw",
         "locator": "definition.nodes 长度 = 23，definition.edges 长度 = 21，metadata.name / metadata.tags"
       }
     },
@@ -991,7 +991,7 @@
       "voltage_level": "HV",
       "voltage_level_name": "高压",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_0TO100/HV/HV_PWMdutyChange_0TO100.wfw",
+      "file_path": "[源] HV/HV_PWMdutyChange_0TO100.wfw",
       "file_size_bytes": 30007,
       "gzip": false,
       "format_version": "1.0.0",
@@ -1056,7 +1056,7 @@
       "purpose": "占空比从 0% 逐档升到 100%，记录各档转速与电流；在高压下执行；带示波器采集，自动出报告。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_0TO100/HV/HV_PWMdutyChange_0TO100.wfw",
+        "file": "[源] HV/HV_PWMdutyChange_0TO100.wfw",
         "locator": "definition.nodes 长度 = 16，definition.edges 长度 = 21，metadata.name / metadata.tags"
       }
     },
@@ -1071,7 +1071,7 @@
       "voltage_level": "HV",
       "voltage_level_name": "高压",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_0TO100/HV/HV_PWMdutyChange_0TO100_SUB.wfw",
+      "file_path": "[源] HV/HV_PWMdutyChange_0TO100_SUB.wfw",
       "file_size_bytes": 39509,
       "gzip": false,
       "format_version": "1.0.0",
@@ -1101,7 +1101,7 @@
       "purpose": "占空比从 0% 逐档升到 100%，记录各档转速与电流；在高压下执行；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_0TO100/HV/HV_PWMdutyChange_0TO100_SUB.wfw",
+        "file": "[源] HV/HV_PWMdutyChange_0TO100_SUB.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -1116,7 +1116,7 @@
       "voltage_level": "LV+SV+HV",
       "voltage_level_name": "三档电压串跑（LV、SV、HV）",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_0TO100/HV_SV_LV_PWMDUTY_0TO100.wfw",
+      "file_path": "[源] PWMDUTY_0TO100/HV_SV_LV_PWMDUTY_0TO100.wfw",
       "file_size_bytes": 104552,
       "gzip": false,
       "format_version": "1.0.0",
@@ -1151,7 +1151,7 @@
       "purpose": "占空比从 0% 逐档升到 100%，记录各档转速与电流；在三档电压串跑（LV、SV、HV）下执行。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_0TO100/HV_SV_LV_PWMDUTY_0TO100.wfw",
+        "file": "[源] PWMDUTY_0TO100/HV_SV_LV_PWMDUTY_0TO100.wfw",
         "locator": "definition.nodes 长度 = 8，definition.edges 长度 = 7，metadata.name / metadata.tags"
       }
     },
@@ -1166,7 +1166,7 @@
       "voltage_level": "LV",
       "voltage_level_name": "低压",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_0TO100/LV/LV_PWMdutyChange_0TO100.wfw",
+      "file_path": "[源] LV/LV_PWMdutyChange_0TO100.wfw",
       "file_size_bytes": 30007,
       "gzip": false,
       "format_version": "1.0.0",
@@ -1231,7 +1231,7 @@
       "purpose": "占空比从 0% 逐档升到 100%，记录各档转速与电流；在低压下执行；带示波器采集，自动出报告。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_0TO100/LV/LV_PWMdutyChange_0TO100.wfw",
+        "file": "[源] LV/LV_PWMdutyChange_0TO100.wfw",
         "locator": "definition.nodes 长度 = 16，definition.edges 长度 = 21，metadata.name / metadata.tags"
       }
     },
@@ -1246,7 +1246,7 @@
       "voltage_level": "LV",
       "voltage_level_name": "低压",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_0TO100/LV/LV_PWMdutyChange_0TO100_SUB.wfw",
+      "file_path": "[源] LV/LV_PWMdutyChange_0TO100_SUB.wfw",
       "file_size_bytes": 47718,
       "gzip": false,
       "format_version": "1.0.0",
@@ -1276,7 +1276,7 @@
       "purpose": "占空比从 0% 逐档升到 100%，记录各档转速与电流；在低压下执行；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_0TO100/LV/LV_PWMdutyChange_0TO100_SUB.wfw",
+        "file": "[源] LV/LV_PWMdutyChange_0TO100_SUB.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -1291,7 +1291,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_0TO100/PWMDUTY_0TO100_ThrVol.wfw",
+      "file_path": "[源] PWMDUTY_0TO100/PWMDUTY_0TO100_ThrVol.wfw",
       "file_size_bytes": 121530,
       "gzip": false,
       "format_version": "1.0.0",
@@ -1321,7 +1321,7 @@
       "purpose": "占空比从 0% 逐档升到 100%，记录各档转速与电流。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_0TO100/PWMDUTY_0TO100_ThrVol.wfw",
+        "file": "[源] PWMDUTY_0TO100/PWMDUTY_0TO100_ThrVol.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -1336,7 +1336,7 @@
       "voltage_level": "SV",
       "voltage_level_name": "标准电压",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_0TO100/SV/SV_PWMdutyChange_0TO100.wfw",
+      "file_path": "[源] SV/SV_PWMdutyChange_0TO100.wfw",
       "file_size_bytes": 30007,
       "gzip": false,
       "format_version": "1.0.0",
@@ -1401,7 +1401,7 @@
       "purpose": "占空比从 0% 逐档升到 100%，记录各档转速与电流；在标准电压下执行；带示波器采集，自动出报告。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_0TO100/SV/SV_PWMdutyChange_0TO100.wfw",
+        "file": "[源] SV/SV_PWMdutyChange_0TO100.wfw",
         "locator": "definition.nodes 长度 = 16，definition.edges 长度 = 21，metadata.name / metadata.tags"
       }
     },
@@ -1416,7 +1416,7 @@
       "voltage_level": "SV",
       "voltage_level_name": "标准电压",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_0TO100/SV/SV_PWMdutyChange_0TO100_SUB.wfw",
+      "file_path": "[源] SV/SV_PWMdutyChange_0TO100_SUB.wfw",
       "file_size_bytes": 36671,
       "gzip": false,
       "format_version": "1.0.0",
@@ -1446,7 +1446,7 @@
       "purpose": "占空比从 0% 逐档升到 100%，记录各档转速与电流；在标准电压下执行；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_0TO100/SV/SV_PWMdutyChange_0TO100_SUB.wfw",
+        "file": "[源] SV/SV_PWMdutyChange_0TO100_SUB.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -1461,7 +1461,7 @@
       "voltage_level": "HV",
       "voltage_level_name": "高压",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_100TO0/HV/HV_PWMdutyChange_100TO0.wfw",
+      "file_path": "[源] HV/HV_PWMdutyChange_100TO0.wfw",
       "file_size_bytes": 30007,
       "gzip": false,
       "format_version": "1.0.0",
@@ -1526,7 +1526,7 @@
       "purpose": "占空比从 100% 逐档降到 0%，验证降速不停转；在高压下执行；带示波器采集，自动出报告。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_100TO0/HV/HV_PWMdutyChange_100TO0.wfw",
+        "file": "[源] HV/HV_PWMdutyChange_100TO0.wfw",
         "locator": "definition.nodes 长度 = 16，definition.edges 长度 = 21，metadata.name / metadata.tags"
       }
     },
@@ -1541,7 +1541,7 @@
       "voltage_level": "HV",
       "voltage_level_name": "高压",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_100TO0/HV/HV_PWMdutyChange_100TO0_SUB.wfw",
+      "file_path": "[源] HV/HV_PWMdutyChange_100TO0_SUB.wfw",
       "file_size_bytes": 39852,
       "gzip": false,
       "format_version": "1.0.0",
@@ -1571,7 +1571,7 @@
       "purpose": "占空比从 100% 逐档降到 0%，验证降速不停转；在高压下执行；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_100TO0/HV/HV_PWMdutyChange_100TO0_SUB.wfw",
+        "file": "[源] HV/HV_PWMdutyChange_100TO0_SUB.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -1586,7 +1586,7 @@
       "voltage_level": "LV+SV+HV",
       "voltage_level_name": "三档电压串跑（LV、SV、HV）",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_100TO0/HV_SV_LV_PWMDUTY_100TO0.wfw",
+      "file_path": "[源] PWMDUTY_100TO0/HV_SV_LV_PWMDUTY_100TO0.wfw",
       "file_size_bytes": 105169,
       "gzip": false,
       "format_version": "1.0.0",
@@ -1621,7 +1621,7 @@
       "purpose": "占空比从 100% 逐档降到 0%，验证降速不停转；在三档电压串跑（LV、SV、HV）下执行。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_100TO0/HV_SV_LV_PWMDUTY_100TO0.wfw",
+        "file": "[源] PWMDUTY_100TO0/HV_SV_LV_PWMDUTY_100TO0.wfw",
         "locator": "definition.nodes 长度 = 8，definition.edges 长度 = 7，metadata.name / metadata.tags"
       }
     },
@@ -1636,7 +1636,7 @@
       "voltage_level": "LV",
       "voltage_level_name": "低压",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_100TO0/LV/LV_PWMdutyChange_100TO0.wfw",
+      "file_path": "[源] LV/LV_PWMdutyChange_100TO0.wfw",
       "file_size_bytes": 30007,
       "gzip": false,
       "format_version": "1.0.0",
@@ -1701,7 +1701,7 @@
       "purpose": "占空比从 100% 逐档降到 0%，验证降速不停转；在低压下执行；带示波器采集，自动出报告。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_100TO0/LV/LV_PWMdutyChange_100TO0.wfw",
+        "file": "[源] LV/LV_PWMdutyChange_100TO0.wfw",
         "locator": "definition.nodes 长度 = 16，definition.edges 长度 = 21，metadata.name / metadata.tags"
       }
     },
@@ -1716,7 +1716,7 @@
       "voltage_level": "LV",
       "voltage_level_name": "低压",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_100TO0/LV/LV_PWMdutyChange_100TO0_SUB.wfw",
+      "file_path": "[源] LV/LV_PWMdutyChange_100TO0_SUB.wfw",
       "file_size_bytes": 40856,
       "gzip": false,
       "format_version": "1.0.0",
@@ -1746,7 +1746,7 @@
       "purpose": "占空比从 100% 逐档降到 0%，验证降速不停转；在低压下执行；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_100TO0/LV/LV_PWMdutyChange_100TO0_SUB.wfw",
+        "file": "[源] LV/LV_PWMdutyChange_100TO0_SUB.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -1761,7 +1761,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_100TO0/PWMDUTY_100TO0_ThrVol.wfw",
+      "file_path": "[源] PWMDUTY_100TO0/PWMDUTY_100TO0_ThrVol.wfw",
       "file_size_bytes": 128256,
       "gzip": false,
       "format_version": "1.0.0",
@@ -1791,7 +1791,7 @@
       "purpose": "占空比从 100% 逐档降到 0%，验证降速不停转。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_100TO0/PWMDUTY_100TO0_ThrVol.wfw",
+        "file": "[源] PWMDUTY_100TO0/PWMDUTY_100TO0_ThrVol.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -1806,7 +1806,7 @@
       "voltage_level": "SV",
       "voltage_level_name": "标准电压",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_100TO0/SV/SV_PWMdutyChange_100TO0.wfw",
+      "file_path": "[源] SV/SV_PWMdutyChange_100TO0.wfw",
       "file_size_bytes": 30007,
       "gzip": false,
       "format_version": "1.0.0",
@@ -1871,7 +1871,7 @@
       "purpose": "占空比从 100% 逐档降到 0%，验证降速不停转；在标准电压下执行；带示波器采集，自动出报告。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_100TO0/SV/SV_PWMdutyChange_100TO0.wfw",
+        "file": "[源] SV/SV_PWMdutyChange_100TO0.wfw",
         "locator": "definition.nodes 长度 = 16，definition.edges 长度 = 21，metadata.name / metadata.tags"
       }
     },
@@ -1886,7 +1886,7 @@
       "voltage_level": "SV",
       "voltage_level_name": "标准电压",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_100TO0/SV/SV_PWMdutyChange_100TO0_SUB.wfw",
+      "file_path": "[源] SV/SV_PWMdutyChange_100TO0_SUB.wfw",
       "file_size_bytes": 42325,
       "gzip": false,
       "format_version": "1.0.0",
@@ -1916,7 +1916,7 @@
       "purpose": "占空比从 100% 逐档降到 0%，验证降速不停转；在标准电压下执行；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_100TO0/SV/SV_PWMdutyChange_100TO0_SUB.wfw",
+        "file": "[源] SV/SV_PWMdutyChange_100TO0_SUB.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -1931,7 +1931,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_HIGHTOLOW/HIGHTOLOW_THREEVOLTAGE.wfw",
+      "file_path": "[源] PWMDUTY_HIGHTOLOW/HIGHTOLOW_THREEVOLTAGE.wfw",
       "file_size_bytes": 143271,
       "gzip": false,
       "format_version": "1.0.0",
@@ -1961,7 +1961,7 @@
       "purpose": "占空比由高档直接切到低档，测阶跃降速响应。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_HIGHTOLOW/HIGHTOLOW_THREEVOLTAGE.wfw",
+        "file": "[源] PWMDUTY_HIGHTOLOW/HIGHTOLOW_THREEVOLTAGE.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -1976,7 +1976,7 @@
       "voltage_level": "HV",
       "voltage_level_name": "高压",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_HIGHTOLOW/HV/HV_PWMdutyChange_HighToLow.wfw",
+      "file_path": "[源] HV/HV_PWMdutyChange_HighToLow.wfw",
       "file_size_bytes": 32603,
       "gzip": false,
       "format_version": "1.0.0",
@@ -2046,7 +2046,7 @@
       "purpose": "占空比由高档直接切到低档，测阶跃降速响应；在高压下执行；带示波器采集，自动出报告，含循环回归。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_HIGHTOLOW/HV/HV_PWMdutyChange_HighToLow.wfw",
+        "file": "[源] HV/HV_PWMdutyChange_HighToLow.wfw",
         "locator": "definition.nodes 长度 = 19，definition.edges 长度 = 26，metadata.name / metadata.tags"
       }
     },
@@ -2061,7 +2061,7 @@
       "voltage_level": "HV",
       "voltage_level_name": "高压",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_HIGHTOLOW/HV/HV_PWMdutyChange_HighToLow_Sub.wfw",
+      "file_path": "[源] HV/HV_PWMdutyChange_HighToLow_Sub.wfw",
       "file_size_bytes": 46584,
       "gzip": false,
       "format_version": "1.0.0",
@@ -2091,7 +2091,7 @@
       "purpose": "占空比由高档直接切到低档，测阶跃降速响应；在高压下执行；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_HIGHTOLOW/HV/HV_PWMdutyChange_HighToLow_Sub.wfw",
+        "file": "[源] HV/HV_PWMdutyChange_HighToLow_Sub.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -2106,7 +2106,7 @@
       "voltage_level": "LV",
       "voltage_level_name": "低压",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_HIGHTOLOW/LV/LV_PWMdutyChange_HighToLow.wfw",
+      "file_path": "[源] LV/LV_PWMdutyChange_HighToLow.wfw",
       "file_size_bytes": 32562,
       "gzip": false,
       "format_version": "1.0.0",
@@ -2176,7 +2176,7 @@
       "purpose": "占空比由高档直接切到低档，测阶跃降速响应；在低压下执行；带示波器采集，自动出报告，含循环回归。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_HIGHTOLOW/LV/LV_PWMdutyChange_HighToLow.wfw",
+        "file": "[源] LV/LV_PWMdutyChange_HighToLow.wfw",
         "locator": "definition.nodes 长度 = 19，definition.edges 长度 = 26，metadata.name / metadata.tags"
       }
     },
@@ -2191,7 +2191,7 @@
       "voltage_level": "LV",
       "voltage_level_name": "低压",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_HIGHTOLOW/LV/LV_PWMdutyChange_HighToLow_sub.wfw",
+      "file_path": "[源] LV/LV_PWMdutyChange_HighToLow_sub.wfw",
       "file_size_bytes": 43361,
       "gzip": false,
       "format_version": "1.0.0",
@@ -2221,7 +2221,7 @@
       "purpose": "占空比由高档直接切到低档，测阶跃降速响应；在低压下执行；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_HIGHTOLOW/LV/LV_PWMdutyChange_HighToLow_sub.wfw",
+        "file": "[源] LV/LV_PWMdutyChange_HighToLow_sub.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -2236,7 +2236,7 @@
       "voltage_level": "SV",
       "voltage_level_name": "标准电压",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_HIGHTOLOW/SV/SV_PWMdutyChange_HighToLow.wfw",
+      "file_path": "[源] SV/SV_PWMdutyChange_HighToLow.wfw",
       "file_size_bytes": 32603,
       "gzip": false,
       "format_version": "1.0.0",
@@ -2306,7 +2306,7 @@
       "purpose": "占空比由高档直接切到低档，测阶跃降速响应；在标准电压下执行；带示波器采集，自动出报告，含循环回归。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_HIGHTOLOW/SV/SV_PWMdutyChange_HighToLow.wfw",
+        "file": "[源] SV/SV_PWMdutyChange_HighToLow.wfw",
         "locator": "definition.nodes 长度 = 19，definition.edges 长度 = 26，metadata.name / metadata.tags"
       }
     },
@@ -2321,7 +2321,7 @@
       "voltage_level": "SV",
       "voltage_level_name": "标准电压",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_HIGHTOLOW/SV/SV_PWMdutyChange_HighToLow_sub.wfw",
+      "file_path": "[源] SV/SV_PWMdutyChange_HighToLow_sub.wfw",
       "file_size_bytes": 44617,
       "gzip": false,
       "format_version": "1.0.0",
@@ -2351,7 +2351,7 @@
       "purpose": "占空比由高档直接切到低档，测阶跃降速响应；在标准电压下执行；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_HIGHTOLOW/SV/SV_PWMdutyChange_HighToLow_sub.wfw",
+        "file": "[源] SV/SV_PWMdutyChange_HighToLow_sub.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -2366,7 +2366,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_HIGHTOLOW/THREETEST.wfw",
+      "file_path": "[源] PWMDUTY_HIGHTOLOW/THREETEST.wfw",
       "file_size_bytes": 117524,
       "gzip": false,
       "format_version": "1.0.0",
@@ -2401,7 +2401,7 @@
       "purpose": "占空比由高档直接切到低档，测阶跃降速响应。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_HIGHTOLOW/THREETEST.wfw",
+        "file": "[源] PWMDUTY_HIGHTOLOW/THREETEST.wfw",
         "locator": "definition.nodes 长度 = 8，definition.edges 长度 = 7，metadata.name / metadata.tags"
       }
     },
@@ -2416,7 +2416,7 @@
       "voltage_level": "HV",
       "voltage_level_name": "高压",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_LOWTOHIGH/HV/HV_PWMdutyChange_LowToHigh.wfw",
+      "file_path": "[源] HV/HV_PWMdutyChange_LowToHigh.wfw",
       "file_size_bytes": 32589,
       "gzip": false,
       "format_version": "1.0.0",
@@ -2486,7 +2486,7 @@
       "purpose": "占空比由低档直接切到高档，测阶跃升速响应；在高压下执行；带示波器采集，自动出报告，含循环回归。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_LOWTOHIGH/HV/HV_PWMdutyChange_LowToHigh.wfw",
+        "file": "[源] HV/HV_PWMdutyChange_LowToHigh.wfw",
         "locator": "definition.nodes 长度 = 19，definition.edges 长度 = 26，metadata.name / metadata.tags"
       }
     },
@@ -2501,7 +2501,7 @@
       "voltage_level": "HV",
       "voltage_level_name": "高压",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_LOWTOHIGH/HV/HV_PWMdutyChange_LowToHigh_Sub.wfw",
+      "file_path": "[源] HV/HV_PWMdutyChange_LowToHigh_Sub.wfw",
       "file_size_bytes": 42455,
       "gzip": false,
       "format_version": "1.0.0",
@@ -2531,7 +2531,7 @@
       "purpose": "占空比由低档直接切到高档，测阶跃升速响应；在高压下执行；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_LOWTOHIGH/HV/HV_PWMdutyChange_LowToHigh_Sub.wfw",
+        "file": "[源] HV/HV_PWMdutyChange_LowToHigh_Sub.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -2546,7 +2546,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_LOWTOHIGH/LTH_PWMDUTY_THREETEST.wfw",
+      "file_path": "[源] PWMDUTY_LOWTOHIGH/LTH_PWMDUTY_THREETEST.wfw",
       "file_size_bytes": 123341,
       "gzip": false,
       "format_version": "1.0.0",
@@ -2581,7 +2581,7 @@
       "purpose": "占空比由低档直接切到高档，测阶跃升速响应。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_LOWTOHIGH/LTH_PWMDUTY_THREETEST.wfw",
+        "file": "[源] PWMDUTY_LOWTOHIGH/LTH_PWMDUTY_THREETEST.wfw",
         "locator": "definition.nodes 长度 = 8，definition.edges 长度 = 7，metadata.name / metadata.tags"
       }
     },
@@ -2596,7 +2596,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_LOWTOHIGH/LTH_PWMDUTY_THREETEST_LIBRARY.wfw",
+      "file_path": "[源] PWMDUTY_LOWTOHIGH/LTH_PWMDUTY_THREETEST_LIBRARY.wfw",
       "file_size_bytes": 139061,
       "gzip": false,
       "format_version": "1.0.0",
@@ -2626,7 +2626,7 @@
       "purpose": "占空比由低档直接切到高档，测阶跃升速响应。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_LOWTOHIGH/LTH_PWMDUTY_THREETEST_LIBRARY.wfw",
+        "file": "[源] PWMDUTY_LOWTOHIGH/LTH_PWMDUTY_THREETEST_LIBRARY.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -2641,7 +2641,7 @@
       "voltage_level": "LV",
       "voltage_level_name": "低压",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_LOWTOHIGH/LV/LV_PWMdutyChange_LowToHigh.wfw",
+      "file_path": "[源] LV/LV_PWMdutyChange_LowToHigh.wfw",
       "file_size_bytes": 32532,
       "gzip": false,
       "format_version": "1.0.0",
@@ -2711,7 +2711,7 @@
       "purpose": "占空比由低档直接切到高档，测阶跃升速响应；在低压下执行；带示波器采集，自动出报告，含循环回归。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_LOWTOHIGH/LV/LV_PWMdutyChange_LowToHigh.wfw",
+        "file": "[源] LV/LV_PWMdutyChange_LowToHigh.wfw",
         "locator": "definition.nodes 长度 = 19，definition.edges 长度 = 26，metadata.name / metadata.tags"
       }
     },
@@ -2726,7 +2726,7 @@
       "voltage_level": "LV",
       "voltage_level_name": "低压",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_LOWTOHIGH/LV/LV_PWMdutyChange_LowToHigh_Sub.wfw",
+      "file_path": "[源] LV/LV_PWMdutyChange_LowToHigh_Sub.wfw",
       "file_size_bytes": 42340,
       "gzip": false,
       "format_version": "1.0.0",
@@ -2756,7 +2756,7 @@
       "purpose": "占空比由低档直接切到高档，测阶跃升速响应；在低压下执行；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_LOWTOHIGH/LV/LV_PWMdutyChange_LowToHigh_Sub.wfw",
+        "file": "[源] LV/LV_PWMdutyChange_LowToHigh_Sub.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -2771,7 +2771,7 @@
       "voltage_level": "SV",
       "voltage_level_name": "标准电压",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_LOWTOHIGH/SV/SV_PWMdutyChange_LowToHigh.wfw",
+      "file_path": "[源] SV/SV_PWMdutyChange_LowToHigh.wfw",
       "file_size_bytes": 32532,
       "gzip": false,
       "format_version": "1.0.0",
@@ -2841,7 +2841,7 @@
       "purpose": "占空比由低档直接切到高档，测阶跃升速响应；在标准电压下执行；带示波器采集，自动出报告，含循环回归。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_LOWTOHIGH/SV/SV_PWMdutyChange_LowToHigh.wfw",
+        "file": "[源] SV/SV_PWMdutyChange_LowToHigh.wfw",
         "locator": "definition.nodes 长度 = 19，definition.edges 长度 = 26，metadata.name / metadata.tags"
       }
     },
@@ -2856,7 +2856,7 @@
       "voltage_level": "SV",
       "voltage_level_name": "标准电压",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_LOWTOHIGH/SV/SV_PWMdutyChange_LowToHigh_Sub.wfw",
+      "file_path": "[源] SV/SV_PWMdutyChange_LowToHigh_Sub.wfw",
       "file_size_bytes": 42462,
       "gzip": false,
       "format_version": "1.0.0",
@@ -2886,7 +2886,7 @@
       "purpose": "占空比由低档直接切到高档，测阶跃升速响应；在标准电压下执行；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/PWMDUTY_LOWTOHIGH/SV/SV_PWMdutyChange_LowToHigh_Sub.wfw",
+        "file": "[源] SV/SV_PWMdutyChange_LowToHigh_Sub.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -2901,7 +2901,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/SPEEDTEST.wfw",
+      "file_path": "[源] WORKINGflow/SPEEDTEST.wfw",
       "file_size_bytes": 15075,
       "gzip": false,
       "format_version": "1.0.0",
@@ -2941,7 +2941,7 @@
       "purpose": "直接放在 WORKINGflow 根目录的工作流。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/SPEEDTEST.wfw",
+        "file": "[源] WORKINGflow/SPEEDTEST.wfw",
         "locator": "definition.nodes 长度 = 5，definition.edges 长度 = 7，metadata.name / metadata.tags"
       }
     },
@@ -2956,7 +2956,7 @@
       "voltage_level": "LV",
       "voltage_level_name": "低压",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/StaticStart/HSLV_StaticStart.wfw",
+      "file_path": "[源] StaticStart/HSLV_StaticStart.wfw",
       "file_size_bytes": 113559,
       "gzip": false,
       "format_version": "1.0.0",
@@ -2986,7 +2986,7 @@
       "purpose": "风扇静止状态下按各档占空比启动，测起动成功率与起动时间；在低压下执行。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/StaticStart/HSLV_StaticStart.wfw",
+        "file": "[源] StaticStart/HSLV_StaticStart.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -3001,7 +3001,7 @@
       "voltage_level": "HV",
       "voltage_level_name": "高压",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/StaticStart/HV/HV_StaticStart.wfw",
+      "file_path": "[源] HV/HV_StaticStart.wfw",
       "file_size_bytes": 28408,
       "gzip": false,
       "format_version": "1.0.0",
@@ -3071,7 +3071,7 @@
       "purpose": "风扇静止状态下按各档占空比启动，测起动成功率与起动时间；在高压下执行；带示波器采集，自动出报告，含循环回归。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/StaticStart/HV/HV_StaticStart.wfw",
+        "file": "[源] HV/HV_StaticStart.wfw",
         "locator": "definition.nodes 长度 = 14，definition.edges 长度 = 20，metadata.name / metadata.tags"
       }
     },
@@ -3086,7 +3086,7 @@
       "voltage_level": "HV",
       "voltage_level_name": "高压",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/StaticStart/HV/HV_StaticStart_Sub.wfw",
+      "file_path": "[源] HV/HV_StaticStart_Sub.wfw",
       "file_size_bytes": 38119,
       "gzip": false,
       "format_version": "1.0.0",
@@ -3116,7 +3116,7 @@
       "purpose": "风扇静止状态下按各档占空比启动，测起动成功率与起动时间；在高压下执行；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/StaticStart/HV/HV_StaticStart_Sub.wfw",
+        "file": "[源] HV/HV_StaticStart_Sub.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -3131,7 +3131,7 @@
       "voltage_level": "LV+SV+HV",
       "voltage_level_name": "三档电压串跑（LV、SV、HV）",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/StaticStart/HV_SV_LV_StaticStart.wfw",
+      "file_path": "[源] StaticStart/HV_SV_LV_StaticStart.wfw",
       "file_size_bytes": 92108,
       "gzip": false,
       "format_version": "1.0.0",
@@ -3166,7 +3166,7 @@
       "purpose": "风扇静止状态下按各档占空比启动，测起动成功率与起动时间；在三档电压串跑（LV、SV、HV）下执行。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/StaticStart/HV_SV_LV_StaticStart.wfw",
+        "file": "[源] StaticStart/HV_SV_LV_StaticStart.wfw",
         "locator": "definition.nodes 长度 = 7，definition.edges 长度 = 6，metadata.name / metadata.tags"
       }
     },
@@ -3181,7 +3181,7 @@
       "voltage_level": "LV",
       "voltage_level_name": "低压",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/StaticStart/LV/LV_StaticStart.wfw",
+      "file_path": "[源] LV/LV_StaticStart.wfw",
       "file_size_bytes": 28295,
       "gzip": false,
       "format_version": "1.0.0",
@@ -3251,7 +3251,7 @@
       "purpose": "风扇静止状态下按各档占空比启动，测起动成功率与起动时间；在低压下执行；带示波器采集，自动出报告，含循环回归。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/StaticStart/LV/LV_StaticStart.wfw",
+        "file": "[源] LV/LV_StaticStart.wfw",
         "locator": "definition.nodes 长度 = 14，definition.edges 长度 = 20，metadata.name / metadata.tags"
       }
     },
@@ -3266,7 +3266,7 @@
       "voltage_level": "LV",
       "voltage_level_name": "低压",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/StaticStart/LV/LV_StaticStart_SUB.wfw",
+      "file_path": "[源] LV/LV_StaticStart_SUB.wfw",
       "file_size_bytes": 37923,
       "gzip": false,
       "format_version": "1.0.0",
@@ -3296,7 +3296,7 @@
       "purpose": "风扇静止状态下按各档占空比启动，测起动成功率与起动时间；在低压下执行；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/StaticStart/LV/LV_StaticStart_SUB.wfw",
+        "file": "[源] LV/LV_StaticStart_SUB.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -3311,7 +3311,7 @@
       "voltage_level": "SV",
       "voltage_level_name": "标准电压",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/StaticStart/SV/SV_StaticStart.wfw",
+      "file_path": "[源] SV/SV_StaticStart.wfw",
       "file_size_bytes": 28257,
       "gzip": false,
       "format_version": "1.0.0",
@@ -3381,7 +3381,7 @@
       "purpose": "风扇静止状态下按各档占空比启动，测起动成功率与起动时间；在标准电压下执行；带示波器采集，自动出报告，含循环回归。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/StaticStart/SV/SV_StaticStart.wfw",
+        "file": "[源] SV/SV_StaticStart.wfw",
         "locator": "definition.nodes 长度 = 14，definition.edges 长度 = 20，metadata.name / metadata.tags"
       }
     },
@@ -3396,7 +3396,7 @@
       "voltage_level": "SV",
       "voltage_level_name": "标准电压",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/StaticStart/SV/SV_StaticStart_Sub.wfw",
+      "file_path": "[源] SV/SV_StaticStart_Sub.wfw",
       "file_size_bytes": 37925,
       "gzip": false,
       "format_version": "1.0.0",
@@ -3426,7 +3426,7 @@
       "purpose": "风扇静止状态下按各档占空比启动，测起动成功率与起动时间；在标准电压下执行；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/StaticStart/SV/SV_StaticStart_Sub.wfw",
+        "file": "[源] SV/SV_StaticStart_Sub.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -3441,7 +3441,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/TAILWINDWIND/difSpeedTAILWINDTEST.wfw",
+      "file_path": "[源] TAILWINDWIND/difSpeedTAILWINDTEST.wfw",
       "file_size_bytes": 23757,
       "gzip": false,
       "format_version": "1.0.0",
@@ -3516,7 +3516,7 @@
       "purpose": "被测风扇带残速时重新启动，验证顺风识别与接管；含循环回归。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/TAILWINDWIND/difSpeedTAILWINDTEST.wfw",
+        "file": "[源] TAILWINDWIND/difSpeedTAILWINDTEST.wfw",
         "locator": "definition.nodes 长度 = 14，definition.edges 长度 = 21，metadata.name / metadata.tags"
       }
     },
@@ -3531,7 +3531,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/TAILWINDWIND/difSpeedTAILWINDTEST_SUB.wfw",
+      "file_path": "[源] TAILWINDWIND/difSpeedTAILWINDTEST_SUB.wfw",
       "file_size_bytes": 32357,
       "gzip": false,
       "format_version": "1.0.0",
@@ -3561,7 +3561,7 @@
       "purpose": "被测风扇带残速时重新启动，验证顺风识别与接管；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/WORKINGflow/WORKINGflow/TAILWINDWIND/difSpeedTAILWINDTEST_SUB.wfw",
+        "file": "[源] TAILWINDWIND/difSpeedTAILWINDTEST_SUB.wfw",
         "locator": "definition.nodes 长度 = 3，definition.edges 长度 = 2，metadata.name / metadata.tags"
       }
     },
@@ -3576,7 +3576,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/子流程/子流程/12V启停测试.wfw",
+      "file_path": "[源] 子流程/12V启停测试.wfw",
       "file_size_bytes": 2708,
       "gzip": false,
       "format_version": "1.0.0",
@@ -3609,7 +3609,7 @@
       "purpose": "被主工作流以 subworkflow 节点引用的原子测试片段；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/子流程/子流程/12V启停测试.wfw",
+        "file": "[源] 子流程/12V启停测试.wfw",
         "locator": "definition.nodes 长度 = 4，definition.edges 长度 = 3，metadata.name / metadata.tags"
       }
     },
@@ -3624,7 +3624,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/子流程/子流程/PWM_VSP插入.wfw",
+      "file_path": "[源] 子流程/PWM_VSP插入.wfw",
       "file_size_bytes": 26666,
       "gzip": false,
       "format_version": "1.0.0",
@@ -3697,7 +3697,7 @@
       "purpose": "被主工作流以 subworkflow 节点引用的原子测试片段；本文件是被主流程引用的子流程；带示波器采集，自动出报告，含循环回归。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/子流程/子流程/PWM_VSP插入.wfw",
+        "file": "[源] 子流程/PWM_VSP插入.wfw",
         "locator": "definition.nodes 长度 = 15，definition.edges 长度 = 22，metadata.name / metadata.tags"
       }
     },
@@ -3712,7 +3712,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/子流程/子流程/关闭PWM测试 .wfw",
+      "file_path": "[源] 子流程/关闭PWM测试 .wfw",
       "file_size_bytes": 6236,
       "gzip": false,
       "format_version": "1.0.0",
@@ -3770,7 +3770,7 @@
       "purpose": "被主工作流以 subworkflow 节点引用的原子测试片段；本文件是被主流程引用的子流程；含循环回归。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/子流程/子流程/关闭PWM测试 .wfw",
+        "file": "[源] 子流程/关闭PWM测试 .wfw",
         "locator": "definition.nodes 长度 = 10，definition.edges 长度 = 10，metadata.name / metadata.tags"
       }
     },
@@ -3785,7 +3785,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/子流程/子流程/启动PWM测试.wfw",
+      "file_path": "[源] 子流程/启动PWM测试.wfw",
       "file_size_bytes": 5713,
       "gzip": false,
       "format_version": "1.0.0",
@@ -3838,7 +3838,7 @@
       "purpose": "被主工作流以 subworkflow 节点引用的原子测试片段；本文件是被主流程引用的子流程；含循环回归。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/子流程/子流程/启动PWM测试.wfw",
+        "file": "[源] 子流程/启动PWM测试.wfw",
         "locator": "definition.nodes 长度 = 9，definition.edges 长度 = 9，metadata.name / metadata.tags"
       }
     },
@@ -3853,7 +3853,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/子流程/子流程/启动到全速的时间测试.wfw",
+      "file_path": "[源] 子流程/启动到全速的时间测试.wfw",
       "file_size_bytes": 13849,
       "gzip": false,
       "format_version": "1.0.0",
@@ -3891,7 +3891,7 @@
       "purpose": "被主工作流以 subworkflow 节点引用的原子测试片段；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/子流程/子流程/启动到全速的时间测试.wfw",
+        "file": "[源] 子流程/启动到全速的时间测试.wfw",
         "locator": "definition.nodes 长度 = 5，definition.edges 长度 = 4，metadata.name / metadata.tags"
       }
     },
@@ -3906,7 +3906,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/子流程/子流程/启动电压值确定.wfw",
+      "file_path": "[源] 子流程/启动电压值确定.wfw",
       "file_size_bytes": 16933,
       "gzip": false,
       "format_version": "1.0.0",
@@ -3959,7 +3959,7 @@
       "purpose": "被主工作流以 subworkflow 节点引用的原子测试片段；本文件是被主流程引用的子流程；含循环回归。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/子流程/子流程/启动电压值确定.wfw",
+        "file": "[源] 子流程/启动电压值确定.wfw",
         "locator": "definition.nodes 长度 = 10，definition.edges 长度 = 10，metadata.name / metadata.tags"
       }
     },
@@ -3974,7 +3974,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/子流程/子流程/逆风启动.wfw",
+      "file_path": "[源] 子流程/逆风启动.wfw",
       "file_size_bytes": 14680,
       "gzip": false,
       "format_version": "1.0.0",
@@ -4012,7 +4012,7 @@
       "purpose": "被主工作流以 subworkflow 节点引用的原子测试片段；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/子流程/子流程/逆风启动.wfw",
+        "file": "[源] 子流程/逆风启动.wfw",
         "locator": "definition.nodes 长度 = 5，definition.edges 长度 = 7，metadata.name / metadata.tags"
       }
     },
@@ -4027,7 +4027,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/子流程/子流程/速度1到速度2的稳定设置.wfw",
+      "file_path": "[源] 子流程/速度1到速度2的稳定设置.wfw",
       "file_size_bytes": 3838,
       "gzip": false,
       "format_version": "1.0.0",
@@ -4070,7 +4070,7 @@
       "purpose": "被主工作流以 subworkflow 节点引用的原子测试片段；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/子流程/子流程/速度1到速度2的稳定设置.wfw",
+        "file": "[源] 子流程/速度1到速度2的稳定设置.wfw",
         "locator": "definition.nodes 长度 = 6，definition.edges 长度 = 5，metadata.name / metadata.tags"
       }
     },
@@ -4085,7 +4085,7 @@
       "voltage_level": null,
       "voltage_level_name": "未标电压等级",
       "is_subworkflow": true,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/子流程/子流程/顺风启动.wfw",
+      "file_path": "[源] 子流程/顺风启动.wfw",
       "file_size_bytes": 14154,
       "gzip": false,
       "format_version": "1.0.0",
@@ -4123,7 +4123,7 @@
       "purpose": "被主工作流以 subworkflow 节点引用的原子测试片段；本文件是被主流程引用的子流程。",
       "purpose_derived": true,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/ClientSoftware/子流程/子流程/顺风启动.wfw",
+        "file": "[源] 子流程/顺风启动.wfw",
         "locator": "definition.nodes 长度 = 5，definition.edges 长度 = 5，metadata.name / metadata.tags"
       }
     }

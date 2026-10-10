@@ -41,7 +41,7 @@ Node 24 and Python 3.10 or newer. Everything below was run on WSL2, Ubuntu,
 kernel 6.18.
 
 ```sh
-mkdir -p ~/lab/dsh-plugins && cd ~/lab/dsh-plugins
+mkdir -p c/components/dsh-plugins && cd c/components/dsh-plugins
 
 # DSH itself. Exactly one dependency. See section 2 before adding a second.
 npm install --save-exact @deepseek-ai/dsh@0.1.5-rc.2
@@ -132,7 +132,7 @@ dsh plugin --profile web add <package>@<exact version>
 ## 3. Directory structure
 
 ```
-~/lab/dsh-plugins/
+c/components/dsh-plugins
 ├── package.json              one pinned dependency: @deepseek-ai/dsh 0.1.5-rc.2
 ├── cordis.patch.yml          the ATH overlay: MCP stubs, hooks, skill roots, model
 ├── README.md                 this file
@@ -167,7 +167,7 @@ dsh plugin --profile web add <package>@<exact version>
 ```
 
 `data/faithful_norm1200.csv` is copied from
-`/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/测试数据_20260701/faithful_norm1200.csv`.
+`测试数据_20260701/faithful_norm1200.csv`.
 
 ---
 
@@ -176,10 +176,10 @@ dsh plugin --profile web add <package>@<exact version>
 ### Non-interactive, one task, prints the answer and exits
 
 ```sh
-cd ~/lab/dsh-plugins
+cd c/components/dsh-plugins
 export DEEPSEEK_API_KEY=...
 ./node_modules/.bin/dsh --profile headless --patch ./cordis.patch.yml \
-  "对散热风扇做一次起动测试并判定。调试器路径用 /opt/ath/bin/AsicCliDebugger.exe。"
+  "对散热风扇做一次起动测试并判定。调试器路径用 [源] bin/AsicCliDebugger.exe。"
 ```
 
 ### Web UI
@@ -208,7 +208,7 @@ the server.
 ```sh
 .venv/bin/python tools_session_stats.py
 .venv/bin/python tools_dump_session.py \
-  ~/.dsh/sessions/--home-zzz-lab-dsh-plugins--/<session-id>/session.v3.jsonl.zstd
+  [源] sessions/--home-zzz-lab-dsh-plugins--<session-id>/session.v3.jsonl.zstd
 ```
 
 Sessions are zstd-compressed JSONL under `$DSH_HOME/sessions/`. Hook scripts
@@ -233,8 +233,8 @@ machine-readable form.
 Tool names, parameter names and return shapes are copied from the production
 Rust implementation, not invented:
 
-- `/mnt/f/Main/File/2_Projects/峰岹/平台代码-脱敏版/app/src-tauri/src/vibe_testing_mcp/tools/types.rs`
-- `/mnt/f/Main/File/2_Projects/峰岹/平台代码-脱敏版/app/src-tauri/src/vibe_testing_mcp/tools/motor.rs`
+- `[源] tools/types.rs`
+- `[源] tools/motor.rs`
 
 | Tool | Parameters | Returns |
 |---|---|---|
@@ -336,7 +336,7 @@ rather than by quotation. Here is what it recorded during run 1:
 
 ```json
 {"session_id":"session-780f4667-…","transcript_path":null,
- "cwd":"/home/zzz/lab/dsh-plugins","hook_event_name":"PreToolUse",
+ "cwd":"c/components/dsh-plugins","hook_event_name":"PreToolUse",
  "model":"deepseek-v4-pro","permission_mode":"default","turn_id":"1",
  "tool_name":"mcp__motor__motor_start","tool_input":{"command":""},
  "tool_use_id":"call_00_Y6YZxcRnHQfixztV0Ez17813"}
@@ -484,7 +484,7 @@ After those three, the dependency check passes and the tools answer:
 ```
 [kb-rag] Python dependencies OK
 kb_stats -> 知识库统计 · 0 文档 / 0 块 / 0 向量
-           数据库：/home/zzz/lab/dsh-plugins/.kb/kb.sqlite
+           数据库：[源] .kb/kb.sqlite
 ```
 
 After those three, the dependency check passes and the plugin serves real data:
@@ -492,7 +492,7 @@ After those three, the dependency check passes and the plugin serves real data:
 ```
 [kb-rag] Python dependencies OK
 kb_stats -> 知识库统计 · 0 文档 / 0 块 / 0 向量
-           数据库：/home/zzz/lab/dsh-plugins/.kb/kb.sqlite
+           数据库：[源] .kb/kb.sqlite
 ```
 
 `kb_ingest` on this project's own `README.md` and `logs/e2e.md` completed —
@@ -502,7 +502,7 @@ the engine by hand:
 
 ```sh
 echo '{"query":"hook exit code 2 block","top_k":2,"kb_root":"'$PWD'/.kb"}' \
-  | ./bin/python ~/.dsh/profiles/headless/node_modules/dsh-kb-rag/kb_engine.py search
+  | ./bin/python [源] dsh-kb-rag/kb_engine.py search
 ```
 
 returns section "7. The hooks, and why there are two bridges", paragraphs 76–82,
@@ -568,7 +568,7 @@ browser opens instead. `tools_drive_ui.py` handles all of it.
 ## 12. Architecture notes carried over from the ecosystem survey
 
 Three findings from
-`/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/A-开源工具与DSH插件生态.md`
+`[源] _调研/A-开源工具与DSH插件生态.md`
 that shape what this skeleton should become. They are recorded here because they
 contradict assumptions that are easy to carry in from the task book.
 

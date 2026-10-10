@@ -1,0 +1,79 @@
+# OmniTest 单机部署编排（Linux + Docker Compose）
+#
+# 架构：backend（FastAPI，容器内 gunicorn 监听 5100）+ web（nginx，对外 5100，
+#       静态托管 web/dist，并把 /api 反代到 backend）。
+# 说明：compose 的 ports 只暴露 web 一个服务，backend 仅在内部网络可达，
+#       最贴近部署脚本「一端口一首页」的验证口径。
+#
+# 用法（服务器端，通常由 /opt/demo/_infra/deploy.sh omnitest all 触发）：
+#   docker compose -p omnitest up -d --build
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: omnitest-backend:latest
+    container_name: omnitest-backend
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    expose:
+      - "5100"
+    volumes:
+      # 持久化运行期数据：数据库、上传原件、报告产物、向量索引
+      - ./backend/uploads:/srv/omnitest/c/backend/uploads
+      - ./backend/.deploy:/srv/omnitest/c/backend/.deploy
+      - /var/log/demo:/var/log/demo
+      # ⚠️ backend/app/core/paths.py 要求容器内路径为 <repo>/c/backend/...，
+      #    且会用到 c/web/public（场景包/知识库静态数据）与 c/data/kb/documents（抽取稿）。
+      #    故把宿主机的 web/ 与 data/ 只读挂到对应层级。
+      - ./web:/srv/omnitest/c/web:ro
+      - ./data:/srv/omnitest/c/data:ro
+    mem_limit: 1g
+    cpus: "1.0"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:5100/health', timeout=5).status==200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - omnitest
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        # 前端只发相对路径请求（/api、/scenes），构建期无需后端地址
+        VITE_BACKEND_URL: ""
+    image: omnitest-web:latest
+    container_name: omnitest
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5100:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - omnitest
+
+networks:
+  omnitest:
+    driver: bridge

@@ -123,14 +123,14 @@ const STATE_TEXT: Record<ToolItem['state'], string> = {
 
 /* ---------------------------------------------------------------- 设备桥工具
 
-   工具条下半截挂的是设备桥（~/lab/spike-device-mcp，默认 127.0.0.1:8031）
+   工具条下半截挂的是设备桥（c/components/spike-device-mcp，默认 127.0.0.1:8031）
    现在真挂着的工具，按桥返回的三层分组渲染：连接层 / 观测层 / 动作层。
 
    两类点击行为不一样，这个差别是红线本身：
      · 连接层与观测层不受闸口约束，点了直接调，结果摆在抽屉里；
      · 动作层六个工具对应六条红线，点下去只会拿回一张待确认凭据，
        执行必须由人在确认卡上再点一次。前端骗不过去——桥会直接拒绝执行。
-   依据：~/lab/spike-device-mcp/README.md 第 3 节与第 5 节。 */
+   依据：[源] spike-device-mcp/README.md 第 3 节与第 5 节。 */
 
 const LAYER_SHORT: Record<BridgeLayer, string> = {
   connection: '连接',
@@ -354,7 +354,7 @@ export function ToolRail({ groups }: { groups: ToolGroup[] }) {
             </div>
             <p className="text-[12px] leading-5 text-t3">
               调用结果的摘要在页面底部那条提示里；完整返回见设备桥自己的日志
-              （~/lab/spike-device-mcp/evidence/bridge.log）。
+              （[源] evidence/bridge.log）。
             </p>
           </div>
         ) : null}

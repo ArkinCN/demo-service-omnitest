@@ -3,13 +3,13 @@
 把客户交付的手册、数据手册、工程源码，转成前端「知识库管理」页可直接加载的结构化知识；
 另从 98 次启动实验数据包与客户随装规程提炼经验条目。
 
-- 输出目录：`/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/kb/`（可用环境变量 `KB_OUT` 覆盖）
+- 输出目录：`c-data/kb`（可用环境变量 `KB_OUT` 覆盖）
 - 源材料**只读**：先复制到 `input/`，再在副本上转换。
 
 ## 跑起来
 
 ```bash
-cd ~/lab/kb-pipeline
+cd c/components/kb-pipeline
 uv venv --python 3.10 .venv
 VIRTUAL_ENV=$PWD/.venv UV_DEFAULT_INDEX=https://pypi.org/simple \
   uv pip install docling==2.129.0 rank_bm25 pymupdf4llm --torch-backend=cpu

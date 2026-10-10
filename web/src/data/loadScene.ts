@@ -7,6 +7,7 @@ import {
   type RawAttribute,
   type RawPack,
 } from '../features/scene/pack'
+import { fetchJson } from '../features/shared/fetchJson'
 import { MOCK_SCENE } from './mock/motor.cooling-fan.fu6832'
 import { FLOW_IDS } from './types'
 import type {
@@ -26,7 +27,7 @@ import type {
  *
  * 真实场景包是一个目录下的 10 份 JSON（不是单文件），整目录已复制到
  * public/scenes/<sceneId>/，源目录见
- * /mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/motor.cooling-fan.fortior-fu6832/README.md
+ * [源] motor.cooling-fan.fortior-fu6832/README.md
  *
  * 本文件负责把它压成壳层的 ScenePackage（左栏参数、卡槽、清单）。
  * 卡片内部要用的明细直接读 src/features/scene/pack.ts 的原始结构，不经这里。
@@ -527,15 +528,12 @@ let catalogTask: Promise<{ catalog: CatalogNode[]; defaultScene: string }> | nul
 export function loadCatalog(): Promise<{ catalog: CatalogNode[]; defaultScene: string }> {
   if (catalogTask) return catalogTask
   catalogTask = (async () => {
-    try {
-      const r = await fetch('/scenes/index.json', { cache: 'force-cache' })
-      if (!r.ok) throw new Error(String(r.status))
-      const j = (await r.json()) as SceneIndexFile
-      if (!Array.isArray(j.catalog) || !j.catalog.length) throw new Error('empty catalog')
-      return { catalog: j.catalog, defaultScene: j.default ?? DEFAULT_SCENE_ID }
-    } catch {
+    // 2026-10-08：改用统一 fetchJson（原 force-cache 会读旧副本，见 fetchJson 模块头）
+    const j = await fetchJson<SceneIndexFile>('/scenes/index.json')
+    if (!j || !Array.isArray(j.catalog) || !j.catalog.length) {
       return { catalog: FALLBACK_CATALOG, defaultScene: DEFAULT_SCENE_ID }
     }
+    return { catalog: j.catalog, defaultScene: j.default ?? DEFAULT_SCENE_ID }
   })()
   return catalogTask
 }

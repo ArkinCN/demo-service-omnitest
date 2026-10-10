@@ -7,13 +7,24 @@ import os
 import re
 from pathlib import Path
 
+# 路径一律基于脚本位置推导，禁止写绝对路径（Windows 盘符随机器变，写死即硬编码）。
+#   BASE      = c/kb-pipeline
+#   PROJECT_C = c/
 BASE = Path(__file__).resolve().parent.parent
+PROJECT_C = BASE.parent
+
 INPUT = BASE / "input"
 CONFIG = BASE / "config"
-KB_OUT = Path(os.environ.get(
-    "KB_OUT",
-    "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/kb",
-))
+
+# 流水线产物输出目录。默认写回前端 public/kb——前端就是从这个目录 fetch 的，
+# 所以默认值指向它才能「跑完即生效」。部署方可用环境变量 KB_OUT 覆盖；
+# 相对值按项目根 c/ 解析，绝对值（部署方显式指定）原样采用。
+_KB_OUT_ENV = (os.environ.get("KB_OUT") or "").strip()
+KB_OUT = (
+    (Path(_KB_OUT_ENV) if Path(_KB_OUT_ENV).is_absolute() else PROJECT_C / _KB_OUT_ENV)
+    if _KB_OUT_ENV
+    else PROJECT_C / "web" / "public" / "kb"
+)
 
 TAXONOMY = {"l1": "motor", "l2": "cooling-fan", "l3": "fortior-fu6832"}
 PROCESS_TAGS = ["初始化配置", "测试需求", "启动测试", "调优", "报告"]

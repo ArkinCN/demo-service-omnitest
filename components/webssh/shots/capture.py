@@ -2,7 +2,7 @@
 import asyncio, glob, pathlib
 from playwright.async_api import async_playwright
 
-CHROME = sorted(glob.glob("/home/zzz/.cache/puppeteer/chrome/*/chrome-linux64/chrome"))[-1]
+CHROME = sorted(glob.glob("[源] chrome-linux64/chrome"))[-1]
 OUT = pathlib.Path(__file__).parent
 CMDS = ["hostname", "tasklist | findstr /i motordebug", "dir C:\\fc_pull"]
 

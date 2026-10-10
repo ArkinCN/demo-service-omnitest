@@ -8,7 +8,7 @@ import json
 import os
 
 # ---- 源材料根路径（全部绝对路径，便于 _source 可独立定位）----
-REPO = "/mnt/f/Main/File/2_Projects/峰岹"
+REPO = "[源] 2_Projects/峰岹"
 
 # 素材综述文档（本包绝大多数条目的一级来源，_source 指其行号）
 DOC_B = os.path.join(

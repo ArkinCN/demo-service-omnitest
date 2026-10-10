@@ -1,17 +1,17 @@
 # 案例简化与 demo 故事线 · 流程 4 与流程 5
 
-改版依据：用户录音意见 R-14（案例搞太复杂，演示是个 demo，故事不好讲）与 R-16（全篇平铺，要分层级、要折叠）。原话见 `/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/00b-用户录音意见原话-20260919-2121.md`。
+改版依据：用户录音意见 R-14（案例搞太复杂，演示是个 demo，故事不好讲）与 R-16（全篇平铺，要分层级、要折叠）。原话见 `docs/20260919-通用Agent测试系统v2.0/00b-用户录音意见原话-20260919-2121.md`。
 
-本文只做设计决定，不改代码。前端工程 `~/agent-test-web` 在本轮未被修改。
+本文只做设计决定，不改代码。前端工程 `c/` 在本轮未被修改。
 
 被体检的两页：
 
 | 流程 | 页面路径 | 前端源码 | 截图 |
 | --- | --- | --- | --- |
-| 流程 4 启动测试及结果分析 | `/run` | `~/agent-test-web/src/features/flow-run/panel.tsx` | `03-截图/final-run.png` |
-| 流程 5 调优确认及运行 | `/tune` | `~/agent-test-web/src/features/flow-tune/panel.tsx` | `03-截图/final-tune.png` |
+| 流程 4 启动测试及结果分析 | `/run` | `[源] flow-run/panel.tsx` | `03-截图/final-run.png` |
+| 流程 5 调优确认及运行 | `/tune` | `[源] flow-tune/panel.tsx` | `03-截图/final-tune.png` |
 
-数据来源统一说明：下文凡标「真实」的数字，均出自场景包 `~/agent-test-web/public/scenes/motor.cooling-fan.fortior-fu6832/` 下的 JSON，或该 JSON 自带的 `_source` 指向的客户材料；凡标「合成」的，出自本项目自建的演示骨架；核不到出处的一律标「待核实」。
+数据来源统一说明：下文凡标「真实」的数字，均出自场景包 `./scenes/motor.cooling-fan.fortior-fu6832/` 下的 JSON，或该 JSON 自带的 `_source` 指向的客户材料；凡标「合成」的，出自本项目自建的演示骨架；核不到出处的一律标「待核实」。
 
 ---
 
@@ -43,7 +43,7 @@ C 区五张卡各自的负担：
 | 安全联锁状态盘 | 10 | 与左栏闸门是同一件事的第二次呈现 |
 | 单机设备会话 | 9 | 台架工控机显示「离线」 |
 
-副驾这一页的脚本共 6 步（`~/agent-test-web/src/features/copilot/scripts.ts` 的 `case 'run'`）：一条开场白、三次工具调用、一条判定说明、一组证据卡。首屏只露出 `test_start` 这一张待确认卡。
+副驾这一页的脚本共 6 步（`[源] copilot/scripts.ts` 的 `case 'run'`）：一条开场白、三次工具调用、一条判定说明、一组证据卡。首屏只露出 `test_start` 这一张待确认卡。
 
 ### 1.3 流程 5 调优确认页
 
@@ -71,7 +71,7 @@ C 区五张卡：
 
 现有案例在两页上一共摊开了 9 条分支，观众每看到一条都会默认「这是要讲的」。
 
-| 分支 | 现有规模 | 数据来源 |
+| 分支 | 现有规模 | 数据来[源] |
 | --- | --- | --- |
 | 回放的时序曲线 | 登记 5 条，本轮回放 3 条 | 真实，示波器实测 |
 | 场景包 | 散热风扇包 + 玻璃升降器包，双包对照 | 风扇包真实，升降器包三条 CSV 为合成 |
@@ -103,11 +103,11 @@ C 区五张卡：
 
 ### 2.2 为什么主因选「预定位太弱」
 
-这不是编的。场景包 `datasets.json` 登记的三条波形 TRY-0009、TRY-0010、TRY-0021，注入故障字段 `injected_fault` 全部是 `align_weak（预定位太弱）`，其中 TRY-0009 登记 PASS、另两条登记 FAIL。经验条目 EXP-009 的证据级是「台架实测数据」，原文写的是：98 次台架复现里启动失败样本的相电流绝对峰值明显高于启动成功样本，动作是加大预定位 D 轴输出强度 `MOTOR_ALIGNMENT_DOUT` 或延长预定位时间 `MOTOR_ALIGNMENT_TIMES`。来源是 `/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包/分析报告-预定位太弱判定-20260812.md`。
+这不是编的。场景包 `datasets.json` 登记的三条波形 TRY-0009、TRY-0010、TRY-0021，注入故障字段 `injected_fault` 全部是 `align_weak（预定位太弱）`，其中 TRY-0009 登记 PASS、另两条登记 FAIL。经验条目 EXP-009 的证据级是「台架实测数据」，原文写的是：98 次台架复现里启动失败样本的相电流绝对峰值明显高于启动成功样本，动作是加大预定位 D 轴输出强度 `MOTOR_ALIGNMENT_DOUT` 或延长预定位时间 `MOTOR_ALIGNMENT_TIMES`。来源是 `[源] 20260811_启动故障98次实验与30例对照数据包/分析报告-预定位太弱判定-20260812.md`。
 
 也就是说，这套演示数据的病因金标准与经验库里证据级最高的那条条目是同一个东西，波形、归因、参数、结果四件事能串成一条闭环。
 
-现状却不是这么排的。候选队列的排序规则写在 `~/agent-test-web/src/features/flow-tune/panel.tsx` 的 `useCandidates()` 末尾，按「能不能给出具体数值」排，结果排在第一位的是 EXP-001 的启动电流下调 20%，而 EXP-001 的证据级只是「规程条款」，和这批数据的病因也对不上。**改排序口径是本轮的必要改动**：证据级为「台架实测数据」的条目优先，数值能否给出退为第二排序键。
+现状却不是这么排的。候选队列的排序规则写在 `[源] flow-tune/panel.tsx` 的 `useCandidates()` 末尾，按「能不能给出具体数值」排，结果排在第一位的是 EXP-001 的启动电流下调 20%，而 EXP-001 的证据级只是「规程条款」，和这批数据的病因也对不上。**改排序口径是本轮的必要改动**：证据级为「台架实测数据」的条目优先，数值能否给出退为第二排序键。
 
 ### 2.3 分镜表
 
@@ -133,14 +133,14 @@ C 区五张卡：
 
 | 锚点 | 核实结论 | 出处 |
 | --- | --- | --- |
-| 双阶段盲试：probe 3 次 + full 100 次 | 属实，但只有转述件 | 场景包判据 TR-START-02「自动启动盲试（probe 3 次 + full 100 次）」，判据表达式 `probe_pass === probe_runs && full_pass === required_full_pass`。三份独立文档口径一致：`/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/01-架构盘点/v1.0-2026-07-29/AItior软件深度解读-v1.0.md` 第 193 行、`/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/03-规程与工具链分析/v1.0-2026-08-02/Debug模块功能清单-v1.0.md` 第 116 行、`/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/_素材与证据/aitior-evidence-A-skills.md` 第 26 行。**原始件不在本地**：`resources/data/dc-skills/auto-startup-tune/SKILL.md` 是客户机器上的路径，本地仓库全局搜 `dc-skills` 零命中 |
+| 双阶段盲试：probe 3 次 + full 100 次 | 属实，但只有转述件 | 场景包判据 TR-START-02「自动启动盲试（probe 3 次 + full 100 次）」，判据表达式 `probe_pass === probe_runs && full_pass === required_full_pass`。三份独立文档口径一致：`[源] v1.0-2026-07-29/AItior软件深度解读-v1.0.md` 第 193 行、`[源] v1.0-2026-08-02/Debug模块功能清单-v1.0.md` 第 116 行、`[源] _素材与证据/aitior-evidence-A-skills.md` 第 26 行。**原始件不在本地**：`resources/data/dc-skills/auto-startup-tune/SKILL.md` 是客户机器上的路径，本地仓库全局搜 `dc-skills` 零命中 |
 | 10 个固定候选，每个只偏离基线一个轴，耗尽转 need_human | 属实 | 同上一条判据的 `criterion_text` 原文；经验条目 EXP-022 复述同一规则 |
 | 默认 100 次启停可配 1 ~ 1000 次，转速证据取 FG2 > 10000 RPM | 属实 | 场景包判据 TR-START-01；`_source` 指向 AItior 安装目录 `resources/data/dc-skills/startstop-with-scope/SKILL.md`，同样只有转述件 |
-| 台架信号定义：PWM1 驱被测风扇、PWM2 驱逆风风扇、FG1 是电气换相反馈、FG2 是红外机械转速脉冲 | 属实 | `/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/交接/峰岹硬件测试_交接文档.md` 第 58 ~ 71 行 |
+| 台架信号定义：PWM1 驱被测风扇、PWM2 驱逆风风扇、FG1 是电气换相反馈、FG2 是红外机械转速脉冲 | 属实 | `交接/峰岹硬件测试_交接文档.md` 第 58 ~ 71 行 |
 | FG1 频率 = 2 × FG2 频率 | **理论属实，实测不是 2.00** | 极对数 2 的理论关系见场景包判据 TR-SPEED-01，`_source` 指向客户源码 `Customer.h` 第 56 行 `#define Pole_Pairs`。但同一份交接文档第 76 ~ 82 行写明：实测 FG1/FG2 = 2.19，全档恒定，系统性高于理论值约 9.5%，此项待客户确认；第 595 行给出跨次复现的 2.18 与 2.28 |
 | 这批演示波形的病因是预定位太弱 | 属实 | `datasets.json` 中 TRY-0009 / TRY-0010 / TRY-0021 的 `injected_fault` 字段均为 `align_weak（预定位太弱）` |
-| 98 次台架复现里失败样本相电流峰值明显高于成功样本 | 属实 | 经验条目 EXP-009，证据级「台架实测数据」；来源 `/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/数据/20260811_启动故障98次实验与30例对照数据包/分析报告-预定位太弱判定-20260812.md` |
-| 客户软件导出的约 1200 点不是示波器硬件上限 | 属实，但表述要分两半 | `/mnt/f/Main/File/2_Projects/峰岹/archive-POC/20_沟通记录/下一次汇报思路-20260630.md` 第 58 行与第 66 行。准确说法：约 1200 点是 Altior 软件导出层的固定瓶颈，示波器本体是 Rigol DS1104Z Plus，最高 1 GSa/s、内存 24 Mpts，实采 300 万点／通道。但稳态量在 1200 点量级本来就算得出来，客户没做是因为只导截图不做量化回归，不能笼统说成「1200 点物理上看不到」。只有启动逐脉冲暂态才是深存储的真增量 |
+| 98 次台架复现里失败样本相电流峰值明显高于成功样本 | 属实 | 经验条目 EXP-009，证据级「台架实测数据」；来[源] `[源] 20260811_启动故障98次实验与30例对照数据包/分析报告-预定位太弱判定-20260812.md` |
+| 客户软件导出的约 1200 点不是示波器硬件上限 | 属实，但表述要分两半 | `[源] 20_沟通记录/下一次汇报思路-20260630.md` 第 58 行与第 66 行。准确说法：约 1200 点是 Altior 软件导出层的固定瓶颈，示波器本体是 Rigol DS1104Z Plus，最高 1 GSa/s、内存 24 Mpts，实采 300 万点／通道。但稳态量在 1200 点量级本来就算得出来，客户没做是因为只导截图不做量化回归，不能笼统说成「1200 点物理上看不到」。只有启动逐脉冲暂态才是深存储的真增量 |
 | 载波频率 | **口径冲突，未统一** | 写死 25 kHz 的有两处：交接文档第 70 行的台架接线表、某批次客户量产固件头文件第 69 行 `PWM_FREQUENCY`。另一批次固件同一行写的是 30.0 kHz。反推口径见上述汇报思路文档第 67 行：PWM 通道做快速傅里叶变换，混叠主峰 4998.6 Hz，折叠反推真实载波约 20 kHz 或 30 kHz，对外应写「约 20 ~ 30 kHz，待查 FU686x 数据手册核实」。客户用户手册 3.10 另给出 `carrier_sel` 四档可选：25K / 16.6K / 20K / 40K |
 
 后三条的处理：FG1/FG2 若进分镜，讲的是「判据要求比值 2.00 ± 0.05」这个规则，不报实测数；1200 点与载波频率两项不进分镜、屏幕上也不显示，故事线不依赖它们。
@@ -153,7 +153,7 @@ C 区五张卡：
 
 ### 3.1 流程 4 启动测试页
 
-| 信息元素 | 归档 | 理由 | 数据来源 |
+| 信息元素 | 归档 | 理由 | 数据来[源] |
 | --- | --- | --- | --- |
 | 本流程可调参数（现 4 项） | 首屏保留 | 镜 2 要动它 | 真实 |
 | 启停次数与电压档 | 首屏保留 | 镜 2 要讲本轮跑几次 | 真实 |
@@ -177,7 +177,7 @@ C 区五张卡：
 
 ### 3.2 流程 5 调优确认页
 
-| 信息元素 | 归档 | 理由 | 数据来源 |
+| 信息元素 | 归档 | 理由 | 数据来[源] |
 | --- | --- | --- | --- |
 | 未达标项一条 | 首屏保留 | 镜 6 的落点 | 真实 |
 | 推荐参数一条，含当前值 → 建议值 | 首屏保留 | 镜 7 的主角 | 真实 |
@@ -265,7 +265,7 @@ C 区五张卡：
 | --- | --- | --- |
 | 3.4 节「峰岹的具体例子」 | 启动电流本轮取 6.0 安 | 场景包实配值是 1.3 A，量程 0.1 ~ 20.0 A。两个数选一个，另一个撤掉 |
 | 3.4 节同段 | 面板实时画四条曲线（两路转速反馈、两路驱动输出） | 现在回放的是一路相电流，不是四条。要么改文字，要么在 demo 前把 FG1/FG2 接上 |
-| 3.4 节同段 | 电气转速反馈频率与机械转速反馈频率之比，实测 2.01，阈值 2.00 ± 0.05 → 通过 | **这个数与台架实测不符，必须撤。** 交接文档 `/mnt/f/Main/File/2_Projects/峰岹/archive-POC/40_工程/交接/峰岹硬件测试_交接文档.md` 第 76 ~ 82 行记的是实测 2.19、全档恒定、系统性高于理论值约 9.5%、待客户确认。按真实数这一条判的是不通过，不是通过 |
+| 3.4 节同段 | 电气转速反馈频率与机械转速反馈频率之比，实测 2.01，阈值 2.00 ± 0.05 → 通过 | **这个数与台架实测不符，必须撤。** 交接文档 `交接/峰岹硬件测试_交接文档.md` 第 76 ~ 82 行记的是实测 2.19、全档恒定、系统性高于理论值约 9.5%、待客户确认。按真实数这一条判的是不通过，不是通过 |
 | 3.4 节「除了启动还要有什么功能」表 | 七项功能平铺 | 按 R-16 分层：跑之前（预检自检、干跑）、跑之中（断点续跑、台架占用与排队）、跑之后（录制留档、与历史对比、异常定位） |
 | 3.5 节「峰岹的具体例子」 | 候选是「启动电流 + 启动角度」的组合 | 场景包里 6 条候选没有「启动角度」这个宏。改为与 EXP-009 一致的预定位 D 轴输出强度 |
 | 3.5 节同段 | 候选一个个试到成功率达标 | 与新故事线对齐：只动一项，靠证据级最高的经验条目直接定位，不做穷举 |
@@ -304,14 +304,14 @@ C 区五张卡：
 
 前端工程（只读，未修改）：
 
-- `~/agent-test-web/src/features/flow-run/panel.tsx`（807 行，全文）
-- `~/agent-test-web/src/features/flow-tune/panel.tsx`（904 行，全文）
-- `~/agent-test-web/src/features/copilot/scripts.ts`（284 行，全文）
-- `~/agent-test-web/src/features/waveforms/index.ts`（前 160 行）
-- `~/agent-test-web/src/data/flows.ts`、`src/data/cards.ts`
-- `~/agent-test-web/src/data/loadScene.ts`（按关键词检索，未全文读）
-- 场景包 `~/agent-test-web/public/scenes/motor.cooling-fan.fortior-fu6832/` 下的 `control-parameters.json`、`safety-interlocks.json`、`test-requirements.json`、`experience.json`、`datasets.json`
-- `~/agent-test-web/public/data/` 目录清单（四份 CSV 的文件名与体积）
+- `[源] flow-run/panel.tsx`（807 行，全文）
+- `[源] flow-tune/panel.tsx`（904 行，全文）
+- `[源] copilot/scripts.ts`（284 行，全文）
+- `[源] waveforms/index.ts`（前 160 行）
+- `[源] data/flows.ts`、`src/data/cards.ts`
+- `[源] data/loadScene.ts`（按关键词检索，未全文读）
+- 场景包 `./scenes/motor.cooling-fan.fortior-fu6832/` 下的 `control-parameters.json`、`safety-interlocks.json`、`test-requirements.json`、`experience.json`、`datasets.json`
+- `./data/` 目录清单（四份 CSV 的文件名与体积）
 
 文档：
 
@@ -326,7 +326,7 @@ C 区五张卡：
 
 在场景包 JSON 上按 `adjustable_in_flows`、`interlocks.type`、`evidence_level`、`injected_fault`、`criterion_text`、`package_stats` 做统计；在文档上按「启动测试」「调优」「流程 4」「流程 ⑤」「final-run」「final-tune」检索。
 
-业务锚点核实另派了一个子 agent 在 `/mnt/f/Main/File/2_Projects/峰岹/` 全目录做穷举检索，覆盖 `峰岹agent/`（01-架构盘点、03-规程与工具链分析、07-实施规划、09-实验室demo线、_素材与证据）、`平台代码/` 与 `平台代码-脱敏版/`、`峰岹硬件代码层/客户代码`、`10_外部资料/`、`archive-POC/`（20_沟通记录、30_调研设计、40_工程）、`40_工程/agent-test-web` 与 `agent-test-web-data`、`实验数采工具/AItior自动测试软件_便携版_20260813/`、`论文-TASE工业Agent框架/`。用过的关键词：`SKILL.md`、`auto-startup-tune`、`dc-skills`、`固定候选`、`probe 3 次`、`full 100 次`、`盲试`、`FG1`、`FG2`、`极对数`、`pole_pair`、`PWM2`、`1200 点`、`非物理墙`、`载波`、`20-30kHz`、`SquStartCurrent`。
+业务锚点核实另派了一个子 agent 在 `[源] 2_Projects/峰岹` 全目录做穷举检索，覆盖 `峰岹agent/`（01-架构盘点、03-规程与工具链分析、07-实施规划、09-实验室demo线、_素材与证据）、`平台代码/` 与 `平台代码-脱敏版/`、`峰岹硬件代码层/客户代码`、`10_外部资料/`、`archive-POC/`（20_沟通记录、30_调研设计、40_工程）、`40_工程/agent-test-web` 与 `agent-test-web-data`、`实验数采工具/AItior自动测试软件_便携版_20260813/`、`论文-TASE工业Agent框架/`。用过的关键词：`SKILL.md`、`auto-startup-tune`、`dc-skills`、`固定候选`、`probe 3 次`、`full 100 次`、`盲试`、`FG1`、`FG2`、`极对数`、`pole_pair`、`PWM2`、`1200 点`、`非物理墙`、`载波`、`20-30kHz`、`SquStartCurrent`。
 
 ### 7.3 查了没有结果的
 

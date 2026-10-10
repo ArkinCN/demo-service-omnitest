@@ -19,15 +19,26 @@ import {
   EmptyState,
   InfoTip,
   Input,
-  Segmented,
+  Modal,
   SourceTag,
   Tooltip,
   cn,
 } from '../../components/ui'
-import { collapseKey } from '../../state/useAppStore'
+import { collapseKey, useAppStore } from '../../state/useAppStore'
 import { useFlowActions } from '../redline'
+import { assembleReport } from './assemble'
+import {
+  downloadUrl,
+  persistReportInstance,
+  reportExists,
+  resolveReportRunId,
+  templateStatus,
+  uploadTemplate,
+} from './reportApi'
 import { getPack, fileName, sizeText, type RawHeaderField } from '../scene/pack'
-import { ConfirmFooter, Empty, TierTree } from '../shared/bits'
+import { ConfigOverview } from '../../app/LeftPanel'
+import { UnifiedConfigPanel } from '../../app/UnifiedConfigPanel'
+import { ConfirmFooter, Empty } from '../shared/bits'
 import { buildTiers, demoFilter, readTiers } from '../shared/tiers'
 import { simp } from '../shared/zh'
 import { TimeSeriesChart } from '../timeseries'
@@ -48,6 +59,68 @@ function short(s: string, n = 6) {
   return clean.length > n ? `${clean.slice(0, n)}…` : clean
 }
 
+/** 模板分节里的「上传模板文件」行：上传客户正式模板（.xlsm），覆盖式替换系统自建模板。 */
+function TemplateUploadRow() {
+  const [tpl, setTpl] = useState<{ ready: boolean; filename?: string; bytes?: number } | null>(null)
+  const [busy, setBusy] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    let alive = true
+    void templateStatus()
+      .then((t) => { if (alive) setTpl(t) })
+      .catch(() => { if (alive) setTpl({ ready: false }) })
+    return () => { alive = false }
+  }, [])
+
+  const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    e.target.value = '' // 允许重复选同一个文件
+    if (!f) return
+    setBusy(true)
+    const st = useAppStore.getState()
+    try {
+      const r = await uploadTemplate(f)
+      setTpl({ ready: true, filename: r.filename, bytes: r.bytes })
+      st.setNotice(`客户模板已上传（${r.filename}，${r.bytes} 字节），重新生成报告即为正式报告`)
+    } catch (err) {
+      st.setNotice(`模板上传失败：${err instanceof Error ? err.message : String(err)}`)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="flex min-h-[40px] items-center gap-2 px-4 py-1.5">
+      <span className="shrink-0 whitespace-nowrap text-[13px] font-medium text-t1">
+        {tpl?.ready ? '客户模板已就位' : '当前用系统自建模板'}
+      </span>
+      {tpl?.ready && (
+        <span className="num truncate text-[12px] text-t3">
+          {tpl.filename}（{sizeText(tpl.bytes ?? 0)}）
+        </span>
+      )}
+      <span className="ml-auto shrink-0">
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".xlsm"
+          className="hidden"
+          onChange={onPick}
+        />
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => inputRef.current?.click()}
+          className="num cursor-pointer rounded-tpx border border-line px-2 py-1 text-[12px] text-t1 transition-colors hover:bg-p50 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {busy ? '上传中…' : tpl?.ready ? '替换模板' : '上传模板文件'}
+        </button>
+      </span>
+    </div>
+  )
+}
+
 /** 表头字段的短标签。英文位址字段用它的限定词（Inlet / Outlet）区分，全名进 tooltip。 */
 const FIELD_SHORT: Record<string, string> = {
   model: '机型',
@@ -61,50 +134,112 @@ const fieldShort = (f: RawHeaderField) => simp(FIELD_SHORT[f.key] ?? short(f.nam
 /** 报告预览纸面用：照抄模板原文，不做简繁归一，纸面上另标「模板原文」 */
 const rawFieldLabel = (f: RawHeaderField) => short(f.name, 6)
 
-/* ------------------------------------------------- 跨卡片共享：表头 / 导出格式 */
+/* ------------------------------------------------- 跨卡片共享：表头 / 导出格式
+ *
+ * ⚠️ 2026-09-28 修 G-10：这两个原先都是**模块级变量**（`let header = {}` +
+ * 自建订阅、`const fmt = { value }`），刷新即丢——与「其它已确认参数都持久」
+ * 不一致，人会以为「填了表头没保存」。现全部指向 store，由 store 负责持久化。
+ *
+ * `useShared()` / `setHeader` / `setFmt` 的**签名保持不变**，只是内部换成 store，
+ * 这样页面里十余处调用点一处都不用改（改动面最小、回归风险最低）。
+ */
 
-const header: Record<string, string> = {}
-let seeded = false
-const listeners = new Set<() => void>()
-const emit = () => listeners.forEach((l) => l())
-function useShared() {
-  const [, force] = useState(0)
-  useEffect(() => {
-    const l = () => force((v) => v + 1)
-    listeners.add(l)
-    return () => {
-      listeners.delete(l)
-    }
-  }, [])
-  return header
+/** 表头（走 store，含 localStorage 持久化） */
+function useShared(): Record<string, string> {
+  return useAppStore((s) => s.reportHeader)
 }
 function setHeader(k: string, v: string) {
-  header[k] = v
-  emit()
-}
-
-const fmt = { value: 'xlsm' }
-function setFmt(v: string) {
-  fmt.value = v
-  emit()
+  useAppStore.getState().setReportHeader(k, v)
 }
 
 /**
- * 表头字段的初值。
+ * 表头字段的初值：**只从场景包补一项 `firmware_version`**。
  *
- * 只填「场景包里确有其值」的字段，一个都不编：机型、芯片型号这类要由上游流程
- * 带入的，留空显示「由上游带入」，计数如实算作未填。模板样张自带的
- * sample_value 也不拿来顶真值——那是别人报告里的数。
+ * 为什么只补这一项：它是「场景包里确有其值」的唯一一项（`controls.parameters`
+ * 里含 version 的那个宏）。其余由上游流程带入的字段**不编**——那要真读
+ * `config-snapshot`（见 `assemble.ts`，修 G-04），拿场景包登记值顶替会让人
+ * 把「登记值」当成「本轮确认过的基线」，是两回事。
+ *
+ * 写进 store 而非模块变量（G-10）；**已经是空才写**，不覆盖上游装配或人填的值。
  */
 function seed() {
   const pack = getPack()
-  if (!pack || seeded) return
-  seeded = true
+  if (!pack) return
   const ver = pack.controls.parameters.find((p) => p.key.includes('version'))
-  if (ver && ver.value !== null) header.firmware_version = String(ver.value)
+  if (ver && ver.value !== null) {
+    const st = useAppStore.getState()
+    if (!st.reportHeader.firmware_version) {
+      st.setReportHeader('firmware_version', String(ver.value))
+    }
+  }
 }
 
 const upstream = (f: RawHeaderField) => !f.from_flow.startsWith('F6')
+
+/**
+ * 上游装配（修 G-04）：进报告页时按 runId 把 `config-snapshot` 读回来填表头。
+ *
+ * 三条行为约定：
+ *   一、**只在取到值时才写**（`mergeReportHeader` 只补不覆盖）；
+ *   二、取不到**不报错、不静默**——把状态落进 `upstreamState`，界面据此显示
+ *       「上游产物未取到」而不是继续显示误导性的「由上游带入」；
+ *   三、**跑一次就够**（用 ref 防重复），避免每次重渲染都打后端。
+ */
+type UpstreamState = 'idle' | 'loading' | 'ok' | 'none'
+/** 装配状态：模块级 + 自建订阅（与 store 里的 header 不同，这个**不需要持久化**——
+ *  它是「本次进页面读到了什么」的瞬时状态，刷新后本来就该重算） */
+const upstreamState: { state: UpstreamState; note: string } = { state: 'idle', note: '' }
+const upListeners = new Set<() => void>()
+const emitUp = () => upListeners.forEach((l) => l())
+let triedRunId: string | null = null
+
+function useUpstreamState(): { state: UpstreamState; note: string } {
+  const [, force] = useState(0)
+  useEffect(() => {
+    const l = () => force((v) => v + 1)
+    upListeners.add(l)
+    return () => {
+      upListeners.delete(l)
+    }
+  }, [])
+  return upstreamState
+}
+
+/** 供挂载点调用：按「本轮 or 最近一轮」装配一次 */
+function useAssembleUpstream() {
+  const runId = useAppStore((s) => s.runId)
+  const sceneId = useAppStore((s) => s.sceneId)
+  useEffect(() => {
+    if (triedRunId === runId) return
+    triedRunId = runId
+    upstreamState.state = 'loading'
+    emitUp()
+    // ⚠️ 用 `resolveReportRunId` 兜底（与 gen-report / export 同款）：
+    // 报告页与其它下游一样，不该因为"本会话没点过启动"就取不到上游基线。
+    // 内存里没有 runId 时按场景取**最近一轮**（真实存在的轮次，不是编的）。
+    void resolveReportRunId(sceneId, runId)
+      .then((rid) => assembleReport(rid))
+      .then((r) => {
+        if (!r) {
+          upstreamState.state = 'none'
+          upstreamState.note = '上游产物没读到（该轮可能还没落 config-snapshot，或后端不可用）'
+        } else if (Object.keys(r.header).length) {
+          useAppStore.getState().mergeReportHeader(r.header)
+          upstreamState.state = 'ok'
+          upstreamState.note = `已从配置快照带入 ${Object.keys(r.header).length} 项（轮次 ${r.runId.slice(0, 8)}）`
+        } else {
+          upstreamState.state = 'none'
+          upstreamState.note = `轮次 ${r.runId.slice(0, 8)} 的配置快照里没有报告表头字段（该轮快照可能只记了场景与时刻）`
+        }
+        emitUp()
+      })
+      .catch((e: unknown) => {
+        upstreamState.state = 'none'
+        upstreamState.note = e instanceof Error ? e.message : String(e)
+        emitUp()
+      })
+  }, [runId, sceneId])
+}
 
 /** 模板全名可能是一条绝对路径（Excel 模板）或一句长标题（PDF 样张） */
 function templateTitle(raw: string) {
@@ -175,11 +310,92 @@ function FieldRow({ f }: { f: RawHeaderField }) {
   )
 }
 
+/**
+ * 「确认表头」的落库动作（2026-09-30 新增）。
+ *
+ * 语义与流程 2 的 `useConfirmBaseline` 一致：**单一入口、落库成功才置确认态、
+ * 失败必须可见**。此前这颗按钮误绑到「生成报告」上（点确认=生成+下载），
+ * 且表头只存 localStorage，从不落库、也不进生成的报告——本函数修的就是这条断裂。
+ *
+ * 三条纪律：
+ *   一、**不触发生成、不触发下载**——确认与生成是两件事，生成由顶栏按钮负责；
+ *   二、落库前 `resolveReportRunId` 兜底（同 gen-report），一轮都没有时抛可见错误；
+ *   三、**不编值**：表头里空的项不落进 header（空 ≠ 确认了空），由后端显示「未提供」。
+ */
+function useConfirmReportHeader(opts: {
+  sceneId: string
+  header: Record<string, string>
+  fields: { key: string; name: string; from_flow: string; value_slot: string }[]
+}) {
+  const { sceneId, header, fields } = opts
+  const setNotice = useAppStore((s) => s.setNotice)
+  const [saving, setSaving] = useState(false)
+
+  const run = useCallback(async () => {
+    setSaving(true)
+    try {
+      const st = useAppStore.getState()
+      const { runId, instance } = await persistReportInstance({
+        sceneId,
+        runId: st.runId,
+        header,
+        fields,
+        operator: st.benchUser,
+      })
+      st.setRunId(runId)
+      st.confirmFlow('report')
+      const n = Object.keys(instance.header).length
+      setNotice(
+        `已确认报告表头：${n}/${instance.header_total} 项有值（轮次 ${runId.slice(0, 8)}），` +
+          `已写入轮次产物，生成报告时按此填写`,
+      )
+    } catch (e) {
+      // 落库失败必须看得见：没存上是没存上，不能让人以为确认好了
+      setNotice(
+        `确认表头失败（未持久化，刷新后仍是未确认）：${e instanceof Error ? e.message : String(e)}`,
+      )
+    } finally {
+      setSaving(false)
+    }
+  }, [sceneId, header, fields, setNotice])
+
+  return { run, saving }
+}
+
 export function ReportLeftPanel() {
   const pack = getPack()
   seed()
+  // G-04：进报告页时按 runId 把 config-snapshot 读回来填表头（取不到会落状态）
+  useAssembleUpstream()
+  const up = useUpstreamState()
   const h = useShared()
-  const bind = useFlowActions()
+  const sceneId = useAppStore((s) => s.sceneId)
+  const confirmed = !!useAppStore((s) => s.confirmed.report)
+  const setNotice = useAppStore((s) => s.setNotice)
+  const unconfirmFlow = useAppStore((s) => s.unconfirmFlow)
+
+  // ⚠️ 所有 hook 必须无条件调用（铁律）：确认 hook 放在空值分支之前，
+  // 依赖值缺省为空数组，`if (!pack) return` 只在 hook 之后做。
+  const rawFields = pack?.report.header_fields ?? []
+  const fieldDefs = rawFields.map((f) => ({
+    key: f.key,
+    name: f.name,
+    from_flow: f.from_flow,
+    value_slot: f.value_slot,
+  }))
+  const { run: confirmHeader, saving } = useConfirmReportHeader({
+    sceneId,
+    header: h,
+    fields: fieldDefs,
+  })
+
+  // 整篇预览弹层：顶栏「预览」置的 flag 在这里落地渲染。
+  // 离开报告页时清 flag——否则 flag 残留，下次进任何页面回来会「重进即弹」。
+  const previewOpen = useAppStore((s) => s.reportPreviewOpen)
+  const setPreviewOpen = useAppStore((s) => s.setReportPreviewOpen)
+  useEffect(() => () => setPreviewOpen(false), [setPreviewOpen])
+
+  // hook 全部就位后再做空值分支
   if (!pack) return <Empty text="场景包未加载" />
 
   const fields = pack.report.header_fields
@@ -223,6 +439,28 @@ export function ReportLeftPanel() {
         )}
       </header>
 
+      {/* G-04：上游装配状态**必须显示出来**。
+          取不到时若继续显示「由上游带入」，人会以为「报告本来就该空」，
+          而实际是没读到产物——两种情况的处置完全不同（一个要跑一轮，一个要查后端）。 */}
+      {up.state !== 'idle' ? (
+        <div
+          className={
+            'shrink-0 border-b px-4 py-[6px] text-[11.5px] ' +
+            (up.state === 'ok'
+              ? 'border-line-soft bg-p50/60 text-p700'
+              : up.state === 'loading'
+                ? 'border-line-soft bg-p50/40 text-t3'
+                : 'border-warn/30 bg-warn-wash text-t2')
+          }
+        >
+          {up.state === 'loading'
+            ? '正在从上游产物带入表头…'
+            : up.state === 'ok'
+              ? `✔ ${up.note}`
+              : `上游产物未取到：${up.note}`}
+        </div>
+      ) : null}
+
       <div className="fade-b min-h-0 flex-1 overflow-y-auto pb-2">
         {/* 模板选择 */}
         <div className="px-4 pt-3 pb-2">
@@ -265,17 +503,31 @@ export function ReportLeftPanel() {
 
         {/* 表头三层（06b 第 2.2 节）：被测件身份 / 固件位址基线 / 交付对象。
             分组维度是「这一格填错了，谁会先发现、会出什么事」，只展开第一层。 */}
-        <TierTree
-          flow="report"
-          tiers={tiers}
-          // 一级类只展开第一个「被测件身份」，位址基线与交付对象默认折叠
-          defaultOpen={0}
-          itemKey={(f) => f.key}
-          render={(f) => <FieldRow f={f} />}
-          flags={(f) => ({ filled: !!h[f.key], pending: upstream(f) && !h[f.key] })}
-          tierIcon={(t) => iconOf(t, 15)}
-          groupIcon={(t) => iconOf(t)}
-        />
+        <ConfigOverview
+          key={pack.scene.id}
+          count={fields.length}
+          quick={
+            <>
+              {(mine.length ? mine : fields).slice(0, 3).map((f) => (
+                <div className="config-quick-card" key={f.key}>
+                  <FieldRow f={f} />
+                </div>
+              ))}
+            </>
+          }
+        >
+          <UnifiedConfigPanel
+            flow="report"
+            tiers={tiers}
+            // 一级类只展开第一个「被测件身份」，位址基线与交付对象默认折叠
+            defaultOpen={0}
+            itemKey={(f) => f.key}
+            render={(f) => <FieldRow f={f} />}
+            flags={(f) => ({ filled: !!h[f.key], pending: upstream(f) && !h[f.key] })}
+            tierIcon={(t) => iconOf(t, 15)}
+            groupIcon={(t) => iconOf(t)}
+          />
+        </ConfigOverview>
 
         {/* 模板分节：表头之外的正文由这几节构成 */}
         <Collapsible
@@ -286,6 +538,7 @@ export function ReportLeftPanel() {
           defaultOpen={false}
           stat={{ total: pack.report.spec_sections.length }}
         >
+          <TemplateUploadRow />
           {secGroups.map((grp, gi) => (
             <Collapsible
               key={grp.title}
@@ -325,52 +578,56 @@ export function ReportLeftPanel() {
             </Collapsible>
           ))}
         </Collapsible>
-
-        <Collapsible
-          level={1}
-          icon={<Download size={15} strokeWidth={1.9} />}
-          title="导出格式"
-          storeKey={collapseKey('report', 'rp-fmt')}
-          defaultOpen={false}
-          right={
-            <InfoTip
-              content={
-                pack.report.filler_tool
-                  ? `${pack.report.filler_tool.name}：${pack.report.filler_tool.purpose}`
-                  : (pack.report.template_note ?? '模板按节导出')
-              }
-            />
-          }
-        >
-          <div className="flex min-h-[40px] items-center gap-2 px-4 py-1.5">
-            <span className="text-[13px] font-medium text-t1">格式</span>
-            <span className="ml-auto">
-              <Segmented
-                ariaLabel="导出格式"
-                value={fmt.value}
-                onChange={setFmt}
-                items={[
-                  { value: 'xlsm', label: 'xlsm', title: '带 VBA 宏的 Excel 模板，波形截图按文件名规则插进图位' },
-                  { value: 'pdf', label: 'pdf', title: '只读归档件，图位与判定表随正文一起定版' },
-                ]}
-              />
-            </span>
-          </div>
-        </Collapsible>
       </div>
 
-      {/* 与顶栏「生成报告」同一条动作 */}
-      <ConfirmFooter
-        label="确认表头"
-        count={fields.length}
-        unit="项"
-        onClick={bind('gen-report').onClick}
-        hint={
-          left === 0
-            ? `表头 ${fields.length} 项已补全，可生成报告。`
-            : `表头 ${fields.length} 项，本流程还差 ${left} 项未填；未填字段一律留空，不编。`
-        }
-      />
+      {/* ──────── 唯一的「确认表头」入口（2026-09-30）───────
+          此前这颗按钮的 onClick 直接绑 `bind('gen-report').onClick`——点确认表头
+          等于点生成报告（生成+下载），而且表头只存 localStorage、从不落库、
+          也不进生成的报告。现改为：**落 report-instance(confirmed) 产物 + 置确认态**，
+          不触发生成、不下载。生成报告仍由顶栏「生成报告」承担（一步到位自动下载）。
+          确认后变「解除确认」，与流程 1/2 的形态一致（反悔出口保留）。 */}
+      {confirmed ? (
+        <ConfirmFooter
+          label="解除确认"
+          count={fields.length}
+          unit="项"
+          variant="secondary"
+          icon="unlock"
+          hint={`表头已确认并写入轮次产物（${filled}/${fields.length} 项有值）。点此解除后可继续修改；生成报告时按确认值填写表头。`}
+          onClick={() => {
+            unconfirmFlow('report')
+            setNotice('已解除确认：可继续修改表头，改完再点「确认表头」')
+          }}
+        />
+      ) : (
+        <ConfirmFooter
+          label={saving ? '确认中…' : '确认表头'}
+          count={fields.length}
+          unit="项"
+          onClick={() => void confirmHeader()}
+          hint={
+            (left === 0
+              ? `表头 ${fields.length} 项已补全。`
+              : `表头 ${fields.length} 项，本流程还差 ${left} 项未填；未填字段一律留空，不编。`) +
+            '点击后写入轮次产物（生成报告时按此填写表头），不会触发生成。'
+          }
+        />
+      )}
+
+      {/* 整篇报告预览弹层（顶栏「预览」打开）。复用 FullReport（按模板节结构渲染，
+          读 store 里已确认/已装配的表头与真判定行），与卡片放大态同一份实现，
+          不另写一套预览。Modal 走 portal，不受左栏布局裁剪。 */}
+      <Modal
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        title="报告预览"
+        meta="按模板节结构渲染 · 非最终成稿"
+        width={880}
+      >
+        <div className="max-h-[70vh] overflow-y-auto bg-p50 p-3">
+          <FullReport />
+        </div>
+      </Modal>
     </div>
   )
 }
@@ -396,6 +653,8 @@ const STATE_TEXT: Record<string, string> = {
   fail: '不通过',
   missing: '未采集',
   manual: '人工判',
+  // 2026-10-08 新增第五态；缺了这一项会让报告页显示 undefined
+  not_applicable: '本台架不适用',
 }
 
 /** 判定行：走和流程 4 同一套求值，不另写一份口径 */
@@ -403,10 +662,24 @@ const STATE_TEXT: Record<string, string> = {
 function useVerdictRows() {
   const pack = getPack()
   const waves = useWaves()
+  // 采纳/人工改过的控制参数：判定口径与流程 3/4 一致（读采纳值，不读场景包原值）。
+  // ⚠️ hook 必须放在提前 return 之前（Hooks 规则）。
+  const overrides = useAppStore((s) => s.overrides)
+  const snapshotValues = useAppStore((s) => s.snapshotValues)
+  // 本轮台架实测（2026-10-08 补）：报告页原先只吃离线回放波形，**不读本轮实测**，
+  // 于是流程 3/4 判出的通过项到了报告页又变回「未采集」——同一轮出现两套结论，
+  // 且报告是唯一对外产物，结论不一致等于报告不可信。
+  // 并入 runMeasures 后与流程 3/4 完全同口径（本轮实测优先，回放波形只作兜底）。
+  const runMeasures = useAppStore((s) => s.runMeasures)
   if (!pack) return []
   // 判定口径与流程 3、流程 4 同一套：runtimeMeasures 少传 pack 会漏掉
   // datasets.json 里 package_stats 登记的批次量，报告页的通过数会比另两页少一截
-  const all = evaluateAll(pack, runtimeMeasures(waves, pack))
+  const all = evaluateAll(
+    pack,
+    { ...runtimeMeasures(waves, pack), ...runMeasures },
+    overrides,
+    snapshotValues,
+  )
   return demoFilter(pack.requirements, 'requirements', all, (r) => r.req.id)
 }
 
@@ -504,7 +777,6 @@ function ReportPreview({ full }: { full?: boolean }) {
   const pack = getPack()
   seed()
   const h = useShared()
-  const bind = useFlowActions()
   const waves = useWaves()
   const rows = useVerdictRows()
   const [box, boxH] = useBoxHeight()
@@ -667,14 +939,34 @@ function ReportPreview({ full }: { full?: boolean }) {
         </div>
       </div>
 
-      {/* 导出：卡头右侧是壳层的「放大」，导出挂在预览自己身上 */}
-      <span className="absolute top-1 right-1">
-        <Tooltip content={`导出为 ${fmt.value}；导出是红线动作，点下去先弹确认卡`}>
+      {/* 卡头右侧是壳层的「放大」。这里只留「下载报告文件」——取回已生成的文件，
+          非破坏性，不弹卡、直接下。原先并排还有一颗「导出」（红线动作）已删除：
+          「生成报告」成功后已自动下载，导出是重复的第二入口（2026-09-30 用户口径）。 */}
+      <span className="absolute top-1 right-1 flex items-center gap-1">
+        <Tooltip content="下载报告文件（取回已生成的文件，无需确认）">
           <button
             type="button"
-            aria-label="导出"
-            data-action="export"
-            onClick={bind('export').onClick}
+            aria-label="下载报告"
+            data-action="download-report"
+            onClick={async () => {
+              const st = useAppStore.getState()
+              try {
+                const rid = await resolveReportRunId(st.sceneId, st.runId)
+                const ok = await reportExists(rid)
+                if (!ok) {
+                  st.setNotice('报告还没生成，先点顶栏「生成报告」（生成后会自动下载）')
+                  return
+                }
+                const a = document.createElement('a')
+                a.href = downloadUrl(rid)
+                a.download = ''
+                document.body.appendChild(a)
+                a.click()
+                a.remove()
+              } catch (e) {
+                st.setNotice(`下载失败：${e instanceof Error ? e.message : String(e)}`)
+              }
+            }}
             className="flex h-[24px] w-[24px] cursor-pointer items-center justify-center rounded-tpx bg-white/70 text-t3 transition-colors hover:bg-white hover:text-p700 [&>svg]:block"
           >
             <Download size={14} strokeWidth={1.75} />
@@ -897,7 +1189,7 @@ function Artifacts({ full }: { full?: boolean }) {
       key: 'report',
       icon: FileSpreadsheet,
       name: '报告文件',
-      meta: `report.${fmt.value}`,
+      meta: 'report.xlsm',
       size: '未生成',
       ready: false,
       tip: pack.report.filler_tool
@@ -989,8 +1281,17 @@ function VerdictSummary({ full }: { full?: boolean }) {
   const pass = rows.filter((r) => r.state === 'pass').length
   const fail = rows.filter((r) => r.state === 'fail').length
   const missing = rows.filter((r) => r.state === 'missing').length
+  // 本台架不适用（2026-10-08）：与 missing 分开，不进通过/不通过
+  const notApplicable = rows.filter((r) => r.state === 'not_applicable').length
   const judged = pass + fail
-  const list = full ? rows : rows.slice(0, 6)
+  // 不适用项排在未采集之前（有明确结论，已写明缺什么设备）
+  const list = full
+    ? rows
+    : [
+        ...rows.filter((r) => r.state === 'pass' || r.state === 'fail'),
+        ...rows.filter((r) => r.state === 'not_applicable'),
+        ...rows.filter((r) => r.state === 'missing'),
+      ].slice(0, 6)
 
   const Stat = ({ n, label, tone }: { n: number; label: string; tone: 'ok' | 'bad' | 'mute' }) => (
     <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -1019,9 +1320,18 @@ function VerdictSummary({ full }: { full?: boolean }) {
       <div className="flex shrink-0 items-start gap-2 pb-2.5">
         <Stat n={pass} label="通过" tone="ok" />
         <Stat n={fail} label="不通过" tone="bad" />
-        <Stat n={missing} label="未采集" tone="mute" />
+        {/* 有「本台架不适用」项时优先展示它：已写明缺什么设备，比笼统的未采集更利于决策 */}
+        {notApplicable > 0 ? (
+          <Stat n={notApplicable} label="本台架不适用" tone="mute" />
+        ) : (
+          <Stat n={missing} label="未采集" tone="mute" />
+        )}
         <InfoTip
-          content={`全表 ${rows.length} 条判据，可自动求值 ${pack.requirements.evaluable_count} 条，本轮已求值 ${judged} 条。结论段按判定结果聚合，不自由撰写。`}
+          content={`全表 ${rows.length} 条判据，可自动求值 ${pack.requirements.evaluable_count} 条，本轮已求值 ${judged} 条。${
+            notApplicable
+              ? `其中 ${notApplicable} 条为「本台架不适用」：需本台架未配置的测量手段（MCU 故障寄存器 / FG 转速信号 / 母线电流探头 / 程控电源等），逐条写明缺什么，不计入通过或不通过。`
+              : ''
+          }结论段按判定结果聚合，不自由撰写。`}
         />
       </div>
       <div
@@ -1071,7 +1381,9 @@ function ReportHistory({ full }: { full?: boolean }) {
   const hOther = Math.max(0, Number(st.attempts_total ?? 0) - hPass - hFail)
   const pass = rows.filter((r) => r.state === 'pass').length
   const fail = rows.filter((r) => r.state === 'fail').length
-  const other = rows.length - pass - fail
+  // 本台架不适用（2026-10-08）：从「未采集」里拆出来，避免把"缺测量设备"说成"漏采"
+  const na = rows.filter((r) => r.state === 'not_applicable').length
+  const other = rows.length - pass - fail - na
 
   const batches = [
     {
@@ -1081,6 +1393,7 @@ function ReportHistory({ full }: { full?: boolean }) {
       pass: hPass,
       fail: hFail,
       other: hOther,
+      na: 0,
       tip: `20260811_启动故障98次实验与30例对照数据包：登记 ${st.attempts_total ?? '—'} 次尝试，已标注 ${
         st.labeled ?? '—'
       } 次，通过 ${hPass}、不通过 ${hFail}、无效 ${st.invalid ?? 0}。这是实验批次的标注结果，不是历史报告——历史报告库尚未建立。`,
@@ -1092,7 +1405,10 @@ function ReportHistory({ full }: { full?: boolean }) {
       pass,
       fail,
       other,
-      tip: `本轮按 test-requirements.json 逐条求值：通过 ${pass}、不通过 ${fail}、未采集 ${other}。与历史批次口径不同（那批按单次启动尝试计，本轮按判据条目计）。`,
+      na,
+      tip: `本轮按 test-requirements.json 逐条求值：通过 ${pass}、不通过 ${fail}、未采集 ${other}${
+        na ? `、本台架不适用 ${na}` : ''
+      }。与历史批次口径不同（那批按单次启动尝试计，本轮按判据条目计）。`,
     },
   ]
 
@@ -1115,6 +1431,8 @@ function ReportHistory({ full }: { full?: boolean }) {
                 seg={[
                   { n: b.pass, cls: 'bg-p600', title: '通过' },
                   { n: b.fail, cls: 'bg-alert', title: '不通过' },
+                  // 不适用单独一段（中性灰），与「未判」分开，一眼可见缺的是设备不是数据
+                  { n: b.na, cls: 'bg-t3/25', title: '本台架不适用' },
                   { n: b.other, cls: 'bg-p100', title: '未判' },
                 ]}
               />

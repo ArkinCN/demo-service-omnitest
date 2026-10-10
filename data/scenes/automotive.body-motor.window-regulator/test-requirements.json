@@ -554,11 +554,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:117-118 5.4.1 a)"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 122 行：工作电压范围 5.4.1 a)"
         }
       ]
@@ -600,11 +600,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:119-120 5.4.1 b)"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 124 行：工作电流上限 5.4.1 b)"
         }
       ]
@@ -647,15 +647,15 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:304-306 6.4.1 b) 堵转电流测量方法"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 125 行：堵转电流上限"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 161 行：堵转电流温度分档"
         }
       ]
@@ -698,11 +698,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:307-310 6.4.1 c) 堵转力测量"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 126 行：堵转力 5.4.1 c)"
         }
       ]
@@ -750,11 +750,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:312-315 6.4.1 d) 运行速度测量"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 127 行：上升运行速度 5.4.1 d)"
         }
       ]
@@ -795,11 +795,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:312-315 6.4.1 d)"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 128 行：下降运行速度 5.4.1 d)"
         }
       ]
@@ -854,11 +854,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:324-328 6.4.1 e) 工作噪音试验"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 129 行：工作噪音 5.4.1 e)"
         }
       ]
@@ -899,11 +899,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:332-334 6.4.1 f) 启动电压"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 130 行：启动电压 5.4.1 f)"
         }
       ]
@@ -955,15 +955,15 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:142-144 5.5；:372-374 6.5 自锁性试验"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 131 行：自锁能力 5.5"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 191 行：自锁性 5.5 / 6.5"
         }
       ]
@@ -1031,15 +1031,15 @@
       "note": "这是全包唯一一条直接关乎人身安全的判据，也是本场景相对第一个包（全部为设备安全判据）最有演示价值的一条。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/gb11552.txt",
+          "file": "[源] 汽车场景素材-20260919/gb11552.txt",
           "locator": "gb11552.txt:440 §4.8.3.1.1；:446-452 §4.8.3.1.3 试验棒与刚度"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 215 行：三地防夹对照表 GB 11552-2009 行"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 166 行：防夹力判据（已核实）"
         }
       ]
@@ -1115,11 +1115,11 @@
       "note": "表达式用 || 把四档并起来，由 retract_mode 选中其中一支。每个分支的括号都是必需的：|| 的优先级低于 &&，不加括号会把条件串错。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/gb11552.txt",
+          "file": "[源] 汽车场景素材-20260919/gb11552.txt",
           "locator": "gb11552.txt:445-452 §4.8.3.1.2.1 至 4.8.3.1.2.4"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 215 行：GB 11552-2009 回缩后要求四选一"
         }
       ]
@@ -1210,11 +1210,11 @@
       "_status": "100 N 与 4–200 mm 已核实；试验棒刚度 20 N/mm 与条款编号 S4/S7/S8 待核实",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 216 行：三地防夹对照表 FMVSS 118 行"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 69 行：49 CFR § 571.118 全名与 URL"
         }
       ]
@@ -1281,11 +1281,11 @@
       "_status": "待核实（未打开 UNECE 原文逐字确认，回缩后的三种位置未取得具体表述）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 217 行：三地防夹对照表 UN ECE R21 行"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 70 行：UN ECE R21 全名与 URL"
         }
       ]
@@ -1352,11 +1352,11 @@
       "_placeholder": true,
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 341 行：基于纹波电机的车窗启动阶段防夹控制策略研究"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 351 行：防夹调参清单「启动段屏蔽时间」行"
         }
       ]
@@ -1421,11 +1421,11 @@
       "note": "这条与 TR-PINCH-01 互斥：antipinch_enable 决定走哪一支。把互斥关系写进判据本身而不是留给流程，是为了让 Agent 在 F3 的分支决策有据可依。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/gb11552.txt",
+          "file": "[源] 汽车场景素材-20260919/gb11552.txt",
           "locator": "gb11552.txt:425-437 §4.8.2.6 至 §4.8.2.9"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 219 行：无防夹功能时的替代要求 GB 11552-2009 §4.8.2（已核实）"
         }
       ]
@@ -1462,7 +1462,7 @@
       "note": "第二个变量是反向判据，期望值为 false。写成 === false 而不是取反，是为了让前端展示时两个变量的取值方向一致可读。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/gb11552.txt",
+          "file": "[源] 汽车场景素材-20260919/gb11552.txt",
           "locator": "gb11552.txt:453-455 §4.8.5 保护装置"
         }
       ]
@@ -1592,7 +1592,7 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 192 行：耐高温特性 5.6.1 / 6.6.1"
         }
       ]
@@ -1715,7 +1715,7 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 193 行：耐低温特性 5.6.2 / 6.6.2"
         }
       ]
@@ -1787,15 +1787,15 @@
       "_status": "QC/T 413-2002 的扫频条件正文未取得；VW 80000 M-04 谱型 D 数值已核实",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 194 行：耐振动性 5.7 / 6.7"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 240 行：VW 80000 M-04 谱型 D（已核实）"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 77 行：QC/T 413-2002 是所有车用电机标准的公共底座"
         }
       ]
@@ -1890,11 +1890,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）；且征求意见稿引的 GB/T 10125-2012 已被 2021 版全部代替",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 195 行：耐腐蚀性 5.8 / 6.8"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 85 行：GB/T 10125-2021 已代替 2012 版"
         }
       ]
@@ -2007,15 +2007,15 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 196 行：耐久性（电动，前门）5.9.1 / 6.9.1 表 7"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 199 行：耐久泥水配比 6.9.1 注"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 200 行：耐久单循环波形 6.9.1 注 3"
         }
       ]
@@ -2065,7 +2065,7 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 201 行：耐高温高湿放置 5.10 / 6.10"
         }
       ]
@@ -2100,11 +2100,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 202 行：耐过负载操作强度 5.11.1 / 6.11.1"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 156 行：过压保护判据"
         }
       ]
@@ -2141,7 +2141,7 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 203 行：防水性 5.12.1 / 6.12.1 表 9"
         }
       ]
@@ -2177,11 +2177,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 204 行：绝缘介电强度 5.12.2 / 6.12.2"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 163 行：绝缘介电强度判据"
         }
       ]
@@ -2281,11 +2281,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 205 行：热保护性 5.12.3 / 6.12.3 表 5"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 162 行：热保护三档判据"
         }
       ]
@@ -2360,15 +2360,15 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）；且两本引用标准均已换版",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 206 行：电磁兼容性 5.12.4 / 6.12.4"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 81 行：GB/T 18655-2025 已代替 2018 版"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 80 行：GB/T 21437 系列第 1 至 3 部分均为 2021 版"
         }
       ]
@@ -2408,11 +2408,11 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:112-114 5.3 有害物质"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 207 行：有害物质 5.3 / 6.3"
         }
       ]
@@ -2457,11 +2457,11 @@
       ],
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 157 行：ISO 16750-2:2023 §4.3.1.1.2 长时过电压（已核实）"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/ls16750_2.pdf",
+          "file": "[源] 汽车场景素材-20260919/ls16750_2.pdf",
           "locator": "ISO 16750-2:2023 §4.3.1.1.2"
         }
       ]
@@ -2506,11 +2506,11 @@
       ],
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 158 行：ISO 16750-2:2023 §4.3.1.2.2 表 5 跨接启动（已核实）"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/ls16750_2.pdf",
+          "file": "[源] 汽车场景素材-20260919/ls16750_2.pdf",
           "locator": "ISO 16750-2:2023 §4.3.1.2.2 表 5"
         }
       ]
@@ -2569,11 +2569,11 @@
       "_status": "试验条件已核实；fault_flags 的位定义是本包编的示例（见 safety-interlocks.json fault_bitmap）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 160 行：反极性 LV 124 / VW 80000 试验 E-15（已核实）"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/lv124.pdf",
+          "file": "[源] 汽车场景素材-20260919/lv124.pdf",
           "locator": "MBN LV 124-1: 2013-03 试验 E-15"
         }
       ]
@@ -2608,15 +2608,15 @@
       "_status": "分组数与抽样方案取自备选产品标准 QC/T 29090-2023；QC/T 626 征求意见稿第 7 章的具体分组本次未逐条提取",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 414 行：QC/T 626 征求意见稿第 7 章检验规则"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 415 行：QC/T 29090-2023 第 6 章检验规则（已核实）"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 279 行：型式检验 6.3：20 个项目分 6 组"
         }
       ]
@@ -2641,7 +2641,7 @@
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/qc636.txt",
+          "file": "[源] 汽车场景素材-20260919/qc636.txt",
           "locator": "qc636.txt:110-111 5.2.1、5.2.2"
         }
       ]
@@ -2664,11 +2664,11 @@
       ],
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/gb11552.txt",
+          "file": "[源] 汽车场景素材-20260919/gb11552.txt",
           "locator": "gb11552.txt:456-462 §4.8.6 用户手册指南"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 405 行：NHTSA 报告第 6 节 Owner's Manual Information"
         }
       ]

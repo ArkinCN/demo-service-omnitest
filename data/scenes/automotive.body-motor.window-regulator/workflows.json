@@ -5,7 +5,7 @@
   "generated_at": "2026-09-19",
   "belongs_to_flow": "F3 测试需求确认（工作流一步步运转、可调整）+ F4 启动测试及结果分析（执行）",
   "source_roots": [
-    "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/automotive.body-motor.window-regulator/assets/workflows"
+    "./assets/workflows"
   ],
   "total": 4,
   "count_by_group": {
@@ -72,7 +72,7 @@
       "false": "条件分支假支，画暗红虚线"
     },
     "_source": {
-      "file": "/home/zzz/lab/workflow/README.md",
+      "file": "[源] workflow/README.md",
       "locator": "§2.2 结构层、§2.3 坑 2（sourceHandle 承载分支语义）、§3.1 统一内部模型 WorkflowModel"
     }
   },
@@ -93,7 +93,7 @@
       "voltage_level": "12V",
       "voltage_level_name": "12 V 系统",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/automotive.body-motor.window-regulator/assets/workflows/WR-WF-001.json",
+      "file_path": "./assets/workflows/WR-WF-001.json",
       "file_size_bytes": 6096,
       "gzip": false,
       "format_version": "1.0.0",
@@ -178,11 +178,11 @@
       "_placeholder": true,
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 188-207 行：流程 3 判据表：本工作流覆盖的判据逐条出自该表"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/automotive.body-motor.window-regulator/test-requirements.json",
+          "file": "[源] automotive.body-motor.window-regulator/test-requirements.json",
           "locator": "requirements 数组中 id 为 TR-BASIC-01 / TR-BASIC-02 / TR-BASIC-05 / TR-BASIC-06 / TR-ENV-01 / TR-ENV-02 的条目"
         }
       ]
@@ -198,7 +198,7 @@
       "voltage_level": "12V",
       "voltage_level_name": "12 V 系统",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/automotive.body-motor.window-regulator/assets/workflows/WR-WF-002.json",
+      "file_path": "./assets/workflows/WR-WF-002.json",
       "file_size_bytes": 5967,
       "gzip": false,
       "format_version": "1.0.0",
@@ -279,11 +279,11 @@
       "_placeholder": true,
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 188-207 行：流程 3 判据表：本工作流覆盖的判据逐条出自该表"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/automotive.body-motor.window-regulator/test-requirements.json",
+          "file": "[源] automotive.body-motor.window-regulator/test-requirements.json",
           "locator": "requirements 数组中 id 为 TR-BASIC-03 / TR-BASIC-04 的条目"
         }
       ]
@@ -299,7 +299,7 @@
       "voltage_level": "12V",
       "voltage_level_name": "12 V 系统",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/automotive.body-motor.window-regulator/assets/workflows/WR-WF-003.json",
+      "file_path": "./assets/workflows/WR-WF-003.json",
       "file_size_bytes": 6579,
       "gzip": false,
       "format_version": "1.0.0",
@@ -383,11 +383,11 @@
       "_placeholder": true,
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 188-207 行：流程 3 判据表：本工作流覆盖的判据逐条出自该表"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/automotive.body-motor.window-regulator/test-requirements.json",
+          "file": "[源] automotive.body-motor.window-regulator/test-requirements.json",
           "locator": "requirements 数组中 id 为 TR-PINCH-01 / TR-PINCH-02 / TR-PINCH-03 / TR-PINCH-04 / TR-PINCH-05 的条目"
         }
       ]
@@ -403,7 +403,7 @@
       "voltage_level": "12V",
       "voltage_level_name": "12 V 系统",
       "is_subworkflow": false,
-      "file_path": "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/automotive.body-motor.window-regulator/assets/workflows/WR-WF-004.json",
+      "file_path": "./assets/workflows/WR-WF-004.json",
       "file_size_bytes": 7435,
       "gzip": false,
       "format_version": "1.0.0",
@@ -484,11 +484,11 @@
       "_placeholder": true,
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 188-207 行：流程 3 判据表：本工作流覆盖的判据逐条出自该表"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/automotive.body-motor.window-regulator/test-requirements.json",
+          "file": "[源] automotive.body-motor.window-regulator/test-requirements.json",
           "locator": "requirements 数组中 id 为 TR-DUR-01 / TR-DUR-02 的条目"
         }
       ]

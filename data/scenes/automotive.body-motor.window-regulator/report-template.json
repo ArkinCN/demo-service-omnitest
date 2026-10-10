@@ -63,7 +63,7 @@
   "belongs_to_flow": "F6 测试报告及产出（模板确认、信息确认）",
   "template_source": {
     "kind": "PDF 报告样张（非 Excel 模板）",
-    "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+    "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
     "title": "REPORT NUMBER 118-GTL-11-002, SAFETY COMPLIANCE TESTING FOR FMVSS NO. 118, POWER-OPERATED WINDOW, PARTITION AND ROOF PANEL SYSTEMS — 2011 NISSAN JUKE S MPV, NHTSA NO. CB5201",
     "lab": "General Testing Laboratories, Inc., 1623 Leedstown Road, Colonial Beach, Virginia 22443",
     "sponsor": "U.S. Department of Transportation, National Highway Traffic Safety Administration, Office of Vehicle Safety Compliance (NVS-220)",
@@ -73,7 +73,7 @@
     "page_count": 36,
     "url": "https://www.carsandracingstuff.com/library/reports/5683.pdf",
     "_source": {
-      "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+      "file": "[源] _调研/B-汽车场景测试案例素材.md",
       "locator": "第 387 行：报告全名、检测方、委托方、人员、日期与合同号"
     }
   },
@@ -100,7 +100,7 @@
       ],
       "_status": "标准编号与版次已核实；字段清单经 Perry Johnson Laboratory Accreditation, Inc. (PJLA) 公开培训讲义转述，待核实",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 411 行：ISO/IEC 17025:2017 第 7.8 条必含要素"
       }
     },
@@ -111,7 +111,7 @@
       ],
       "_status": "待核实（PDF 文本层抽取失败）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 412 行：CNAS-EL-13 全名、机构与日期"
       }
     },
@@ -122,7 +122,7 @@
       ],
       "_status": "待核实",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 413 行：European Accreditation 关于试验报告修订的官方问答"
       }
     },
@@ -133,7 +133,7 @@
       ],
       "_status": "待核实（QC/T 626-2019 正式版可能调整）",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 414 行：QC/T 626 征求意见稿第 7 章检验规则"
       }
     }
@@ -152,7 +152,7 @@
       "from_flow": "F6 测试报告及产出",
       "required_by": "ISO/IEC 17025:2017 §7.8.2",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+        "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
         "locator": "第 3 页 Technical Report Documentation Page，字段 1"
       }
     },
@@ -169,7 +169,7 @@
       "from_flow": "F6 测试报告及产出",
       "required_by": null,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+        "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
         "locator": "第 3 页 Technical Report Documentation Page，字段 2"
       }
     },
@@ -186,7 +186,7 @@
       "from_flow": "F6 测试报告及产出",
       "required_by": null,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+        "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
         "locator": "第 3 页 Technical Report Documentation Page，字段 3"
       }
     },
@@ -203,7 +203,7 @@
       "from_flow": "F6 测试报告及产出",
       "required_by": "ISO/IEC 17025:2017 §7.8.2",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+        "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
         "locator": "第 3 页 Technical Report Documentation Page，字段 4"
       }
     },
@@ -220,7 +220,7 @@
       "from_flow": "F6 测试报告及产出",
       "required_by": "ISO/IEC 17025:2017 §7.8.2",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+        "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
         "locator": "第 3 页 Technical Report Documentation Page，字段 5"
       }
     },
@@ -237,7 +237,7 @@
       "from_flow": "F6 测试报告及产出",
       "required_by": null,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+        "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
         "locator": "第 3 页 Technical Report Documentation Page，字段 6"
       }
     },
@@ -254,7 +254,7 @@
       "from_flow": "F6 测试报告及产出",
       "required_by": null,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+        "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
         "locator": "第 3 页 Technical Report Documentation Page，字段 7"
       }
     },
@@ -271,7 +271,7 @@
       "from_flow": "F6 测试报告及产出",
       "required_by": null,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+        "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
         "locator": "第 3 页 Technical Report Documentation Page，字段 8"
       }
     },
@@ -288,7 +288,7 @@
       "from_flow": "F6 测试报告及产出",
       "required_by": "ISO/IEC 17025:2017 §7.8.2",
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+        "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
         "locator": "第 3 页 Technical Report Documentation Page，字段 9"
       }
     },
@@ -305,7 +305,7 @@
       "from_flow": "F6 测试报告及产出",
       "required_by": null,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+        "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
         "locator": "第 3 页 Technical Report Documentation Page，字段 10"
       }
     },
@@ -322,7 +322,7 @@
       "from_flow": "F6 测试报告及产出",
       "required_by": null,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+        "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
         "locator": "第 3 页 Technical Report Documentation Page，字段 11"
       }
     },
@@ -339,7 +339,7 @@
       "from_flow": "F6 测试报告及产出",
       "required_by": null,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+        "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
         "locator": "第 3 页 Technical Report Documentation Page，字段 12"
       }
     },
@@ -356,7 +356,7 @@
       "from_flow": "F6 测试报告及产出",
       "required_by": null,
       "_source": {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+        "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
         "locator": "第 3 页 Technical Report Documentation Page，字段 13"
       }
     }
@@ -412,11 +412,11 @@
       "maps_to": null,
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+          "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
           "locator": "第 1 页 封面"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 397 行：封面字段清单"
         }
       ]
@@ -452,11 +452,11 @@
       "note": "双签名是 ISO/IEC 17025:2017 §7.8.2 的授权签字要求在本模板里的落点。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+          "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
           "locator": "第 2 页 免责声明页"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 398 行：免责声明页字段"
         }
       ]
@@ -537,11 +537,11 @@
       "note": "13 个编号字段，详见 technical_report_documentation_page 数组。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+          "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
           "locator": "第 3 页"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 399 行：13 个编号字段清单"
         }
       ]
@@ -592,11 +592,11 @@
       "note": "被测件识别段。本场景若测的是升降器总成而不是整车，VIN / 颜色 / 制造日期三个字段应换成总成件号、批次号与生产日期——**这是模板从整车级移植到零部件级时必须改的一处**，本包只登记不擅改。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+          "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
           "locator": "第 5 页 SECTION 1"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 400 行：第 1 节字段清单"
         }
       ]
@@ -626,15 +626,15 @@
       "maps_to": "workflows.json（执行序列）+ test-requirements.json（判定结论）",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+          "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
           "locator": "第 6 页 SECTION 2"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 401 行：第 2 节字段清单"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 391 行：TP-118-06 与 TP-118-03A"
         }
       ]
@@ -695,11 +695,11 @@
       "note": "原报告的七张数据表全部是整车级的锁止与促动装置试验。本场景若做零部件级的 QC/T 626 判据，这一节要整套换成基本性能、自锁、防夹、环境与耐久五组数据表——**换的是本节内容，不是报告骨架**，这正是模板可复用的证明。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+          "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
           "locator": "第 7 至 16 页 SECTION 3"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 402 行：第 3 节数据表清单"
         }
       ]
@@ -720,15 +720,15 @@
       "note": "本场景的设备清单应覆盖：程控电源（13.5 ± 0.3 V、纹波 ≤100 mV）、力传感器（防夹与自锁两个量级分开选型）、位移传感器（最小刻度 ≤0.05 mm）、电流传感器、声级计、环境箱、盐雾箱、振动台、耐压仪。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+          "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
           "locator": "第 17 页 SECTION 4"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 403 行：第 4 节设备清单"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 134 行：仪器精度 6.1 a)"
         }
       ]
@@ -831,11 +831,11 @@
       "note": "15 张编号照片。本包已把 FIGURE 5.1 渲染成 assets/product-photo-nhtsa-fig5-1.png 作为场景示意图。零部件级试验的照片清单应换成：总成件全貌、铭牌特写、试验棒布置、力传感器安装、位移传感器安装、声级计测点、试验前后对比、拆机检查照片。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+          "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
           "locator": "第 18 至 33 页 SECTION 5"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 404 行：15 张编号照片清单"
         }
       ]
@@ -871,15 +871,15 @@
       "note": "对应 GB 11552-2009 §4.8.6 的用户手册要求。这一节是 evaluable: false 那三条判据里唯一进报告的。",
       "_source": [
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
+          "file": "[源] 汽车场景素材-20260919/nhtsa118-gtl-11-002.pdf",
           "locator": "第 34 页 SECTION 6"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+          "file": "[源] _调研/B-汽车场景测试案例素材.md",
           "locator": "第 405 行：第 6 节"
         },
         {
-          "file": "/mnt/f/Main/File/2_Projects/峰岹/10_外部资料/汽车场景素材-20260919/gb11552.txt",
+          "file": "[源] 汽车场景素材-20260919/gb11552.txt",
           "locator": "gb11552.txt:456-462 §4.8.6"
         }
       ]
@@ -889,11 +889,11 @@
     "note": "报告「结论」段不是人写的自由文本，而是由 test-requirements.json 的逐条判定结果按检验规则聚合出来的。本场景的聚合规则：型式检验按组判，组内任一项 FAIL 则该组 FAIL；防夹三条（TR-PINCH-01/03/04）按目标市场只取其一参与聚合，不参与的两条在报告里标 N/A 而不是 PASS。",
     "_source": [
       {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 414 行：QC/T 626 征求意见稿第 7 章检验规则"
       },
       {
-        "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+        "file": "[源] _调研/B-汽车场景测试案例素材.md",
         "locator": "第 415 行：QC/T 29090-2023 第 6 章检验规则（已核实）"
       }
     ]
@@ -901,7 +901,7 @@
   "known_gap": {
     "text": "NHTSA 官方声明：合规报告公开是为信息交流，其意见、发现与结论不应被视为产品是否合规的最终判定。因此这份样张只能作为**版式与字段骨架**的来源，不能把它的判定口径直接搬成本系统的判定口径。",
     "_source": {
-      "file": "/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md",
+      "file": "[源] _调研/B-汽车场景测试案例素材.md",
       "locator": "第 390 行：NHTSA 官方声明"
     }
   }

@@ -2,13 +2,13 @@
 import glob, http.server, os, socketserver, sys, threading, time
 from playwright.sync_api import sync_playwright
 
-ROOT = os.path.expanduser("~/lab/timeseries")
+ROOT = os.path.expanduser("c/components/timeseries")
 DIST = os.path.join(ROOT, "dist")
 SHOTS = os.path.join(ROOT, "shots")
 PORT = 8731
 
 CHROME = sorted(glob.glob(os.path.expanduser(
-    "~/.cache/puppeteer/chrome/*/chrome-linux64/chrome")))[-1]
+    "[源] chrome-linux64/chrome")))[-1]
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):

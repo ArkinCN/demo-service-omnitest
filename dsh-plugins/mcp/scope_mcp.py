@@ -1,8 +1,8 @@
-#!/usr/bin/env python3
+#![源] bin/env python3
 """scope-mcp — stub MCP server for the RIGOL oscilloscope (stdio transport).
 
 Contract source of truth for tool names and parameter names:
-  /mnt/f/Main/File/2_Projects/峰岹/平台代码-脱敏版/app/src-tauri/src/vibe_testing_mcp/tools/types.rs
+  [源] tools/types.rs
   (TOOL_RIGOL_CONNECT / TOOL_RIGOL_MEASURE and their JSON Schemas)
 
 Tools:

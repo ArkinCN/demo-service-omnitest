@@ -1,6 +1,6 @@
 # 场景包契约 v1.1
 
-适用系统：通用 Agent 测试系统 v2.0 网页原型（前端工程 `/home/zzz/agent-test-web`）。
+适用系统：通用 Agent 测试系统 v2.0 网页原型（前端工程 `[源] zzz/agent-test-web`）。
 
 本目录把「换行业只换一个场景包」这句话固化成可执行的契约：十二份 JSON Schema、一个两阶段校验脚本、一个最小骨架包。契约从两个实物场景包归纳而来，不是凭空设计的。
 
@@ -8,12 +8,12 @@
 
 | 版本 | 日期 | 改了什么 |
 |---|---|---|
-| v1.1 | 2026-09-20 | 按独立审稿意见（`/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/08b-审稿意见.md`，阻断 1 条、主要 9 条、次要 8 条）修订：报告模板定位字段进机读契约、四条红线全部机读化、`validate.py` 补第二阶段九组跨文件与业务检查、README 补齐十一个未写字段、目录登记表外置。处置逐条见第 13 节 |
+| v1.1 | 2026-09-20 | 按独立审稿意见（`docs/20260919-通用Agent测试系统v2.0/08b-审稿意见.md`，阻断 1 条、主要 9 条、次要 8 条）修订：报告模板定位字段进机读契约、四条红线全部机读化、`validate.py` 补第二阶段九组跨文件与业务检查、README 补齐十一个未写字段、目录登记表外置。处置逐条见第 13 节 |
 | v1.0 | 2026-09-20 | 首版：12 份 Schema、结构校验脚本、最小骨架包 |
 
 | 产物 | 路径 | 干什么 |
 |---|---|---|
-| 本文件 | `/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/08b-场景包契约/README-场景包契约-v1.1.md` | 契约的人读版：文件职责、字段规则、红线、换包步骤 |
+| 本文件 | `[源] 08b-场景包契约/README-场景包契约-v1.1.md` | 契约的人读版：文件职责、字段规则、红线、换包步骤 |
 | Schema | 同目录 `schema/*.schema.json`（12 份） | 契约的机读版，JSON Schema draft 2020-12 |
 | 校验脚本 | 同目录 `validate.py` | 两阶段校验任一场景包目录：先逐文件结构，再跨文件与业务 |
 | 目录登记表 | 同目录 `packs.json` | `validate.py --all` 要校验哪几个包，路径不再写死在脚本里 |
@@ -21,8 +21,8 @@
 
 归纳所依据的两个实物包：
 
-- 散热风扇包 `/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/motor.cooling-fan.fortior-fu6832/`（峰岹 FU6832 散热风扇驱动板，数据源自客户真实工程）。
-- 玻璃升降器包 `/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/automotive.body-motor.window-regulator/`（汽车电动玻璃升降器总成含防夹，数据源自公开标准、法规与参考设计）。
+- 散热风扇包 `[源] scenes/motor.cooling-fan.fortior-fu6832`（峰岹 FU6832 散热风扇驱动板，数据源自客户真实工程）。
+- 玻璃升降器包 `[源] scenes/automotive.body-motor.window-regulator`（汽车电动玻璃升降器总成含防夹，数据源自公开标准、法规与参考设计）。
 
 下文凡说「包一」指散热风扇包，「包二」指玻璃升降器包，首次之后不再重复全名。
 
@@ -55,7 +55,7 @@
 
 **不装什么。** 界面版式、卡片实现、画布节点渲染、判据求值器、按钮点击后的编排逻辑，这五样都在前端代码里，跨场景不变。场景包只下发数据与少量版式开关，目前的版式开关只有 C 区默认视图一项。
 
-**装在哪。** 源目录是 `/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/<场景标识>/`；前端内置副本在 `/home/zzz/agent-test-web/public/scenes/<场景标识>/`，另有一份目录索引 `/home/zzz/agent-test-web/public/scenes/index.json` 驱动三级级联选择器。两处是同一份内容的两个落点，改了源目录要同步内置副本。
+**装在哪。** 源目录是 `c-data/scenes<场景标识>/`；前端内置副本在 `./scenes/<场景标识>/`，另有一份目录索引 `./scenes/index.json` 驱动三级级联选择器。两处是同一份内容的两个落点，改了源目录要同步内置副本。
 
 一个完整场景包目录的构成：
 
@@ -88,7 +88,7 @@
 | 文件 | 职责 | 主要消费方 | 包一条数 | 包二条数 |
 |---|---|---|---:|---:|
 | `safety-interlocks.json` | 安全联锁条目与 FAULT 位图，启动按钮只查它 | F2 确认、F4 放行闸口 | 19 条 | 21 条 |
-| `test-requirements.json` | 测试项与合格判据，含可求值表达式与变量来源 | F3 确认、F4 判定 | 26 条 | 34 条 |
+| `test-requirements.json` | 测试项与合格判据，含可求值表达式与变量来[源] | F3 确认、F4 判定 | 26 条 | 34 条 |
 | `workflows.json` | 工作流索引，本体在 `assets/workflows/` 或客户 `.wfw` 里 | F3 选型、F4 执行 | 67 条 | 4 条 |
 | `datasets.json` | 可回放时序数据登记 | F4 曲线回放与判定 | 5 条 | 3 条 |
 | `report-template.json` | 报告模板结构与字段映射 | F6 报告产出 | 10 节 | 9 节 |
@@ -101,7 +101,7 @@
 | `experience.json` | 经验条目与证据档位 | F1 知识库（经验一路）、F4/F5 检索命中 | 24 条 | 18 条 |
 | `copilot-actions.json` | 助手（D 区）预置按钮定义 | 五条流程 + 知识库模块的按钮排 | 29 枚 | 29 枚 |
 
-`copilot-actions.json` 是第三轮改版后加的第十一份，它与前十份的加载路径不同：前十份由 `/home/zzz/agent-test-web/src/features/scene/pack.ts` 的 `loadPack()` 一次性并发取回，`copilot-actions.json` 由 `/home/zzz/agent-test-web/src/features/copilot/actions.ts` 的 `loadActions()` 单独取。前十份任何一份缺失，整包加载判失败回落；`copilot-actions.json` 缺失只退回该文件末尾的通用兜底骨架，不影响其余功能。包一的 `_build/selfcheck.py` 只检前十份，也是这个原因——包二没有自己的 `selfcheck.py`，见第 9.3 节。
+`copilot-actions.json` 是第三轮改版后加的第十一份，它与前十份的加载路径不同：前十份由 `[源] scene/pack.ts` 的 `loadPack()` 一次性并发取回，`copilot-actions.json` 由 `[源] copilot/actions.ts` 的 `loadActions()` 单独取。前十份任何一份缺失，整包加载判失败回落；`copilot-actions.json` 缺失只退回该文件末尾的通用兜底骨架，不影响其余功能。包一的 `_build/selfcheck.py` 只检前十份，也是这个原因——包二没有自己的 `selfcheck.py`，见第 9.3 节。
 
 ### 2.4 引用关系
 
@@ -179,7 +179,7 @@ graph TD
 
 | 字段 | 在哪 | 是什么 |
 |---|---|---|
-| `usage_class` | `documents.json` 的 `documents[]`、`experience.json` 的 `experiences[]`，均必填 | 材料的来源类别标签，与 `usage` 用途轴正交。形如「A2 应用方案与用户手册」「D1 实验沉淀」：字母段是来源大类，数字段是类内序号，后面跟中文名。前端 `/home/zzz/agent-test-web/src/features/knowledge/data.ts` 只把它当展示字符串透传，不参与分类与过滤，所以新场景可以自定义字母段，但同一个包里要自洽 |
+| `usage_class` | `documents.json` 的 `documents[]`、`experience.json` 的 `experiences[]`，均必填 | 材料的来源类别标签，与 `usage` 用途轴正交。形如「A2 应用方案与用户手册」「D1 实验沉淀」：字母段是来源大类，数字段是类内序号，后面跟中文名。前端 `[源] knowledge/data.ts` 只把它当展示字符串透传，不参与分类与过滤，所以新场景可以自定义字母段，但同一个包里要自洽 |
 
 **第三类 · 工作流索引的六个索引位（6 个）**
 
@@ -200,7 +200,7 @@ graph TD
 
 | 字段 | 在哪 | 写什么 |
 |---|---|---|
-| `schema_note` | `experience.json` 顶层 | 一条经验由哪几段构成。两包都写成「每条 = 问题现象 symptom / 原因 cause / 调整动作 action / 结果 result / 标签 tags / 证据档位 evidence_level / 来源 _source」 |
+| `schema_note` | `experience.json` 顶层 | 一条经验由哪几段构成。两包都写成「每条 = 问题现象 symptom / 原因 cause / 调整动作 action / 结果 result / 标签 tags / 证据档位 evidence_level / 来[源] _source」 |
 | `criterion_expression_note` | `test-requirements.json` 顶层 | `evaluable` / `criterion` / `variables` / `criterion_text` 四个配套字段的口径：谁是机读的、谁是人读的、什么时候为 null |
 
 **第五类 · 左栏分组骨架（1 个）**
@@ -223,8 +223,8 @@ graph TD
 
 `demo_profile` 不是装饰字段，它是顶栏「演示 / 全量」开关的数据来源。链路是三段：
 
-1. 顶栏开关在 `/home/zzz/agent-test-web/src/app/TopBar.tsx` 第 173 行，切的是全局的演示模式标志位。
-2. `/home/zzz/agent-test-web/src/features/shared/tiers.ts` 第 157 到 172 行的 `demoList()` 与 `demoFilter()` 读这个标志位，按 `demo_profile` 点名的标识过滤条目。
+1. 顶栏开关在 `[源] app/TopBar.tsx` 第 173 行，切的是全局的演示模式标志位。
+2. `[源] shared/tiers.ts` 第 157 到 172 行的 `demoList()` 与 `demoFilter()` 读这个标志位，按 `demo_profile` 点名的标识过滤条目。
 3. 过滤结果决定左栏在演示模式下亮哪几条参数、判据、联锁、时序。
 
 四份文件各自点名什么：
@@ -352,7 +352,7 @@ v1.0 只贴了前三处，后三处是裸字符串，写成不存在的流程号
 | `_status` | 这个数有来源，但来源本身还没定版或没逐字核实 | 非空字符串，写清为什么 | 挂「待核实」角标，数值照常可用，引用时要说明 |
 | `synthetic` / `all_synthetic` | 这条时序是合成的，不是实测 | 布尔 | 显式标注「合成，非实测」，且不得进入任何合规报告 |
 
-`_placeholder` 与 `_status` 是两件事，可以同时出现：前者是「这个数是编的」，后者是「这个数有来源但来源没定版」。前端类型定义 `/home/zzz/agent-test-web/src/data/types.ts` 的 `ParamItem` 把它们分别落成 `status: 'alert'` 与 `pending` 两个字段，不要合并。
+`_placeholder` 与 `_status` 是两件事，可以同时出现：前者是「这个数是编的」，后者是「这个数有来源但来源没定版」。前端类型定义 `[源] data/types.ts` 的 `ParamItem` 把它们分别落成 `status: 'alert'` 与 `pending` 两个字段，不要合并。
 
 ### 5.2 四条红线
 
@@ -366,7 +366,7 @@ v1.1 起四条全部机读，不再有「靠人自觉」的那两条。
 
 机读落实分两半：能进 schema 的那半写进 `datasets.schema.json` 的 `allOf`——所有条目 `synthetic` 为真时，顶层 `all_synthetic`、`synthetic_banner`、`why_synthetic` 三项条件必填。跨文件的那半 schema 表达不了，落在 `validate.py` 的 X8 业务检查：合成数据集的 `id` 不得出现在 `report-template.json` 的 `compliance_basis`、`conclusion_binding`、`technical_report_documentation_page` 三个合规相关字段里，且有合成数据的包必须写 `known_gap` 明示这份报告不能当合规证据用。
 
-**红线四：「未采集」不等于「不通过」。** 判据求值器 `/home/zzz/agent-test-web/src/features/flow-run/evaluate.ts` 的规则是：只要有一个 `runtime.measure` 变量取不到值，整条判「未采集」并列出缺哪几个，既不算通过也不算不通过，不进未达标清单、不进调优推荐，不拿别的数顶替。
+**红线四：「未采集」不等于「不通过」。** 判据求值器 `[源] flow-run/evaluate.ts` 的规则是：只要有一个 `runtime.measure` 变量取不到值，整条判「未采集」并列出缺哪几个，既不算通过也不算不通过，不进未达标清单、不进调优推荐，不拿别的数顶替。
 
 场景包侧对应的约定是 `evaluable` 为 `false` 的判据必须写 `not_evaluable_reason`。v1.1 用 `test-requirements.schema.json` 里 `requirements[].allOf` 的 `if/then` 强制这一条；`validate.py` 的 X8 再查一遍理由文本里有没有出现判定词，防止把「未采集」写成「不通过」。
 
@@ -462,9 +462,9 @@ schema 里只有取值集合确实封闭的字段才写 `enum`，语义随场景
 
 场景包自己改完还不算完，这三处不改新场景进不去界面：
 
-1. `/home/zzz/agent-test-web/public/scenes/index.json` 的 `catalog` 加一行三级节点，第三级挂 `sceneId`。
-2. `/home/zzz/agent-test-web/public/scenes/<场景标识>/` 放一份同步副本（含 `assets/`）。
-3. 若新包的字段形态与现有两包都不同（例如又一种报告模板定位方式），在 `/home/zzz/agent-test-web/src/features/scene/pack.ts` 的 `normalize()` 里加一条归一化分支。这是唯一允许为换包改前端代码的地方，且只许补字段、不许改数值。
+1. `./scenes/index.json` 的 `catalog` 加一行三级节点，第三级挂 `sceneId`。
+2. `./scenes/<场景标识>/` 放一份同步副本（含 `assets/`）。
+3. 若新包的字段形态与现有两包都不同（例如又一种报告模板定位方式），在 `[源] scene/pack.ts` 的 `normalize()` 里加一条归一化分支。这是唯一允许为换包改前端代码的地方，且只许补字段、不许改数值。
 
 ---
 
@@ -494,7 +494,7 @@ schema 里只有取值集合确实封闭的字段才写 `enum`，语义随场景
 |---|---|---|---|
 | `version` | `copilot-actions.json` 顶层 | `1.0` | 该文件自身的迭代号 |
 | `format_version` | `workflows.json` 的 `workflows[]` | `1.0.0` | 工作流本体文件的格式版本 |
-| `schema` | `/home/zzz/agent-test-web/public/scenes/index.json` | `agent-test-web/scenes-index@1` | 三级级联目录索引的格式版本 |
+| `schema` | `./scenes/index.json` | `agent-test-web/scenes-index@1` | 三级级联目录索引的格式版本 |
 
 本 README 的 v1.1 是文档与校验器的版本，十一份文件的 `schema` 仍是 `v1`：v1.1 只补了约束与说明，没有改语义、没有删必填字段，按第 7.2 节的第二条策略不升文件契约版本。
 
@@ -502,9 +502,9 @@ schema 里只有取值集合确实封闭的字段才写 `enum`，语义随场景
 
 **加字段不升版本。** 新增可选字段，老前端读不到就跳过，`schema` 保持 `v1`。这也是两个实物包互有独有字段却同为 `v1` 的原因。
 
-**改语义或删必填字段升版本。** 把 `v1` 改成 `v2`，同时在 `/home/zzz/agent-test-web/src/features/scene/pack.ts` 的 `normalize()` 里加分支同时认两版，本目录下新增 `<文件名>.v2.schema.json` 而不是就地改 `v1`。
+**改语义或删必填字段升版本。** 把 `v1` 改成 `v2`，同时在 `[源] scene/pack.ts` 的 `normalize()` 里加分支同时认两版，本目录下新增 `<文件名>.v2.schema.json` 而不是就地改 `v1`。
 
-**跨文件引用只用标识，不内嵌副本。** 例如 `workflows[].covers_requirements` 只写判据 id，不把判据正文抄一份。唯一例外是六流程之间传的配置快照（`config-snapshot/v1`），为了让快照自包含而内嵌参数值。六份流程间产物的完整 Schema 在 `/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/01-设计规格-信息架构与页面.md` 第 15 节，那一套与本目录的场景包契约是两层东西，不要混用。
+**跨文件引用只用标识，不内嵌副本。** 例如 `workflows[].covers_requirements` 只写判据 id，不把判据正文抄一份。唯一例外是六流程之间传的配置快照（`config-snapshot/v1`），为了让快照自包含而内嵌参数值。六份流程间产物的完整 Schema 在 `docs/20260919-通用Agent测试系统v2.0/01-设计规格-信息架构与页面.md` 第 15 节，那一套与本目录的场景包契约是两层东西，不要混用。
 
 ---
 
@@ -523,11 +523,11 @@ schema 里只有取值集合确实封闭的字段才写 `enum`，语义随场景
 }
 ```
 
-五个键与前端 `FLOW_IDS` 一一对应，即 `init`、`req`、`run`、`tune`、`report`。知识库是模块不占流程序号，不在这里。取值只有 `canvas` 与 `grid` 两种。它经 `/home/zzz/agent-test-web/src/data/loadScene.ts` 的 `adaptScene()` 拼成 `ScenePackage.ui.defaultView`，前端读这一段决定进页落画板还是落网格，不写死在代码里。
+五个键与前端 `FLOW_IDS` 一一对应，即 `init`、`req`、`run`、`tune`、`report`。知识库是模块不占流程序号，不在这里。取值只有 `canvas` 与 `grid` 两种。它经 `[源] data/loadScene.ts` 的 `adaptScene()` 拼成 `ScenePackage.ui.defaultView`，前端读这一段决定进页落画板还是落网格，不写死在代码里。
 
 真正的画布拓扑分两处，都在前端：
 
-- 节点与连线的契约在 `/home/zzz/agent-test-web/src/data/types.ts`，三个接口：`CanvasNode`、`CanvasEdge`、`CanvasLayout`。节点类型固定十一类，按语义分三组：仪器与被测件是 `scope`、`motor`、`psu`、`bench`、`device-mcp`；资料与产物是 `curve`、`schematic`、`workflow`、`knowledge`；判定与闸口是 `verdict`、`interlock`。边分两种语义：`physical` 仿物理接线、`data` 数据流。
+- 节点与连线的契约在 `[源] data/types.ts`，三个接口：`CanvasNode`、`CanvasEdge`、`CanvasLayout`。节点类型固定十一类，按语义分三组：仪器与被测件是 `scope`、`motor`、`psu`、`bench`、`device-mcp`；资料与产物是 `curve`、`schematic`、`workflow`、`knowledge`；判定与闸口是 `verdict`、`interlock`。边分两种语义：`physical` 仿物理接线、`data` 数据流。
 - 每条流程的默认版式（卡片位置与连线）在 `FlowContent.canvas` 里，由 `adaptScene()` 按流程生成，属于前端代码。
 
 新场景包要改画布长什么样，改的是 `default_view` 的五个取值；要改画布上有哪些节点怎么连，那是改前端，不是改场景包。这条边界目前就是这么划的，不要在场景包里自造 `canvas.json`。
@@ -546,9 +546,9 @@ schema 里只有取值集合确实封闭的字段才写 `enum`，语义随场景
 
 按钮 `id` 尤其不得改名，前端按它做埋点与折叠记忆。知识库作用域的按钮沿用草案里的 `kb.` 前缀，与作用域键 `knowledge` 对不上是历史原因，见下文，`validate.py` 的 X9 检查认这一个别名。
 
-它的来源是草案 `/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/06-第三轮改版/06c-copilot-actions.draft.json`，两个实物包的 `_derived_from` 段都指向它。草案到实物包有两处改动：草案的 `kb` 键改名为 `knowledge`（知识库已从流程降级为模块），以及新增 `icon_draft` 字段保留草案里的 lucide 组件名、`icon` 改填前端可用的语义名。
+它的来源是草案 `[源] 06-第三轮改版/06c-copilot-actions.draft.json`，两个实物包的 `_derived_from` 段都指向它。草案到实物包有两处改动：草案的 `kb` 键改名为 `knowledge`（知识库已从流程降级为模块），以及新增 `icon_draft` 字段保留草案里的 lucide 组件名、`icon` 改填前端可用的语义名。
 
-`icon` 的取值必须落在 `/home/zzz/agent-test-web/src/app/icons.ts` 的 `COPILOT_ACTION_ICON_NAMES` 之内，共 28 个。按语义分四类：
+`icon` 的取值必须落在 `[源] app/icons.ts` 的 `COPILOT_ACTION_ICON_NAMES` 之内，共 28 个。按语义分四类：
 
 | 类 | 图标名 | 冻结轮次 |
 |---|---|---|
@@ -607,7 +607,7 @@ X7 只查落在场景包目录内的路径。指向客户工程目录或标准�
 **用法**
 
 ```bash
-cd /mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/08b-场景包契约
+cd docs/20260919-通用Agent测试系统v2.0/08b-场景包契约
 python3 validate.py /绝对路径/到/场景包目录        # 校验一个包，务必传绝对路径
 python3 validate.py --all                          # 校验 packs.json 登记的全部包
 python3 validate.py <目录> --template               # 模板目录：豁免「目录名 = 场景标识」与骨架文案检查
@@ -622,7 +622,7 @@ python3 validate.py <目录> --quiet                  # 只要每份文件一行
 
 ### 9.2 `selfcheck.py` 管内容自洽，每包一份
 
-`/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/motor.cooling-fan.fortior-fu6832/_build/selfcheck.py`（392 行）是包一自己的验收脚本，跑完 `_build/build_scene_pack.py` 之后用。它的十项检查归纳如下。
+`[源] _build/selfcheck.py`（392 行）是包一自己的验收脚本，跑完 `_build/build_scene_pack.py` 之后用。它的十项检查归纳如下。
 
 **A 组 · 数据完整性（2 项）**
 
@@ -757,7 +757,7 @@ v1.1 另记一条放宽：`requirements[].evaluable` 为 `false` 时，惯例上
 ### 第一步 · 定身份（半天）
 
 1. 定三级标识 `<一级场景>.<二级子类>.<三级产品类型>`，全小写，段内用连字符。**必须是三段，少一段整包校验失败**：`common.schema.json` 的 `sceneId` 要求三段点分。`hvac.indoor-unit` 是错的，`hvac.indoor-unit.cross-flow-fan` 才对。这个串同时是目录名、`scene.json` 的 `id`、其余十份的 `scene_id`，定了就不要改。
-2. 建目录 `/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/<场景标识>/`。
+2. 建目录 `c-data/scenes<场景标识>/`。
 3. 把本目录的 `examples/minimal-scene/` 复制进去，包括十一份 JSON 与 `assets/` 下的三份占位资产。
 4. 按下面的必改清单逐项替换。**只做「全局替换场景标识」这一个动作是不够的**：替换后 `taxonomy` 三级仍是骨架包的 `example` / `minimal` / `skeleton`、`product` 三字段仍是骨架文案，这些会带着「最小子类 · 骨架产品」上到全局状态位。v1.1 的 `validate.py` 的 X2 检查会点名这两处。
 
@@ -773,7 +773,7 @@ v1.1 另记一条放宽：`requirements[].evaluable` 为 `false` 时，惯例上
 5. 跑一遍校验确认起手就是绿的，传绝对路径：
 
 ```bash
-python3 /mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/08b-场景包契约/validate.py /mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/<场景标识>
+python3 [源] 08b-场景包契约/validate.py c-data/scenes<场景标识>
 ```
 
 ### 第二步 · 备材料（一到两周，取决于材料可得性）
@@ -796,7 +796,7 @@ python3 /mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260
 | 测试资产 | 工作流文件、实测波形、报告模板或样张 |
 | 经验 | 调试规程、台架经验、文献结论 |
 
-这一步产出的不是 JSON，是一份材料清单：每份材料的全名、绝对路径、可不可引用、转化到哪一步了。包二把这份清单写成了 `/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/_调研/B-汽车场景测试案例素材.md`，可以照着做。
+这一步产出的不是 JSON，是一份材料清单：每份材料的全名、绝对路径、可不可引用、转化到哪一步了。包二把这份清单写成了 `[源] _调研/B-汽车场景测试案例素材.md`，可以照着做。
 
 ### 第三步 · 写构建脚本（三到五天）
 
@@ -818,8 +818,8 @@ python3 /mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260
 ```bash
 python3 _build/build_scene_pack.py          # 生成
 python3 _build/selfcheck.py                 # 内容自洽，十项
-python3 /mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/08b-场景包契约/validate.py \
-        /mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/scenes/<场景标识>    # 结构契约与跨文件检查
+python3 [源] 08b-场景包契约/validate.py \
+        c-data/scenes<场景标识>    # 结构契约与跨文件检查
 ```
 
 **第三条命令必须传绝对路径，不要传 `.`。** v1.0 这里写的是 `validate.py .`，传 `.` 时 X2 的目录名比对取到的是 `"."`，这条检查在官方流程里永远不跑，而目录名与场景标识不一致正是前端按 `/scenes/<sceneId>/` 取文件时 404、整包加载判失败回落的成因。
@@ -828,10 +828,10 @@ python3 /mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260
 
 ### 第六步 · 接进前端（半天）
 
-1. 复制整个包（含 `assets/`，不含 `_build/`）到 `/home/zzz/agent-test-web/public/scenes/<场景标识>/`。
-2. 在 `/home/zzz/agent-test-web/public/scenes/index.json` 的 `catalog` 里加三级节点，第三级挂 `sceneId`。
+1. 复制整个包（含 `assets/`，不含 `_build/`）到 `./scenes/<场景标识>/`。
+2. 在 `./scenes/index.json` 的 `catalog` 里加三级节点，第三级挂 `sceneId`。
 3. 起前端切到新场景，逐条流程翻一遍：左栏分组对不对、联锁闸口拦不拦、判据判不判、画布落画板还是网格、助手按钮排换没换。
-4. 若某处渲染不出来且原因是新包的字段形态与现有两包都不同，去 `/home/zzz/agent-test-web/src/features/scene/pack.ts` 的 `normalize()` 加归一化分支。只许补字段，不许改数值，也不许发明源材料里没有的东西。
+4. 若某处渲染不出来且原因是新包的字段形态与现有两包都不同，去 `[源] scene/pack.ts` 的 `normalize()` 加归一化分支。只许补字段，不许改数值，也不许发明源材料里没有的东西。
 
 ### 第七步 · 起手模板本身的回归结果（2026-09-20 实测）
 
@@ -843,7 +843,7 @@ python3 /mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260
 | 第五步 · 校验 | 通过。十一份文件全 PASS、第二阶段九组检查 PASS、退出码 0 |
 | 第六步 · 接进前端 | 通过。六个路由全部正常渲染，零 `pageerror` |
 
-六个路由的逐条结果。沙箱做法：把 `/home/zzz/agent-test-web` 打包复制到临时目录（`node_modules` 用软链接），在副本的 `public/scenes/` 下放新包并在 `index.json` 挂三级节点，起 Vite 开发服务器后用 Playwright 逐页打开、采集 `pageerror` 与 console error。`/home/zzz/agent-test-web` 本体未做任何修改。
+六个路由的逐条结果。沙箱做法：把 `[源] zzz/agent-test-web` 打包复制到临时目录（`node_modules` 用软链接），在副本的 `public/scenes/` 下放新包并在 `index.json` 挂三级节点，起 Vite 开发服务器后用 Playwright 逐页打开、采集 `pageerror` 与 console error。`[源] zzz/agent-test-web` 本体未做任何修改。
 
 | 路由 | 页面 | 渲染 | `pageerror` |
 |---|---|---|---|
@@ -854,7 +854,7 @@ python3 /mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260
 | `/report` | 测试报告 | 正常，报告预览显示模板文件名与「未采集 1」 | 0 |
 | `/knowledge` | 知识库 | 正常，顶栏级联显示「暖通空调 › 室内机 › 贯流风机」 | 0 |
 
-这是 v1.1 相对 v1.0 最要紧的一处变化。v1.0 的骨架包不带报告模板定位字段、`report-template.schema.json` 也不要求，照它建的包校验全绿但前端 `/init`、`/req`、`/report` 三页白屏，崩在 `/home/zzz/agent-test-web/src/features/flow-init/panel.tsx` 第 444 行的 `fileName(pack.report.template_file)` 与 `/home/zzz/agent-test-web/src/features/flow-report/panel.tsx` 第 110 行的 `templateTitle(raw)`，两处都对 `undefined` 抛 `TypeError`。
+这是 v1.1 相对 v1.0 最要紧的一处变化。v1.0 的骨架包不带报告模板定位字段、`report-template.schema.json` 也不要求，照它建的包校验全绿但前端 `/init`、`/req`、`/report` 三页白屏，崩在 `[源] flow-init/panel.tsx` 第 444 行的 `fileName(pack.report.template_file)` 与 `[源] flow-report/panel.tsx` 第 110 行的 `templateTitle(raw)`，两处都对 `undefined` 抛 `TypeError`。
 
 v1.1 从契约侧堵住：`report-template.schema.json` 顶层加 `anyOf`，要求 `template_file` 与 `template_source` 至少写一个；骨架包的 `report-template.json` 补上 `template_file` 占位路径并挂 `_placeholder: true`。
 
@@ -883,8 +883,8 @@ v1.1 从契约侧堵住：`report-template.schema.json` 顶层加 `anyOf`，要�
 2. **包外绝对路径的存在性。** X7 只查落在场景包目录内的路径。指向客户工程目录、标准原文、报告模板原件的包外绝对路径不查，那些材料换台机器就不在了。
 3. **包自己 `README.md` 的计数对账。** 正则句式每包不同，留在各包的 `selfcheck.py` C9。包二至今没有这个脚本。
 4. **来源与占位对象数的基线。** 每包一个数，跨包通用的校验器无从知道，留在 `selfcheck.py` C2。
-5. **前端消费侧的契约。** 六流程之间传的七份产物（从 `config-snapshot/v1` 到 `report-instance/v1`）是另一层契约，Schema 在 `/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/01-设计规格-信息架构与页面.md` 第 15 节，本目录不覆盖。
-6. **知识库产物目录。** `/mnt/f/Main/File/2_Projects/峰岹/40_工程/agent-test-web-data/kb/` 下的文档索引、切片、实体与检索样例是另一路 agent 的产物，前端按可选加载，本契约不覆盖。
+5. **前端消费侧的契约。** 六流程之间传的七份产物（从 `config-snapshot/v1` 到 `report-instance/v1`）是另一层契约，Schema 在 `docs/20260919-通用Agent测试系统v2.0/01-设计规格-信息架构与页面.md` 第 15 节，本目录不覆盖。
+6. **知识库产物目录。** `c-data/kb` 下的文档索引、切片、实体与检索样例是另一路 agent 的产物，前端按可选加载，本契约不覆盖。
 7. **前端对缺字段的健壮性。** 契约保证「过了校验就能被前端读进去」，但前端若在别处对可选字段做无保护取值，仍可能白屏。第 10 节第七步点名了 `fileName` 与 `templateTitle` 两处。
 
 ---
@@ -911,7 +911,7 @@ v1.1 从契约侧堵住：`report-template.schema.json` 顶层加 `anyOf`，要�
 
 ## 13. 审稿意见处置表
 
-审稿意见原文：`/mnt/f/Main/File/2_Projects/峰岹/峰岹agent/09-实验室demo线/20260919-通用Agent测试系统v2.0/08b-审稿意见.md`。计数：阻断 1 条、主要 9 条、次要 8 条，共 18 条。**全部处置，无未处置项**，其中 17 条按建议改、1 条（次-1）按建议改口径但保留实现。
+审稿意见原文：`docs/20260919-通用Agent测试系统v2.0/08b-审稿意见.md`。计数：阻断 1 条、主要 9 条、次要 8 条，共 18 条。**全部处置，无未处置项**，其中 17 条按建议改、1 条（次-1）按建议改口径但保留实现。
 
 | 编号 | 级别 | 意见摘要 | 处置 | 改在哪 |
 |---|---|---|---|---|

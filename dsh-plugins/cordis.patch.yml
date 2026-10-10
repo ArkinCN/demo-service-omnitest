@@ -1,7 +1,7 @@
 # ATH overlay for DeepSeek Harness — Agentic Test Harness plugin set, Fortior line.
 #
-# Apply with:   dsh web --patch /home/zzz/lab/dsh-plugins/cordis.patch.yml
-#          or:  dsh --profile headless --patch /home/zzz/lab/dsh-plugins/cordis.patch.yml "<task>"
+# Apply with:   dsh web --patch [源] dsh-plugins/cordis.patch.yml
+#          or:  dsh --profile headless --patch [源] dsh-plugins/cordis.patch.yml "<task>"
 #
 # Composition order (dsh 0.1.5-rc.2): each bundle patch in dsh.profile.bundles
 # order, then the profile's cordis.patch.yml, then $DSH_HOME/cordis.patch.yml,
@@ -20,7 +20,7 @@
   disabled: false
   config:
     customSkillDirs:
-      - /home/zzz/lab/dsh-plugins/skills
+      - [源] dsh-plugins/skills
 
 - id: tool-skill
   disabled: false
@@ -41,8 +41,8 @@
       config:
         serverName: motor
         transport: stdio
-        command: /home/zzz/lab/dsh-plugins/.venv/bin/python
-        args: ['/home/zzz/lab/dsh-plugins/mcp/motor_mcp.py']
+        command: [源] bin/python
+        args: ['[源] mcp/motor_mcp.py']
         failOnStartupError: true
 
     - id: mcp-scope
@@ -50,8 +50,8 @@
       config:
         serverName: scope
         transport: stdio
-        command: /home/zzz/lab/dsh-plugins/.venv/bin/python
-        args: ['/home/zzz/lab/dsh-plugins/mcp/scope_mcp.py']
+        command: [源] bin/python
+        args: ['[源] mcp/scope_mcp.py']
         failOnStartupError: true
 
     - id: mcp-report
@@ -59,8 +59,8 @@
       config:
         serverName: report
         transport: stdio
-        command: /home/zzz/lab/dsh-plugins/.venv/bin/python
-        args: ['/home/zzz/lab/dsh-plugins/mcp/report_mcp.py']
+        command: [源] bin/python
+        args: ['[源] mcp/report_mcp.py']
         failOnStartupError: true
 
     # Enforcing gate. The Claude Code bridge passes the real tool arguments
@@ -68,13 +68,13 @@
     - id: hooks-ath
       name: '@deepseek-ai/dsh-hooks-claude-code'
       config:
-        configPath: /home/zzz/lab/dsh-plugins/hooks/hooks.json
-        projectDir: /home/zzz/lab/dsh-plugins
+        configPath: [源] hooks/hooks.json
+        projectDir: [源] lab/dsh-plugins
 
     # Evidence only, never blocks. Records the Codex-shaped payload so the
     # tool_input flattening in that bridge is documented rather than assumed.
     - id: hooks-ath-codex-probe
       name: '@deepseek-ai/dsh-hooks-codex'
       config:
-        configPath: /home/zzz/lab/dsh-plugins/hooks/hooks.codex.json
+        configPath: [源] hooks/hooks.codex.json
         model: deepseek-v4-pro

@@ -1,8 +1,8 @@
 # 视觉缺陷修复记录 · 2026-09-20
 
 修的是 `03-截图/CHANGES-v2.1-to-v3.0.md` 第 13 节「本次人眼复检发现的问题（不阻断交付，记录待修）」
-列出的 5 条，外加第 1 条连带的截图脚本静默失败。工程根目录 `~/agent-test-web`（非 git 仓库），
-动手前把 `src/` 整份备份到 `~/agent-test-web/.bak-src-0849/`，下面的「原行号」即相对该备份。
+列出的 5 条，外加第 1 条连带的截图脚本静默失败。工程根目录 `c/`（非 git 仓库），
+动手前把 `src/` 整份备份到 `（见交付包内备份）`，下面的「原行号」即相对该备份。
 
 本轮只动了以下 6 个文件，`src/features/flow-run/**`、`src/features/flow-tune/**`、
 `src/data/**` 一行未碰（另一会话在改）。
@@ -140,10 +140,10 @@
 | `node scripts/shootfinal.mjs` | 17 张（六页 ×2 尺寸 + 放大态 3 张 + 汽车包 2 张），退出码 0，「✓ 全部动作成功，无静默失败」 |
 | `node scripts/shootextra.mjs` | 5 张，退出码 0，同上 |
 
-截图落在 `~/agent-test-web/shots4/`（共 22 张），复现命令：
+截图落在 `c/shots4`（共 22 张），复现命令：
 
 ```bash
-cd ~/agent-test-web
+cd c/
 npm run build && npx vite preview --port 4173
 OUTDIR=shots4 node scripts/shootfinal.mjs
 OUTDIR=shots4 node scripts/shootextra.mjs
