@@ -480,6 +480,94 @@ def get_wave_metrics(values: list[float], increment: float, edges: bool) -> dict
     return metric
 
 
+# 波形点数回退阶梯（2026-10-10 增）。
+#
+# 现场取证（runs/1d9db708… 2026-10-10 17:00 失败 vs runs/probe_ch4_008… 10-09 17:37 成功）：
+#   · 同一台 DS1104Z、同一套参数（tach 50 ms/div、1200 点、触发电平 0.9V）：
+#     probe_ch4_008 在 **100% 档实测 rpm=2142.86、21 个脉冲**，preamble 正常；
+#   · 联合实验同一轮里，前 6 次 tach 采集（30/50/70 档）preamble 都正常，
+#     第 7 次（100% 档）起preamble 变成 10 个 0（inc=0）→ 报成「时间坐标非法」；
+#   · probe_tach.py 的现场注释早已写明「**超出会读回 0 点**」——
+#     请求点数超过记录上限时DS1000Z 回的是 0 点 preamble，而不是报错。
+# 结论：这是**记录点数上限**问题，**不是「本档无脉冲」**（脉冲一直存在）。
+# 处置：点数逐级下退重读；四通道都是主测量，任何一档都不允许用「未采集」糊过去，
+# 读到的点数/时间坐标一律按实际 preamble 如实记录。
+#
+# 阶梯下限 432 是**算出来的**，不是随手取的：tach 窗口 = 12div × 50ms = 600ms，
+# 100% 档实测转速 2143rpm → 周期 28ms；`get_tach_pulse_metrics` 要求「每周期 ≥20
+# 个采样点」→ inc ≤ 1.4ms → 点数 ≥ 600/1.4 ≈ 429。取 432（inc≈1.39ms，每周期
+# 20.2 点）刚好守住门限。若退到 300/150 点，inc 变2/4ms → 每周期仅 14/7 点，
+# 转速会被判据如实拒收——那等于用另一种方式让转速没数据，与需求相悖。
+POINTS_BACKOFF = (600, 480, 432)
+
+
+def _read_preamble(scope: ScopeDevice, channel: int, want_points: int) -> dict[str, Any]:
+    """读某通道波形 preamble；点数超记录上限时按 POINTS_BACKOFF 逐级下退重读。
+
+    覆盖三类失败：① 通信异常（VISA 读超时/被占用）；② 畸形 preamble
+    （字段数≠10 / 数值解析失败）；③ **0 点 preamble**（inc≤0，DS1000Z 的超限表现）。
+
+    返回 {ok, preamble, inc, origin, ref, y_inc, y_origin, y_ref,
+    requested_points, reason, raw}。
+    数据纪律：拿不到合法 preamble 一律 ok=False，**绝不编造坐标**，
+    由调用方如实抛错（四个通道都是主测量，不做「未采集」降级）。
+    """
+    raw: list[str] = []
+    last_err = ""
+    # 先按配置点数试 4 次（覆盖「切源后首帧未就绪」），再逐级下退各试 2 次。
+    plan = [(want_points, 4)] + [(p, 2) for p in POINTS_BACKOFF if p < want_points]
+    for requested, attempts in plan:
+        for _ in range(attempts):
+            try:
+                # 每次读前重发 POINts：切源/换档后设备可能把它复位
+                scope.write(f":WAVeform:POINts {requested}")
+                pre = scope.query(":WAVeform:PREamble?")
+            except Exception as e:  # noqa: BLE001 - 通信瞬断可重试
+                last_err = f"POINts={requested} 读取异常 {type(e).__name__}: {e}"
+                time.sleep(0.4)
+                continue
+            raw.append(pre)
+            f = pre.split(",")
+            if len(f) != 10:
+                last_err = f"POINts={requested} preamble 字段数 {len(f)} ≠ 10"
+                time.sleep(0.4)
+                continue
+            try:
+                inc = float(f[4]); origin = float(f[5]); ref = float(f[6])
+                y_inc = float(f[7]); y_origin = float(f[8]); y_ref = float(f[9])
+            except (ValueError, OverflowError) as e:
+                last_err = f"POINts={requested} 数值解析失败: {e}"
+                time.sleep(0.4)
+                continue
+            bad = (inc <= 0 or math.isnan(inc) or math.isinf(inc)
+                   or math.isnan(origin) or math.isinf(origin)
+                   or math.isnan(ref) or math.isinf(ref)
+                   or math.isnan(y_inc) or math.isinf(y_inc)
+                   or math.isnan(y_origin) or math.isinf(y_origin)
+                   or math.isnan(y_ref) or math.isinf(y_ref))
+            if bad:
+                # 全 0 preamble = 0 点，正是「点数超记录上限」；退一档点数再试
+                last_err = (f"POINts={requested} 返回非法时间坐标"
+                            f"(inc={inc}, raw={pre.strip()[:80]})")
+                time.sleep(0.4)
+                continue
+            if requested != want_points:
+                sys.stderr.write(
+                    f"scope capture: CH{channel} 点数回退 {want_points} -> {requested}"
+                    f"（{last_err}）；按实际 preamble 记录点数与时间坐标\n"
+                )
+            return {
+                "ok": True, "preamble": pre, "inc": inc, "origin": origin, "ref": ref,
+                "y_inc": y_inc, "y_origin": y_origin, "y_ref": y_ref,
+                "requested_points": requested, "reason": "", "raw": raw[-4:],
+            }
+    return {
+        "ok": False, "preamble": "", "inc": 0.0, "origin": 0.0, "ref": 0.0,
+        "y_inc": 0.0, "y_origin": 0.0, "y_ref": 0.0,
+        "requested_points": want_points, "reason": last_err, "raw": raw[-4:],
+    }
+
+
 # ---------------------------------------------------------------------------
 # 单档采集（对齐 Save-ProfileCapture）
 # ---------------------------------------------------------------------------
@@ -513,51 +601,21 @@ def _save_profile_capture(
             scope.write(f":WAVeform:SOURce CHANnel{channel}")
             # 逐通道重新设点数（切源后 POINts 可能被复位为屏幕点数）
             scope.write(f":WAVeform:POINts {want_points}")
-            # preamble 读取 + 重试（2026-10-09 增）：
-            # 实测 100% 档（恒高电平）偶发在**切源后首帧**读到：
-            #   ① 通信层异常（VISA 读超时/被占用，query 直接抛 VisaError）；
-            #   ② 畸形 preamble（长度≠10 或时间坐标 NaN/0）。
-            # 原实现任一情况都直接抛错让整轮 failed（实测每轮都在 100% 档第 2 次挂掉）。
-            # 处置：重试（最多 4 次、间隔 0.4s，含通信异常与畸形两种）；仍失败才如实抛错。
-            # 数据纪律：**不伪造坐标** —— 只在「能读到合法 preamble」时继续。
-            inc = origin = ref = y_inc = y_origin = y_ref = 0.0
-            ok = False
-            last_err = ""
-            for attempt in range(4):
-                try:
-                    pre = scope.query(":WAVeform:PREamble?")
-                except Exception as e:  # noqa: BLE001 - 通信瞬断可重试
-                    last_err = f"{type(e).__name__}: {e}"
-                    time.sleep(0.4)
-                    continue
-                f = pre.split(",")
-                if len(f) != 10:
-                    last_err = f"preamble 字段数 {len(f)} ≠ 10"
-                    time.sleep(0.4)
-                    continue
-                try:
-                    inc = float(f[4]); origin = float(f[5]); ref = float(f[6])
-                    y_inc = float(f[7]); y_origin = float(f[8]); y_ref = float(f[9])
-                except (ValueError, OverflowError) as e:
-                    last_err = f"数值解析失败: {e}"
-                    time.sleep(0.4)
-                    continue
-                bad = (inc <= 0 or math.isnan(inc) or math.isinf(inc)
-                       or math.isnan(origin) or math.isinf(origin)
-                       or math.isnan(ref) or math.isinf(ref)
-                       or math.isnan(y_inc) or math.isinf(y_inc)
-                       or math.isnan(y_origin) or math.isinf(y_origin)
-                       or math.isnan(y_ref) or math.isinf(y_ref))
-                if not bad:
-                    ok = True
-                    break
-                last_err = "时间坐标非法(NaN/Inf/≤0)"
-                time.sleep(0.4)
-            if not ok:
-                # 如实抛错（附最后一次原因，便于现场定位），不编造坐标
+            # preamble 读取：重试 + 点数回退（2026-10-09/10，见 _read_preamble）。
+            # 覆盖三类失败：通信瞬断 / 畸形 preamble / **0 点 preamble（点数超上限）**。
+            # 四通道都是主测量 → 读不到就如实抛错（附判据与原始返回），
+            # 绝不降级成「未采集」，转速必须显示真实数据。
+            got = _read_preamble(scope, channel, want_points)
+            if not got["ok"]:
                 raise VisaError(
-                    f"Invalid waveform time coordinates. (CH{channel} 连续 4 次读取失败：{last_err})"
+                    f"Invalid waveform time coordinates. "
+                    f"(CH{channel} 点数 {want_points}→{POINTS_BACKOFF[-1]} 读取均失败："
+                    f"{got['reason']}；原始返回 {got['raw']})"
                 )
+            pre = got["preamble"]
+            inc = got["inc"]; origin = got["origin"]; ref = got["ref"]
+            y_inc = got["y_inc"]; y_origin = got["y_origin"]; y_ref = got["y_ref"]
+            requested_points = got["requested_points"]
             if role == "pwm" and inc > 0.000002:
                 raise VisaError("PWM export lacks 20 samples per 25kHz period.")
 
@@ -608,6 +666,10 @@ def _save_profile_capture(
             else:
                 m = get_wave_metrics(values, inc, role == "pwm")
             m["physicalProbeRatioConfirmed"] = ch["physicalProbeRatioConfirmed"]
+            # 点数回退留痕（2026-10-10）：requested_points = 设备实际接受的请求点数，
+            # points = 实际读到的样本数（上文按读回量如实记录）。两者不一致即说明
+            # 触发过 POINTS_BACKOFF 回退，便于离线核查波形分辨率是否被降级。
+            m["requestedPoints"] = requested_points
             if role == "pwm" and duty in (0, 100):
                 m["frequencyHz"] = None
                 m["dutyPercent"] = None

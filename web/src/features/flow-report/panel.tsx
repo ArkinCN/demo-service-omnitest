@@ -1020,14 +1020,14 @@ export function FullReport() {
     <div className="h-full w-full min-h-0 overflow-y-auto">
       <div className="mx-auto max-w-[760px] bg-white px-5 py-4">
         <h1 title={raw} className="border-b border-p700 pb-1.5 text-center text-[16px] font-semibold text-t1">
-          {templateTitle(raw)}
+          测试报告
         </h1>
         <table className="mt-2.5 w-full border-collapse text-[12px]">
           <tbody>
             {pack.report.header_fields.map((f) => (
               <tr key={f.key} className="border-b border-line-soft">
                 <td className="w-[34%] py-1 text-t3">
-                  {f.name} <span className="num text-t3">{f.value_slot || '—'}</span>
+                  {simp(f.name)} <span className="num text-t3">{f.value_slot || '—'}</span>
                 </td>
                 <td className={cn('num py-1', h[f.key] ? 'text-t1' : 'text-t3')}>
                   {h[f.key] || (upstream(f) ? '由上游流程带入' : '待补全')}
@@ -1043,22 +1043,22 @@ export function FullReport() {
         {pack.report.spec_sections.map((s) => (
           <div key={s.section} className="border-b border-line-soft py-1.5">
             <div className="flex items-baseline gap-2">
-              <span className="text-[12.5px] text-t1">{s.section}</span>
+              <span className="text-[12.5px] text-t1">{simp(s.section)}</span>
               <span className="num ml-auto text-[12px] text-t3">{s.rows}</span>
             </div>
-            <p className="pt-0.5 text-[12px] leading-5 text-t2">{s.fields.join(' · ')}</p>
+            <p className="pt-0.5 text-[12px] leading-5 text-t2">{simp(s.fields.join(' · '))}</p>
           </div>
         ))}
 
         {pt ? (
           <>
             <h2 className="mt-4 border-l-2 border-p700 pl-2 text-[13px] font-semibold text-t1">
-              {pt.sheet} · 通過條件 {pt.pass_condition.length} 條
+              {simp(pt.sheet)} · 通过条件 {pt.pass_condition.length} 条
             </h2>
             <ul className="m-0 list-none p-0 pt-1">
               {pt.pass_condition.map((c) => (
                 <li key={c.key} className="flex items-baseline gap-2 py-[2px] text-[12px]">
-                  <span className="text-t1">{c.text}</span>
+                  <span className="text-t1">{simp(c.text)}</span>
                   <span className="num ml-auto text-t3">{c.maps_to}</span>
                 </li>
               ))}
@@ -1070,11 +1070,11 @@ export function FullReport() {
                     <th
                       key={c.key}
                       className="px-1 py-1 text-left font-medium text-t2"
-                      title={`${c.note ?? ''}${
+                      title={`${simp(c.note ?? '')}${
                         c.scale_factor && c.scale_factor !== 1 ? ` · CSV 值 ×${c.scale_factor}` : ''
                       }`}
                     >
-                      {c.name}
+                      {simp(c.name)}
                     </th>
                   ))}
                 </tr>
@@ -1095,7 +1095,7 @@ export function FullReport() {
         ) : null}
 
         <h2 className="mt-4 border-l-2 border-p700 pl-2 text-[13px] font-semibold text-t1">
-          波形圖位
+          波形图位
           {pack.caps.syntheticData ? (
             <span className="ml-2 rounded-full border border-warn/30 bg-warn-wash px-2 text-[12px] font-normal text-warn">
               合成数据，非实测
@@ -1115,7 +1115,7 @@ export function FullReport() {
                 xLabel=""
               />
               <figcaption className="num pt-1 text-[12px] text-t3">
-                {w.id} · {w.verdictText} · 峰值 {w.metrics.peak.toFixed(2)} {w.unit}
+                {simp(w.id)} · {simp(w.verdictText)} · 峰值 {w.metrics.peak.toFixed(2)} {w.unit}
               </figcaption>
             </figure>
           ))}
@@ -1142,7 +1142,7 @@ export function FullReport() {
                 >
                   {r.req.id}
                 </td>
-                <td className="py-1 text-t1">{r.req.name}</td>
+                <td className="py-1 text-t1">{simp(r.req.name)}</td>
                 <td
                   className={cn(
                     'num w-[72px] py-1 text-right',
@@ -1159,15 +1159,15 @@ export function FullReport() {
         {pack.report.conclusion_binding ? (
           <>
             <h2 className="mt-4 border-l-2 border-p700 pl-2 text-[13px] font-semibold text-t1">
-              結論聚合規則
+              结论聚合规则
             </h2>
-            <p className="pt-1 text-[12px] leading-5 text-t2">{pack.report.conclusion_binding.note}</p>
+            <p className="pt-1 text-[12px] leading-5 text-t2">{simp(pack.report.conclusion_binding.note)}</p>
           </>
         ) : null}
 
         <p className="pt-3 text-[12px] leading-5 text-t3">
           预览按 report-template.json 的节结构渲染，不是最终成稿。模板全名：{raw}
-          {pack.report.known_gap ? ` ${pack.report.known_gap.text}` : ''}
+          {pack.report.known_gap ? ` ${simp(pack.report.known_gap.text)}` : ''}
         </p>
       </div>
     </div>

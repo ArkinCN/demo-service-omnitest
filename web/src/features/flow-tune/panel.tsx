@@ -445,6 +445,13 @@ export function TuneLeftPanel() {
   const demo = useAppStore((s) => s.demoMode)
   const sceneId = useAppStore((s) => s.sceneId)
   const adoptAllCandidates = useAppStore((s) => s.adoptAllCandidates)
+  /* 2026-10-10：本流程的「已确认」是在**采纳参数写回时**由系统自动写入的，
+     此前左栏没有反向出口 → 顶栏那一格打勾关不掉（用户反馈）。
+     现补上反悔出口，形态与流程 1/2/5 的「解除确认」同源（同一 ConfirmFooter 形态）。
+     ⚠️ 解除只取消标记；下次采纳参数时仍会照原口径再次自动确认。 */
+  const locked = !!useAppStore((s) => s.confirmed.tune)
+  const unconfirmFlow = useAppStore((s) => s.unconfirmFlow)
+  const setNotice = useAppStore((s) => s.setNotice)
   useRestoreAdoption(sceneId)
 
   if (!pack) return <Empty text="场景包未加载" />
@@ -695,18 +702,38 @@ export function TuneLeftPanel() {
         ) : null}
       </footer>
       {/* 与顶栏「采纳并回到启动测试」同一条动作：写回参数是六条红线之一，
-          点下去先弹确认卡，批准后才写回并跳回流程 3 */}
-      <ConfirmFooter
-        label="确认采纳"
-        count={takenList.length}
-        unit="项"
-        onClick={adopt.disabled ? undefined : adopt.onClick}
-        hint={
-          takenList.length
-            ? '写回只改数值外壳括号内的数字，不换外壳、不动行尾注释；确认卡上再点一次才真写回。'
-            : '先在推荐参数里勾选要采纳的项。'
-        }
-      />
+          点下去先弹确认卡，批准后才写回并跳回流程 3。
+
+          ⚠️ 2026-10-10：本流程的「已确认」在采纳写回时由系统自动写入，
+          此前左栏没有反向出口（顶栏那一格打勾关不掉，用户反馈）。
+          现在已确认时按钮换成流程 1/2/5 同款的「解除确认」
+          （同一 ConfirmFooter 的 secondary + unlock 形态，不新写样式）。 */}
+      {locked ? (
+        <ConfirmFooter
+          label="解除确认"
+          count={takenList.length}
+          unit="项"
+          variant="secondary"
+          icon="unlock"
+          hint="本流程已确认（采纳参数写回时由系统自动置为已确认）。点此解除后顶栏「调优运行」的打勾消失，可继续调整；下次采纳参数时仍会再次自动确认。"
+          onClick={() => {
+            unconfirmFlow('tune')
+            setNotice('已解除确认：顶栏「调优运行」打勾已取消；下次采纳参数后会再次自动确认')
+          }}
+        />
+      ) : (
+        <ConfirmFooter
+          label="确认采纳"
+          count={takenList.length}
+          unit="项"
+          onClick={adopt.disabled ? undefined : adopt.onClick}
+          hint={
+            takenList.length
+              ? '写回只改数值外壳括号内的数字，不换外壳、不动行尾注释；确认卡上再点一次才真写回。'
+              : '先在推荐参数里勾选要采纳的项。'
+          }
+        />
+      )}
     </div>
   )
 }

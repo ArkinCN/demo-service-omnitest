@@ -1,24 +1,30 @@
-"""报告生成与下载（阶段 4.4 引入；2026-09-28 修 G-06 / G-07）。
+"""报告生成与下载（阶段 4.4 引入；2026-09-28 修 G-06 / G-07；2026-10-10 改口径）。
 
-主文档 4.4 硬约束：**不自研 Excel 写入，复用客户 writeFile_rust**。
-本模块做的是「把系统产物整理成 writeFile_rust 要的输入形态并调它」的适配层。
+## 口径变更（2026-10-10 用户拍板，先看这段再看代码）
+
+**系统内置模板（`report_workbook.py` 产出）就是客户认可的正式报告模板。**
+因此原先的三档（ok / placeholder / blocked）收成两档：
+
+| 情形 | 走哪条路 | status |
+|---|---|---|
+| 用户**没有**上传客户模板（默认） | 系统内置模板产出报告（`_self_built_report`） | **ok** |
+| 用户**已上传**客户模板 + 填充程序齐备 | `write-file-rust` 填充客户模板 | ok |
+| 用户已上传客户模板但**缺填充程序** | 不产出，如实报错 | **blocked** |
+| 生成过程抛错 | 不产出，如实报错 | blocked |
+
+两条纪律：
+  1. **缺填充程序时不静默降级**：用户明确要客户模板，却给一份系统内置版式的报告，
+     那是最危险的一种「看起来成功」——所以如实报 blocked 并说明缺什么。
+  2. **历史文件不失效**：下载端点仍保留 `*.placeholder.xlsm` / `*.placeholder.json`
+     兜底顺序，改版前生成的老报告照样下得到。
+
+## 客户模板通路（保留但不默认走）
 
 writeFile_rust CLI（见 `writeFile_rust/README.md`）：
     write-file-rust --template <xlsm> --images <dir> [--csv <csv>] --output <xlsm>
 
-⚠️ 两个阻塞的**当前状态**（原文写在文件头，2026-09-28 核实后更正）：
-  1. ~~writeFile_rust 未编译~~ → **已过时**：`writeFile_rust/write-file-rust.exe`
-     （22.48 MB）已存在，可直接调用。
-  2. **模板 .xlsm 不在本机**（真阻塞）：`report-template.json` 的 `template_file`
-     指向客户软件目录（`[源] ClientSoftware/...`），全仓搜 `.xlsm` = 0 个。
-
-因此**三档行为**（真跑通与不冒充两者都要）：
-  ┌ 模板存在        → 走 write-file-rust 真生成      → status: "ok"
-  ├ 模板缺失        → 生成**占位报告**（真文件、可下载）→ status: "placeholder"
-  └ 生成失败        → 不产出，如实报错                 → status: "blocked"
-
-**占位报告也要真产出、真下载**——用户要求「本轮真跑通一次」；同时在
-文件名、接口 status、note 三处标注「模板未到位」，不让人误以为这是最终交付件。
+启用方式：把客户 .xlsm 传进 `report_templates_dir()`（或调 `POST /api/reports/template`），
+并把 `write-file-rust.exe` 放到 `WRITE_FILE_RUST` 指向的位置。两者齐备即自动改走该通路。
 """
 from __future__ import annotations
 
@@ -39,7 +45,7 @@ from app.core.paths import PROJECT_ROOT, report_templates_dir, reports_dir
 from app.models.run import Artifact, Run
 from app.models.user import User
 from app.schemas.common import success_response
-from app.services.report_workbook import build_placeholder_workbook
+from app.services.report_workbook import build_report_workbook
 
 #: 报告表头里**由上游（流程 2 初始化配置）提供**的字段。
 #: 与前端 `c/web/src/features/flow-report/assemble.ts` 的 `UPSTREAM_HEADER_KEYS`
@@ -128,6 +134,8 @@ def _collect_report_data(session: Session, run_id: str) -> dict:
                 ② `config-snapshot` 的 `product_attributes`（只认**真快照**：
                    必须带 `product_attributes` 数组；`persistRun` 落的那份简化版只记场景与时刻）
       - 判定 ← `verdict-table` 的 `verdicts[].state`
+      - 判定明细 ← 同一份 `verdicts[]` 逐条取 `req_id / name / state`
+        （2026-10-10 编号 4 美化新增，供报告文件列出「哪几条判了什么」）
       - 产物 ← 该轮实际有的 `artifact_kind`
 
     ⚠️ 表头两条来源的**优先级是刻意的**（2026-09-30）：报告页人确认过的表头
@@ -198,53 +206,82 @@ def _collect_report_data(session: Session, run_id: str) -> dict:
 
     # ── 判定汇总
     verdict: dict[str, Any] | None = None
+    # 逐条判定明细（2026-10-10 编号 4 美化新增）：报告文件据此列出
+    # 「哪几条判了什么」，让判据总数与通过数之间能逐条核对。
+    verdict_items: list[dict[str, Any]] = []
     vt = by_kind.get("verdict-table")
     if isinstance(vt, dict) and isinstance(vt.get("verdicts"), list):
         states = [
             (v or {}).get("state", "") if isinstance(v, dict) else ""
             for v in vt["verdicts"]
         ]
+        n_pass = sum(1 for s in states if s == "pass")
+        n_fail = sum(1 for s in states if s == "fail")
+        # 通过率（2026-10-10 新增，需求单编号 3）
+        #   B 口径：通过率 = 通过 ÷（通过 + 不通过）。
+        #   「未采集」「本台架不适用」「人工判定」三类都不进分子也不进分母——
+        #   把没测到的算进分母，等于把「没测」当成「不合格」，那是造假。
+        #   分母为 0 时给 None：展示层显示「—」，**不许显示 0%**
+        #   （0% 会被读成「全不通过」，与实际语义相反）。
+        judged = n_pass + n_fail
         verdict = {
             "total": len(states),
-            "pass": sum(1 for s in states if s == "pass"),
-            "fail": sum(1 for s in states if s == "fail"),
+            "pass": n_pass,
+            "fail": n_fail,
             "missing": sum(1 for s in states if s in ("missing", "未采集")),
+            # 「本台架不适用」与「人工判定」也各自计数（2026-10-10 随通过率一并补）：
+            # 通过率的分母把这两类排除了，报告里就必须看得见它们有多少条——
+            # 否则「判据总数 34、通过 + 不通过才 8」会让人以为少了 26 条。
+            "not_applicable": sum(1 for s in states if s in ("not_applicable", "本台架不适用")),
+            "manual": sum(1 for s in states if s == "manual"),
+            "pass_rate": (n_pass / judged) if judged else None,
             "authoritative": bool(vt.get("authoritative")),
         }
+        # 明细只取「报告要用的三个字段」，state 原样透传（前端与 xlsm 各自映射中文，
+        # 两边同词：通过 / 不通过 / 未采集 / 人工判定 / 本台架不适用）。
+        verdict_items = [
+            {
+                "req_id": (v or {}).get("req_id") or "",
+                "name": (v or {}).get("name") or "",
+                "state": (v or {}).get("state") or "",
+            }
+            for v in vt["verdicts"]
+            if isinstance(v, dict)
+        ]
 
     return {
         "header": header,
         "missing_header_keys": missing,
         "verdict": verdict,
+        "verdict_items": verdict_items,
         "artifact_kinds": [a.artifact_kind for a in artifacts],
         "snapshot_counts": counts,
     }
 
 
-def _placeholder_report(run_id: str, reason: str, data: dict) -> Path:
-    """生成占位报告：**真文件、可下载、能在 Excel 里打开**。
+def _self_built_report(run_id: str, data: dict) -> Path:
+    """用**系统内置模板**生成报告：真文件、可下载、能在 Excel 里打开。
 
-    2026-09-28 用户要求：占位件也做成 **xlsm**（能看到本轮的真题数据），
-    而不是原先那份只有元数据的 JSON ——「先看效果，后续加模板」。
+    2026-10-10 口径变更（用户拍板）——**这就是正式报告**：
+      · 文件名不再带 `placeholder`（改用正式名 `report-<id>.xlsm`）；
+      · 首行琥珀「可替换」横幅**已按用户要求删除**；
+      · 接口返回 `status: "ok"`。
 
-    ⚠️ 它仍是**占位件**，不是交付件。三道标注缺一不可：
-      ① 文件名带 `placeholder`；② 首行琥珀横幅；③ 接口 `status: "placeholder"`。
-    理由见模块头：自建版式与客户模板的版式/VBA 宏/工作表结构都不同，
-    不标注就会被当成正式报告。
+    数据取自 `_collect_report_data`（只取真数据，缺的如实留「未提供」）。
 
-    ⚠️ 仍然**不生成 json**：上一版是 JSON，这版换成 xlsm——
-    用户要的是「能打开看效果」，JSON 做不到。但**下载端点的兜底顺序保留 JSON**，
-    这样旧轮次（改版前生成的）仍能下到，不会因为这次改动把历史文件变成 404。
+    ⚠️ 下载端点的兜底顺序**仍保留** `*.placeholder.xlsm` / `*.placeholder.json`：
+    那是改版前生成的历史文件，不因这次改口径把旧报告变成 404。
     """
-    dest = _report_path(run_id, "placeholder.xlsm")
-    build_placeholder_workbook(
+    dest = _report_path(run_id, "xlsm")
+    build_report_workbook(
         run_id=run_id,
         header=data.get("header") or {},
         missing_header_keys=data.get("missing_header_keys") or [],
         verdict=data.get("verdict"),
+        verdict_items=data.get("verdict_items") or [],
         artifact_kinds=data.get("artifact_kinds") or [],
         snapshot_counts=data.get("snapshot_counts"),
-        reason=reason,
+        source_note="系统内置模板",
         output=dest,
     )
     return dest
@@ -259,11 +296,11 @@ async def generate_report(
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """生成报告。三档行为见模块头（ok / placeholder / blocked）。
+    """生成报告。两档见模块头（ok / blocked）。
 
     ⚠️ 本轮**不含波形图**：波形需真机采集（`capture_scope` 从未真跑过，
     且需现场有人把电机跑起来），本轮无真机。`image_dir` 仍保留入参，
-    模板到位后可直接用。
+    客户模板通路启用后可直接用。
     """
     # 轮次必须存在——否则「生成成功」的是一份指向空轮次的报告
     run = session.exec(select(Run).where(Run.run_id == run_id)).first()
@@ -278,8 +315,18 @@ async def generate_report(
     tpl = template_path or _read_template_path(session, run_id)
     tpl_exists = bool(tpl) and not tpl.startswith("[源]") and Path(tpl).exists()
 
-    # ── 档位 1：模板存在 + 工具存在 → 真生成
-    if tpl_exists and WRITE_FILE_RUST.exists():
+    # ── 路径 1：用户**真的上传了客户模板** → 必须走客户模板填充工具
+    if tpl_exists:
+        if not WRITE_FILE_RUST.exists():
+            # 明确要客户模板却缺填充程序：如实报 blocked，**不静默降级**成系统内置模板
+            # （降级会让人以为拿到的是客户模板版式，那是最危险的一种「看起来成功」）。
+            return success_response(data={
+                "run_id": run_id, "status": "blocked", "artifacts": kinds,
+                "reason": (
+                    f"已上传客户模板（{Path(tpl).name}），但填充程序不存在：{WRITE_FILE_RUST}。"
+                    "请把 write-file-rust.exe 放到该位置，或删除已上传的客户模板以改用系统内置模板。"
+                ),
+            }, message="报告生成失败（缺填充程序，未产出文件）")
         out = _report_path(run_id, "xlsm")
         out.parent.mkdir(parents=True, exist_ok=True)
         cmd = [str(WRITE_FILE_RUST), "--template", tpl, "--images", image_dir or str(out.parent)]
@@ -314,36 +361,31 @@ async def generate_report(
             "reason": f"write-file-rust 退出码 {proc.returncode}：{tail[0][:300]}",
         }, message="报告生成失败（未产出文件）")
 
-    # ── 档位 2：模板缺失 → 系统自建模板报告（真文件、可下载，两处标注）
+    # ── 路径 2：没有客户模板 → 系统内置模板，**这就是正式报告**
     #
-    # 2026-09-28 用户要求：占位件做成 **xlsm**（能在 Excel 里打开、含本轮真题数据），
-    # 而不是只有元数据的 JSON ——「先看效果，后续加模板」。
-    # 2026-09-29 用户拍板：不等甲方模板，自建模板填数据出报告，做好可替换即可。
+    # 2026-10-10 用户拍板：系统内置模板即客户认可的正式报告模板。
+    # 因此这里返回 status="ok"、文件名不带 placeholder、首行不再有「可替换」横幅。
     # 数据取自 `_collect_report_data`（只取真数据，缺的如实留「未提供」）。
-    reason = (
-        f"使用系统自建模板（客户模板登记值：{tpl or '未登记'}）"
-        + ("" if WRITE_FILE_RUST.exists() else "；且 write-file-rust.exe 不存在")
-    )
+    # 抓不到的异常类别（磁盘满/权限）一律如实报 blocked，禁裸 catch。
     data = _collect_report_data(session, run_id)
     try:
-        dest = _placeholder_report(run_id, reason, data)
+        dest = _self_built_report(run_id, data)
     except Exception as exc:  # noqa: BLE001 —— 生成失败必须如实报，不能假装成功
-        logger.exception(f"report: placeholder build failed for {run_id}")
+        logger.exception(f"report: self-built build failed for {run_id}")
         return success_response(data={
             "run_id": run_id, "status": "blocked", "artifacts": kinds,
-            "reason": f"自建模板报告生成失败：{type(exc).__name__}: {exc}",
+            "reason": f"报告生成失败：{type(exc).__name__}: {exc}",
         }, message="报告生成失败（未产出文件）")
-    logger.warning(f"report: placeholder generated for {run_id} — {reason}")
+    logger.info(f"report: generated (system built-in template) for {run_id}")
     return success_response(data={
-        "run_id": run_id, "status": "placeholder", "file": dest.name,
+        "run_id": run_id, "status": "ok", "file": dest.name,
         "bytes": dest.stat().st_size, "artifacts": kinds,
-        "reason": reason,
         "download_url": f"/api/reports/{run_id}/download",
         "note": (
-            "报告已用系统自建模板生成（xlsm）：含本轮真题数据（表头 / 判定汇总 / 产物清单）。"
-            "版式由系统自建、非客户模板，**可替换**——上传客户正式模板后重新生成即为正式报告。"
+            "报告已生成（xlsm）：含本轮真题数据（表头 / 判定汇总 / 判定明细 / 产物清单）。"
+            "判定结论按后端权威结果如实呈现；「未采集」与「本台架不适用」均不计入通过率分母。"
         ),
-    }, message="已生成报告（系统自建模板）")
+    }, message="报告已生成")
 
 
 @router.get("/reports/{run_id}/download")
@@ -357,12 +399,12 @@ async def download_report(
     找不到文件时返回 404 并**说明该怎么办**，不返回空文件——
     空文件会让人以为「报告生成了但内容是空的」，那是另一回事。
     """
-    # 查找顺序（**正式优先，占位兜底**）：
-    #   ① report-<id>.xlsm            —— writeFile_rust 出的正式报告（模板到位后）
-    #   ② report-<id>.placeholder.xlsm —— 本系统自建的占位 xlsm（2026-09-28 起）
-    #   ③ report-<id>.placeholder.json —— **旧版占位件**，仅为兼容改版前生成的历史轮次，
-    #      否则这次改动会让旧文件下载变 404（历史记录不该因为改格式而失效）。
-    # 同一轮可能先出占位、后换正式，所以正式排最前。
+    # 查找顺序（**正式名优先，历史文件兜底**）：
+    #   ① report-<id>.xlsm            —— 正式报告（2026-10-10 起，系统内置模板也用它）
+    #   ② report-<id>.placeholder.xlsm —— **改版前**生成的占位 xlsm（2026-09-28 ~ 10-09）
+    #   ③ report-<id>.placeholder.json —— 更早的「只有元数据」版占位件
+    # ②③ 只为兼容历史轮次：改口径不该让旧报告的下载变成 404
+    # （历史记录不该因为改了格式而失效）。
     media_by_suffix = {
         ".xlsm": "application/vnd.ms-excel.sheet.macroEnabled.12",
         ".json": "application/json",

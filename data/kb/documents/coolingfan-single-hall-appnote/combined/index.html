@@ -22,6 +22,20 @@ th { background: #f0f5f1; font-weight: 600; }
 hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 .kb-fig { margin: 14px 0; text-align: center; }
 .kb-fig img { max-width: 100%; height: auto; border: 1px solid #e3e8e4; border-radius: 4px; }
+/* 代码块：整体成块，保留原始换行与缩进 */
+.kb-code {
+  background: #f7f9f7; border: 1px solid #e3e8e4; border-left: 3px solid #9bb8a8;
+  border-radius: 4px; padding: 10px 12px; margin: 12px 0; overflow-x: auto;
+  white-space: pre; font-size: 12px; line-height: 1.65;
+}
+.kb-code code { background: none; border: none; padding: 0; font-size: 12px; }
+/* 公式块：居中、衬线、留白（干净文本样式，不引排版引擎） */
+.kb-formula {
+  margin: 12px auto; padding: 8px 12px; max-width: 100%; text-align: center;
+  font-family: "Cambria Math", "Times New Roman", "Georgia", serif;
+  font-size: 14px; line-height: 2; color: #22302a;
+  background: #fbfcfb; border-radius: 4px; white-space: pre-wrap; word-break: break-word;
+}
 </style></head><body><h1>散热风扇单霍尔方案应用手册</h1><div style="margin:0 0 14px;padding:8px 10px;border:1px solid #e3e8e4;border-radius:4px;background:#f7faf8;color:#5b6b62;font-size:12px;">系统合成图文稿（由抽取产物重建，非客户原件 PDF）。</div><figure class="kb-fig"><img src="/api/kb/documents/coolingfan-single-hall-appnote/figure?name=p005_x126.png" alt="插图 1" loading="lazy"></figure>
 
 <h3>散热风扇单 HALL （无 BEMF 检测电路） 调试手册</h3>
@@ -31,8 +45,6 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 <p>峰岹科技 ( 深圳 ) 股份有限公司</p>
 
 <figure class="kb-fig"><img src="/api/kb/documents/coolingfan-single-hall-appnote/figure?name=p005_x127.png" alt="插图 2" loading="lazy"></figure>
-
-<h3>目 录</h3>
 
 <table><thead><tr><th>1 概述</th><th>........................................................................................................................................................................................ 4</th></tr></thead><tbody>
 <tr><td>2 硬件原理与参数配置 .............................................................................................................................................................</td><td>5</td></tr>
@@ -309,14 +321,14 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 <h3>1.  PMOSTYPE 设置</h3>
 
 
-<p>6861 上下桥臂都为 NMOS ，没有该设置； 6832 上桥臂为 PMOS ，需要进行 PMOSTYPE 设置。 PMOSTYPE 为 PMOS 芯片输出低电平或高电平有效驱动， 6832 正常 PMOS 为芯片输出低电平驱动， 为了兼容 48V 电压通过硬件电路特殊处理后 PMOS 为芯片输出高电平驱动，为重要参数，影响所有 DRV\_CMR 与 DRV\_OUT 配置，如果是常规电路选择 PMOSLOW ，如果 48V 选择 PMOSHIGH 。</p>
+<p>6861 上下桥臂都为 NMOS ，没有该设置； 6832 上桥臂为 PMOS ，需要进行 PMOSTYPE 设置。 PMOSTYPE 为 PMOS 芯片输出低电平或高电平有效驱动， 6832 正常 PMOS 为芯片输出低电平驱动， 为了兼容 48V 电压通过硬件电路特殊处理后 PMOS 为芯片输出高电平驱动，为重要参数，影响所有 DRV_CMR 与 DRV_OUT 配置，如果是常规电路选择 PMOSLOW ，如果 48V 选择 PMOSHIGH 。</p>
 
 <h3>2. SingleHallEn 设置</h3>
 
 
 <p>如果单 HALL 使能，则为启动有感运行到一定转速切入无感运行，需要设置有感切无感速度阈值， HALL 偏置角， HALL 对应 IO 口及其启动角度参数；如果不使能即为全程无感运行。</p>
 
-<h3>3. TailWind\_Mode 设置</h3>
+<h3>3. TailWind_Mode 设置</h3>
 
 
 <p>如果单 HALL 不使能，则只能选择 NoTailWind 不支持顺逆风检测，主要验证驱动电路是否正常； 如果单 HALL 使能则可以选择 NoTailWind 和 HALLFOCMethod 两种检测方式。</p>
@@ -362,7 +374,7 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 <p>HALL 跳变沿开窗注入的偏置角度，可选择 0-180 度， HALL 跳变沿一来就注入可能无法区分顺逆 风，这和 HALL 安装的位置有关，调节注入偏置角可以从软件上解决不同的 HALL 安装位置问题。</p>
 
 <ol>
-<li>DRIVER 初始化的 DRV\_COMR 设置</li>
+<li>DRIVER 初始化的 DRV_COMR 设置</li>
 </ol>
 
 
@@ -391,7 +403,7 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 <ol>
 <li>SingleHallEn 使能，即选择单 HALL 模式；</li>
-<li>TailWind\_Mode 选择 HALLFOCMethod ，即通过开窗注入的方式进行顺逆风方向检测；</li>
+<li>TailWind_Mode 选择 HALLFOCMethod ，即通过开窗注入的方式进行顺逆风方向检测；</li>
 <li>InjectType 可以先直接选择 Uinject ，即 U 相注入，后面根据实际效果再调整；</li>
 <li>TriggerType 先选择 DoubleTrigger ，后面根据实际效果再调整；</li>
 <li>使能 HALLFOCTestEn ，电机不是静止状态就会一直处于顺逆风检测中；</li>
@@ -427,12 +439,12 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 </ol>
 
 
-<p>由于 TriggerType 先选择 DoubleTrigger ，即在 HALL 上升沿和下降沿都会开窗注入并进行相电流 ADC 采样， 所以可以调整注入偏置角 HallFocInjectOffsetAngle 使得顺风和逆风的上升沿和下降沿的 ADC 采样值恰好大小关系 相反，如：假设 ADC1 为上升沿相电流采样值， ADC2 为下降沿相电流采样值，可以通过调整注入偏置角使得顺风 时 ADC1&amp;gt;ADC2 （或 ADC1&amp;lt;ADC2 ） ，逆风时 ADC1&amp;lt;ADC2( 或 ADC1&amp;gt;ADC2) ，这样就能判断方向，如果只是修改</p>
+<p>由于 TriggerType 先选择 DoubleTrigger ，即在 HALL 上升沿和下降沿都会开窗注入并进行相电流 ADC 采样， 所以可以调整注入偏置角 HallFocInjectOffsetAngle 使得顺风和逆风的上升沿和下降沿的 ADC 采样值恰好大小关系 相反，如：假设 ADC1 为上升沿相电流采样值， ADC2 为下降沿相电流采样值，可以通过调整注入偏置角使得顺风 时 ADC1&gt;ADC2 （或 ADC1&lt;ADC2 ） ，逆风时 ADC1&lt;ADC2( 或 ADC1&gt;ADC2) ，这样就能判断方向，如果只是修改</p>
 
 
 <h3>Application Note</h3>
 
-<p>偏置角无法达到上述效果，此时需要修改 InjectType ；考虑到最终的原则是在方向判断准确的情况下尽量减少注入 的时间，因此如果顺逆风转速过高时，建议过渡到只在上升沿进行开窗注入采样，这时候需要调整偏置角使得能 够满足：顺风时 ADC1&amp;gt;ADC2 （或 ADC1&amp;lt;ADC2 ） ，逆风时 ADC1&amp;lt;ADC2 （或 ADC1&amp;gt;ADC2 ）的前提下再满足如 下条件：高速顺风时 ADC1&amp;gt;0 （或 ADC1&amp;lt;0 ） , 高速逆风时 ADC1&amp;lt;0( 或 ADC1&amp;gt;0) （注意只需要高速满足即可） 。以 两对极电机为例，如果机械转速不超过 15000RPM 的回风量直接选择 DoubleTrigger ，超过的话选择 SingleDoubleTrigger 即在中低速下双跳变沿注入，高速下只在上升沿注入。如果选择 SingleDoubleTrigger 需要定 义下图参数，其中 ADCSpeed\_DoubleToSingle 为中低速双跳变沿开窗注入过渡到高速只在上升沿开窗注入的转 速阈值， ADCSpeed\_SingleToDouble 为高速只在上升沿开窗注入过渡到中低速双跳变沿开窗注入的速度阈值。</p>
+<p>偏置角无法达到上述效果，此时需要修改 InjectType ；考虑到最终的原则是在方向判断准确的情况下尽量减少注入 的时间，因此如果顺逆风转速过高时，建议过渡到只在上升沿进行开窗注入采样，这时候需要调整偏置角使得能 够满足：顺风时 ADC1&gt;ADC2 （或 ADC1&lt;ADC2 ） ，逆风时 ADC1&lt;ADC2 （或 ADC1&gt;ADC2 ）的前提下再满足如 下条件：高速顺风时 ADC1&gt;0 （或 ADC1&lt;0 ） , 高速逆风时 ADC1&lt;0( 或 ADC1&gt;0) （注意只需要高速满足即可） 。以 两对极电机为例，如果机械转速不超过 15000RPM 的回风量直接选择 DoubleTrigger ，超过的话选择 SingleDoubleTrigger 即在中低速下双跳变沿注入，高速下只在上升沿注入。如果选择 SingleDoubleTrigger 需要定 义下图参数，其中 ADCSpeed_DoubleToSingle 为中低速双跳变沿开窗注入过渡到高速只在上升沿开窗注入的转 速阈值， ADCSpeed_SingleToDouble 为高速只在上升沿开窗注入过渡到中低速双跳变沿开窗注入的速度阈值。</p>
 
 <h3>3.4 顺逆风方向判断后的启动调试</h3>
 
@@ -480,7 +492,7 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 <h3>2. 软件过流保护</h3>
 
-<p>程序通过获取三相电流值，当相电流值超过设定的软件过流保护值 OverSoftCurrentValue 时，则 1 毫秒计一 次；计数值达到 OverSoftCurrent\_DectTime 后触发保护。</p>
+<p>程序通过获取三相电流值，当相电流值超过设定的软件过流保护值 OverSoftCurrentValue 时，则 1 毫秒计一 次；计数值达到 OverSoftCurrent_DectTime 后触发保护。</p>
 
 <h3>4.1.2 电压保护</h3>
 
@@ -493,14 +505,14 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 <p>堵转保护有 3 种方法检测 :</p>
 
-<p>通过检测估算器计算出来的 FOC\_ESQU （估算器计算的反电动势的平方）判断，正常情况下，电机转速 越高， FOC\_ESQU 会越大。在电机发生堵转时，电机失步的情况下，估算转速会很高，但是 FOC\_ESQU 会 很小，因此可以通过该方式判断。</p>
+<p>通过检测估算器计算出来的 FOC_ESQU （估算器计算的反电动势的平方）判断，正常情况下，电机转速 越高， FOC_ESQU 会越大。在电机发生堵转时，电机失步的情况下，估算转速会很高，但是 FOC_ESQU 会 很小，因此可以通过该方式判断。</p>
 
 <h3>具体程序实现方法 :</h3>
 
 <ol>
-<li>方法一，当反电动势 mcFocCtrl.EsValue &amp;lt; 设定值，或估算转速 &amp;gt; 设定值且 mcFocCtrl.EsValue &amp;lt; 设 定值时，触发堵转保护，延时 StallRecoverTime 时间重启；</li>
+<li>方法一，当反电动势 mcFocCtrl.EsValue &lt; 设定值，或估算转速 &gt; 设定值且 mcFocCtrl.EsValue &lt; 设 定值时，触发堵转保护，延时 StallRecoverTime 时间重启；</li>
 <li>方法二，当转速小于设定的最小堵转转速或大于设定的最大堵转转速时，触发堵转保护；</li>
-<li>方法三，判断反电动势和转速的关系，当 mcFocCtrl.SpeedFlt &amp;gt; (mcFocCtrl.EsValue * 3) 触发堵转保护；</li>
+<li>方法三，判断反电动势和转速的关系，当 mcFocCtrl.SpeedFlt &gt; (mcFocCtrl.EsValue * 3) 触发堵转保护；</li>
 </ol>
 
 <h3>Application Note</h3>
@@ -521,7 +533,7 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 <h3>Application Note</h3>
 
 
-<h3>5 方案调试难点 &amp;amp; 解决方法</h3>
+<h3>5 方案调试难点 &amp; 解决方法</h3>
 
 <table><thead><tr><th>顺逆风 - 常见问题</th><th>顺逆风 - 解决方法</th></tr></thead><tbody>
 <tr><td>顺逆风方向检测错误</td><td>1. 调整三相注入方式 TrrigerType ； 2. 调节偏置角度 HallFocInjectOffsetAngle</td></tr>

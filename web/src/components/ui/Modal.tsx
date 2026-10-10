@@ -21,6 +21,7 @@ export function Modal({
   footer,
   children,
   width = 960,
+  zIndex = 50,
 }: {
   open: boolean
   onClose: () => void
@@ -29,12 +30,15 @@ export function Modal({
   footer?: ReactNode
   children: ReactNode
   width?: number
+  /** 遮罩层 z-index（默认 50）；当上层有更高 z 的容器（如自动化回归结果弹窗 z-60）时需调高 */
+  zIndex?: number
 }) {
   useEscape(open, onClose)
   if (!open) return null
   return createPortal(
     <div
       className="animate-fade fixed inset-0 z-50 flex items-center justify-center bg-[rgba(16,26,21,0.34)] p-10 backdrop-blur-[2px]"
+      style={{ zIndex }}
       onClick={onClose}
     >
       <div

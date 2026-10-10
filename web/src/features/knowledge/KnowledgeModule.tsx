@@ -715,6 +715,10 @@ function AssistantBar({ total }: { total: number }) {
             ]}
             // 会话标识与流程页同构（shell-<场景>-<scope>），后端据此维护上下文，避免与流程页串会话
             sessionId={`shell-${sceneId}-knowledge`}
+            // 会话持久化键同源：知识库助手收起 / 切页 / 刷新后对话都还在。
+            // ⚠️ 下边的 initialItems 只是「从没聊过」时的问候语种子——有落盘历史时
+            // AgentChat 会用历史顶掉它，不会出现「历史 + 问候语」叠在一张对话里。
+            persistKey={`shell-${sceneId}-knowledge`}
             onReady={setApi}
             onBusyChange={handleBusy}
             actionSlot={<ActionDock scope="knowledge" send={send} busy={busy} />}

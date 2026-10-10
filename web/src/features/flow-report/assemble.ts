@@ -35,8 +35,39 @@ export interface VerdictSummary {
   missing: number
   /** 本台架不适用 ≠ 未采集 ≠ 不通过，单独计数（2026-10-08 新增） */
   notApplicable: number
+  /**
+   * B 口径通过率 = 通过 ÷（通过 + 不通过），取值 0~1（2026-10-10 新增，需求单编号 3）。
+   * 未采集 / 本台架不适用 / 人工判定三类都不进分子分母；
+   * **分母为 0 时为 `null`** —— 展示层显示「—」，不许显示 0%。
+   */
+  passRate: number | null
   /** 后端权威结果还是前端预览 */
   authoritative: boolean
+}
+
+/**
+ * B 口径通过率 —— 前端唯一实现（与后端 `reports.py:_collect_report_data` 逐字同公式）。
+ *
+ * 分母只算**已判定**的条目（通过 + 不通过）：未采集、本台架不适用、人工判定都不进。
+ * 分母为 0 时返回 `null`（本轮没有任何可判定的通过/不通过项）——
+ * 界面与报告一律显示「—」，**禁止显示 0%**：0% 会被读成「全不通过」，与实际语义相反。
+ */
+export function computePassRate(pass: number, fail: number): number | null {
+  const judged = pass + fail
+  return judged > 0 ? pass / judged : null
+}
+
+/**
+ * 通过率显示文本（唯一出口，报告页各处共用）：
+ *   无判定数据 → 「—」；整数值 → 「100%」；非整数 → 保留 1 位小数（「66.7%」）。
+ * 不做「四舍五入成假整数」：66.6% 不许写成 67%。
+ */
+export function fmtPassRate(rate: number | null): string {
+  if (rate === null) return '—'
+  const pct = rate * 100
+  // 容忍浮点误差（如 0.1×100 = 10.000000000000002），仍按整数显示
+  if (Math.abs(pct - Math.round(pct)) < 1e-9) return `${Math.round(pct)}%`
+  return `${pct.toFixed(1)}%`
 }
 
 export interface AssembledReport {
@@ -119,13 +150,17 @@ export async function assembleReport(runId: string | null): Promise<AssembledRep
     | undefined
   if (vt && Array.isArray(vt.verdicts)) {
     const states = vt.verdicts.map((v) => v?.state ?? '')
+    const pass = states.filter((s) => s === 'pass').length
+    const fail = states.filter((s) => s === 'fail').length
     verdict = {
       total: states.length,
-      pass: states.filter((s) => s === 'pass').length,
-      fail: states.filter((s) => s === 'fail').length,
+      pass,
+      fail,
       missing: states.filter((s) => s === 'missing' || s === '未采集').length,
       // 本台架不适用（2026-10-08）：与 missing 分开统计，不进通过/不通过
       notApplicable: states.filter((s) => s === 'not_applicable' || s === '本台架不适用').length,
+      // 通过率（2026-10-10）：分母只含已判定的通过/不通过，与后端同公式
+      passRate: computePassRate(pass, fail),
       authoritative: Boolean(vt.authoritative),
     }
   }

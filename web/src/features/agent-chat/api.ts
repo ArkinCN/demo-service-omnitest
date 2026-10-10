@@ -1,5 +1,6 @@
 // 后端适配层：定义 SSE 事件协议，并提供 mock / DeepSeek Harness 两种实现。
 import type { EvidenceItem, PermissionLevel, Verdict } from './types';
+import { getToolExecutor, type ToolExecResult } from './toolExec';
 import { heldEnv } from '../copilot/held';
 import {
   REDLINE_ACTIONS,
@@ -383,8 +384,16 @@ export const mockAdapter: AgentAdapter = {
  */
 const confirmActor = () => useAppStore.getState().operator;
 
-/** 放行回执。actor 与 confirm_token 都带上，与契约第 1.1.2 节的建议一致。 */
-function postConfirm(callId: string, approved: boolean, confirmToken?: string) {
+/** 放行回执。actor 与 confirm_token 都带上，与契约第 1.1.2 节的建议一致。
+ *
+ * result（2026-10-10 新增）：前端执行类工具的真执行结果 `{ok, summary, data?}`，
+ * 随回执带给后端，由后端作为 tool_result 回填模型。设备桥凭据流不带此字段。 */
+function postConfirm(
+  callId: string,
+  approved: boolean,
+  confirmToken?: string,
+  result?: { ok: boolean; summary: string; data?: unknown },
+) {
   return fetch('/api/agent/confirm', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -393,8 +402,26 @@ function postConfirm(callId: string, approved: boolean, confirmToken?: string) {
       approved,
       actor: confirmActor(),
       ...(confirmToken ? { confirm_token: confirmToken } : {}),
+      ...(result ? { result } : {}),
     }),
   });
+}
+
+/**
+ * 按权限档位生成请求体的工具白名单（2026-10-10）。
+ *
+ * ⚠️ 这只是**前端开关**：真正的权限边界由后端 select_tools(permission) 硬过滤决定
+ * （不信任前端）。这里同步按档生成，是为了让「只读档不发写工具」在请求层就诚实，
+ * 与后端口径一致；即便这里多发一个写工具，后端也只读档照样不会下发给模型。
+ *
+ * - readonly : 仅检索工具。
+ * - params   : 检索 + 写报告表头。
+ * - hardware : 同 params（设备控制工具下一批再接）。
+ */
+export function enabledToolsFor(permission: string): string[] {
+  const base = ['KnowledgeSearch', 'DocLibrarySearch'];
+  if (permission === 'params' || permission === 'hardware') return [...base, 'WriteReportHeader'];
+  return base;
 }
 
 export const dshAdapter: AgentAdapter = {
@@ -417,10 +444,10 @@ export const dshAdapter: AgentAdapter = {
           permission: req.permission,
           auto_run: req.autoRun,
           session_id: req.sessionId,
-          // 检索工具开关：后端 select_tools() 在缺省/空列表时返回空工具集，
-          // 模型会纯回答、不触发检索，前端就收不到 tool_call/evidence 事件。
-          // permission 只读档只开放只读检索工具，不涉及改动类动作。
-          enabled_tools: ['KnowledgeSearch', 'DocLibrarySearch'],
+          // 工具开关：后端 select_tools(enabled ∩ permission) 决定最终集，
+          // 缺省/空列表时返回空工具集（模型纯回答、前端收不到 tool_call）。
+          // 按档生成：只读档仅检索；可改参数/可控硬件档追加写报告表头工具。
+          enabled_tools: enabledToolsFor(req.permission),
           ...(ctx ? { context: ctx } : {}),
         }),
         signal: req.signal,
@@ -475,6 +502,29 @@ export const dshAdapter: AgentAdapter = {
         await postConfirm(call.callId, passed, token);
         return;
       }
+
+      // ── 前端执行类工具（2026-10-10）──
+      // 写类工具（如 WriteReportHeader）无 confirm_token：人点「确认执行」后，
+      // 由前端注册的执行器**真正执行**（写 store + 落库），把结果随回执带给后端。
+      // 未注册执行器 → 如实回「无执行器、未执行」，绝不谎报成功。
+      const executor = getToolExecutor(call.name);
+      if (executor) {
+        if (!ok) {
+          // 人点了取消：不回传 result，后端按「未执行」处理
+          await postConfirm(call.callId, false, undefined);
+          return;
+        }
+        let result: ToolExecResult;
+        try {
+          result = await executor((call.args ?? {}) as Record<string, unknown>);
+        } catch (e) {
+          // 执行器抛错也要如实回传「失败」，不能让后端以为写成功了
+          result = { ok: false, summary: `执行异常：${e instanceof Error ? e.message : String(e)}` };
+        }
+        await postConfirm(call.callId, true, undefined, result);
+        return;
+      }
+
       await postConfirm(call.callId, ok, token);
     };
     const reader = resp.body.getReader();

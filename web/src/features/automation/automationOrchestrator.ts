@@ -327,7 +327,8 @@ export interface AutomationConfig {
   stageTimeoutMs: number
   /** 单个阶段失败重试次数 */
   maxRetries: number
-  /** 流程4 调优重试上限：跑流程3→判fail→采纳→回流程3，最多循环这么多次 */
+  /** 流程4 调优重试上限：跑流程3→判fail→采纳→回流程3，最多循环这么多次。
+   *  缺省取 `TUNE_RETRIES`（唯一来源），别在调用处再写死一个数字。 */
   tuneRetries: number
   /** 播报节流（毫秒）：同类型事件至少间隔这么久才重发一次 */
   announceThrottleMs: number
@@ -379,6 +380,16 @@ export const FINAL_ROUTE = '/report'
  * 已落库的测试产物（快照/基线/判定/报告）一律不动——这点在 clearAutomation 注释里写明。
  */
 export const AUTOMATION_STORAGE_KEY = 'omnitest.automation.v1'
+
+/**
+ * 流程 4 调优重跑轮次上限 —— **唯一来源**。
+ *
+ * 演示口径（2026-10-10 用户拍板，需求单编号 2）：**只重跑 1 轮**。
+ * 一次真机测试要几分钟，轮次越多等待越久；跑满上限后无论结果如何都出报告。
+ * 循环条件（`start()` 里的 while）与引导屏文案（`AutomationIntro`）都从这里派生，
+ * 别处不许再写一个数字 —— 这两处口径曾经漂移过（注释写 3、逻辑改 1）。
+ */
+export const TUNE_RETRIES = 1
 
 const DEFAULT_CONFIG: AutomationConfig = {
   // 阶段严格对齐顶部五流程（data/flows.ts 的 FLOWS）：id/name/route 一一对应。
@@ -435,8 +446,9 @@ const DEFAULT_CONFIG: AutomationConfig = {
   ],
   stageTimeoutMs: 120_000,
   maxRetries: 1,
-  // 流程4 调优重试：跑流程3→判fail→自动采纳→回流程3，最多循环 3 次，之后无论结果都出报告。
-  tuneRetries: 3,
+  // 流程4 调优重试：跑流程3→判fail→自动采纳→回流程3，最多循环 TUNE_RETRIES 次（现为 1，见常量说明），
+  // 之后无论结果都出报告。
+  tuneRetries: TUNE_RETRIES,
   announceThrottleMs: 400,
   storageKey: AUTOMATION_STORAGE_KEY,
   minStageMs: 900,

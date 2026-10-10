@@ -60,7 +60,7 @@ export function ToolCallCard({ call, onConfirm }: Props) {
         </div>
         {call.status === 'pending_confirm' && onConfirm ? (
           <div className="ac-tool__confirm">
-            <span className="ac-tool__confirm-text">该动作会改变被测对象状态，需人工放行。</span>
+            <span className="ac-tool__confirm-text">该动作会写入数据或改变被测对象状态，需人工放行。</span>
             <button type="button" className="ac-btn ac-btn--solid" onClick={() => onConfirm(call.id, true)}>
               确认执行
             </button>

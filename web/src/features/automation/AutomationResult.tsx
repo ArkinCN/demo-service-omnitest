@@ -17,7 +17,7 @@ import type { StageView, VerdictStats } from './automationViewModel'
    三条交互口径（与 Overlay 约定一致）：
      · 「关闭」= 收起弹窗（**只收起**，不退出回归、不清运行台数据）；
      · 「重新运行」= 回引导屏（不直接开跑，仍要人确认一次现场安全）；
-     · 「查看报告」= 跳报告页并退出回归（报告是本轮的自然终点）。
+     · 「查看报告」= 原地打开报告预览弹窗（不退出回归、不跳报告页）。
 
    数据纪律（本页最要紧的一条）：**四块统计全部取编排器事件的真值**，
      · 总耗时 ← startedAt/finishedAt 做减法，不由前端累加计时器；
@@ -43,6 +43,7 @@ export function AutomationResult({
   /** 收起弹窗（停留运行台）；**不是**退出回归 */
   onDismiss: () => void
   onRetry: () => void
+  /** 打开报告预览弹窗（原地，不退出回归、不跳页） */
   onViewReport: () => void
   onRedownload: () => void
 }) {

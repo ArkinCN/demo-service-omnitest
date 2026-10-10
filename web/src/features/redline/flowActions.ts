@@ -402,7 +402,8 @@ export function useFlowActions(): (id: string) => ActionBinding {
             st.setNotice(
               r.status === 'ok'
                 ? `${t.label}：${r.file ?? ''}（${r.bytes ?? 0} 字节），已开始下载`
-                : `${t.label}：${r.file ?? ''}（${r.bytes ?? 0} 字节），已开始下载；版式为系统自建、可替换（${r.reason ?? ''}）`,
+                : // placeholder 只剩「改版前落的历史轮次」这一种来源，措辞里不再提「可替换」
+                  `${t.label}：${r.file ?? ''}（${r.bytes ?? 0} 字节），已开始下载；该轮为历史占位版式`,
             )
           })
           .catch((e: unknown) => {

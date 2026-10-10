@@ -14,6 +14,7 @@ import { ExperienceModal } from './components/ExperienceModal';
 import { Markdown } from './components/Markdown';
 import { ToolCallCard } from './components/ToolCallCard';
 import { VerdictCard } from './components/VerdictCard';
+import { readStoredChat, writeStoredChat } from './persist';
 import { useAppStore } from '../../state/useAppStore';
 
 export interface AgentChatProps {
@@ -82,6 +83,19 @@ export interface AgentChatProps {
    * 与「沉淀为经验 / 依据」同排，不遮不压；由宿主决定收起后的表现。
    */
   onCollapse?: () => void;
+  /**
+   * 会话持久化键（2026-10-10 用户需求单：收起再打开、切页、刷新不能丢对话）。
+   *
+   * **必须随会话变化**：宿主传的 sessionId（`shell-<场景>-<流程>` /
+   * `shell-<场景>-knowledge`）天然满足「每流程一份 + 知识库一份」，
+   * 本组件不自造命名。最终落盘键 = `omnitest.chat.v1.<persistKey>`。
+   *
+   * ⚠️ 该 prop 变化即视为**换会话**（不是同会话的新数据），效果同 key 变化：
+   * 立刻清掉上一份内存态并改读新键，避免把 A 流程的对话画到 B 流程的卡片里。
+   *
+   * 缺省 undefined = 不持久化，行为与加它之前完全一致（组件仍可独立复用）。
+   */
+  persistKey?: string;
 }
 
 /** 交给宿主的命令式接口 */
@@ -121,23 +135,49 @@ export function AgentChat(props: AgentChatProps) {
     evidenceOpenOnMount = false,
     operator = '当前操作员',
     defaultModel = 'deepseek-v4-pro',
-    defaultPermission = 'params',
+    // 保留入参以不破坏调用方接口；2026-10-10 起权限改由全局 store 驱动，此值仅作说明。
+    defaultPermission: _defaultPermission,
     onSaveExperience,
     actionSlot,
     onReady,
     onBusyChange,
     sessionId,
     onCollapse,
+    persistKey,
   } = props;
 
-  const [items, setItems] = useState<ChatItem[]>(initialItems);
-  const [evidence, setEvidence] = useState<EvidenceItem[]>(initialEvidence);
+  /*
+   * 会话恢复（2026-10-10）：有落盘记录就用记录，没有才用 initialItems/initialEvidence。
+   *
+   * 为什么用惰性初值：读 localStorage 是同步操作，放在 useState 初始化函数里
+   * 就能在**首帧之前**拿到历史，避免「先画空壳、再补历史」的闪烁。
+   * 本组件被宿主用 key={flow} 挂载，换流程即换实例，惰性初值不会读串。
+   */
+  const [items, setItems] = useState<ChatItem[]>(() => {
+    if (!persistKey) return initialItems;
+    return readStoredChat(persistKey)?.items ?? initialItems;
+  });
+  const [evidence, setEvidence] = useState<EvidenceItem[]>(() => {
+    if (!persistKey) return initialEvidence;
+    return readStoredChat(persistKey)?.evidence ?? initialEvidence;
+  });
   const [shownEvidenceIds, setShownEvidenceIds] = useState<string[] | null>(
     evidenceOpenOnMount ? initialEvidence.map((e) => e.id) : null,
   );
   const [busy, setBusy] = useState(false);
   const [model, setModel] = useState(defaultModel);
-  const [permission, setPermission] = useState<PermissionLevel>(defaultPermission);
+  /**
+   * 权限档位**全局化**（2026-10-10 权限切换修复）。
+   *
+   * 此前它是本组件内部 state，且没有一路传到后端 → 切档只改 UI 高亮，
+   * 模型侧永远看到写死的 readonly（根因见报告）。现在以 store 为**单一来源**：
+   * 切换即写 store + 落盘，各宿主（流程页/知识库/运行台）共享同一档位。
+   * `defaultPermission` prop 保留（不破坏调用方接口），仅在 store 无值时作初始兜底。
+   */
+  const permission = useAppStore((s) => s.permission) as PermissionLevel;
+  const setPermission = useAppStore((s) => s.setPermission);
+  // 显式标注：defaultPermission 仅保留接口兼容，不再参与逻辑（权限以 store 为准）
+  void _defaultPermission;
   const [autoRun, setAutoRun] = useState(true);
   const [expDraft, setExpDraft] = useState<ExperienceDraft | null>(null);
 
@@ -152,6 +192,60 @@ export function AgentChat(props: AgentChatProps) {
     const el = streamRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [items]);
+
+  /* -------------------------------- 会话持久化（2026-10-10）
+
+     收起卡片 / 切流程 / 切页都会把本组件**整块卸载**，刷新更是连宿主一起重来，
+     所以对话必须落盘；否则用户看到的就是「一收起、对话就白了」。
+     写入节奏：跑一轮时事件是高频追加的，因此 400ms 防抖；另有卸载兜底，
+     免得刚跑完的最后一轮正好落在防抖窗口里被丢掉。
+     ------------------------------------------------ */
+
+  /** 最新一份对话与依据：防抖回调与卸载兜底都从这里取值，避免闭包拿到旧数组 */
+  const latestRef = useRef({ items, evidence });
+  latestRef.current = { items, evidence };
+
+  /** 会话键也跟随 ref：卸载时那个 cleanup 闭包里要拿得到当时的值 */
+  const persistKeyRef = useRef(persistKey);
+  persistKeyRef.current = persistKey;
+
+  useEffect(() => {
+    if (!persistKey) return;
+    const timer = setTimeout(() => {
+      writeStoredChat(persistKey, latestRef.current.items, latestRef.current.evidence);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [items, evidence, persistKey]);
+
+  // 卸载兜底：宿主收起 / 切页 / 换会话时的最后一次落盘
+  useEffect(() => {
+    if (!persistKey) return;
+    return () => {
+      writeStoredChat(persistKey, latestRef.current.items, latestRef.current.evidence);
+    };
+  }, [persistKey]);
+
+  /**
+   * 换会话（persistKey 变化）时立刻换台：
+   * 清掉上一份内存态并改读新键。本组件的宿主目前都用 key={flow} 挂载，
+   * 换流程走的是「卸载重建」而不是这条路径；保留它是为了这个接口在别处复用时
+   * 不会把 A 会话的对话画到 B 会话的卡片里。
+   * ⚠️ 下方所有 effect 都排在它后面，因此「跳过开场提问」与「卸载兜底」
+   * 拿到的都是换台之后的状态。
+   */
+  const prevPersistKey = useRef(persistKey);
+  useEffect(() => {
+    if (prevPersistKey.current === persistKey) return;
+    prevPersistKey.current = persistKey;
+    if (!persistKey) {
+      setItems([]);
+      setEvidence([]);
+      return;
+    }
+    const restored = readStoredChat(persistKey);
+    setItems(restored?.items ?? []);
+    setEvidence(restored?.evidence ?? []);
+  }, [persistKey]);
 
   const apply = useCallback((ev: AgentEvent) => {
     setItems((prev) => {
@@ -400,8 +494,14 @@ export function AgentChat(props: AgentChatProps) {
    * 容易出现「第一次置位但那次 run 被丢弃 → 之后再也不发」。现在把记账放在
    * **真正进入发送分支之后**，且以「已记账」为唯一判据：ready 到来时若还没发过，
    * 一定发得出去；已发过则严格幂等。
+   *
+   * ⚠️ 恢复到历史对话时**不再自动开场**（2026-10-10）：否则刷新一次就多出一轮
+   * 「产品本体属性里哪些是占位的」——人看到的不是「上次的对话」，而是被追问了一句。
+   * 判定放在惰性初始化期内联读，不额外引入时序依赖；读不到历史时才置 false 走原逻辑。
    */
-  const started = useRef(false);
+  const started = useRef(
+    persistKey ? readStoredChat(persistKey) !== null : false,
+  );
   useEffect(() => {
     if (!autoStartPrompt || !autoStartReady || started.current) return;
     started.current = true;

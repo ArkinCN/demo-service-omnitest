@@ -4,6 +4,8 @@ import type { LucideIcon } from 'lucide-react'
 import { Button } from '../../components/ui'
 import { FLOWS } from '../../data/flows'
 import { getPack } from '../scene/pack'
+// 调优重跑轮次从编排器的唯一来源取，不在这里另写一个数字（两处口径曾漂移过）
+import { TUNE_RETRIES } from './automationOrchestrator'
 
 /* ===========================================================================
    自动化回归 · 一屏引导（授权前置）
@@ -54,8 +56,7 @@ export function AutomationIntro({
   const notes: { title: string; body: string }[] = [
     {
       title: '参数怎么选',
-      body:
-        '按「上次采纳值 → 初始化快照 → 场景包文档值」回落。判定不达标时自动采纳推荐参数、写回并回到第 3 步重测，最多 3 轮。',
+      body: `按「上次采纳值 → 初始化快照 → 场景包文档值」回落。判定不达标时自动采纳推荐参数、写回并回到第 3 步重测，最多 ${TUNE_RETRIES} 轮。`,
     },
     {
       title: gateIds
@@ -67,8 +68,9 @@ export function AutomationIntro({
     },
     {
       title: '会真下发设备启动',
-      body:
-        '风扇会真的转起来。点开始前请确认现场无人接触旋转件、急停回路可用。一轮采集约 45~50 秒，含调优重测全程约 1~3 分钟。',
+      // 全程时长不写死分钟数：它随调优轮次变，改成由 TUNE_RETRIES 派生的采集轮数，
+      // 免得改了上限而耗时说明还停在旧口径（原来写「约 1~3 分钟」是按 3 轮估的）。
+      body: `风扇会真的转起来。点开始前请确认现场无人接触旋转件、急停回路可用。一轮采集约 45~50 秒；调优重测最多 ${TUNE_RETRIES} 轮，全程采集轮数不超过 ${TUNE_RETRIES + 1} 轮。`,
     },
   ]
   const NOTE_ICON: LucideIcon[] = [Sliders, ShieldCheck, Timer]

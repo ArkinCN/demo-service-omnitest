@@ -7,6 +7,7 @@ import {
   Gauge,
   PlayCircle,
   SlidersHorizontal,
+  Terminal,
   Zap,
 } from 'lucide-react'
 import { Button, Panel, PanelHeader, Tooltip, cn } from '../../components/ui'
@@ -76,69 +77,122 @@ const TERMINAL_LABEL: Record<'completed' | 'failed' | 'stopped', string> = {
   stopped: '已终止',
 }
 
-/** 默认：趋势 55% / 日志 45%（双击复位回到此值） */
-const DEFAULT_LOG_RATIO = 0.45
-/** 静态兜底区间（实测高度不足时向上/向下收紧） */
-const MIN_LOG_RATIO = 0.18
-const MAX_LOG_RATIO = 0.82
-/** 趋势区像素下限：沿用它原来的 min-h-[220px]，也正好保住 FanTrendChart 的 full 档 */
+/**
+ * 执行日志区（中栏第三行，与助手卡共用）的**固定高度**：190px（2026-10-10 用户定）。
+ *
+ * 之前它是「占中栏可用高的比例」（默认 45%），于是同一块区域在 692 / 900 / 1080 高的
+ * 窗口下分别是 242 / 336 / 417px —— 换个屏幕就换个高度。用户要求**固定成同一高度**：
+ *   · 存的是**像素**而不是比例 ⇒ 窗口缩放时这块不动，多出来的高度全给上方实时趋势
+ *     （用户原话：「下面固定，上面是要动的」）；
+ *   · 190px = 卡头 47px + 约 6 行日志，取自用户截图里量出的高度；
+ *   · 助手态另有更高的下限 300px（见 CONSOLE_AI_MIN_H），本默认值只对日志态生效。
+ */
+const LOG_DEFAULT_H = 190
+/**
+ * 趋势区像素下限：沿用它原来的 min-h-[220px]，也正好保住 FanTrendChart 的 full 档。
+ *
+ * ⚠️ 2026-10-10（机测页助手高度修复）按用户确认的保守口径**保持不变**：助手态下也不
+ * 放开，即 AI 卡最多 = 中栏可用高 − 220。将来若要让它像人测页面板那样被压到只剩标题条，
+ * 只需要改这个数（人测页对应常量是 `app/FlowScreen.tsx` 的 PANEL_MIN_H）。
+ *
+ * ⚠️ 它现在只是**拖动 / 键盘**的上界护栏；窗口本身矮到装不下时，渲染照样保住日志区的
+ * 固定高度、让趋势让位（见 clampRowHeight / rowHeightBounds 的说明）。
+ */
 const TREND_MIN_H = 220
-/** 日志区像素下限：沿用它原来的 min-h-[140px] */
+/** 日志区像素下限：可拖到的最小高度（沿用它原来的 min-h-[140px]） */
 const LOG_MIN_H = 140
 /**
- * 助手卡像素下限（2026-10-10 新增）。
+ * 助手卡像素下限（助手态 300 —— 日志态的下限是 LOG_MIN_H）。
  *
- * 与流程页 `app/FlowScreen.tsx` 的 `ASSISTANT_MIN_H` **同源同值**：助手卡在下方
- * 第三行出现时，输入框 / 停止按钮 / 模型·权限行必须完整可见。实测「头部 44 +
- * 动作条 34 + 输入框 58 + 模型行 40 + 内边距」≈ 215px，取 216。
+ * ⚠️ 2026-10-10（机测页助手高度修复）由 216 抬到 300。216 只够把「卡头 47 + 输入区
+ * 125 = 172」摆下，对话区只剩 42px（约 2 行）——那正是用户报的「被压扁、展示不完整」。
+ * 300 给对话区留 ~128px（约 4~5 行），满足「至少能看到完整的输入框和几条对话」。
  *
- * ⚠️ 这是**模式下限**：日志态用 LOG_MIN_H、助手态用本值，喂给 `clampLogRatio`
- * 的第三个参数。若不按模式取，助手态会被旧的 140px 下界夹回、底部被裁。
- */
-const CONSOLE_AI_MIN_H = 216
-/** 分隔条行高：原两区之间 10px gap 全收进条里 */
-const HANDLE_H = 20
-/** 值 = 日志区占比字符串（与流程页的 flow-assistant-ratio:* 键区分） */
-const SPLIT_KEY = 'automation-console-split-ratio'
-
-/**
- * 把日志占比夹到「两侧像素下限都成立」的区间。
+ * 与流程页 `app/FlowScreen.tsx` 的 ASSISTANT_MIN_H / ASSISTANT_COMFORT_H 同源（那边
+ * 主动下拖可到 160、默认走 216 舒适口径）；这里是运行台第三行，取 300 作为常态下限。
  *
- * 静态兜底 [0.18, 0.82] 只防极端值；矮视口（1280×720 一类）下两侧底线相加
- * 可能超出容器，故必须用**实测高度**再夹一次，否则拖到端点会让栅格溢出、
- * 把底部状态条与「终止」按钮挤出屏幕。容器高度未知（首帧 / 已卸载）时退回静态兜底。
- *
- * ⚠️ 第三个参数 `thirdMinH` 是**第三行（日志卡 / 助手卡）的像素下限**：
- * 日志态 140、助手态 216（见 CONSOLE_AI_MIN_H）。像素夹取必须用它，否则
+ * ⚠️ 这是**模式下限**：日志态用 LOG_MIN_H、助手态用本值。若不按模式取，
  * 助手态会被日志态的 140px 下界夹回、助手卡底部被裁。
  */
-function clampLogRatio(r: number, containerH: number, thirdMinH: number = LOG_MIN_H): number {
-  let lo = MIN_LOG_RATIO
-  let hi = MAX_LOG_RATIO
-  if (containerH > 0) {
-    const byPixels = thirdMinH / containerH
-    const byTrend = 1 - TREND_MIN_H / containerH
-    // 像素约束比静态兜底更紧时才收紧；否则保留静态区间
-    lo = Math.max(lo, Math.min(byPixels, hi))
-    hi = Math.min(hi, Math.max(byTrend, lo))
-  }
-  return Math.min(hi, Math.max(lo, r))
+const CONSOLE_AI_MIN_H = 300
+/** 分隔条行高：原两区之间 10px gap 全收进条里 */
+const HANDLE_H = 20
+/** 日志区固定高度（px）的持久化键 */
+const LOG_H_KEY = 'automation-console-log-height'
+/** 旧键：存的是「日志占比」（0~1 的比例），改像素后弃用，读到即清理 */
+const LEGACY_SPLIT_KEY = 'automation-console-split-ratio'
+
+/**
+ * 可用高：容器高扣掉分隔条那一行。**所有像素换算统一用它**。
+ *
+ * 老实现夹取时分母用 containerH（含那 20px 条）、而栅格渲染时条是固定行会被扣掉，
+ * 两者差 20px，端点处会出现约 8~10px 的口径差（拖到顶时表现为「还差一点/多出来一点」）。
+ */
+function splitUsable(containerH: number): number {
+  return Math.max(0, containerH - HANDLE_H)
+}
+
+/** 第三行（日志区 / 助手卡）的**模式下限**：日志态 140、助手态 300 */
+function logRowMin(aiActive: boolean): number {
+  return aiActive ? CONSOLE_AI_MIN_H : LOG_MIN_H
 }
 
 /**
- * 读磁盘上的日志占比。
- *
- * 持久值只按**日志口径**（LOG_MIN_H）夹一次即可：它是「用户想要的日志比例」，
- * 与当前是日志态还是助手态无关；真正渲染时再由 `eff` 按模式下限现算。
+ * 渲染用的第三行高度（px）：**始终取用户存下的固定高**，只有窗口真装不下时才缩到
+ * 装得下的最大值（此时上方趋势让位，符合用户「下面固定，上面要动」的口径）。
+ * 下限按模式取（日志 140 / 助手 300），所以助手态永远 ≥300px。
  */
-function readLogRatio(): number {
-  if (typeof localStorage === 'undefined') return DEFAULT_LOG_RATIO
-  const raw = Number(localStorage.getItem(SPLIT_KEY))
-  if (!Number.isFinite(raw) || raw <= 0) return DEFAULT_LOG_RATIO
-  return clampLogRatio(raw, 0, LOG_MIN_H)
+function clampRowHeight(px: number, containerH: number, rowMinH: number): number {
+  const usable = splitUsable(containerH)
+  if (!(usable > 0)) return LOG_DEFAULT_H
+  const lo = Math.min(rowMinH, usable)
+  const want = Number.isFinite(px) ? px : LOG_DEFAULT_H
+  return Math.max(lo, Math.min(want, usable))
 }
 
-const pct = (r: number) => Math.round(r * 100)
+/**
+ * 拖动 / 键盘的合法区间（px）。
+ *
+ * · 下界 = 模式下限（窗口太矮时退化为可用高）；
+ * · 上界 = 给实时趋势留 TREND_MIN_H（220），**但不小于当前值**：窗口矮到装不下时，
+ *   渲染会照固定高显示（趋势让位），这时上界必须仍包含当前值，否则一拖就把日志「跳」矮。
+ */
+function rowHeightBounds(
+  containerH: number,
+  rowMinH: number,
+  currentPx: number,
+): { lo: number; hi: number } {
+  const usable = splitUsable(containerH)
+  if (!(usable > 0)) return { lo: 0, hi: LOG_DEFAULT_H }
+  const lo = Math.min(rowMinH, usable)
+  const hi = Math.max(lo, Math.min(usable, Math.max(usable - TREND_MIN_H, currentPx)))
+  return { lo, hi }
+}
+
+/**
+ * 读磁盘上的固定高度（px）。
+ *
+ * ⚠️ 旧版同一个位置存的是「日志占比」（0~1 的比例）。改成像素后旧值不再可用：一律忽略、
+ * 回默认 190px，并把旧键清掉（下一次拖动 / 双击复位就写成像素值）。
+ * 用「> 1」区分两种口径：比例恒 ≤ 1，像素高恒 > 1。
+ */
+function readLogHeight(): number {
+  if (typeof localStorage === 'undefined') return LOG_DEFAULT_H
+  try {
+    localStorage.removeItem(LEGACY_SPLIT_KEY)
+  } catch {
+    /* 清不掉不影响本次 */
+  }
+  const raw = Number(localStorage.getItem(LOG_H_KEY))
+  if (!Number.isFinite(raw) || raw <= 1) return LOG_DEFAULT_H
+  return raw
+}
+
+/** 还原拖动期间锁住的光标与选区（拖动结束与组件卸载都要调，否则会残留在 body 上） */
+function releaseBody() {
+  document.body.style.removeProperty('cursor')
+  document.body.style.removeProperty('user-select')
+}
 
 export function AutomationConsole({
   stages,
@@ -197,36 +251,48 @@ export function AutomationConsole({
    *     助手对话与进行中的回答不被切换打断（切走时只把卡片移出视野，不卸载）；
    *   · 位移用 transform.driver（GPU 合成、无布局抖动），motion-reduce 下降级为瞬时。
    *
-   * `panel` 只影响两块：第三行的**像素下限**（日志 140 / 助手 216）与两卡的位移。
+   * `panel` 只影响两块：第三行的**像素下限**（日志 140 / 助手 300，见 CONSOLE_AI_MIN_H）
+   * 与两卡的位移。
    * 它**不改日志数据逻辑、不新增任何轮询或硬件调用**（运行台纪律：不另起轮询、
    * 不启停台架），因此助手开合与测试运行完全解耦。
    */
   const [panel, setPanel] = useState<'log' | 'ai'>('log')
   const aiActive = panel === 'ai'
-  /** 第三行像素下限随模式取（见 CONSOLE_AI_MIN_H 注释） */
-  const thirdMinH = aiActive ? CONSOLE_AI_MIN_H : LOG_MIN_H
+  /** 第三行的像素下限随模式取（日志 140 / 助手 300，见 CONSOLE_AI_MIN_H 注释） */
+  const rowMinH = logRowMin(aiActive)
 
   /* ---------------------------------------------- 中栏「趋势 ↔ 日志」分隔条 */
-  const [ratio, setRatio] = useState(readLogRatio)
+  /** 日志区高度（px，**不是比例**）—— 窗口缩放时这个数不动，见 LOG_DEFAULT_H */
+  const [logH, setLogH] = useState(readLogHeight)
   const splitRef = useRef<HTMLDivElement>(null)
   const dragging = useRef(false)
-  /** 拆分栅格实测高度：clamp 要用它把两侧像素下限算成比例区间 */
+  /** 按下分隔条那一刻的锚点：指针纵坐标 + 第三行当时的**实际像素高**（相对位移法） */
+  const dragStart = useRef({ y: 0, h: 0 })
+  /** 拆分栅格实测高度：夹取要用它算可用高 */
   const [splitH, setSplitH] = useState(0)
 
-  const persistRatio = useCallback(
-    (r: number) => {
+  /**
+   * 落盘日志区高度（px）。**所有写入都经过这里**，按「给趋势留 220px」与当前模式下限
+   * 夹取，因此存下的值一定可达 ⇒ 存值 = 屏上实际高度，指针与条不会分家
+   * （这是人测页修「往下拉反而弹起来」时立的纪律）。入参可以是任何来源
+   * （拖动位移、方向键步进、双击复位）。
+   *
+   * `currentPx` = 当前**屏上**的第三行高度：窗口太矮时渲染会保住固定高、让趋势让位，
+   * 那种情况下上界若不包含当前值，一拖就会把日志「跳」矮（见 rowHeightBounds）。
+   */
+  const persistLogHeight = useCallback(
+    (px: number, currentPx: number) => {
       const h = splitRef.current?.getBoundingClientRect().height ?? splitH
-      // 拖动得到的「日志占比」按**日志口径**夹取后落盘：持久值语义单一（用户想要的
-      // 日志比例），与当前模式无关；渲染时再按 thirdMinH 现算，避免助手态污染存值。
-      const next = clampLogRatio(r, h, LOG_MIN_H)
-      setRatio(next)
+      const { lo, hi } = rowHeightBounds(h, rowMinH, currentPx)
+      const next = Math.min(hi, Math.max(lo, Number.isFinite(px) ? px : lo))
+      setLogH(next)
       try {
-        localStorage.setItem(SPLIT_KEY, String(next))
+        localStorage.setItem(LOG_H_KEY, String(Math.round(next)))
       } catch {
         // 隐私模式下 localStorage 可能被禁；记不住不影响本次调整
       }
     },
-    [splitH],
+    [splitH, rowMinH],
   )
 
   /* 容器高度跟随窗口/布局变化重算（窗口缩放、底部状态条换行等） */
@@ -240,31 +306,36 @@ export function AutomationConsole({
     return () => ro.disconnect()
   }, [])
 
-  /* 高度变化的重新收口：视口变矮后旧比例可能已越界，夹回合法区间。
-   * ⚠️ 依赖里带上 thirdMinH：切到助手态下限抬高（140→216）后也要夹一次，
-   * 否则旧比例可能让助手卡底部越界。 */
-  useEffect(() => {
-    setRatio((r) => clampLogRatio(r, splitH, thirdMinH))
-  }, [splitH, thirdMinH])
+  /* 视口/模式变化**不再改写高度状态**：用户存下的固定高一字不改，窗口装不下时只由渲染
+   * 现算（clampRowHeight），窗口恢复后自动回到他存的那个高度（人测页同款纪律：不被任何
+   * 逻辑强制复位）。删掉旧的 setRatio 收口还顺带解决一个隐患——它会在每次窗口缩放/切模式
+   * 时把状态改成夹取后的值，导致「存值 ≠ 屏上高度」，下次拖动的起算点就是错的。 */
 
   /**
    * 拖拽：按下分隔条后监听 window 的 move/up，而不是条自己的。
    * 指针很容易在拖动中滑出这条 20px 的细条，绑在自己身上会中途丢事件。
-   * 日志在下面：从底部往上量，得到的就是日志应占的比例。
+   *
+   * ⚠️ 2026-10-10（机测页助手高度修复）改为**指针相对位移**：按下时记下起点纵坐标与
+   * 第三行当时的实际像素高，移动时用位移换算新高度。老实现按指针绝对纵坐标反算比例，
+   * 一旦渲染被下限夹住，指针位置与卡片高度就各说各话（抓条瞬间跳变、往下拖不跟手）。
+   * 相对位移严格 1:1 跟手，拖到边界就停在边界，不弹回也不跳。语义与原来一致——
+   * 指针上移 = 下方区域（日志卡 / 助手卡）变大，与 ArrowUp 同向。
    */
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
       if (!dragging.current) return
       const box = splitRef.current?.getBoundingClientRect()
       if (!box || box.height <= 0) return
-      const fromBottom = (box.bottom - e.clientY) / box.height
-      persistRatio(fromBottom)
+      const usable = splitUsable(box.height)
+      if (usable <= 0) return
+      // 相对位移：指针往上（clientY 变小）→ 位移为正 → 日志区变高
+      const nextH = dragStart.current.h - (e.clientY - dragStart.current.y)
+      persistLogHeight(nextH, dragStart.current.h)
     }
     const onUp = () => {
       if (!dragging.current) return
       dragging.current = false
-      document.body.style.removeProperty('cursor')
-      document.body.style.removeProperty('user-select')
+      releaseBody()
     }
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
@@ -273,20 +344,53 @@ export function AutomationConsole({
       window.removeEventListener('pointerup', onUp)
       // ⚠️ 运行台会被整体卸载（跑完切结果页）：卸载时也要把锁住的光标/选区还原，
       // 否则会残留 row-resize 光标挂在 body 上，影响后续页面。
-      document.body.style.removeProperty('cursor')
-      document.body.style.removeProperty('user-select')
+      releaseBody()
     }
-  }, [persistRatio])
+  }, [persistLogHeight])
 
-  const startDrag = () => {
+  const startDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    const box = splitRef.current?.getBoundingClientRect()
+    if (!box) return
+    const bar = e.currentTarget.getBoundingClientRect()
     dragging.current = true
+    // 起点用**量到的实际高度**（条底边到容器底边 = 第三行高），而不是比例反推：
+    // 夹取后的高度才是用户看到的高度，按它起算，抓住条的那一刻才不会跳一下。
+    dragStart.current = { y: e.clientY, h: Math.max(0, box.bottom - bar.bottom) }
     // 拖动全程锁住光标与选区，否则手一快就选中了半屏文字
     document.body.style.cursor = 'row-resize'
     document.body.style.userSelect = 'none'
   }
 
-  const eff = clampLogRatio(ratio, splitH, thirdMinH)
-  const splitRows = `minmax(${TREND_MIN_H}px, ${(1 - eff).toFixed(4)}fr) ${HANDLE_H}px minmax(${thirdMinH}px, ${eff.toFixed(4)}fr)`
+  /**
+   * 第三行（日志卡 / 助手卡）最终渲染高度（px）：
+   * **默认恒为用户存下的固定高（190px）**，窗口缩放不动它；只有窗口真装不下时才缩到
+   * 装得下的最大值（此时上方趋势让位 —— 用户口径「下面固定，上面要动」）。
+   * 下限按模式取：日志态 140、助手态 300（助手卡不会被压回「被压扁」）。
+   */
+  const rowPx = clampRowHeight(logH, splitH, rowMinH)
+  const usable = splitUsable(splitH)
+  /** 拖动 / 键盘 / aria 报的真实可达区间（px，不是比例） */
+  const bounds = rowHeightBounds(splitH, rowMinH, rowPx)
+  /** 趋势行下限：给趋势留 220px；窗口太矮装不下时退到「剩多少算多少」，绝不溢出 */
+  const trendMinPx = Math.max(0, Math.min(TREND_MIN_H, usable - rowPx))
+
+  /**
+   * 中栏三行模板（趋势 / 拖动条 / 日志卡或助手卡）。
+   *
+   * ⚠️ 2026-10-10 实测踩到的坑：两行**都写成比例**会留下一条空白。
+   * `minmax(220px, a fr) 20px minmax(下限, b fr)`（a+b=1）一旦趋势被它 220px 的下限顶住
+   * ——而拖到顶必然发生——剩下那行的 fr 之和就 < 1，按 CSS 规范「flex sum 小于 1 时按 1 计」，
+   * 浏览器**不会**把剩余空间分完：1280×720 实测排成 220 / 20 / 216.1、缺口 130px；
+   * 1920×692 下卡片恒为 216px、缺口 102px 且拖到顶毫无变化。
+   *
+   * 故：第三行直接给**像素**（固定高），趋势行 `1fr` 吃掉剩下的全部 ⇒ 三行之和恒等于
+   * 容器高，既不溢出也不留空白。首帧还没量到容器高（splitH = 0）时用静态值兜底：
+   * 绝不能给出 0 高，否则第三行会闪一帧空壳（测量回调随后在绘制前补上真实高度）。
+   */
+  const splitRows =
+    splitH > 0
+      ? `minmax(${trendMinPx}px, 1fr) ${HANDLE_H}px ${rowPx}px`
+      : `minmax(${TREND_MIN_H}px, 1fr) ${HANDLE_H}px ${LOG_DEFAULT_H}px`
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -364,21 +468,25 @@ export function AutomationConsole({
             className="grid min-h-0 flex-1 overflow-hidden"
             style={{ gridTemplateRows: splitRows, gap: '0' }}
           >
-          <section className="flex min-h-0 flex-col rounded-tps border border-line-soft bg-surface">
-                 <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-line-soft px-3 py-2">
-            <Activity size={14} strokeWidth={1.9} className="shrink-0 text-p700" />
-               <h2 className="text-[12.5px] font-semibold text-t1">实时趋势</h2>
-                      <TrendPill cur={cur} live={live} terminalStatus={terminalStatus} />
-                 <span className="num ml-auto text-[11.5px] text-t3">
-                        {live.plan
-                     ? `计划 ${live.plan.planned_duration_s}s${
-                           live.plan.actual_duration_s != null
-                    ? ` · 实际 ${live.plan.actual_duration_s}s`
-              : ''
-              }${live.plan.overrun ? '（已延期）' : ''}`
-           : ''}
-                      </span>
-                    </header>
+          {/* 2026-10-10 样式统一：中/右栏卡标题条与左栏、人测页面同规格
+              （Panel + PanelHeader：h-[44px] / px-4 / 标题 16px / 图标 17px；计数 12px）。 */}
+          <Panel>
+            <PanelHeader
+              icon={<Activity size={17} strokeWidth={1.9} />}
+              title="实时趋势"
+              left={<TrendPill cur={cur} live={live} terminalStatus={terminalStatus} />}
+              right={
+                <span className="num text-[12px] text-t3">
+                  {live.plan
+                    ? `计划 ${live.plan.planned_duration_s}s${
+                        live.plan.actual_duration_s != null
+                          ? ` · 实际 ${live.plan.actual_duration_s}s`
+                          : ''
+                      }${live.plan.overrun ? '（已延期）' : ''}`
+                    : ''}
+                </span>
+              }
+            />
             <div className="min-h-0 flex-1 p-2">
               {/*
                 与 /run 人测页**同一套**时序曲线 UI（工具行 + 四通道读数行 + 趋势/波形
@@ -402,37 +510,43 @@ export function AutomationConsole({
                 }
               />
             </div>
-          </section>
+          </Panel>
 
           {/*
             可拖拽分隔条：常显抓握手柄（用户曾反馈「没注意到有这个条」，故不藏）。
             role="separator" + aria-* 让读屏软件知道这是可调整的分隔，方向键也能调。
             交互与视觉口径与流程页 app/FlowScreen.tsx 那条**同源**，保持手感一致。
+
+            2026-10-10：aria 报的是**像素**（执行日志区当前高度与真正能拖到的上下界），
+            因为这块现在是「固定像素高」而不是比例——报比例会与实际屏上高度对不上。
+            双击复位回 LOG_DEFAULT_H（190px），方向键 ±20px（Shift ±60px）。
           */}
           <div
             role="separator"
             data-testid="auto-console-splitter"
             aria-orientation="horizontal"
             aria-label="调整实时趋势与执行日志的高度"
-            aria-valuenow={pct(eff)}
-            aria-valuemin={pct(MIN_LOG_RATIO)}
-            aria-valuemax={pct(MAX_LOG_RATIO)}
+            aria-valuenow={Math.round(rowPx)}
+            aria-valuemin={Math.round(bounds.lo)}
+            aria-valuemax={Math.round(bounds.hi)}
+            aria-valuetext={`执行日志区 ${Math.round(rowPx)} 像素`}
             tabIndex={0}
             onPointerDown={startDrag}
-            onDoubleClick={() => persistRatio(DEFAULT_LOG_RATIO)}
+            onDoubleClick={() => persistLogHeight(LOG_DEFAULT_H, rowPx)}
             onKeyDown={(e) => {
               // ArrowUp = 日志区变大（与流程页「上键把下方区域拉大」同向）
-              const step = e.shiftKey ? 0.05 : 0.02
+              // 从**当前屏上高度**起算（rowPx 已是夹取后的值），步进踩在人看得见的高度上
+              const step = e.shiftKey ? 60 : 20
               if (e.key === 'ArrowUp') {
                 e.preventDefault()
-                persistRatio(ratio + step)
+                persistLogHeight(rowPx + step, rowPx)
               } else if (e.key === 'ArrowDown') {
                 e.preventDefault()
-                persistRatio(ratio - step)
+                persistLogHeight(rowPx - step, rowPx)
               }
             }}
             className="group flex cursor-row-resize items-center justify-center focus-visible:outline-none"
-            title="拖动调整实时趋势与执行日志的高度（双击复位）"
+            title="拖动调整执行日志区高度（默认 190px，双击复位）"
           >
             <span className="flex items-center gap-1 rounded-full bg-p50/70 px-2.5 py-[3px] transition-colors group-hover:bg-p50 group-focus-visible:bg-p50">
               <span className="h-[2px] w-5 rounded-full bg-t3/60 transition-colors group-hover:bg-ink group-focus-visible:bg-ink" />
@@ -697,12 +811,18 @@ function LogStream({ logs }: { logs: AutomationLogEntry[] }) {
   }, [logs.length])
 
   return (
-    <section className="flex min-h-0 flex-col rounded-tps bg-[#1A2320]">
+    <section className="flex min-h-0 flex-col overflow-hidden rounded-tp bg-[#1A2320]">
       {/* ⚠️ 头部右侧留 52px：右上角悬浮着圆形 AI 按钮（不随卷动位移），
-          不给「N 条」计数让位的话会被按钮压住。 */}
-      <header className="flex shrink-0 items-center gap-1.5 py-1.5 pr-[52px] pl-3 text-[10.5px] font-semibold tracking-[0.08em] text-white/45 uppercase">
-        执行日志
-        <span className="num ml-auto tracking-normal">{logs.length} 条</span>
+          不给「N 条」计数让位的话会被按钮压住。
+          2026-10-10 样式统一：标题条改用与其它卡相同的 h-[44px] / 16px 标题 / 17px 图标
+          规格（圆角同步为 rounded-tp）；只有配色仍是深色卡自己的（不套浅色 PanelHeader，
+          否则白字会被压成黑字）。 */}
+      <header className="flex h-[44px] shrink-0 items-center gap-2.5 border-b border-white/10 pr-[52px] pl-4">
+        <Terminal size={17} strokeWidth={1.9} className="shrink-0 text-white/70" />
+        <h2 className="shrink-0 text-[16px] leading-none font-semibold tracking-tight whitespace-nowrap text-white">
+          执行日志
+        </h2>
+        <span className="num ml-auto text-[12px] text-white/60">{logs.length} 条</span>
       </header>
       <div ref={boxRef} className="min-h-0 flex-1 overflow-y-auto px-3 pb-2">
         {logs.length ? (
@@ -758,19 +878,23 @@ function ProgressCard({ stageStats }: { stageStats: StageStats }) {
   const total = stageStats.total
   const failed = stageStats.failed > 0
   return (
-    <section className="shrink-0 rounded-tps border border-line-soft bg-surface px-3 py-2.5">
-      <h2 className="text-[12.5px] font-semibold text-t1">执行进度</h2>
-      <div className="mt-1.5 flex items-baseline gap-1.5">
-        <span className="num text-[24px] leading-none font-bold text-p700">{done}</span>
-        <span className="num text-[12px] text-t3">/ {total} 个阶段</span>
+    <Panel className="shrink-0">
+      {/* 标题条右侧刻意留空：阶段数已在卡内以大号数字 + 进度条呈现，
+          再放一份就是同一信息说两遍（用户对冗余元素敏感）。 */}
+      <PanelHeader icon={<Gauge size={17} strokeWidth={1.9} />} title="执行进度" />
+      <div className="px-4 py-3">
+        <div className="flex items-baseline gap-1.5">
+          <span className="num text-[24px] leading-none font-bold text-p700">{done}</span>
+          <span className="num text-[12px] text-t3">/ {total} 个阶段</span>
+        </div>
+        <div className="mt-2 h-[6px] w-full overflow-hidden rounded-full bg-p100">
+          <div
+            className={cn('h-full rounded-full transition-[width] duration-300', failed ? 'bg-alert' : 'grad-ink')}
+            style={{ width: fmtPct(done, total) === '—' ? '0%' : fmtPct(done, total) }}
+          />
+        </div>
       </div>
-      <div className="mt-2 h-[6px] w-full overflow-hidden rounded-full bg-p100">
-        <div
-          className={cn('h-full rounded-full transition-[width] duration-300', failed ? 'bg-alert' : 'grad-ink')}
-          style={{ width: fmtPct(done, total) === '—' ? '0%' : fmtPct(done, total) }}
-        />
-      </div>
-    </section>
+    </Panel>
   )
 }
 
@@ -783,13 +907,17 @@ function VerdictPanel({ stats, rows }: { stats: VerdictStats; rows: VerdictView[
     { label: '本台架不适用', n: stats.notApplicable, cls: 'text-t3' },
   ]
   return (
-    <section className="flex min-h-0 flex-1 flex-col rounded-tps border border-line-soft bg-surface">
-      <header className="flex shrink-0 items-center gap-1.5 border-b border-line-soft px-3 py-2">
-        <AlertTriangle size={14} strokeWidth={1.9} className="shrink-0 text-p700" />
-        <h2 className="text-[12.5px] font-semibold text-t1">判定结果</h2>
-        <span className="num ml-auto text-[11.5px] text-t3">{stats.total === null ? '待判定' : `${stats.total} 条`}</span>
-      </header>
-      <div className="grid shrink-0 grid-cols-4 gap-1 border-b border-line-soft px-3 py-2">
+    <Panel className="flex-1">
+      <PanelHeader
+        icon={<AlertTriangle size={17} strokeWidth={1.9} />}
+        title="判定结果"
+        right={
+          <span className="num text-[12px] text-t3">
+            {stats.total === null ? '待判定' : `${stats.total} 条`}
+          </span>
+        }
+      />
+      <div className="grid shrink-0 grid-cols-4 gap-1 border-b border-line-soft px-4 py-2">
         {cells.map((c) => (
           <div key={c.label} className="flex flex-col items-center gap-0.5">
             <span className={cn('num text-[17px] leading-none font-bold', c.cls)}>
@@ -799,13 +927,13 @@ function VerdictPanel({ stats, rows }: { stats: VerdictStats; rows: VerdictView[
           </div>
         ))}
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-2 py-1.5">
+      <div className="min-h-0 flex-1 overflow-y-auto py-1">
         {rows.length ? (
           rows.map((v) => (
             <Tooltip key={v.reqId} className="w-full" content={`${v.reqId} · ${v.detail || v.name}`}>
               <div
                 className={cn(
-                  'mb-1 flex items-center gap-1.5 rounded-tps px-2 py-1.5',
+                  'mb-1 flex min-h-[32px] items-center gap-2 rounded-tps px-3 py-1',
                   v.tone === 'fail' ? 'bg-alert-wash' : 'bg-sunk',
                 )}
               >
@@ -821,10 +949,10 @@ function VerdictPanel({ stats, rows }: { stats: VerdictStats; rows: VerdictView[
                           : 'bg-t3/40',
                   )}
                 />
-                <span className="min-w-0 flex-1 truncate text-[12px] text-t1">{v.name}</span>
+                <span className="min-w-0 flex-1 truncate text-[13px] text-t1">{v.name}</span>
                 <span
                   className={cn(
-                    'num max-w-[45%] shrink-0 truncate text-[10.5px]',
+                    'num max-w-[45%] shrink-0 truncate text-[11.5px]',
                     v.tone === 'fail' ? 'text-alert' : 'text-t3',
                   )}
                 >
@@ -834,12 +962,12 @@ function VerdictPanel({ stats, rows }: { stats: VerdictStats; rows: VerdictView[
             </Tooltip>
           ))
         ) : (
-          <p className="px-1 py-3 text-center text-[11.5px] leading-5 text-t3">
+          <p className="px-3 py-3 text-center text-[12px] leading-5 text-t3">
             本轮判定还没出来。判定由后端出权威结论，跑完一轮后逐条列出——
             缺测的项会写「未采集」，本台架测不了的会写明缺哪台设备。
           </p>
         )}
       </div>
-    </section>
+    </Panel>
   )
 }

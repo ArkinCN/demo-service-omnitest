@@ -43,6 +43,39 @@ def _get(d: Any, *path: str) -> Any:
     return cur
 
 
+# 权限档位 → 给模型看的中文能力描述。
+#
+# 关键：**明写作用域与边界**。只写「readonly」这种英文词，模型会把它当解释素材
+# 到处引用（实测会拿它解释「为什么我改不动」，把无关字段当理由）；写清「能做什么、
+# 不能做什么」才能让模型在只读档明确拒写、在可改参数档正常调用写工具。
+PERMISSION_CN: dict[str, str] = {
+    "readonly": (
+        "只读。你可以检索资料与回答问题，但**不能**执行任何写操作"
+        "（填写报告字段、修改参数、控制硬件）。用户要求写操作时，"
+        "如实说明当前是只读档、请其先在下方权限处切到「可改参数」，不要假装已执行。"
+    ),
+    "params": (
+        "可改参数。除检索外，你**可以**调用写类工具修改报告表头字段等数据；"
+        "写操作会先弹人工确认卡，操作员点了「确认执行」才算数——"
+        "确认前不得声称已写好，被取消或失败要如实转述。"
+        "控制硬件（下发硬件指令）仍不在本档范围内。"
+    ),
+    "hardware": (
+        "可控硬件。除检索与写数据外，你还可以就硬件控制类指令与操作员协作；"
+        "所有写/控操作同样先经人工确认卡。"
+    ),
+}
+
+
+def _permission_line(permission: Any) -> str:
+    """把档位英文值翻成中文能力描述行。未知值按只读口径描述（安全默认）。"""
+    key = str(permission or "readonly").strip().lower()
+    desc = PERMISSION_CN.get(key)
+    if desc is None:
+        desc = PERMISSION_CN["readonly"]
+    return f"当前权限档位：{desc}"
+
+
 def _fmt_list(v: Any, limit: int = 12) -> str:
     """列表转「a、b、c」；超长截断并写明还有几条，不让摘要无限膨胀。"""
     if not isinstance(v, list):
@@ -280,10 +313,16 @@ def build_context_summary(env: dict | None) -> str:
             else:
                 lines.append(f"最近一轮判为不通过的项：{_fmt_list(failed)}")
 
-    # ⑦ 权限档位：服务端另有拦截，这里只让模型知道它能说到哪一步
+    # ⑦ 权限档位：服务端另有拦截（工具集按档过滤），这里只让模型知道它能做到哪一步。
+    #
+    # ⚠️ 2026-10-10 修复：此前 envelope.policy.permission 是前端**写死的常量
+    # readonly**，与 UI 选择无联动 → 模型永远自述只读、拒绝一切写指令。
+    # 现在前端改为动态读当前档位，这里把英文档位名翻成中文能力描述：
+    # 用中文名 + 明写作用域，避免模型把「readonly」误解成「我什么都改不了」
+    # （故此前实测教训：模型会把无关字段当解释素材）。
     permission = _get(env, "policy", "permission")
     if permission:
-        lines.append(f"当前权限档位：{permission}")
+        lines.append(_permission_line(permission))
 
     if len(lines) == 1:
         return ""  # 一个字段都没取到，不如不给

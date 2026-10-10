@@ -17,11 +17,16 @@ import { cn } from '../../components/ui'
      · returning active 且为调优回退段（段 3：启动测试 → 调优运行）且退回信号
                  置位 → 反向（沿用既有 flow-seg-return / flow-seg-arrow-rev）；
      · done      左节点已完成 → 纯静态线，**无箭头**（已走过区域安静）；
-     · pending   运行中但尚未到达 → 静态线 + 静态暗色箭头（不闪不滑）；
+     · pending   运行中但尚未到达 → 纯静态暗线，**无箭头**；
      · idle      非运行态 → 纯静态线，无箭头（空闲态完全安静）。
    curIdx = 4（停在节点 5）时无段满足 active → 无动效段（横向条上无 5→1 连接段）。
 
-   平滑消失（验收标准核心）：动效层与静态箭头层**常驻 DOM**，只由 `data-on`
+   ⚠️ 2026-10-10 二次确认（用户看效果后）：未到达段那个静态暗色小箭头
+   "不显示、影响观感" → 已按纯静态线处理（此前实现过锚点居中的暗箭头，
+   现整体删除：DOM、CSS 规则与 testid 一并移除，段内不留任何非预期构件）。
+   需求单编号 3 原口径（未到达段显示静态暗色箭头）由本次指令覆盖。
+
+   平滑消失（验收标准核心）：动效层**常驻 DOM**，只由 `data-on`
    驱动 CSS transition（opacity + scale 约 0.3s）——节点从「当前进行中」变
    「已完成」时，旧段箭头淡出 + 缩小平滑消失，新段同时淡入；连续切换由
    transition 直接重定向，无闪烁、无残留、不依赖 JS 定时器与动画结束事件。
@@ -88,8 +93,6 @@ export interface FlowSegLinkProps {
   testId: string
   /** 动效箭头 testid：顶栏 'flow-seg-arrow' / 运行台 'auto-seg-arrow' */
   arrowTestId: string
-  /** 未到达段的静态暗箭头 testid（新增） */
-  staticArrowTestId: string
 }
 
 export function FlowSegLink({
@@ -97,10 +100,8 @@ export function FlowSegLink({
   phase,
   testId,
   arrowTestId,
-  staticArrowTestId,
 }: FlowSegLinkProps): ReactElement {
   const animOn = phase === 'active' || phase === 'returning'
-  const staticOn = phase === 'pending'
   const returning = phase === 'returning'
 
   return (
@@ -139,15 +140,8 @@ export function FlowSegLink({
         />
       </span>
 
-      {/* ④ 静态暗箭头（仅 pending，即运行中未到达段）：不闪不滑，仅淡入淡出 */}
-      <ChevronRight
-        size={21}
-        strokeWidth={3}
-        data-testid={staticArrowTestId}
-        data-on={staticOn ? 'true' : 'false'}
-        className="flow-seg-arrow-static"
-        style={ARROW_STYLE}
-      />
+      {/* ④ 未到达段（pending）：只保留基底线，不渲染任何箭头
+          （2026-10-10 用户确认「暗色小箭头不显示、影响观感」）。 */}
     </span>
   )
 }

@@ -83,6 +83,9 @@ export function ActionDock({
   // 流程 5 的本页表头填写状态：reportHeader 里已有值的键 → true（只当集合用）。
   // 摘要据此给「报告表头未填项」——跨页隔离后流程 5 助手对表头问题仍有据可答。
   const reportHeader = useAppStore((s) => s.reportHeader)
+  // AI 助手权限档位（2026-10-10）：上下文包 policy.permission 要动态反映当前档位，
+  // 否则模型永远以为自己是只读。订阅 store 后切档即让 envelope 重建、下轮请求生效。
+  const permission = useAppStore((s) => s.permission)
   const reportHeaderFilled = useMemo(() => {
     const out: Record<string, true> = {}
     for (const [k, v] of Object.entries(reportHeader)) {
@@ -146,6 +149,7 @@ export function ActionDock({
         selectedFailItem: focusReq,
         reportHeaderFilled,
         snapshotValues,
+        permission,
       }),
     [
       scope,
@@ -170,6 +174,7 @@ export function ActionDock({
       focusReq,
       reportHeaderFilled,
       snapshotValues,
+      permission,
     ],
   )
 

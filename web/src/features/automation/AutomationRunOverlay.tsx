@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { LogOut } from 'lucide-react'
-import { cn } from '../../components/ui'
+import { cn, Modal } from '../../components/ui'
 import { FLOWS } from '../../data/flows'
+import { FullReport } from '../flow-report/panel'
 import { useAppStore } from '../../state/useAppStore'
 import { buildStageViews, buildVerdictViews } from './automationViewModel'
 import { AutomationConsole } from './AutomationConsole'
@@ -95,6 +96,10 @@ export function AutomationRunOverlay() {
    * 必须先问一句。非运行态退出没有后果，直接走（见 requestExit）。
    */
   const [confirmExit, setConfirmExit] = useState(false)
+
+  /** 「查看报告」报告预览弹窗是否开着（本地态）。
+   *  只控制弹窗显隐，不退出回归、不清运行台数据（2026-10-10 改）。 */
+  const [reportOpen, setReportOpen] = useState(false)
 
   const isFinal = runStatus === 'completed' || runStatus === 'failed' || runStatus === 'stopped'
   const phase: Phase | null = isFinal
@@ -211,10 +216,14 @@ export function AutomationRunOverlay() {
     clearAutomation()
     setAutomationIntent(true)
   }
-  const viewReport = () => {
-    exitOverlay()
-    void import('../../router').then(({ router }) => router.navigate('/report'))
-  }
+  /**
+   * 「查看报告」= **原地**打开报告预览弹窗（不退出回归、不跳 /report）。
+   *
+   * 2026-10-10 改：老实现是 `exitOverlay() + navigate('/report')`，会把整层回归
+   * 退出并跳到第 5 节点页面，人想复查运行台数据还得重新进一轮。现改为弹窗预览：
+   * 关闭弹窗只复位 `reportOpen`，回归层与本轮数据（趋势/日志/判定）全程保留。
+   */
+  const viewReport = () => setReportOpen(true)
   const redownload = () => {
     void import('../flow-report/reportApi').then(async ({ downloadUrl, resolveReportRunId }) => {
       const st = useAppStore.getState()
@@ -326,6 +335,22 @@ export function AutomationRunOverlay() {
       {confirmExit && phase === 'running' ? (
         <AutoExitConfirm onCancel={() => setConfirmExit(false)} onConfirm={confirmAndExit} />
       ) : null}
+
+      {/* 「查看报告」报告预览弹窗：复用报告页 FullReport，portal 到 body 覆盖回归层。
+          右上角 X / Esc / 点遮罩关闭；关闭只复位 reportOpen，回归层不动。
+          ⚠️ zIndex=70：结果弹窗遮罩是 z-60，默认 z-50 会被它盖住、点不到右上角 X。 */}
+      <Modal
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        title="报告预览"
+        meta="按模板节结构渲染 · 非最终成稿"
+        width={880}
+        zIndex={70}
+      >
+        <div className="max-h-[70vh] overflow-y-auto bg-p50 p-3">
+          <FullReport />
+        </div>
+      </Modal>
     </div>
   )
 }
@@ -342,14 +367,35 @@ function HeaderBar({
     <header
       className="flex h-[max(56px,var(--auto-header-h,56px))] shrink-0 items-center gap-3 border-b border-line bg-surface px-4"
     >
-      <div className="flex shrink-0 items-center gap-2">
-        <span className="grad-ink flex h-[28px] w-[28px] items-center justify-center rounded-tps text-[14px] font-bold text-white shadow-tpink">
+      {/* 2026-10-10（用户反馈）：品牌区原为写死像素（logo 28 / 字号 16 / 徽标 10.5），
+          流程条放大到 1.5× 后显得过小。现全部乘 --fb-scale，与流程条节点同档
+          （圆标 39×s、节点字号 19×s、标签 20×s，见 AutomationStageFlow）；
+          引导屏没有流程条、--fb-scale 缺失，回落 1（与原尺寸相当）。 */}
+      <div className="flex shrink-0 items-center" style={{ gap: 'calc(var(--fb-scale, 1) * 8px)' }}>
+        <span
+          className="grad-ink flex items-center justify-center rounded-tps font-bold text-white shadow-tpink"
+          style={{
+            width: 'calc(var(--fb-scale, 1) * 39px)',
+            height: 'calc(var(--fb-scale, 1) * 39px)',
+            fontSize: 'calc(var(--fb-scale, 1) * 19px)',
+          }}
+        >
           O
         </span>
-        <span className="text-[16px] leading-none font-bold tracking-tight text-t1">
+        <span
+          className="leading-none font-bold tracking-tight text-t1"
+          style={{ fontSize: 'calc(var(--fb-scale, 1) * 20px)' }}
+        >
           Omni<span className="text-p700">Test</span>
         </span>
-        <span className="rounded-full bg-p100 px-2 py-[3px] text-[10.5px] font-medium text-p700">
+        <span
+          className="rounded-full bg-p100 font-medium text-p700"
+          style={{
+            fontSize: 'calc(var(--fb-scale, 1) * 13px)',
+            paddingInline: 'calc(var(--fb-scale, 1) * 9px)',
+            paddingBlock: 'calc(var(--fb-scale, 1) * 4px)',
+          }}
+        >
           全屏自动回归
         </span>
       </div>
@@ -390,7 +436,7 @@ function ExitButton({ onExit }: { onExit: () => void }) {
       type="button"
       data-testid="auto-exit-button"
       onClick={onExit}
-      title="退出自动化测试：只关闭当前界面，后台测试继续跑完"
+      title="退出AI自动化测试：只关闭当前界面，后台测试继续跑完"
       className={cn(
         'inline-flex shrink-0 cursor-pointer items-center rounded-full border border-line bg-white text-t3 transition-colors duration-150',
         'hover:border-p300 hover:bg-p50 hover:text-p700',
@@ -403,15 +449,17 @@ function ExitButton({ onExit }: { onExit: () => void }) {
         fontSize: 'calc(var(--fb-scale, 1) * 13px)',
       }}
     >
+      {/* 2026-10-10（用户反馈）：文案改「退出AI自动化测试」；图标 14→16×s，
+          与放大后的品牌区/流程条比例协调 */}
       <LogOut
         strokeWidth={1.9}
         className="shrink-0"
         style={{
-          width: 'calc(var(--fb-scale, 1) * 14px)',
-          height: 'calc(var(--fb-scale, 1) * 14px)',
+          width: 'calc(var(--fb-scale, 1) * 16px)',
+          height: 'calc(var(--fb-scale, 1) * 16px)',
         }}
       />
-      退出自动化测试
+      退出AI自动化测试
     </button>
   )
 }

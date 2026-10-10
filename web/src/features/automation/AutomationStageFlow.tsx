@@ -52,11 +52,19 @@ export function AutomationStageFlow({ views }: { views: StageView[] }) {
     compactTextPx: 10,
   })
 
-  // 运行台 HeaderBar 高度：随流程条放大（1.5×→120×s，不低于 56px），避免条被压扁/溢出
+  /*
+   * 把缩放口径写到 HeaderBar（最近的 header）：
+   *   · --auto-header-h：顶栏高度随流程条放大（1.5×→120×s，不低于 56px），
+   *     避免条被压扁/溢出；
+   *   · --fb-scale：供 header 内的**退出按钮**使用（2026-10-10 新增）——
+   *     它要与流程条节点同族，必须共用同一套缩放；不写出去的话 header 取不到
+   *     该变量，1.5× 下按钮与流程条比例会失衡。
+   */
   useLayoutEffect(() => {
     const bar = slotRef.current?.closest('header')
     if (!bar) return
     bar.style.setProperty('--auto-header-h', `${Math.round(120 * scale)}px`)
+    bar.style.setProperty('--fb-scale', String(scale))
   }, [scale, slotRef])
 
   return (

@@ -1,25 +1,32 @@
-"""占位报告 xlsm 生成（2026-09-28 新增）。
+"""报告 xlsm 生成（2026-09-28 新增；2026-10-10 升格为正式产出）。
 
-## 为什么要有这个模块
+## 这个模块现在是什么
 
-`reports.py` 的三档行为里，「模板缺失」一档原先只产出一份 JSON 元数据
-（`report-placeholder/v1`）——它证明了「生成 → 下载」链路通，但**看不出报告长什么样**。
-用户要求：占位件也做成 **xlsm**（能在 Excel 里打开、能看到本轮的真题数据），
-理由是「先看效果，后续加模板」。
+本模块产出的 xlsm **就是正式报告**（2026-10-10 用户拍板：系统内置模板即客户认可的
+正式报告模板，不再有「客户模板替换」这条链路）。
 
-## 与正式报告的关系（关键，别搞混）
+口径变更的来龙去脉（重要，别按旧注释理解代码）：
 
-| 档位 | 谁生成 | 产物 | 是不是交付件 |
-|---|---|---|---|
-| 模板存在 | `writeFile_rust`（客户工具） | 客户模板填充后的 xlsm | ✅ 是 |
-| **模板缺失** | **本模块**（openpyxl） | **本模块自建版式的 xlsm** | ❌ **不是** |
+| 时间 | 口径 | 产物身份 |
+|---|---|---|
+| 2026-09-28 ~ 2026-10-09 | 「模板缺失」一档用本模块补一份看得见的文件 | **占位件**：文件名带 placeholder、首行琥珀横幅、接口 status=placeholder |
+| **2026-10-10 起** | **本模块即正式报告的唯一产出路径** | **正式报告**：文件名 `report-<id>.xlsm`、无横幅、status=ok |
 
-**本模块产出的 xlsm 版式是自己设计的，不是客户模板的样子。**
-所以不论它多像报告，它都只是**占位件**——三道标注必须带（见 `PLACEHOLDER_BANNER`）。
+- 首行那条琥珀「可替换」横幅**已按用户要求删除**（原话：这份就是客户模板，不再需要替换提示）。
+- 历史遗留的 `report-<id>.placeholder.xlsm` 仍可下载（`reports.py` 的下载兜底顺序保留），
+  但**新生成的报告一律用正式名**。
 
-为什么不用 openpyxl 直接生成「正式报告」：`writeFile_rust/README.md` 说明了客户模板
-自带 VBA 宏、多工作表（LV/SV/HV 測試波型）与特定单元格映射；这些**只能从模板继承**，
-凭空造不出来。造一个「像正式的」反而是冒充（`reports.py` 头部的纪律）。
+## 客户模板通路（保留但不默认走）
+
+`writeFile_rust` 那条路仍在 `reports.py` 里：**只有用户真的上传了客户模板**才会走。
+它需要客户模板 .xlsm 与填充程序 `write-file-rust.exe` 同时到位；缺程序时如实报 `blocked`，
+**不静默降级**成系统内置模板（那会让人以为拿到的是客户模板版式）。
+
+## 为什么不用 openpyxl 去模仿客户模板版式
+
+`writeFile_rust/README.md` 说明了客户模板自带 VBA 宏、多工作表（LV/SV/HV 測試波型）
+与特定单元格映射；这些**只能从模板继承**，凭空造不出来。本模块因此只做
+「忠实呈现本轮真实数据」这一件事：不模仿客户版式、不改写任何判定结论。
 
 ## 繁体处理（用户口径「一律用中文，繁体进行优化」）
 
@@ -45,12 +52,6 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
 # ---------------------------------------------------------------- 常量
-
-#: 自建模板横幅 —— **必须出现在第一张表的首行**，让人打开就知道版式是系统自建的、可替换
-PLACEHOLDER_BANNER = (
-    "本报告由系统自建模板生成（客户 Motor_Checklist 模板未上传），含本轮真题数据；"
-    "版式非客户正式模板，可替换——上传客户模板后重新生成即为正式报告。"
-)
 
 #: 工作表名（简体；客户模板里是「LV 測試波型」这种繁体名）
 SHEET_MAIN = "报告概要"
@@ -119,19 +120,51 @@ def _to_simplified(s: str) -> str:
     return "".join(_S2T.get(c, c) for c in s)
 
 
+def _fmt_rate(rate: Any) -> str:
+    """通过率显示（本模块唯一出口，与前端 `assemble.ts:fmtPassRate` 同口径）：
+
+      无判定数据 → 「—」；整数值 → 「100%」；非整数 → 保留 1 位小数（「66.7%」）。
+
+    ⚠️ 分母为 0（入参是 `None`）时**不许写成 0%**：0% 会被读成「全不通过」，
+    与实际语义完全相反。缺数就如实写「—」，并由调用方在下一行说明为什么没有这个数。
+
+    ⚠️ 也不做「四舍五入成假整数」：66.6% 不许写成 67%。
+    """
+    if not isinstance(rate, (int, float)) or isinstance(rate, bool):
+        return "—"
+    pct = float(rate) * 100
+    if abs(pct - round(pct)) < 1e-9:
+        return f"{round(pct)}%"
+    return f"{pct:.1f}%"
+
+
 # ---------------------------------------------------------------- 样式
 
 _TITLE_FONT = Font(name="微软雅黑", size=14, bold=True, color="1F2A24")
 _LABEL_FONT = Font(name="微软雅黑", size=10, bold=True, color="5B6B62")
 _VALUE_FONT = Font(name="微软雅黑", size=10, color="1F2A24")
-_BANNER_FONT = Font(name="微软雅黑", size=10, bold=True, color="B7791F")
 _SECTION_FONT = Font(name="微软雅黑", size=11, bold=True, color="2E5E45")
 
-_FILL_BANNER = PatternFill("solid", fgColor="FFF7E6")
+#: 通过率专用字体（2026-10-10 编号 4 美化）：判定汇总**第一行**要压得住版面，
+#: 用 14px 墨绿加粗与前端报告页「通过率大号数字」同一口径。
+_LEAD_FONT = Font(name="微软雅黑", size=14, bold=True, color="2E5E45")
+
 _FILL_HEAD = PatternFill("solid", fgColor="EAF2EC")
+_FILL_ZEBRA = PatternFill("solid", fgColor="FBFCFB")
+
+# ── 判定明细里的「不通过」降权（2026-10-10 编号 4 美化） ──
+#
+# ⚠️ 为什么不用正红 #A6353A：一页里出现多处正红，报告会被读成「报错单」，
+# 与「绿为主、灰为辅、红降权」的口径冲突（效果图已确认）。
+# 改为浅陶土底 + 深陶土字 + 左侧陶土细色条——保留可读性与警示性，但不刺眼。
+# ⚠️ 判定状态**文字**仍是「不通过」原词，降的是颜色不是措辞。
+_FILL_FAIL = PatternFill("solid", fgColor="FBF4F3")
+_FAIL_FONT = Font(name="微软雅黑", size=10, color="97504B")
+_FAIL_BAR = Side(style="thick", color="C58F8B")
 
 _THIN = Side(style="thin", color="E3E8E4")
 _BORDER = Border(left=_THIN, right=_THIN, top=_THIN, bottom=_THIN)
+_FAIL_BORDER = Border(left=_FAIL_BAR, right=_THIN, top=_THIN, bottom=_THIN)
 
 _WRAP = Alignment(vertical="top", wrap_text=True)
 _LEFT = Alignment(vertical="center", horizontal="left")
@@ -140,18 +173,22 @@ _LEFT = Alignment(vertical="center", horizontal="left")
 # ---------------------------------------------------------------- 主体
 
 
-def build_placeholder_workbook(
+def build_report_workbook(
     *,
     run_id: str,
     header: dict[str, str],
     missing_header_keys: list[str],
     verdict: dict[str, Any] | None,
+    verdict_items: list[dict[str, Any]] | None = None,
     artifact_kinds: list[str],
     snapshot_counts: dict[str, int] | None,
-    reason: str,
+    source_note: str,
     output: Path,
 ) -> Path:
-    """生成占位报告 xlsm，写到 `output`，返回该路径。
+    """生成报告 xlsm，写到 `output`，返回该路径。
+
+    ⚠️ 函数名 2026-10-10 由 `build_placeholder_workbook` 改为现名：产出的文件
+    **就是正式报告**（用户拍板：系统内置模板即客户认可的正式模板），不再是「占位件」。
 
     入参全部是**已装配好的真题数据**（由 `reports.py` 从轮次产物里取），
     本函数**不读库、不猜值**：缺的字段就写「由上游带入（未提供）」，绝不编。
@@ -160,10 +197,17 @@ def build_placeholder_workbook(
         run_id: 轮次号（写进文件，便于与库中记录对应）
         header: 表头字段 → 值（只含取到的）
         missing_header_keys: 未取到的表头字段 key（显示为「未提供」）
-        verdict: 判定汇总 `{total,pass,fail,missing,authoritative}`，None = 本轮无判定数据
+        verdict: 判定汇总 `{total,pass,fail,missing,not_applicable,manual,pass_rate,authoritative}`。
+            `pass_rate` 是 B 口径通过率（0~1）；分母为 0 时上游给 `None`，
+            本函数显示「—」并补一行口径说明。None = 本轮**没有判定数据**（另一回事）。
+            `not_applicable` / `manual` 各有值时单独成行，让总数能对上账。
+        verdict_items: 逐条判定 `[{req_id,name,state}]`（2026-10-10 编号 4 美化新增）。
+            「三、判定明细」一节据此渲染，让「哪几条判了什么」在纸面上一眼可见；
+            空列表或 None 时该节仍出现（写「（无）」），以保持分节序号稳定。
         artifact_kinds: 该轮实际有的产物 kind 列表
         snapshot_counts: 配置快照的三类计数 `{本体属性,控制参数,报告表头}`
-        reason: 为什么走了占位（写进文件，如实交代）
+        source_note: 「报告来源」一行写什么（如「系统内置模板」）。**如实填**，
+            不要写成自我表扬的话；这一行是给人核对出处用的。
         output: 输出路径（父目录会自动创建）
     """
     wb = Workbook()
@@ -174,27 +218,22 @@ def build_placeholder_workbook(
     col_b_width = 52
     ws.column_dimensions[get_column_letter(1)].width = col_a_width
     ws.column_dimensions[get_column_letter(2)].width = col_b_width
+    # 第三列只给「判定明细」的名称用（其余各节都是两列）
+    ws.column_dimensions[get_column_letter(3)].width = 40
 
     r = 1  # 行游标
 
-    # ── ① 占位横幅（必须首行，且合并单元格以免被列宽裁掉）
-    ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=2)
-    c = ws.cell(row=r, column=1, value=PLACEHOLDER_BANNER)
-    c.font = _BANNER_FONT
-    c.fill = _FILL_BANNER
-    c.alignment = _WRAP
-    ws.row_dimensions[r].height = 46
-    r += 2
-
-    # ── ② 标题与轮次信息
-    ws.cell(row=r, column=1, value="测试报告（系统自建模板）").font = _TITLE_FONT
+    # ── ① 标题与轮次信息
+    # 原首行那条琥珀「可替换」横幅已于 2026-10-10 **按用户要求删除**：
+    # 本模板即客户认可的正式报告模板，不再有「可替换」这层意思。
+    ws.cell(row=r, column=1, value="测试报告").font = _TITLE_FONT
     r += 1
     now = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M:%S")
     for label, value in (
         ("轮次号", run_id),
         ("生成时间", now),
-        ("报告状态", "系统自建模板（可替换）"),
-        ("生成原因", _to_simplified(reason)),
+        ("报告状态", "正式报告"),
+        ("报告来源", _to_simplified(source_note)),
     ):
         ws.cell(row=r, column=1, value=label).font = _LABEL_FONT
         ws.cell(row=r, column=2, value=value).font = _VALUE_FONT
@@ -217,12 +256,34 @@ def build_placeholder_workbook(
     # ── ④ 判定汇总
     r = _section(ws, r, "二、判定汇总")
     if verdict:
+        # 通过率排第一行（2026-10-10 需求单编号 3）：这是看报告的人最先要的那个数。
+        # 分母为 0 时 _fmt_rate 给「—」，并补一行口径说明，绝不写成 0%。
+        rate = verdict.get("pass_rate")
+        # 14px 墨绿加粗（改动点 ①）：与前端报告页的「通过率大号数字」同一口径
+        r = _kv(ws, r, "通过率", _fmt_rate(rate), value_font=_LEAD_FONT)
+        if rate is None:
+            r = _kv(
+                ws,
+                r,
+                "通过率口径",
+                "本轮没有可判定的「通过/不通过」项，因此暂不给出通过率"
+                "（「未采集」与「本台架不适用」都不计入分母）",
+                muted=True,
+            )
         r = _kv(ws, r, "判据总数", str(verdict.get("total", 0)))
         r = _kv(ws, r, "通过", str(verdict.get("pass", 0)))
         r = _kv(ws, r, "不通过", str(verdict.get("fail", 0)))
         # 「未采集」单独一行并加说明：它**不是**「不通过」，
         # 混在一起会让人以为「没测的就是不合格」
         r = _kv(ws, r, "未采集", str(verdict.get("missing", 0)))
+        # 「本台架不适用」与「人工判定」各自成行，**有才显示**（2026-10-10 随通过率一并补）。
+        # 为什么必须补：通过率的分母把这两类排除了，报告里若看不见它们，
+        # 「判据总数 34、通过 + 不通过才 8」会被读成「少了 26 条没交代」。
+        # 0 条时不占版面，不制造噪音。
+        if verdict.get("not_applicable"):
+            r = _kv(ws, r, "本台架不适用", str(verdict["not_applicable"]))
+        if verdict.get("manual"):
+            r = _kv(ws, r, "人工判定", str(verdict["manual"]))
         r = _kv(
             ws,
             r,
@@ -233,7 +294,8 @@ def build_placeholder_workbook(
         ws.cell(
             row=r,
             column=2,
-            value="「未采集」不等于「不通过」：这些判据所需的现场实测量本轮一条都没采到，"
+            value="通过率 = 通过 ÷（通过 + 不通过），「未采集」与「本台架不适用」均不计入分母。"
+            "「未采集」也不等于「不通过」：这些判据所需的现场实测量本轮一条都没采到，"
             "因此既判不出通过也判不出不通过。",
         ).font = _VALUE_FONT
         ws.cell(row=r, column=2).alignment = _WRAP
@@ -242,8 +304,27 @@ def build_placeholder_workbook(
         r = _kv(ws, r, "（无）", "本轮没有判定数据（未产出判定结果表）", muted=True)
         r += 1
 
-    # ── ⑤ 配置快照摘要
-    r = _section(ws, r, "三、配置快照摘要")
+    # ── ⑤ 判定明细（2026-10-10 编号 4 美化新增，改动点 ⑥）
+    #
+    # 为什么要有这一节：上面只给了五类**计数**。客户拿到纸面时看不到「哪几条判了什么」，
+    # 而判据总数与通过数之间隔着未采集 / 不适用 / 人工，要逐条才能核对。
+    # 逐条列出 判据 / 名称 / 结论；结论文字取自 STATE_CN，与前端逐字一致。
+    #
+    # ⚠️ 与其余各节同一口径：**永远出现**（空则写「（无）」）。
+    # 不写「有才显示」——那会让分节序号随数据跳号（二 → 四），
+    # 「第几节」就失去了指代意义，引用与核对都会错位。
+    r = _section(ws, r, "三、判定明细")
+    if verdict_items:
+        r = _detail_head(ws, r)
+        for i, it in enumerate(verdict_items):
+            if isinstance(it, dict):
+                r = _detail_row(ws, r, it, zebra=(i % 2 == 1))
+    else:
+        r = _kv(ws, r, "（无）", "本轮没有判定数据", muted=True)
+    r += 1
+
+    # ── ⑥ 配置快照摘要
+    r = _section(ws, r, "四、配置快照摘要")
     if snapshot_counts:
         for k, v in snapshot_counts.items():
             r = _kv(ws, r, k, f"{v} 项")
@@ -251,8 +332,8 @@ def build_placeholder_workbook(
         r = _kv(ws, r, "（无）", "本轮没有配置快照", muted=True)
     r += 1
 
-    # ── ⑥ 产物清单
-    r = _section(ws, r, "四、本轮产物清单")
+    # ── ⑦ 产物清单
+    r = _section(ws, r, "五、本轮产物清单")
     if artifact_kinds:
         for k in artifact_kinds:
             r = _kv(ws, r, ARTIFACT_LABEL.get(k, k), k, muted=True)
@@ -260,20 +341,16 @@ def build_placeholder_workbook(
         r = _kv(ws, r, "（无）", "本轮没有落任何产物", muted=True)
     r += 1
 
-    # ── ⑦ 页脚：怎么换成正式报告
-    r = _section(ws, r, "五、如何换成正式报告")
-    for line in (
-        "1. 取得客户模板 Motor_Checklist 公用模板 .xlsm；",
-        "2. 把 report-template.json 的 template_file 指向该文件；",
-        "3. 重新调用生成接口 —— 系统改走 writeFile_rust 出正式报告，接口与前端均无需改动。",
-    ):
-        ws.cell(row=r, column=1, value=line).font = _VALUE_FONT
-        ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=2)
-        r += 1
-
-    # ── 收尾：冻结首行 + 打印设置（只是个像样的文件该有的样子）
-    ws.freeze_panes = "A3"
-    ws.sheet_properties.tabColor = "B7791F"  # 琥珀：一眼看出是占位件
+    # ── 收尾：冻结标题行 + 页签色
+    #
+    # 原「六、如何换成正式报告」一节（列客户模板三步操作）已于 2026-10-10 **删除**：
+    # 本模板即正式模板，报告里再写「怎么换成正式报告」自相矛盾。
+    # 若将来真要用客户模板，操作留在这里备查（不再印进报告）：
+    #   ① 把客户 .xlsm 放进 backend/uploads/report_templates/（或调 POST /api/reports/template 上传）；
+    #   ② 把 write-file-rust.exe 放到 `reports.py` 的 WRITE_FILE_RUST 指向的位置；
+    #   两者齐备时 generate_report 会自动改走 writeFile_rust，无需改代码。
+    ws.freeze_panes = "A2"
+    ws.sheet_properties.tabColor = "2E5E45"  # 墨绿：正式报告的页签色（原为琥珀，那是「占位件」标识）
 
     output.parent.mkdir(parents=True, exist_ok=True)
     wb.save(str(output))
@@ -289,14 +366,75 @@ def _section(ws, row: int, title: str) -> int:
     return row + 1
 
 
-def _kv(ws, row: int, key: str, value: str, *, muted: bool = False) -> int:
-    """写一行「标签 | 值」，返回下一行行号。`muted` 用浅灰，表示「这项没取到」。"""
+def _kv(
+    ws,
+    row: int,
+    key: str,
+    value: str,
+    *,
+    muted: bool = False,
+    value_font: Font | None = None,
+) -> int:
+    """写一行「标签 | 值」，返回下一行行号。
+
+    `muted` 用浅灰，表示「这项没取到」；`value_font` 供个别需要**加大字号**的行使用
+    （目前只有判定汇总的「通过率」），缺省即普通值字体。
+    """
     kc = ws.cell(row=row, column=1, value=key)
     kc.font = _LABEL_FONT
     kc.alignment = _LEFT
     kc.border = _BORDER
     vc = ws.cell(row=row, column=2, value=value)
-    vc.font = Font(name="微软雅黑", size=10, color="9AA69F") if muted else _VALUE_FONT
+    vc.font = value_font or (
+        Font(name="微软雅黑", size=10, color="9AA69F") if muted else _VALUE_FONT
+    )
     vc.alignment = _WRAP
     vc.border = _BORDER
+    return row + 1
+
+
+#: 判定状态的中文（与前端 `flow-report/panel.tsx` 的 `STATE_TEXT` 逐字一致）。
+#: ⚠️ 两端必须同词：判定的说法在屏幕与纸面上不许出现两种叫法。
+STATE_CN: dict[str, str] = {
+    "pass": "通过",
+    "fail": "不通过",
+    "missing": "未采集",
+    "manual": "人工判定",
+    "not_applicable": "本台架不适用",
+}
+
+
+def _detail_head(ws, row: int) -> int:
+    """判定明细表头（改动点 ⑥）：浅墨绿底 + 中性字，与分节标题同一套体系。"""
+    for col, text in ((1, "判据"), (2, "名称"), (3, "结论")):
+        c = ws.cell(row=row, column=col, value=text)
+        c.font = _LABEL_FONT
+        c.fill = _FILL_HEAD
+        c.border = _BORDER
+    return row + 1
+
+
+def _detail_row(ws, row: int, item: dict, *, zebra: bool) -> int:
+    """判定明细一行（改动点 ⑥）。
+
+    `fail` 行用「浅陶土底 + 左侧陶土细色条 + 深陶土结论字」，**不整行标红**；
+    其余行走斑马纹。结论文字取自 `STATE_CN`，与前端逐字一致。
+    """
+    state = str(item.get("state") or "")
+    is_fail = state == "fail"
+    cells = (
+        (1, str(item.get("req_id") or "—"), _VALUE_FONT),
+        (2, _to_simplified(str(item.get("name") or "—")), _VALUE_FONT),
+        (3, STATE_CN.get(state, state or "—"), _FAIL_FONT if is_fail else _VALUE_FONT),
+    )
+    for col, text, font in cells:
+        c = ws.cell(row=row, column=col, value=text)
+        c.font = font
+        c.border = _BORDER
+        if is_fail:
+            c.fill = _FILL_FAIL
+            if col == 1:
+                c.border = _FAIL_BORDER
+        elif zebra:
+            c.fill = _FILL_ZEBRA
     return row + 1

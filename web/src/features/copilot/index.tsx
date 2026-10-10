@@ -148,6 +148,8 @@ export function FlowCopilot({
         onReady={setApi}
         onBusyChange={handleBusy}
         sessionId={sessionId}
+        // 会话持久化键 = 会话标识：每流程一份，收起 / 切页 / 刷新后对话都还在
+        persistKey={sessionId}
         onCollapse={onCollapse}
         actionSlot={
           <ActionDock scope={flow} send={send} busy={busy} onEnvReady={setEnvReady} />

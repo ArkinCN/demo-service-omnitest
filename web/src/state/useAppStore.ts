@@ -120,6 +120,33 @@ export const EMPTY_AUTOMATION_SUMMARY: AutomationSummary = {
   gateAckCount: 0,
 }
 
+/* ---------------------------------------------------------------------------
+   「浮层已被用户退出」的会话级持久化（2026-10-10 新增）。
+
+   为什么用 sessionStorage 而不是 localStorage：它是**会话内的一次操作**，
+   不该跨会话沿用；而演示时刷新页面很常见，若刷新后浮层又自己弹回来，
+   「退出」就等于白点。sessionStorage 的作用域正好覆盖「本标签页会话」。
+   --------------------------------------------------------------------------- */
+const SS_OVERLAY_HIDDEN = 'omnitest.automation.overlay-hidden.v1'
+
+function readOverlayHidden(): boolean {
+  try {
+    return sessionStorage.getItem(SS_OVERLAY_HIDDEN) === '1'
+  } catch {
+    /* 隐私模式等取不到 → 当没退出过（保守：宁可多显示一次浮层） */
+    return false
+  }
+}
+
+function writeOverlayHidden(v: boolean) {
+  try {
+    if (v) sessionStorage.setItem(SS_OVERLAY_HIDDEN, '1')
+    else sessionStorage.removeItem(SS_OVERLAY_HIDDEN)
+  } catch {
+    /* 存不下就只在本会话内存里生效 */
+  }
+}
+
 /** 日志流上限：跑满「4 档 × 最多 1 轮调优」（TUNE_RETRIES）也远用不到 200 条。
  *  封顶是为了不让长跑之后 DOM 无限膨胀；**不丢事实**——被挤掉的都是更早的
  *  过程行，最终结论与失败原因另有 summary/stages 承载。 */
@@ -485,6 +512,27 @@ interface AppState {
   automationVerdicts: AutomationVerdict[]
   /** 本轮由自动化代确认的安全闸门 id（审计用） */
   automationGateAcks: string[]
+  /**
+   * 「本轮浮层已被用户退出」（2026-10-10 新增）。
+   *
+   * 为什么单独立一个位、而不是复用 `clearAutomation()`：后者会把
+   * `automationRunStatus` 复位成 `idle`，运行中直接用它会出现双重故障——
+   * ① 运行台数据被清空；② 下一条编排器事件立刻把 runStatus 回写成 running，
+   * 浮层当场弹回来。所以运行中退出走**软退出**：只隐藏浮层，不清任何数据、
+   * 不删持久化，后台编排器继续跑完。
+   *
+   * ⚠️ 它只拦**渲染**，不拦 store 同步：`_syncAutomation` 与事件订阅保持原样，
+   * 顶栏因此仍能读到真实运行信号（按钮显示「回到运行台」），
+   * 但浮层不会因为后台事件而自己弹回来。
+   */
+  automationOverlayHidden: boolean
+  /** 运行中退出浮层（软退出）：只置该位，不清数据、不发任何停止指令 */
+  hideAutomationOverlay: () => void
+  /**
+   * 置引导位。⚠️ 置 `true` 时**同时清掉「浮层已隐藏」**——它是「重新进入浮层」
+   * 的唯一入口（顶栏按钮第三态「回到运行台」也走这里），不清就会出现
+   * 「点了回到运行台却什么都没发生」。
+   */
   setAutomationIntent: (v: boolean) => void
   /** 启动自动化。幂等：已在跑则 setNotice「自动化测试正在进行中」 */
   startAutomation: () => void
@@ -916,6 +964,8 @@ export const useAppStore = create<AppState>((set) => ({
   automationLive: { plan: null, samples: [] },
   automationVerdicts: [],
   automationGateAcks: [],
+  // 刷新后保持「已退出」态：本次会话里人点过退出，刷新不该让浮层自己再弹回来
+  automationOverlayHidden: readOverlayHidden(),
 
   toggleGate: (id) =>
     set((s) => {
@@ -1230,7 +1280,34 @@ export const useAppStore = create<AppState>((set) => ({
       })
     })
   },
-  setAutomationIntent: (automationIntent) => set({ automationIntent }),
+  /*
+   * 置引导位。⚠️ 置 true 时**同时清掉「浮层已隐藏」**：它是「重新进入浮层」的
+   * 唯一入口（顶栏「回到运行台」也走这里）。不清的话会出现「点了回到运行台、
+   * 界面却毫无变化」——浮层被隐藏位挡在渲染之外。
+   */
+  setAutomationIntent: (automationIntent) => {
+    if (automationIntent) writeOverlayHidden(false)
+    set(
+      automationIntent
+        ? { automationIntent, automationOverlayHidden: false }
+        : { automationIntent },
+    )
+  },
+  /**
+   * 运行中退出浮层（**软退出**）。
+   *
+   * 与 `clearAutomation()` 的关键区别：这里**只隐藏浮层**，不清任何运行数据、
+   * 不删持久化、不发停止指令。后台编排器继续跑到自然完成，台架不受影响。
+   * 用 clearAutomation 会清空运行台数据并把 runStatus 复位成 idle，
+   * 下一条编排器事件又把浮层拉回来（历史已踩过，见 AutomationRunOverlay 注释）。
+   */
+  hideAutomationOverlay: () => {
+    writeOverlayHidden(true)
+    // 同时清引导位：人主动关掉了浮层，也就没有「要看浮层」的意图了。
+    // 留着它会有两个副作用：① 渲染闸门若叠上 `!intent` 会当场失效（实测栽过）；
+    // ② 下次经「回到运行台」重进时 intent 无 0→1 边沿，结果弹窗的 dismissed 不会复位。
+    set({ automationOverlayHidden: true, automationIntent: false })
+  },
     /**
      * 启动自动化（**授权瞬间**：安全闸门在此代确认）。
      *
@@ -1257,8 +1334,11 @@ export const useAppStore = create<AppState>((set) => ({
       // 真启动时关掉引导态：引导屏交给编排器事件驱动（runStatus=running → 切进度屏）
           // ⚠️ 同时清空上一轮的过程数据（动作/日志/样本/判定），否则重跑时会把
        // 上一轮的判据与曲线带进来，看起来像「还没开跑就已经有数据」。
+          // 新一轮开跑：清掉「浮层已隐藏」，否则上一轮点过退出会把这轮浮层也藏起来
+          writeOverlayHidden(false)
           set({
             automationIntent: false,
+            automationOverlayHidden: false,
             automationTools: [],
             automationLogs: [],
             automationLive: { plan: null, samples: [] },
@@ -1321,12 +1401,15 @@ export const useAppStore = create<AppState>((set) => ({
             /* 清不掉就只清内存，不影响本会话 */
           }
         })
+        // 整层退出：隐藏位一并复位，否则下一轮浮层会被上一轮的退出态挡住
+        writeOverlayHidden(false)
         set({
           automationRunStatus: 'idle',
           automationStages: [],
           automationCurrentStageId: null,
           automationAnnouncement: '',
           automationIntent: false,
+          automationOverlayHidden: false,
           automationSummary: { ...EMPTY_AUTOMATION_SUMMARY },
           // 运行态清空，但**已落库产物不受影响**（下一轮会重新落）
           automationTools: [],
@@ -1613,7 +1696,19 @@ function getOrchestrator(): Orchestrator {
   // 轻量事件总线：编排器 emit，store 切片订阅后写回（单向数据流）
   const bus = createEventBus()
 
-  // 组装真实适配器：复用已联通的测试能力，不重写测试逻辑
+  /* 组装真实适配器：复用已联通的测试能力，不重写测试逻辑。
+   *
+   * ⚠️ 2026-10-10（用户要求）：**适配器一律不写 `confirmed`（确认态）**。
+   * 顶栏流程条上那个节点的勾（✓）只代表「人自己在该页左下角点过确认」——
+   * 确认并锁定（流程 1）/ 确认基线（流程 2）/ 确认参数并启动测试（流程 3）/
+   * 确认采纳（流程 4，经红线确认卡）/ 确认表头（流程 5），实现都在各自面板里。
+   * 机测代跑**不算**：否则人没按过、顶栏却已打勾，页脚与节点两处状态就不一致
+   * （用户实测反馈的正是这一条：机测跑完顶栏自动打勾，刷新后仍然亮）。
+   *
+   * 机测照旧落库、照旧推进阶段，只是不再替人点亮确认态。编排器本体不读 `confirmed`
+   * （`features/automation/` 全目录 0 处引用，已核），故去掉这些写入不产生副作用；
+   * 运行过程中「这一步跑到了」仍由顶栏既有的脉冲 / 成功态（autoDone）表示。
+   */
   const adapters: AutomationAdapters = {
     initParams: async () => {
       const { persistSnapshot } = await import('../features/flow-init/snapshotApi')
@@ -1624,7 +1719,7 @@ function getOrchestrator(): Orchestrator {
         locked: true,
       })
       st.setRunId(runId)
-      st.confirmFlow('init')
+      // 不置 confirmed：机测不代点亮顶栏节点（见上方适配器头说明）
     },
     confirmBaseline: async () => {
       // 流程2 测试需求确认：自动把全部判据纳入基线（与界面「确认基线」全选同一口径）。
@@ -1643,7 +1738,7 @@ function getOrchestrator(): Orchestrator {
         operator: st.benchUser,
       })
       st.setRunId(runId)
-      st.confirmFlow('req')
+      // 不置 confirmed：机测不代点亮顶栏节点（见上方适配器头说明）
     },
     runAndCollect: async (onProgress) => {
       // 流程3 启动测试（2026-10-08 改）：真机链路 = 风扇台架 /api/fan-tests。
@@ -1793,9 +1888,10 @@ const updateProgress = () => {
         backendVerdicts: result.results,
       })
       st.setRunId(runId)
-      // 与交互路径同一锚点（2026-10-08）：自动化跑完一轮并落库后，同样置 run 已确认，
-      // 否则自动化结束后顶栏「启动测试及结果分析」这一格仍点不亮（见 flow-run/panel.tsx 同处）。
-      st.confirmFlow('run')
+      // ⚠️ 2026-10-10 起**不再**置 run 已确认（原注释：与交互路径同一锚点，否则自动化结束后
+      // 顶栏那一格点不亮）。用户新口径：顶栏节点只由「人在流程 3 左下角点『确认参数并启动
+      // 测试』」那条交互路径点亮（见 flow-run/panel.tsx 的同处锚点），机测代跑不代点亮，
+      // 免得页脚与节点两处状态不一致。
       const hasFail = result.results.some((v) => v.state === 'fail')
       // 真实判定统计（后端权威结果）——结果卡据此展示「通过 x · 未通过 y · 未采集 z」，
       // 数字直接来自本轮判定表，不是前端估的
@@ -1856,9 +1952,10 @@ const cands = computeCandidates(pack).filter((c) => typeof c.suggested === 'numb
         pushAutomationLog('info', 'tune', `自动采纳推荐：${it.name} ${it.from} → ${it.to}`)
       }
 
-      // ① 写回 store overrides（流程3 读到新值）+ 置 tune 已确认
+      // ① 写回 store overrides（流程3 读到新值）。⚠️ 2026-10-10 起不置 tune 已确认：
+      // 顶栏「调优运行」那一格的勾只由人在流程 4 左下角点「确认采纳」并批准确认卡点亮
+      // （见 features/redline/flowActions.ts 的 adopt.onApprove）；机测不代点亮。
       st.applyAdopt(items)
-      st.confirmFlow('tune')
       st.setRunPhase('idle')
 
       // ② 落 param-change 产物（复用 persistAdoption）

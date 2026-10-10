@@ -22,6 +22,20 @@ th { background: #f0f5f1; font-weight: 600; }
 hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 .kb-fig { margin: 14px 0; text-align: center; }
 .kb-fig img { max-width: 100%; height: auto; border: 1px solid #e3e8e4; border-radius: 4px; }
+/* 代码块：整体成块，保留原始换行与缩进 */
+.kb-code {
+  background: #f7f9f7; border: 1px solid #e3e8e4; border-left: 3px solid #9bb8a8;
+  border-radius: 4px; padding: 10px 12px; margin: 12px 0; overflow-x: auto;
+  white-space: pre; font-size: 12px; line-height: 1.65;
+}
+.kb-code code { background: none; border: none; padding: 0; font-size: 12px; }
+/* 公式块：居中、衬线、留白（干净文本样式，不引排版引擎） */
+.kb-formula {
+  margin: 12px auto; padding: 8px 12px; max-width: 100%; text-align: center;
+  font-family: "Cambria Math", "Times New Roman", "Georgia", serif;
+  font-size: 14px; line-height: 2; color: #22302a;
+  background: #fbfcfb; border-radius: 4px; white-space: pre-wrap; word-break: break-word;
+}
 </style></head><body><h1>SMO 和 PLL 估算器</h1><div style="margin:0 0 14px;padding:8px 10px;border:1px solid #e3e8e4;border-radius:4px;background:#f7faf8;color:#5b6b62;font-size:12px;">系统合成图文稿（由抽取产物重建，非客户原件 PDF）。</div><h3>SMO 估算器和 PLL 估算器</h3>
 
 <figure class="kb-fig"><img src="/api/kb/documents/smo-pll-estimator/figure?name=p001_x6.png" alt="插图 1" loading="lazy"></figure>
@@ -44,15 +58,15 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 <figure class="kb-fig"><img src="/api/kb/documents/smo-pll-estimator/figure?name=p002_x13.png" alt="插图 4" loading="lazy"></figure>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
+
+
+
 
 <h3>滑膜控制函数为</h3>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
+
 
 <p>式（2.7）中的k₃决定了式（2.5）中的 是否能夠收敛到 lα 和 β ，以及以多快的速度收敛。 p R 1 (ux − =α) 根据式(2.5)可得a轴上的电压方程： ip α L α L (2.8)</p>
 
@@ -68,17 +82,17 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 <p>x − ix = 0 ，如果 根据李亚普洛夫稳定性判据，定义李亚普洛夫函数为：</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
+
+
 
 <p>将式（2.6）的第一行带入计算得：</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
 
-<p>t ks &amp;gt; −R|is|+ Eβsign(is) 综合所得： 2</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
+<p>t ks &gt; −R|is|+ Eβsign(is) 综合所得： 2</p>
+
+
 
 <p>也就是说如果ks满足了式（3.0)，那么αβ轴观测电流就会收敛到实际电流，状态(αx）和（i达到并保持在滑膜面上， 那么s1便收敛到0并保持为0；</p>
 
@@ -86,11 +100,11 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 <p>l 根据式（2.9)当α</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
 
-<p>当Bx&amp;gt;0,那式（3.0）右边的最大绝对值，处于&amp;lt;0的情况下，此时k越大那么这个绝对值就越大，也就是电流误差的绝对值最大； 也就是说如果k。越大，则观测电流偏离实际电流的最大距离也越大，状态变量(αi)偏离滑膜面s1的最大距离就越大，稳态后再滑膜面附近抖动</p>
+
+
+<p>当Bx&gt;0,那式（3.0）右边的最大绝对值，处于&lt;0的情况下，此时k越大那么这个绝对值就越大，也就是电流误差的绝对值最大； 也就是说如果k。越大，则观测电流偏离实际电流的最大距离也越大，状态变量(αi)偏离滑膜面s1的最大距离就越大，稳态后再滑膜面附近抖动</p>
 
 <p>的幅度就越大。</p>
 
@@ -100,11 +114,11 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 <figure class="kb-fig"><img src="/api/kb/documents/smo-pll-estimator/figure?name=p003_x15.png" alt="插图 7" loading="lazy"></figure>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
 
-<p>为了对 Z 滤波以获得e*，用 TPWM\_VALUE 替换公式中的 T，可得到：</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
+<p>为了对 Z 滤波以获得e*，用 TPWM_VALUE 替换公式中的 T，可得到：</p>
+
+
 
 <p>其中,Z(n)为没有进过滤波的反电动势，为滑动模式控制器的输出，</p>
 
@@ -112,169 +126,107 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 <p>1n1L 个什管的后由执</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
+
 
 <p>OBS FBASE用来表示转速转换为角度增量的系数，计算公式</p>
 
-<p>FOC\_FBASE = OBS\_FBASE = fBASE · TPWM\_VALUE * 32767</p>
+<div class="kb-formula">FOC_FBASE = OBS_FBASE = fBASE · TPWM_VALUE * 32767</div>
 
-<p>0</p>
+<pre class="kb-code"><code>#define OBS_FBASE  BASE_FREQ*TPWM_VALUE*32768  // Fbase*Tpwm*32768
+#define OBS_KLPF
+(UE
+#define SPEED_KLPF
+#define OBS EA KS
+UUE
+P //M
+_Q15((2*MOTOR_SPEED_SMOMIN_RPM*_2PI*BASE_FREQ*TPWM_VALUE)/MOTOR_SPEED_BASE)  // SMO的最小速度</code></pre>
 
-<p>#define OBS\_FBASE</p>
+<h3>一阶低通滤波器最小滤波系数OBS_EA_ES的计算</h3>
 
-<p>BASE FREQ*TPWM VALUE*32768</p>
 
-<p>// Fbase*Tpwm*32768</p>
 
-<p>1</p>
-
-<p>#define OBS KLPF</p>
-
-<p>(UE</p>
-
-<p>2</p>
-
-<p>A</p>
-
-<p>3</p>
-
-<p>#define SPEED KLPF</p>
-
-<p>#define OBS EA KS</p>
-
-<p>UUE</p>
-
-<p>P //M</p>
-
-<p>\_Q15((2*MOTOR\_SPEED\_SMOMIN\_RPM*\_2PI*BASE\_FREQ*TPWM\_VALUE)/MOTOR\_SPEED\_BASE)</p>
-
-<p>// SMO的最小速度</p>
-
-<h3>一阶低通滤波器最小滤波系数OBS\_EA\_ES的计算</h3>
-
-<p>&lt;!-- formula-not-decoded --&gt;</p>
-
-<p>FOC\_EKLPFMIN = OBS\_EA\_ES</p>
+<div class="kb-formula">FOC_EKLPFMIN = OBS_EA_ES</div>
 
 <h3>为了得到更加稳定的转速信号，需要对估算器的估算转速进行低通滤波，速度低通滤波系数计算：</h3>
 
-<p>SPEED\_KLPF = 2π * f*TPWM\_VALUE*32767</p>
+<div class="kb-formula">SPEED_KLPF = 2π * f*TPWM_VALUE*32767</div>
 
 <h3>估算器里由速度OMEGA算出角度增量4θ的计算公式</h3>
 
-<p>∆θ = ω * TPWM\_VALUE↓</p>
+<div class="kb-formula">∆θ = ω * TPWM_VALUE↓</div>
 
 <p>对40进行标幺化并用Q15格式表示↓</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
 
-<p>= 2 * (fBASE * TPWM\_VALUE) *</p>
 
-<p>32767)</p>
+<div class="kb-formula">= 2 * (fBASE * TPWM_VALUE) *
+32767)
+ω
+ωBASE</div>
 
-<p>ω</p>
+<p>OBS_FBASE用来表示转速转换为角度增量的系数，计算公式</p>
 
-<p>ωBASE</p>
+<div class="kb-formula">FOC_FBASE = OBS_FBASE = fBASE * TPWM_VALUE * 32767 4</div>
 
-<p>OBS\_FBASE用来表示转速转换为角度增量的系数，计算公式</p>
-
-<p>FOC\_FBASE = OBS\_FBASE = fBASE * TPWM\_VALUE * 32767 4</p>
-
-<p>0</p>
-
-<p>#define OBS FBASE</p>
-
-<p>BASE FREQ*TPWM\_VALUE*32768</p>
-
-<p>// Fbase*Tpwm*32768</p>
-
-<p>1</p>
-
-<p>#define OBS KLPF</p>
-
-<p>\_Q15(\_2PI*BASE\_FREQ*TPWM\_VALUE)</p>
-
-<p>2</p>
-
-<p>#define SPEED KLPF</p>
-
-<p>\_Q15(\_2PI*SPD\_BW*TPWM\_VALUE)</p>
-
-<p>BP  //</p>
-
-<p>3</p>
-
-<p>#define OBS EA\_KS</p>
-
-<p>\_Q15((2*MOTOR\_SPEED\_SMOMIN\_RPM*\_2PI*BASE\_FREQ*TPWM\_VALUE)/MOTOR\_SPEED\_BASE)</p>
-
-<p>// SMO的最小速度</p>
-
-<p>A</p>
+<pre class="kb-code"><code>#define OBS_FBASE  BASE_FREQ*TPWM_VALUE*32768  // Fbase*Tpwm*32768
+#define OBS_KLPF  _Q15(_2PI*BASE_FREQ*TPWM_VALUE)
+#define SPEED_KLPF  _Q15(_2PI*SPD_BW*TPWM_VALUE)
+BP  //
+#define OBS EA_KS  _Q15((2*MOTOR_SPEED_SMOMIN_RPM*_2PI*BASE_FREQ*TPWM_VALUE)/MOTOR_SPEED_BASE)  // SMO的最小速度</code></pre>
 
 <figure class="kb-fig"><img src="/api/kb/documents/smo-pll-estimator/figure?name=p003_x18.png" alt="插图 8" loading="lazy"></figure>
 
-<p>SPD\_BW = fc</p>
+<div class="kb-formula">SPD_BW = fc</div>
 
 <figure class="kb-fig"><img src="/api/kb/documents/smo-pll-estimator/figure?name=p003_x19.png" alt="插图 9" loading="lazy"></figure>
 
 <p>根据控制框图可得方程：</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
+
 
 <p>系统传递函数：</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
+
 
 <p>根据典型二阶系统传递函数表达式</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
+
 
 <p>系统传递函数与典型二阶系统传递函数对比得：</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
+
+
+
+
+
 
 <p>离散化后：</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
+
 
 <p>KP标幺化后转换为Q12格式得：</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
+
 
 <p>KI标幺化后转换为Q15格式得：</p>
 
-<p>FOC \_KI = 2π f *2π f · Ts/ fbase ·32767</p>
+<div class="kb-formula">FOC _KI = 2π f *2π f · Ts/ fbase ·32767</div>
 
-<p>C</p>
-
-<p>7</p>
-
-<p>#define OBSW KP GAIN</p>
-
-<p>#define OBSW KI GAIN</p>
-
-<p>6</p>
+<pre class="kb-code"><code>#define OBSW KP GAIN
+#define OBSW KI GAIN</code></pre>
 
 <h3>4.2 sincos</h3>
 
-<p>\_Q12(2*\_2PI*ATT\_COEF*ATO\_BW/BASE\_FREQ)</p>
-
-<p>4</p>
-
-<p>\_Q15(\_2PI*ATO\_BW*ATO\_BW*TPWM\_VALUE/BASE\_FREQ)</p>
+<pre class="kb-code"><code>_Q12(2*_2PI*ATT_COEF*ATO_BW/BASE_FREQ)
+_Q15(_2PI*ATO_BW*ATO_BW*TPWM_VALUE/BASE_FREQ)</code></pre>
 
 <figure class="kb-fig"><img src="/api/kb/documents/smo-pll-estimator/figure?name=p003_x20.png" alt="插图 10" loading="lazy"></figure>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
+
 
 <p>PLL系统的等效框图：</p>
 
@@ -282,21 +234,21 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 <p>由此可以得到方程</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
+
 
 <p>进一步可得到系统的传递函数</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
+
 
 <p>根据典型二阶系统传递函数表达式</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
+
 
 <p>系统传递函数与典型二阶系统传递函数对比得：</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
 
-<p>&lt;!-- formula-not-decoded --&gt;</p>
+
+
 
 <p>求解得：</p>
 

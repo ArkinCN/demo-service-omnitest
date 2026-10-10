@@ -67,6 +67,10 @@ class AgentConfirmRequest(BaseModel):
     approved: bool
     actor: str
     confirm_token: Optional[str] = None
+    # 前端执行类工具的**真实执行结果**（2026-10-10 新增）：
+    # {ok: bool, summary: str, data?: any}。设备桥凭据流（带 confirm_token）不传此字段，
+    # 缺省 None 时行为与以前一致。
+    result: Optional[dict] = None
 
 
 # ── 工具中文名（前端 title 显示用）──
@@ -74,6 +78,7 @@ _TOOL_TITLES = {
     "KnowledgeSearch": "知识库检索",
     "DocLibrarySearch": "资料库检索",
     "WebSearch": "联网搜索",
+    "WriteReportHeader": "填写报告表头",
 }
 
 
@@ -81,6 +86,15 @@ def _summarize_args(name: str, input_: Any) -> str:
     """生成 argsSummary（前端不渲染参数，摘要由后端给）。"""
     if not input_:
         return f"调用 {name}"
+    # 写类工具：把「字段=值」点出来，让人在半秒内看清这条确认卡要写什么
+    if name == "WriteReportHeader":
+        try:
+            field = input_.get("field") or ""
+            value = input_.get("value")
+            if field:
+                return f"将「{field}」填写为「{value}」"
+        except AttributeError:
+            pass
     try:
         q = input_.get("query") or input_.get("q") or ""
         if q:
@@ -100,6 +114,10 @@ def _summarize_result(name: str, summary: Any) -> str:
         # 重复检索被短路（agent_chat_service 里同名同参跳过），前端卡片据此标注，
         # 让人一眼看出「模型曾尝试重复、已被拦截」，留痕完整。
         return f"{name} 已跳过重复检索（复用上一条结果）"
+    # 前端执行类工具（写类，2026-10-10）：摘要走 detail，如实转述
+    # 已写入 / 失败 / 未执行——卡面直接把这句话给操作员看。
+    if isinstance(summary, dict) and "detail" in summary:
+        return str(summary.get("detail") or f"{name} 完成")
     if isinstance(summary, dict) and "count" in summary:
         return f"{name} 返回 {summary.get('count', 0)} 条来源"
     return f"{name} 完成"
@@ -219,7 +237,9 @@ class _Compat:
                 "title": _TOOL_TITLES.get(name, name),
                 "args": input_,
                 "argsSummary": _summarize_args(name, input_),
-                "mutating": False,
+                # mutating 透传（2026-10-10）：写类工具由后端置 True，前端据此弹人工
+                # 确认卡；检索类工具仍为 False，行为不变。缺省 False 兼容旧事件。
+                "mutating": bool(ev.get("mutating")),
             })
             return out
 
@@ -231,10 +251,13 @@ class _Compat:
             summary = ev.get("summary") or {}
             start = self.tool_start.pop(call_id, None)
             duration = int((time.monotonic() - start) * 1000) if start else 0
+            # status 透传（2026-10-10）：写类工具可能以「未执行 / 失败」收场，
+            # 前端卡片需如实显示；检索类工具恒为 ok，行为不变（缺省 ok 兼容旧事件）。
+            raw_status = ev.get("status") or "ok"
             out.append({
                 "type": "tool_result",
                 "callId": call_id,
-                "status": "ok",
+                "status": "ok" if raw_status == "ok" else "error",
                 "durationMs": duration,
                 "resultSummary": _summarize_result(name, summary),
                 "result": summary,
@@ -305,6 +328,9 @@ async def agent_stream(
                 ip=ip,
                 enabled_tools=body.enabled_tools,
                 context=body.context,
+                # 权限档位透传（2026-10-10 修复断点 A）：此前这里漏传，导致
+                # 后端一直按只读过滤工具、模型也收不到档位。现在原样下传。
+                permission=body.permission,
             ):
                 if ev.get("type") == "content_delta":
                     final_text.append(ev.get("text") or "")
@@ -336,17 +362,45 @@ async def agent_stream(
 async def agent_confirm(
     body: AgentConfirmRequest,
     # 鉴权门禁（2026-09-23 全量审查补上）：本路由原先没挂鉴权。
-    # 它现在恒返回 404，看似无害；但阶段 5 接设备桥后，这里会变成
-    # **批准危险动作的入口**——没鉴权等于任何人都能放行红线动作。
-    # 先把门禁立上，免得实现时忘了；user_id 将来还要写进审计记录。
+    # 它现在会放行写类工具——更需鉴权：没门禁等于任何人都能放行写入。
+    # user_id 也参与挂起项的归属校验（见 agent_confirm_bus.resolve）。
     current_user: User = Depends(get_current_user),
 ):
-    """放行/取消回执。阶段 3 客户工具全是检索类（无 mutating），无待确认凭据。
+    """放行 / 取消回执（2026-10-10 实现挂起解析）。
 
-    阶段 5 接设备桥后，动作类工具会签发 pending 凭据，这里需扩展为：
-    持 confirm_token 调桥 approve/reject 后继续推 tool_result。当前先返回 404。
+    两类来源：
+    1. **前端执行类工具**（WriteReportHeader 等）：agent loop 已把该 call_id 登记
+       在挂起簿；这里 resolve 唤醒它，body.result 是前端真实执行结果（写成功/失败/
+       被取消），loop 据此如实回填模型。
+    2. **设备桥凭据流**（带 confirm_token，阶段 5）：当前后端无对应挂起项，
+       保持原 404 行为（向后兼容，不破坏既有设备桥路径）。
 
-    注：body 暂不消费（无 pending 凭据可校验），保留入参以固定前端契约形状。
+    返回：
+    - 命中挂起项 → 200 {ok: true, resolved: true}；
+    - 无挂起项   → 404 {error: "no pending confirmation"}（与旧行为一致）。
     """
-    _ = body  # 预留：阶段 5 校验 call_id / confirm_token
+    from app.services import agent_confirm_bus
+
+    user_id: int = current_user.id or 0
+
+    # ⚠️ callId 前缀剥离：前端拿到的 callId 形如 "r{毫秒}-{模型原始id}"
+    # （_Compat.map 加的请求级前缀，防跨轮撞 id）。挂起簿登记的是 loop 侧**原始**
+    # tu_id，故这里必须先剥掉前缀再查，否则永远查不到。
+    raw_call_id = body.call_id
+    if raw_call_id and raw_call_id.startswith("r") and "-" in raw_call_id:
+        head, _, tail = raw_call_id.partition("-")
+        if head[1:].isdigit() and tail:
+            raw_call_id = tail
+
+    # 取消（approved=False）也要唤醒挂起位——否则 loop 会一直等到超时。
+    payload = {
+        "approved": bool(body.approved),
+        "actor": body.actor,
+        "result": body.result or {},
+        "reason": "" if body.approved else "cancelled",
+    }
+    if agent_confirm_bus.resolve(raw_call_id, payload, user_id):
+        return JSONResponse(status_code=200, content={"ok": True, "resolved": True})
+
+    # 无挂起项：保持旧行为（设备桥凭据流尚未接，回 404）
     return JSONResponse(status_code=404, content={"error": "no pending confirmation"})

@@ -100,6 +100,13 @@ export interface EnvelopeInput {
   /** 流程 4 里人点选的那条未达标判据（即 store 的 focusReq）；未选为 null */
   selectedFailItem: string | null
   /**
+   * AI 助手当前权限档位（2026-10-10 权限切换修复）。
+   * 由 ActionDock 从 store.permission 订阅传入；缺省（undefined）按 readonly 处理。
+   * 这里动态化后，envelope.policy.permission 与 UI 选择才一致——此前是写死常量，
+   * 模型永远自述只读（根因报告的断点 B）。
+   */
+  permission?: string
+  /**
    * 流程 5 的**本页**表头填写情况：store.reportHeader 里**已有值**的字段 key 集合
    * （值随手给 true，只当集合用）。
    *
@@ -605,7 +612,9 @@ export function buildEnvelope(input: EnvelopeInput): Envelope {
       unclassified: [],
     },
     policy: {
-      permission: 'readonly',
+      // 动态读当前权限档位（2026-10-10）：不再写死 readonly。
+      // 缺省（未传入）按 readonly 处理——安全默认，与后端 select_tools 口径一致。
+      permission: input.permission || 'readonly',
       auto_run: true,
       redline_actions: REDLINE,
     },

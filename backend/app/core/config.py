@@ -208,6 +208,9 @@ class Settings(BaseSettings):
     AGENT_CHAT_MEMORY_MAX_TURNS: int = 8
     # 轮内「同名同参重复检索」连续无进展达到该阈值即提前禁工具、强制收口。
     AGENT_CHAT_NO_PROGRESS_LIMIT: int = 2
+    # 写类工具（前端执行）等待人工确认的超时秒数（2026-10-10）。
+    # 超时后 loop 如实回填「未确认、未执行」并继续，避免请求悬挂到连接断开。
+    AGENT_CONFIRM_TIMEOUT_SECONDS: int = 300
     # AI 对话流恢复（有状态）：完成流缓存保留秒数（够「关应用→重开→进对话」）；
     # streaming 流硬上限（防僵尸）。⚠️ 依赖单 worker 内存单例。
     AGENT_STREAM_RECOVERY_TTL_SECONDS: int = 600

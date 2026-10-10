@@ -22,6 +22,20 @@ th { background: #f0f5f1; font-weight: 600; }
 hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 .kb-fig { margin: 14px 0; text-align: center; }
 .kb-fig img { max-width: 100%; height: auto; border: 1px solid #e3e8e4; border-radius: 4px; }
+/* 代码块：整体成块，保留原始换行与缩进 */
+.kb-code {
+  background: #f7f9f7; border: 1px solid #e3e8e4; border-left: 3px solid #9bb8a8;
+  border-radius: 4px; padding: 10px 12px; margin: 12px 0; overflow-x: auto;
+  white-space: pre; font-size: 12px; line-height: 1.65;
+}
+.kb-code code { background: none; border: none; padding: 0; font-size: 12px; }
+/* 公式块：居中、衬线、留白（干净文本样式，不引排版引擎） */
+.kb-formula {
+  margin: 12px auto; padding: 8px 12px; max-width: 100%; text-align: center;
+  font-family: "Cambria Math", "Times New Roman", "Georgia", serif;
+  font-size: 14px; line-height: 2; color: #22302a;
+  background: #fbfcfb; border-radius: 4px; white-space: pre-wrap; word-break: break-word;
+}
 </style></head><body><h1>MCU-DS-14 FU6832 数据手册 V2.1（2023-06-21）</h1><div style="margin:0 0 14px;padding:8px 10px;border:1px solid #e3e8e4;border-radius:4px;background:#f7faf8;color:#5b6b62;font-size:12px;">系统合成图文稿（由抽取产物重建，非客户原件 PDF）。</div><figure class="kb-fig"><img src="/api/kb/documents/fu6832-datasheet/figure?name=p001_x43.png" alt="插图 1" loading="lazy"></figure>
 
 <h3>数据手册</h3>
@@ -31,8 +45,6 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 <p>峰岹科技(深圳)股份有限公司</p>
 
 <figure class="kb-fig"><img src="/api/kb/documents/fu6832-datasheet/figure?name=p002_x43.png" alt="插图 2" loading="lazy"></figure>
-
-<h3>目 录</h3>
 
 <table><thead><tr><th>目 录 ..................................................................................................................................................</th><th>2</th></tr></thead><tbody>
 <tr><td>符号意义说明 ...................................................................................................................................</td><td>20</td></tr>
@@ -683,7 +695,7 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 <ul>
 <li> 寄存器后的 [ ] 表示寄存器中的位。例: ABCD[XY] 表示 ABCD 寄存器中的 XY 位</li>
-<li> 寄存器名中的 x 表示类似寄存器。例: TIMx\_CR0 表示 TIM3\_CR0 和 TIM4\_CR0</li>
+<li> 寄存器名中的 x 表示类似寄存器。例: TIMx_CR0 表示 TIM3_CR0 和 TIM4_CR0</li>
 <li> [m : n] 表示位范围。例: [3 : 0] 表示从 bit3 到 bit0</li>
 <li> Pm.n 表示 Portm 的第 n 个端口。例: P0.0 表示 Port0 的 0 号端口</li>
 <li> 寄存器读写特性表示:</li>
@@ -699,13 +711,9 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 <li> W0 : 只可写</li>
 </ul>
 
-<p>0</p>
-
 <ul>
 <li> W1 : 只可写</li>
 </ul>
-
-<p>1</p>
 
 
 <h3>英文缩写及说明</h3>
@@ -905,9 +913,9 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 <h3>电源电压:</h3>
 
 <ul>
-<li> 单电源高压模式: VCC\_MODE = 0 ，外部电源从 VCC 输入 5V ~ 28V ， VDD5 由内部 LDO 产生</li>
-<li> 单电源低压模式: VCC\_MODE = 1 ，外部电源从 VDD5 输入 3V ~ 5.5V ，同时将 VCC 与 VDD5 短接</li>
-<li> 双电源模式: VCC\_MODE = 1 ，外部电[源] 1 从 VCC 输入 5V ~ 36V ，外部电[源] 2 从 VDD5 输 入 5V</li>
+<li> 单电源高压模式: VCC_MODE = 0 ，外部电源从 VCC 输入 5V ~ 28V ， VDD5 由内部 LDO 产生</li>
+<li> 单电源低压模式: VCC_MODE = 1 ，外部电源从 VDD5 输入 3V ~ 5.5V ，同时将 VCC 与 VDD5 短接</li>
+<li> 双电源模式: VCC_MODE = 1 ，外部电[源] 1 从 VCC 输入 5V ~ 36V ，外部电[源] 2 从 VDD5 输 入 5V</li>
 <li> 双核: 内核和</li>
 </ul>
 

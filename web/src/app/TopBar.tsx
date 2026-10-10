@@ -26,7 +26,7 @@ import {
   Wand2,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { Avatar, Button, Segmented, StatusDot, Tooltip, cn } from '../components/ui'
+import { Avatar, Button, StatusDot, Tooltip, cn } from '../components/ui'
 import { FLOWS, FLOW_BY_PATH } from '../data/flows'
 import type { FlowId } from '../data/types'
 import { FLOW_ICON, FLOW_SHORT, MODULE_ICON, MODULE_SHORT } from './icons'
@@ -332,8 +332,6 @@ export function TopBar() {
   const benchBusy = useAppStore((s) => s.benchBusy)
   const benchUser = useAppStore((s) => s.benchUser)
   const pending = useAppStore((s) => s.interlockPending)
-  const demoMode = useAppStore((s) => s.demoMode)
-  const setDemoMode = useAppStore((s) => s.setDemoMode)
   // 取数是异步的，用 hook 订阅才会在落地后重渲；同步函数取值会永远停在 0
   const kbTotal = useKnowledgeTotal()
   const bind = useFlowActions()
@@ -391,7 +389,7 @@ export function TopBar() {
         </div>
 
         {/* 「智能测试」一键自动化入口：初始化左侧。三态——
-              ① 非运行 → 「自动化测试」，点击只**打开引导屏**（不直接开跑），
+              ① 非运行 → 「AI自动化测试」（2026-10-10 改名，原「自动化测试」），点击只**打开引导屏**（不直接开跑），
                  人在引导屏确认后才启动，这样才有「点了发生什么」的可感知反馈；
               ② 运行中且浮层在 → 「终止」，点一下停掉整个自动化流程；
               ③ 运行中但人已退出浮层 → 「回到运行台」，点一下重新进入看进度
@@ -430,7 +428,7 @@ export function TopBar() {
                   : () => setAutomationIntent(true)
             }
           >
-            {backToConsole ? '回到运行台' : autoRunning ? '终止' : '自动化测试'}
+            {backToConsole ? '回到运行台' : autoRunning ? '终止' : 'AI自动化测试'}
           </Button>
         </Tooltip>
 
@@ -461,21 +459,11 @@ export function TopBar() {
             </NavLink>
           </Tooltip>
           <ProductCascader />
-          {/* 演示 / 全量：只切展示面，两边读的都是同一份场景包，不删任何数据 */}
-          <Tooltip side="bottom" content="演示只露场景包 demo_profile 点名的那几项；全量把登记过的全表摊开，供评审对照。两边数据同源。">
-            <span>
-              <Segmented
-                ariaLabel="演示模式"
-                size="sm"
-                value={demoMode ? 'demo' : 'full'}
-                onChange={(v) => setDemoMode(v === 'demo')}
-                items={[
-                  { value: 'demo', label: '演示' },
-                  { value: 'full', label: '全量' },
-                ]}
-              />
-            </span>
-          </Tooltip>
+          {/* 2026-10-10（用户反馈）：顶栏的「演示 / 全量」分段控件**已删除**，不再作为可见入口。
+              展示口径仍由 store 的 `demoMode` 决定（真源、持久化与 `?mode=demo|full`
+              强制口都保留，见 state/useAppStore.ts 的 readDemoMode）：现取值与删除前
+              完全一致，只少一颗可点的按钮。若要改成「恒为全量」或整条演示链路一并下线，
+              需另外确认。 */}
           <Tooltip side="bottom" content={benchBusy ? `台架被 ${benchUser} 占用中` : '台架空闲，可排队启动'}>
             <span className="flex h-[30px] items-center gap-1.5 rounded-full border border-line bg-white px-2.5 min-[1536px]:h-[38px] min-[1536px]:px-3">
               <StatusDot status={benchBusy ? 'alert' : 'done'} pulse={!benchBusy} />

@@ -20,6 +20,9 @@ import { tuneCards, TuneLeftPanel } from './flow-tune/panel'
 import { reportCards, ReportLeftPanel } from './flow-report/panel'
 // 副作用注册：registerModulePage('knowledge', KnowledgeModule)
 import './knowledge/register'
+// 副作用注册：把写类工具的前端执行器（WriteReportHeader 等）挂进 agent-chat 注册表，
+// 供人工确认放行后真正执行。与上面 knowledge/register 同一手法。
+import './copilot/toolExecutors'
 
 type CardImpl = (p: { full?: boolean }) => React.ReactNode
 

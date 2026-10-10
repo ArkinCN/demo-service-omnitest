@@ -16,6 +16,7 @@ AI 对话 Agent Loop 服务（阶段②）
   {"type": "done"}
   {"type": "error",          "message": "..."}
 """
+import asyncio
 import json
 from typing import Any, AsyncGenerator, Optional
 
@@ -58,6 +59,10 @@ _TOOL_INTROS = {
         "- DocLibrarySearch：本公司产品资料库，用于「获取资料文件」——数据手册、产品手册、" "应用笔记、用户指南、推广资料、开发工具、demo 等的下载/预览链接。\n"
     ),
     "WebSearch": "- WebSearch：联网搜索，兜底。\n",
+    "WriteReportHeader": (
+        "- WriteReportHeader：填写/修改测试报告的**报告表头字段**（客户名称、工程师、Email 等）。"
+        "这是写操作，调用后会先弹人工确认卡。\n"
+    ),
 }
 _TOOL_RULES = {
     "DocLibrarySearch": (
@@ -68,6 +73,12 @@ _TOOL_RULES = {
     ),
     "KnowledgeSearch": "回答技术内容问题，优先 KnowledgeSearch；首次结果不充分就换关键词再检索（可多次）。\n",
     "WebSearch": "只有内部资料不足时才用 WebSearch。\n",
+    "WriteReportHeader": (
+        "用户要求「填写/修改报告表头字段」（如「帮我填写客户名称为李123」「把工程师改成张三」）时，"
+        "调用 WriteReportHeader，field 传字段中文名或英文键、value 传值。"
+        "调用后**等待人工确认与执行结果**：只有工具返回「已写入」才算成功；"
+        "若返回未执行/被取消/失败，必须如实转述，绝不可谎称已写好。\n"
+    ),
 }
 
 # 引用纪律（两个分支共用，改这里即可同步）。
@@ -154,19 +165,26 @@ _LANG_RULE = (
 )
 
 
-def _build_system_prompt(tools: list[dict], context_summary: str = "") -> str:
-    """按本次请求实际启用的工具动态生成 system prompt。
+def _build_system_prompt(tools: list[dict], context_summary: str = "", permission: str = "readonly") -> str:
+    """按本次请求实际启用的工具 + 权限档位动态生成 system prompt。
 
     只描述、只允许模型使用当前 tools 里声明的工具，避免用户关闭知识库等开关后，
     system prompt 仍暗示模型「你有该工具」而误导模型尝试调用已禁用的工具。
+
+    permission：当前权限档位（readonly / params / hardware）。写成**权威的能力边界
+    声明**——这是模型判断「我能不能写」的第一依据（2026-10-10 权限修复）。
+    与 agent_context 的档位行同源同口径（都用中文能力描述），避免两处口径打架。
 
     context_summary：前端上送的上下文包压成的现场摘要（见 agent_context.py）。
     为空表示前端没上送上下文，此时不加这一段——模型退回通用回答即可。
     """
     names = [t.get("name") for t in tools if t.get("name") in _TOOL_INTROS]
     header = "你是 MotorDebug 的测试助手，面向电机测试台架的操作员作答。\n\n"
+    # 权限声明放在最前：它是「能做什么」的硬边界，先于工具清单被模型读到。
+    perm_line = _build_permission_rule(permission)
     if not names:
         body = (
+            f"{perm_line}\n"
             "当前没有可用的检索工具，直接基于你自己的知识作答；资料不足就如实说明，不要编造。\n"
             + _FORMAT_RULE
             + _CITE_RULE
@@ -181,7 +199,7 @@ def _build_system_prompt(tools: list[dict], context_summary: str = "") -> str:
             f"{len(names) + 3}. {_CITE_RULE}"
             f"{len(names) + 4}. {_LANG_RULE}"
         )
-        body = f"你有以下工具：\n{intros}\n工作方式：\n{rules}{tail}"
+        body = f"{perm_line}\n你有以下工具：\n{intros}\n工作方式：\n{rules}{tail}"
 
     # ⚠️ 上下文摘要必须在**所有分支之后**统一追加。
     # 首版只在「有工具」那条路上追加，而「无工具」分支提前 return 了——
@@ -190,6 +208,19 @@ def _build_system_prompt(tools: list[dict], context_summary: str = "") -> str:
     if context_summary:
         body += f"\n\n{context_summary}"
     return header + body
+
+
+def _build_permission_rule(permission: str) -> str:
+    """权限档位 → system prompt 里的能力边界声明（与 agent_context._permission_line 同源）。
+
+    与 agent_context 的档位行保持同一份文案（都取 PERMISSION_CN），
+    确保模型从 system prompt 与现场上下文两处看到的权限口径完全一致。
+    """
+    from app.services.agent_context import PERMISSION_CN
+
+    key = (permission or "readonly").strip().lower()
+    desc = PERMISSION_CN.get(key, PERMISSION_CN["readonly"])
+    return f"【当前权限档位】{desc}"
 
 
 # 输出 + 工具定义 + 单轮检索回填 预留的 token 余量（从窗口里扣掉，给生成和工具留空间）
@@ -314,6 +345,7 @@ def _compress_stale_tool_results(messages: list[dict]) -> None:
 
 def _call_model_payload(
     model: str, messages: list[dict], tools: list[dict], context_summary: str = "",
+    permission: str = "readonly",
 ) -> dict:
     """构造一次模型调用的 payload（Anthropic Messages，带 system + tools）。
 
@@ -322,7 +354,7 @@ def _call_model_payload(
     payload = {
         "model": model,
         "max_tokens": _MAX_OUTPUT_TOKENS,
-        "system": _build_system_prompt(tools, context_summary),
+        "system": _build_system_prompt(tools, context_summary, permission),
         "messages": messages,
     }
     if tools:
@@ -434,7 +466,7 @@ def _anthropic_messages_to_openai(system_prompt: str, messages: list[dict]) -> l
 async def _stream_model(
     client: httpx.AsyncClient, session: Session, model: str,
     messages: list[dict], tools: list[dict], user_id: int, ip: Optional[str],
-    context_summary: str = "",
+    context_summary: str = "", permission: str = "readonly",
 ) -> AsyncGenerator[dict, None]:
     """流式调一次上游模型，按模型绑定渠道的协议选择 anthropic / openai_chat 格式。
 
@@ -450,11 +482,11 @@ async def _stream_model(
 
     if protocol == "openai_chat":
         gen = _stream_openai_chat(
-            client, url, headers, model, trimmed, tools, user_id, ip, context_summary
+            client, url, headers, model, trimmed, tools, user_id, ip, context_summary, permission
         )
     else:
         gen = _stream_anthropic(
-            client, url, headers, model, trimmed, tools, user_id, ip, context_summary
+            client, url, headers, model, trimmed, tools, user_id, ip, context_summary, permission
         )
     async for ev in gen:
         yield ev
@@ -463,10 +495,10 @@ async def _stream_model(
 async def _stream_anthropic(
     client: httpx.AsyncClient, url: str, headers: dict, model: str,
     trimmed: list[dict], tools: list[dict], user_id: int, ip: Optional[str],
-    context_summary: str = "",
+    context_summary: str = "", permission: str = "readonly",
 ) -> AsyncGenerator[dict, None]:
     """Anthropic Messages SSE 分支（带 tools）。归一化输出 anthropic content_blocks。"""
-    payload = _call_model_payload(model, trimmed, tools, context_summary)
+    payload = _call_model_payload(model, trimmed, tools, context_summary, permission)
     payload["stream"] = True
 
     # 按 index 累积各 content block（text 累积 text，tool_use 累积 input json）
@@ -571,7 +603,7 @@ async def _stream_anthropic(
 async def _stream_openai_chat(
     client: httpx.AsyncClient, url: str, headers: dict, model: str,
     trimmed: list[dict], tools: list[dict], user_id: int, ip: Optional[str],
-    context_summary: str = "",
+    context_summary: str = "", permission: str = "readonly",
 ) -> AsyncGenerator[dict, None]:
     """OpenAI Chat Completions SSE 分支。请求/工具/SSE 用 OpenAI 格式，
     结果归一化回 anthropic content_blocks + stop_reason（tool_calls→tool_use）。"""
@@ -579,7 +611,7 @@ async def _stream_openai_chat(
         "model": model,
         "max_tokens": _MAX_OUTPUT_TOKENS,
         "messages": _anthropic_messages_to_openai(
-            _build_system_prompt(tools, context_summary), trimmed
+            _build_system_prompt(tools, context_summary, permission), trimmed
         ),
         "stream": True,
         # OpenAI chat 流式默认末块不带 usage，须显式要求，否则 0 计费（同网关）。
@@ -674,12 +706,17 @@ async def run_agent_chat(
     ip: Optional[str] = None,
     enabled_tools: Optional[list[str]] = None,
     context: Optional[dict] = None,
+    permission: Optional[str] = None,
 ) -> AsyncGenerator[dict, None]:
     """运行一轮对话的 agent loop，逐步 yield 过程事件。
 
     context：前端上送的上下文包（envelope v1，见前端 features/copilot/context.ts）。
     它只影响 system prompt 里多出的一段现场摘要，**不改变**工具、计费与事件协议。
     为 None（前端未上送）时行为与以前完全一致。
+
+    permission：当前权限档位（readonly / params / hardware，2026-10-10 新增）。
+    **服务端硬边界**：select_tools 按档过滤（只读档模型看不到写工具），未知档按
+    只读处理。缺省 None 时等价只读——向后兼容旧调用方。
 
     user_message 可为：
     - str：纯文本问题；
@@ -689,8 +726,8 @@ async def run_agent_chat(
       用于图文混合输入（视觉模型）。
     """
     model = model or settings.AGENT_CHAT_DEFAULT_MODEL
-    # 按前端开关过滤工具（未显式启用一律视为关闭，见 select_tools）
-    tools = agent_tools.select_tools(enabled_tools)
+    # 按「前端开关 ∩ 权限档位」过滤工具（未显式启用一律视为关闭，见 select_tools）
+    tools = agent_tools.select_tools(enabled_tools, permission)
     # 上下文包 → 现场摘要（为空表示前端没上送，模型退回通用回答）
     context_summary = build_context_summary(context)
 
@@ -760,7 +797,7 @@ async def run_agent_chat(
         try:
             with Session(engine) as s:
                 async for ev in _stream_model(
-                    client, s, model, messages, iter_tools, user_id, ip, context_summary
+                    client, s, model, messages, iter_tools, user_id, ip, context_summary, permission
                 ):
                     if ev.get("type") in ("content_delta", "reasoning_delta"):
                         yield ev  # 透传文本/推理增量给前端打字机
@@ -804,6 +841,66 @@ async def run_agent_chat(
                 tool_result_blocks.append({
                     "type": "tool_result", "tool_use_id": tu_id,
                     "content": f"{name} 当前不可用（用户已关闭），不要再尝试调用。",
+                })
+                continue
+
+            # ── 前端执行类工具：挂起等人工确认，结果由前端回执带回（2026-10-10）──
+            #
+            # 写类工具（如 WriteReportHeader）不在这里本地执行：下发 tool_call
+            # (mutating=true) 给前端弹确认卡 → 挂起等待 /api/agent/confirm 回执 →
+            # 用前端真实执行结果作为 tool_result 回填，再继续下一轮模型调用。
+            # 超时 / 取消 / 断开一律如实回填「未执行」，绝不谎报完成。
+            if name in agent_tools.FRONTEND_EXECUTED_TOOLS:
+                from app.services import agent_confirm_bus
+
+                # mutating=true：前端据此渲染人工确认卡（红线纪律：写操作必经确认）
+                yield {
+                    "type": "tool_call", "id": tu_id, "name": name,
+                    "input": tinput, "mutating": True,
+                }
+                fut = agent_confirm_bus.register(tu_id, user_id)
+                try:
+                    payload = await asyncio.wait_for(
+                        fut, timeout=settings.AGENT_CONFIRM_TIMEOUT_SECONDS
+                    )
+                except asyncio.TimeoutError:
+                    logger.warning(f"agent frontend tool {name} confirm timeout: {tu_id}")
+                    payload = {"approved": False, "reason": "timeout"}
+                except asyncio.CancelledError:
+                    agent_confirm_bus.unregister(tu_id)
+                    raise
+                finally:
+                    agent_confirm_bus.unregister(tu_id)
+
+                approved = bool(payload.get("approved"))
+                result_data = payload.get("result") or {}
+                if approved and result_data.get("ok"):
+                    ok_summary = result_data.get("summary") or f"{name} 已执行"
+                    yield {
+                        "type": "tool_result", "id": tu_id, "name": name,
+                        "status": "ok", "summary": {"ok": True, "detail": ok_summary},
+                    }
+                    content = f"[已执行并确认] {ok_summary}"
+                elif approved:
+                    # 放行了，但前端执行失败/落库失败——如实转述，别谎报成功
+                    fail_summary = result_data.get("summary") or f"{name} 执行失败"
+                    yield {
+                        "type": "tool_result", "id": tu_id, "name": name,
+                        "status": "error", "summary": {"ok": False, "detail": fail_summary},
+                    }
+                    content = f"[执行失败] {fail_summary}。请如实告知用户未成功，勿谎称完成。"
+                else:
+                    reason = payload.get("reason") or "cancelled"
+                    if reason == "timeout":
+                        content = f"[未执行] 等待人工确认超时，{name} 未执行。请如实告知用户未写入。"
+                    else:
+                        content = f"[未执行] 操作员取消了 {name}，未做任何写入。请如实告知用户。"
+                    yield {
+                        "type": "tool_result", "id": tu_id, "name": name,
+                        "status": "cancelled", "summary": {"ok": False, "detail": content},
+                    }
+                tool_result_blocks.append({
+                    "type": "tool_result", "tool_use_id": tu_id, "content": content,
                 })
                 continue
 

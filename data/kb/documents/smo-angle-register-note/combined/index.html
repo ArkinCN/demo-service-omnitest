@@ -22,29 +22,23 @@ th { background: #f0f5f1; font-weight: 600; }
 hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 .kb-fig { margin: 14px 0; text-align: center; }
 .kb-fig img { max-width: 100%; height: auto; border: 1px solid #e3e8e4; border-radius: 4px; }
+/* 代码块：整体成块，保留原始换行与缩进 */
+.kb-code {
+  background: #f7f9f7; border: 1px solid #e3e8e4; border-left: 3px solid #9bb8a8;
+  border-radius: 4px; padding: 10px 12px; margin: 12px 0; overflow-x: auto;
+  white-space: pre; font-size: 12px; line-height: 1.65;
+}
+.kb-code code { background: none; border: none; padding: 0; font-size: 12px; }
+/* 公式块：居中、衬线、留白（干净文本样式，不引排版引擎） */
+.kb-formula {
+  margin: 12px auto; padding: 8px 12px; max-width: 100%; text-align: center;
+  font-family: "Cambria Math", "Times New Roman", "Georgia", serif;
+  font-size: 14px; line-height: 2; color: #22302a;
+  background: #fbfcfb; border-radius: 4px; white-space: pre-wrap; word-break: break-word;
+}
 </style></head><body><h1>SMO 角度估算的原理介绍和部分寄存器说明</h1><div style="margin:0 0 14px;padding:8px 10px;border:1px solid #e3e8e4;border-radius:4px;background:#f7faf8;color:#5b6b62;font-size:12px;">系统合成图文稿（由抽取产物重建，非客户原件 PDF）。</div><p><strong>SMO角度估算的原理介绍和部分寄存器说明</strong></p>
 
 <p>峰岹科技(深圳)股份有限公司</p>
-
-<h3>目  录</h3>
-
-<p><strong>目  录	2</strong></p>
-
-<p><strong>1 概述	3</strong></p>
-
-<p><strong>2 数字化电机模型	5</strong></p>
-
-<p><strong>3 电流观测器	9</strong></p>
-
-<p><strong>4 反电动势估算	16</strong></p>
-
-<p><strong>5 反电动势滤波和转速滤波	22</strong></p>
-
-<p><strong>6 角度估算	17</strong></p>
-
-<p><strong>7 修改记录	18</strong></p>
-
-<h3>1 概述</h3>
 
 <figure class="kb-fig"><img src="/api/kb/documents/smo-angle-register-note/figure?name=image1.png" alt="插图 1" loading="lazy"></figure>
 
@@ -94,9 +88,8 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 <p>将公式4中轴上的数学模型进行离散化处理得公式5。</p>
 
-<p>$$\frac{I_{ \alpha }(n+1)-I_{ \alpha }(n)}{T_{s}}=(-\frac{R}{L_{d}})I_{ \alpha }(n)+\frac{(V_{ \alpha }(n)-e_{ \alpha }(n))}{L_{d}}-\frac{ \omega_{e}(L_{d}-L_{q})I_{ \beta }(n)}{L_{d}}$$</p>
-
-<p>$$I_{ \alpha }(n+1)=(1-T_{s}\frac{R}{L_{d}})I_{ \alpha }(n)+\frac{T_{s}}{L_{d}}(V_{ \alpha }(n)-e_{ \alpha }(n))-\frac{ \omega_{e}T_{s}(L_{d}-L_{q})I_{ \beta }(n)}{L_{d}}$$</p>
+<div class="kb-formula">\frac{I_{ \alpha }(n+1)-I_{ \alpha }(n)}{T_{s}}=(-\frac{R}{L_{d}})I_{ \alpha }(n)+\frac{(V_{ \alpha }(n)-e_{ \alpha }(n))}{L_{d}}-\frac{ \omega_{e}(L_{d}-L_{q})I_{ \beta }(n)}{L_{d}}
+I_{ \alpha }(n+1)=(1-T_{s}\frac{R}{L_{d}})I_{ \alpha }(n)+\frac{T_{s}}{L_{d}}(V_{ \alpha }(n)-e_{ \alpha }(n))-\frac{ \omega_{e}T_{s}(L_{d}-L_{q})I_{ \beta }(n)}{L_{d}}</div>
 
 
 <p>公式5：PMSM在轴上的离散化数学模型</p>
@@ -104,9 +97,8 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 <p>将公式4中轴上的数学模型进行离散化处理得公式6。</p>
 
-<p>$$\frac{I_{ \beta }(n+1)-I_{ \beta }(n)}{T_{s}}=(-\frac{R}{L_{d}})I_{ \beta }(n)+\frac{(V_{ \beta }(n)-e_{ \beta }(n))}{L_{d}}+\frac{ \omega_{e}(L_{d}-L_{q})I_{ \alpha }(n)}{L_{d}}$$</p>
-
-<p>$$I_{ \beta }(n+1)=(1-T_{s}\frac{R}{L_{d}})I_{ \beta }(n)+\frac{T_{s}}{L_{d}}(V_{ \beta }(n)-e_{ \beta }(n))+\frac{ \omega_{e}T_{s}(L_{d}-L_{q})I_{ \alpha }(n)}{L_{d}}$$</p>
+<div class="kb-formula">\frac{I_{ \beta }(n+1)-I_{ \beta }(n)}{T_{s}}=(-\frac{R}{L_{d}})I_{ \beta }(n)+\frac{(V_{ \beta }(n)-e_{ \beta }(n))}{L_{d}}+\frac{ \omega_{e}(L_{d}-L_{q})I_{ \alpha }(n)}{L_{d}}
+I_{ \beta }(n+1)=(1-T_{s}\frac{R}{L_{d}})I_{ \beta }(n)+\frac{T_{s}}{L_{d}}(V_{ \beta }(n)-e_{ \beta }(n))+\frac{ \omega_{e}T_{s}(L_{d}-L_{q})I_{ \alpha }(n)}{L_{d}}</div>
 
 
 <p>公式6：PMSM在轴上的离散化数学模型</p>
@@ -114,16 +106,14 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 <p>令，并对公式5和公式6进行标幺化处理得公式7和公式8。</p>
 
-<p>$$\frac{I_{ \alpha }(n+1)}{I_{BASE}} * 32767=F * \frac{I_{ \alpha }\left(n\right)}{I_{BASE}} * 32767+G * \frac{V_{BASE}}{I_{BASE}} * \frac{V_{ \alpha }(n)}{V_{BASE}} * 32767-$$</p>
-
-<p>$$G * \frac{E_{BASE}}{I_{BASE}} * \frac{e_{ \alpha }\left(n\right)}{E_{BASE}} * 32767-\frac{ \omega_{BASE}T_{s}\left(L_{d}-L_{q}\right)}{L_{d}} * \frac{ \omega e}{ \omega_{BASE}} * \frac{I_{ \beta }\left(n\right)}{I_{BASE}} * 32767$$</p>
+<div class="kb-formula">\frac{I_{ \alpha }(n+1)}{I_{BASE}} * 32767=F * \frac{I_{ \alpha }\left(n\right)}{I_{BASE}} * 32767+G * \frac{V_{BASE}}{I_{BASE}} * \frac{V_{ \alpha }(n)}{V_{BASE}} * 32767-
+G * \frac{E_{BASE}}{I_{BASE}} * \frac{e_{ \alpha }\left(n\right)}{E_{BASE}} * 32767-\frac{ \omega_{BASE}T_{s}\left(L_{d}-L_{q}\right)}{L_{d}} * \frac{ \omega e}{ \omega_{BASE}} * \frac{I_{ \beta }\left(n\right)}{I_{BASE}} * 32767</div>
 
 
 <p>公式7：PMSM在轴上标幺化的离散化数学模型</p>
 
-<p>$$\frac{I_{ \beta }(n+1)}{I_{BASE}} * 32767=F * \frac{I_{ \beta }\left(n\right)}{I_{BASE}} * 32767+G * \frac{V_{BASE}}{I_{BASE}} * \frac{V_{ \beta }(n)}{V_{BASE}} * 32767-$$</p>
-
-<p>$$G * \frac{E_{BASE}}{I_{BASE}} * \frac{e_{ \beta }\left(n\right)}{E_{BASE}} * 32767+\frac{ \omega_{BASE}T_{s}\left(L_{d}-L_{q}\right)}{L_{d}} * \frac{ \omega e}{ \omega_{BASE}} * \frac{I_{ \alpha }(n)}{I_{BASE}} * 32767$$</p>
+<div class="kb-formula">\frac{I_{ \beta }(n+1)}{I_{BASE}} * 32767=F * \frac{I_{ \beta }\left(n\right)}{I_{BASE}} * 32767+G * \frac{V_{BASE}}{I_{BASE}} * \frac{V_{ \beta }(n)}{V_{BASE}} * 32767-
+G * \frac{E_{BASE}}{I_{BASE}} * \frac{e_{ \beta }\left(n\right)}{E_{BASE}} * 32767+\frac{ \omega_{BASE}T_{s}\left(L_{d}-L_{q}\right)}{L_{d}} * \frac{ \omega e}{ \omega_{BASE}} * \frac{I_{ \alpha }(n)}{I_{BASE}} * 32767</div>
 
 
 <p>公式8：PMSM在轴上标幺化的离散化数学模型</p>
@@ -133,15 +123,15 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 
 <ul>
-<li>1、 ：坐标系上的电流，对应寄存器FOC\_\_IA、FOC\_\_IBET，单位为A；</li>
+<li>1、 ：坐标系上的电流，对应寄存器FOC__IA、FOC__IBET，单位为A；</li>
 </ul>
 
 <ul>
-<li>2、 ：坐标系上的电压，对应寄存器FOC\_\_VALP、FOC\_\_VBET与母线相乘得到，单位为V；</li>
+<li>2、 ：坐标系上的电压，对应寄存器FOC__VALP、FOC__VBET与母线相乘得到，单位为V；</li>
 </ul>
 
 <ul>
-<li>3、 ：坐标系上的反电动势，对应寄存器FOC\_\_EALP、FOC\_\_EBET，单位为V；</li>
+<li>3、 ：坐标系上的反电动势，对应寄存器FOC__EALP、FOC__EBET，单位为V；</li>
 </ul>
 
 <ul>
@@ -151,36 +141,36 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 <ul>
 <li>5、 ：分别为轴电感和轴电感，单位为H；</li>
-<li>6、 ：载波周期，单位为s；对应头文件Parameter.h里的宏定义TPWM\_VALUE；</li>
-<li>7、 ：电流基准，单位为A；对应头文件Parameter.h里的宏定义HW\_BOARD\_CURR\_BASE，其值为最大采样电流的两倍，最大采样电流HW\_BOARD\_CURR\_MAX在头文件Parameter.h里的宏定义为HW\_ADC\_REF/2/HW\_AMPGAIN/HW\_RSHUNT，其中HW\_ADC\_REF在头文件Customer.h里宏定义为ADC的参考电压，除2是因为在电流为0时运放的输出电压为ADC参考电压的一半，HW\_AMPGAIN在头文件Customer.h里宏定义为运放的放大倍数，HW\_RSHUNT在头文件Customer.h里宏定义为采样电阻；</li>
+<li>6、 ：载波周期，单位为s；对应头文件Parameter.h里的宏定义TPWM_VALUE；</li>
+<li>7、 ：电流基准，单位为A；对应头文件Parameter.h里的宏定义HW_BOARD_CURR_BASE，其值为最大采样电流的两倍，最大采样电流HW_BOARD_CURR_MAX在头文件Parameter.h里的宏定义为HW_ADC_REF/2/HW_AMPGAIN/HW_RSHUNT，其中HW_ADC_REF在头文件Customer.h里宏定义为ADC的参考电压，除2是因为在电流为0时运放的输出电压为ADC参考电压的一半，HW_AMPGAIN在头文件Customer.h里宏定义为运放的放大倍数，HW_RSHUNT在头文件Customer.h里宏定义为采样电阻；</li>
 </ul>
 
 
 
 <ul>
-<li>8、 ：电压基准，单位为V；对应头文件Parameter.h里的宏定义HW\_BOARD\_VOLT\_BASE，其值为，HW\_BOARD\_VOLT\_MAX为ADC可测得的最大母线电压，在头文件Customer.h里宏定义为HW\_ADC\_REF*RV，除于是因为逆变器最大输出电压为母线电压除于，RV在头文件Customer.h里宏定义为（RV1+RV2+RV3）/RV3，其中RV1、RV2、RV3在头文件Customer.h里宏定义为三个母线分压电阻，其中RV3为接地端的电阻；</li>
-<li>9、 ：反电动势基准，单位为V；对应头文件Parameter.h里的宏定义MAX\_BEMF\_VOLTAGE，其值为(MOTOR\_SPEED\_BASE*KE)/1000，基准转速MOTOR\_SPEED\_BASE在头文件Customer.h里宏定义为电机最大转速的两倍，KE在头文件Customer.h里宏定义为电机的反电动势常数，除于1000是因为KE的值为1000RPM对应的反电动势电压值；</li>
-<li>10、 ：角速度基准，单位为rad/s；对应头文件Parameter.h里的宏定义MAX\_OMEG\_RAD\_SEC，其值为2PI*BASE\_FREQ，基准频率BASE\_FREQ在头文件Customer.h里宏定义为MOTOR\_SPEED\_BASE/60*Pole\_Pairs，基准转速MOTOR\_SPEED\_BASE在头文件Customer.h里宏定义为电机最大转速的两倍，Pole\_Pairs在头文件Customer.h里宏定义为电机的极对数；</li>
+<li>8、 ：电压基准，单位为V；对应头文件Parameter.h里的宏定义HW_BOARD_VOLT_BASE，其值为，HW_BOARD_VOLT_MAX为ADC可测得的最大母线电压，在头文件Customer.h里宏定义为HW_ADC_REF*RV，除于是因为逆变器最大输出电压为母线电压除于，RV在头文件Customer.h里宏定义为（RV1+RV2+RV3）/RV3，其中RV1、RV2、RV3在头文件Customer.h里宏定义为三个母线分压电阻，其中RV3为接地端的电阻；</li>
+<li>9、 ：反电动势基准，单位为V；对应头文件Parameter.h里的宏定义MAX_BEMF_VOLTAGE，其值为(MOTOR_SPEED_BASE*KE)/1000，基准转速MOTOR_SPEED_BASE在头文件Customer.h里宏定义为电机最大转速的两倍，KE在头文件Customer.h里宏定义为电机的反电动势常数，除于1000是因为KE的值为1000RPM对应的反电动势电压值；</li>
+<li>10、 ：角速度基准，单位为rad/s；对应头文件Parameter.h里的宏定义MAX_OMEG_RAD_SEC，其值为2PI*BASE_FREQ，基准频率BASE_FREQ在头文件Customer.h里宏定义为MOTOR_SPEED_BASE/60*Pole_Pairs，基准转速MOTOR_SPEED_BASE在头文件Customer.h里宏定义为电机最大转速的两倍，Pole_Pairs在头文件Customer.h里宏定义为电机的极对数；</li>
 </ul>
 
 
-<p>程序中宏定义常量OBS\_K1T、OBS\_K2T、OBS\_K3T、OBS\_K4T用于在FOC初始化时分别给寄存器FOC\_EK1、FOC\_EK2、FOC\_EK3、FOC\_EK4进行初始化，宏定义常量OBS\_K1T、OBS\_K2T、OBS\_K3T、OBS\_K4T值的计算公式分别为公式9、公式10、公式11、公式12，这四个宏定义常量的值要在-32768~32767的范围之内，如果超出该范围，估算器将出现异常，可以通过修改电机参数、采样电阻、运放放大倍数、母线分压电阻、转速基准、载波频率等相关参数来确保不溢出。</p>
+<p>程序中宏定义常量OBS_K1T、OBS_K2T、OBS_K3T、OBS_K4T用于在FOC初始化时分别给寄存器FOC_EK1、FOC_EK2、FOC_EK3、FOC_EK4进行初始化，宏定义常量OBS_K1T、OBS_K2T、OBS_K3T、OBS_K4T值的计算公式分别为公式9、公式10、公式11、公式12，这四个宏定义常量的值要在-32768~32767的范围之内，如果超出该范围，估算器将出现异常，可以通过修改电机参数、采样电阻、运放放大倍数、母线分压电阻、转速基准、载波频率等相关参数来确保不溢出。</p>
 
-<p>$$OBS \_ K1T=F * 32767=\frac{\left(L_{d}-T_{s}R\right)\left(L_{d}+T_{s}R\right)}{L_{d}\left(L_{d}+T_{s}R\right)} * 32767 \approx \frac{Ld}{L_{d}+T_{s}R} * 32767$$</p>
+<div class="kb-formula">OBS _ K1T=F * 32767=\frac{\left(L_{d}-T_{s}R\right)\left(L_{d}+T_{s}R\right)}{L_{d}\left(L_{d}+T_{s}R\right)} * 32767 \approx \frac{Ld}{L_{d}+T_{s}R} * 32767</div>
 
-<p>公式9：宏定义常量OBS\_K1T的计算公式</p>
+<p>公式9：宏定义常量OBS_K1T的计算公式</p>
 
-<p>$$OBS \_ K2T=G * \frac{V_{BASE}}{I_{BASE}} * 8192=\frac{T_{s}\left(L_{d}+T_{s}R\right)}{L_{d}\left(L_{d}+T_{s}R\right)} * \frac{V_{BASE}}{I_{BASE}} * 8192 \approx \frac{T_{s}}{L_{d}+T_{s}R} * \frac{V_{BASE}}{I_{BASE}} * 8192$$</p>
+<div class="kb-formula">OBS _ K2T=G * \frac{V_{BASE}}{I_{BASE}} * 8192=\frac{T_{s}\left(L_{d}+T_{s}R\right)}{L_{d}\left(L_{d}+T_{s}R\right)} * \frac{V_{BASE}}{I_{BASE}} * 8192 \approx \frac{T_{s}}{L_{d}+T_{s}R} * \frac{V_{BASE}}{I_{BASE}} * 8192</div>
 
-<p>公式10：宏定义常量OBS\_K2T的计算公式</p>
+<p>公式10：宏定义常量OBS_K2T的计算公式</p>
 
-<p>$$OBS \_ K3T=G * \frac{E_{BASE}}{I_{BASE}} * 32767=\frac{T_{s}(L_{d}+T_{s}R)}{L_{d}(L_{d}+T_{s}R)} * \frac{E_{BASE}}{I_{BASE}} * 32767 \approx \frac{T_{s}}{L_{d}+T_{s}R} * \frac{E_{BASE}}{I_{BASE}} * 32767$$</p>
+<div class="kb-formula">OBS _ K3T=G * \frac{E_{BASE}}{I_{BASE}} * 32767=\frac{T_{s}(L_{d}+T_{s}R)}{L_{d}(L_{d}+T_{s}R)} * \frac{E_{BASE}}{I_{BASE}} * 32767 \approx \frac{T_{s}}{L_{d}+T_{s}R} * \frac{E_{BASE}}{I_{BASE}} * 32767</div>
 
-<p>公式11：宏定义常量OBS\_K3T的计算公式</p>
+<p>公式11：宏定义常量OBS_K3T的计算公式</p>
 
-<p>$$OBS \_ K4T=\frac{ \omega_{BASE}T_{s}(L_{d}-L_{q})}{L_{d}} * 32767=\frac{ \omega_{BASE}Ts(L_{d}-L_{q})(L_{d}+T_{s}R)}{Ld(L_{d}+TsR)} * 32767 \approx \frac{ \omega_{BASE}Ts(L_{d}-L_{q})}{L_{d}+T_{s}R} * 32767$$</p>
+<div class="kb-formula">OBS _ K4T=\frac{ \omega_{BASE}T_{s}(L_{d}-L_{q})}{L_{d}} * 32767=\frac{ \omega_{BASE}Ts(L_{d}-L_{q})(L_{d}+T_{s}R)}{Ld(L_{d}+TsR)} * 32767 \approx \frac{ \omega_{BASE}Ts(L_{d}-L_{q})}{L_{d}+T_{s}R} * 32767</div>
 
-<p>公式12：宏定义常量OBS\_K4T的计算公式</p>
+<p>公式12：宏定义常量OBS_K4T的计算公式</p>
 
 <h3>3 电流观测器</h3>
 
@@ -229,7 +219,7 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 
 
-<p>9、滑膜增益值，参数的大小是可以通过寄存器FOC\_KSLIDE进行修改的，程序使用宏定义OBS\_KSLIDE对寄存器FOC\_KSLIDE进行初始化，OBS\_KSLIDE的典型值为0.85，用Q15格式表示为\_Q15(0.85)。</p>
+<p>9、滑膜增益值，参数的大小是可以通过寄存器FOC_KSLIDE进行修改的，程序使用宏定义OBS_KSLIDE对寄存器FOC_KSLIDE进行初始化，OBS_KSLIDE的典型值为0.85，用Q15格式表示为_Q15(0.85)。</p>
 
 <p>该数字化模型对硬件使用了软件表示方式。然而，为了使测量电流和估算电流相匹配，数字化电机模型需要使用闭环来进行校正，如图1所示。</p>
 
@@ -255,12 +245,12 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 <p>公式13给出的一阶数字低通滤波器提供滤波功能。</p>
 
-<p>$$y\left(n\right)=y\left(n-1\right)+T2 \pi fc * \left(x\left(n\right)-y\left(n\right)\right)$$</p>
+<div class="kb-formula">y\left(n\right)=y\left(n-1\right)+T2 \pi fc * \left(x\left(n\right)-y\left(n\right)\right)</div>
 
 
-<p>为了对Z滤波以获得，用TPWM\_VALUE替换公式中的T，可得到：</p>
+<p>为了对Z滤波以获得，用TPWM_VALUE替换公式中的T，可得到：</p>
 
-<p>$$e\left(n\right)=e\left(n-1\right)+TPWM \_ VALUE * 2 \pi fc * \left(z\left(n\right)-e\left(n\right)\right)$$</p>
+<div class="kb-formula">e\left(n\right)=e\left(n-1\right)+TPWM _ VALUE * 2 \pi fc * \left(z\left(n\right)-e\left(n\right)\right)</div>
 
 <p>其中：</p>
 
@@ -283,33 +273,32 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 
 
-<p>截止频率的值被设置为等于驱动电流和电机电压的频率，该频率等于每秒的电气旋转圈数。用于值适应低通滤波器的实现方式会有一个固定的相位延迟，用于所有转速范围内的补偿，因为截止频率会随着电机提速而改变，这里的自适应截止频率固定为驱动电流频率的两倍，因此其固定延迟角度为26度33分56秒，式14为一阶低通滤波器截止频率计算公式，式15为一阶低通滤波器滤波系数计算公式。在程序中，自适应低通滤波器滤波系数的系数的Q15格式在头文件Parameter.h用宏定义OBS\_KLPF表示，自适应低通滤波器滤波系数等于OBS\_KLPF乘以两倍估算转速，式16为OBS\_KLPF的表达式。</p>
+<p>截止频率的值被设置为等于驱动电流和电机电压的频率，该频率等于每秒的电气旋转圈数。用于值适应低通滤波器的实现方式会有一个固定的相位延迟，用于所有转速范围内的补偿，因为截止频率会随着电机提速而改变，这里的自适应截止频率固定为驱动电流频率的两倍，因此其固定延迟角度为26度33分56秒，式14为一阶低通滤波器截止频率计算公式，式15为一阶低通滤波器滤波系数计算公式。在程序中，自适应低通滤波器滤波系数的系数的Q15格式在头文件Parameter.h用宏定义OBS_KLPF表示，自适应低通滤波器滤波系数等于OBS_KLPF乘以两倍估算转速，式16为OBS_KLPF的表达式。</p>
 
-<p>自适应低通滤波器的滤波系数需要设置一个最小滤波系数，该最小滤波系数通过修改头文件Customer.h里的宏定义MOTOR\_SPEED\_SMOMIN\_RPM进行调整，MOTOR\_SPEED\_SMOMIN\_RPM表示SMO的最小运行转速，其值应设置小于电机要求的最小转速，自适应低通滤波器的最小滤波系数在头文件Parameter.h里用宏定义OBS\_EA\_ES表示，对应寄存器FOC\_EKLPFMIN，其与MOTOR\_SPEED\_SMOMIN\_RPM的关系如公式17所示。</p>
+<p>自适应低通滤波器的滤波系数需要设置一个最小滤波系数，该最小滤波系数通过修改头文件Customer.h里的宏定义MOTOR_SPEED_SMOMIN_RPM进行调整，MOTOR_SPEED_SMOMIN_RPM表示SMO的最小运行转速，其值应设置小于电机要求的最小转速，自适应低通滤波器的最小滤波系数在头文件Parameter.h里用宏定义OBS_EA_ES表示，对应寄存器FOC_EKLPFMIN，其与MOTOR_SPEED_SMOMIN_RPM的关系如公式17所示。</p>
 
-<p>$$fc=\frac{p * 2 * n}{60}=\frac{p}{60} * MOTOR \_ SPEED \_ BASE * \frac{2 * n}{MOTOR \_ SPEED \_ BASE}$$</p>
-
-<p>$$=BASE \_ FREQ * \frac{2 * n}{MOTOR \_ SPEED \_ BASE}$$</p>
+<div class="kb-formula">fc=\frac{p * 2 * n}{60}=\frac{p}{60} * MOTOR _ SPEED _ BASE * \frac{2 * n}{MOTOR _ SPEED _ BASE}
+=BASE _ FREQ * \frac{2 * n}{MOTOR _ SPEED _ BASE}</div>
 
 <p>公式14、反电动势自适应一阶低通滤波器截止频率计算公式</p>
 
-<p>$$2 \pi  * fc * TPWM \_ VALUE=2 \pi  * BASE \_ FREQ * TPWM \_ VALUE * \frac{2 * n}{MOTOR \_ SPEED \_ BASE}$$</p>
+<div class="kb-formula">2 \pi  * fc * TPWM _ VALUE=2 \pi  * BASE _ FREQ * TPWM _ VALUE * \frac{2 * n}{MOTOR _ SPEED _ BASE}</div>
 
 <p>公式15、反电动势自适应一阶低通滤波器滤波系数计算公式</p>
 
-<p>$$OBS \_ KLPF=2 \pi  * BASE \_ FREQ * TPWM \_ VALUE * 32767$$</p>
+<div class="kb-formula">OBS _ KLPF=2 \pi  * BASE _ FREQ * TPWM _ VALUE * 32767</div>
 
-<p>公式16、反电动势自适应一阶低通滤波器滤波系数的系数OBS\_KLPF的计算公式</p>
+<p>公式16、反电动势自适应一阶低通滤波器滤波系数的系数OBS_KLPF的计算公式</p>
 
-<p>$$OBS \_ EA \_ ES=2 \pi  * BASE \_ FREQ * TPWM \_ VALUE * \frac{2 * MOTOR \_ SPEED \_ SMOMIN \_ RPM}{MOTOR \_ SPEED \_ BASE} * 32767$$</p>
+<div class="kb-formula">OBS _ EA _ ES=2 \pi  * BASE _ FREQ * TPWM _ VALUE * \frac{2 * MOTOR _ SPEED _ SMOMIN _ RPM}{MOTOR _ SPEED _ BASE} * 32767</div>
 
-<p>公式17、反电动势自适应一阶低通滤波器最小滤波系数OBS\_EA\_ES的计算公式</p>
+<p>公式17、反电动势自适应一阶低通滤波器最小滤波系数OBS_EA_ES的计算公式</p>
 
-<p>为了得到更加稳定的转速信号，需要对估算器的估算转速进行低通滤波，其滤波系数在头文件Parameter.h里用宏定义SPEED\_KLPF表示，对应寄存器FOC\_OMEKLPF；该滤波系数通过修改头文件Customer.h里的宏定义SPD\_BW进行调整，调整宏定义SPD\_BW就是在调整低通滤波器的截止频率；式18为系数SPEED\_KLPF和系数SPD\_BW的关系式。</p>
+<p>为了得到更加稳定的转速信号，需要对估算器的估算转速进行低通滤波，其滤波系数在头文件Parameter.h里用宏定义SPEED_KLPF表示，对应寄存器FOC_OMEKLPF；该滤波系数通过修改头文件Customer.h里的宏定义SPD_BW进行调整，调整宏定义SPD_BW就是在调整低通滤波器的截止频率；式18为系数SPEED_KLPF和系数SPD_BW的关系式。</p>
 
-<p>$$SPEED \_ KLPF=2 \pi  * SPD \_ BW * TPWM \_ VALUE * 32767$$</p>
+<div class="kb-formula">SPEED _ KLPF=2 \pi  * SPD _ BW * TPWM _ VALUE * 32767</div>
 
-<p>公式18、系数SPEED\_KLPF和系数SPD\_BW的关系式</p>
+<p>公式18、系数SPEED_KLPF和系数SPD_BW的关系式</p>
 
 <h3>6 角度估算</h3>
 
@@ -333,11 +322,9 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 <p>根据图3可以得到的关系式如公式19所示。</p>
 
-<p>$$\bigtriangleup e=-\overset{ \wedge}{e}_{ \alpha }\cos(\overset{ \wedge}{ \theta }_{e})-\overset{ \wedge}{e}_{ \beta }\sin(\overset{ \wedge}{ \theta }_{e})=$$</p>
-
-<p>$$k\sin( \theta_{e})\cos(\overset{ \wedge}{ \theta }_{e})-k\cos( \theta_{e})\sin(\overset{ \wedge}{ \theta }_{e})=$$</p>
-
-<p>$$k\sin(\left( \theta_{e}-\overset{ \wedge}{ \theta }_{e}\right)) \approx k\left( \theta_{e}-\overset{ \wedge}{ \theta }_{e}\right)$$</p>
+<div class="kb-formula">\bigtriangleup e=-\overset{ \wedge}{e}_{ \alpha }\cos(\overset{ \wedge}{ \theta }_{e})-\overset{ \wedge}{e}_{ \beta }\sin(\overset{ \wedge}{ \theta }_{e})=
+k\sin( \theta_{e})\cos(\overset{ \wedge}{ \theta }_{e})-k\cos( \theta_{e})\sin(\overset{ \wedge}{ \theta }_{e})=
+k\sin(\left( \theta_{e}-\overset{ \wedge}{ \theta }_{e}\right)) \approx k\left( \theta_{e}-\overset{ \wedge}{ \theta }_{e}\right)</div>
 
 <p>公式19</p>
 
@@ -345,7 +332,7 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 
 
-<p>此时，图3的等效框图如图4所示，图中的通过寄存器FOC\_EKP、FOC\_EKI进行修改，在电机转速比较低时，寄存器FOC\_EKP、FOC\_EKI的值可以给小些；在电机转速比较高时，寄存器FOC\_EKP、FOC\_EKI的值可以给大些，在头文件Parameter.h里定义了几组常量用于给寄存器FOC\_EKP、FOC\_EKI赋值，这几组常量的大小受头文件Customer.h里的一组ATO影响，ATO值越大，这几组常量的值就越大，寄存器FOC\_EKP、FOC\_EKI得到的值越大，角度响应就越快。</p>
+<p>此时，图3的等效框图如图4所示，图中的通过寄存器FOC_EKP、FOC_EKI进行修改，在电机转速比较低时，寄存器FOC_EKP、FOC_EKI的值可以给小些；在电机转速比较高时，寄存器FOC_EKP、FOC_EKI的值可以给大些，在头文件Parameter.h里定义了几组常量用于给寄存器FOC_EKP、FOC_EKI赋值，这几组常量的大小受头文件Customer.h里的一组ATO影响，ATO值越大，这几组常量的值就越大，寄存器FOC_EKP、FOC_EKI得到的值越大，角度响应就越快。</p>
 
 
 <p>图4 基于PLL系统的SMO的等效框图</p>
@@ -358,14 +345,14 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 <p>公式20</p>
 
-<p>$$k\left( \theta e-\hat{ \theta }e\right)\left(Kp+\frac{Ki}{s}\right)\frac{K}{s}=\hat{ \theta }e$$</p>
+<div class="kb-formula">k\left( \theta e-\hat{ \theta }e\right)\left(Kp+\frac{Ki}{s}\right)\frac{K}{s}=\hat{ \theta }e</div>
 
 <p>公式21</p>
 
 
 <p>公式22</p>
 
-<p>$$\frac{\hat{ \theta }_{e}}{ \theta_{e}}=\frac{kK_{p}Ks+kK_{i}K}{s^{2}+kK_{p}Ks+kK_{i}K}$$</p>
+<div class="kb-formula">\frac{\hat{ \theta }_{e}}{ \theta_{e}}=\frac{kK_{p}Ks+kK_{i}K}{s^{2}+kK_{p}Ks+kK_{i}K}</div>
 
 <p>公式23</p>
 
@@ -384,7 +371,7 @@ hr { border: none; border-top: 1px solid #e3e8e4; margin: 16px 0; }
 
 <p>公式27</p>
 
-<p>$$Ki=\frac{ \omega^{2}n}{Kk}$$</p>
+<div class="kb-formula">Ki=\frac{ \omega^{2}n}{Kk}</div>
 
 <p>公式28</p>
 

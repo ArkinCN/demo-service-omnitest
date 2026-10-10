@@ -290,6 +290,13 @@ export function RunLeftPanel() {
   const setGateTotal = useAppStore((s) => s.setGateTotal)
   const setNotice = useAppStore((s) => s.setNotice)
   const bind = useFlowActions()
+  /* 2026-10-10：本流程的「已确认」是系统在**本轮跑完且判定表落库后自动写入**的，
+     此前左栏没有任何反向出口 → 顶栏那一格打勾关不掉（用户反馈）。
+     现在补上反悔出口，形态与流程 1/2/5 的「解除确认」同源
+     （同一个 ConfirmFooter 的 secondary + unlock 形态，不新写样式）。
+     ⚠️ 解除只是取消「已确认」这个标记；下轮跑完测试时仍会照原口径再次自动确认。 */
+  const locked = !!useAppStore((s) => s.confirmed.run)
+  const unconfirmFlow = useAppStore((s) => s.unconfirmFlow)
 
   const gateItems = useMemo(
     () => (pack ? pack.interlocks.interlocks.filter((i) => i.type === '人员' || i.type === '流程') : []),
@@ -541,18 +548,38 @@ export function RunLeftPanel() {
 
       {/* 底部悬浮确认 */}
       {/* 底部确认按钮与顶栏「启动测试」同一条动作、同一份行为表，
-          点下去照样先弹红线确认卡，不另开一条放行路径 */}
-      <ConfirmFooter
-        label="确认参数"
-        count={params.length}
-        unit="项并启动测试"
-        onClick={bind('start').disabled ? undefined : bind('start').onClick}
-        hint={
-          green
-            ? `本流程可调 ${params.length} 项，安全闸门 ${gateItems.length} 条已全部确认，点此启动本轮（仍需在确认卡上再点一次）。`
-            : `本流程可调 ${params.length} 项；安全闸门还差 ${gateItems.length - g.acked.size} 条未确认，确认前不可启动。`
-        }
-      />
+          点下去照样先弹红线确认卡，不另开一条放行路径。
+
+          ⚠️ 2026-10-10：本流程的「已确认」由系统自动写入（本轮正常跑完 + 判定表落库），
+          此前左栏没有任何反向出口，顶栏那一格打勾便关不掉（用户反馈）。
+          现在已确认时按钮换成流程 1/2/5 同款的「解除确认」（同一 ConfirmFooter 的
+          secondary + unlock 形态）；解除只取消标记，不影响启动测试本身。 */}
+      {locked ? (
+        <ConfirmFooter
+          label="解除确认"
+          count={params.length}
+          unit="项"
+          variant="secondary"
+          icon="unlock"
+          hint="本流程已确认（本轮正常跑完且判定结果落库后由系统自动置为已确认）。点此解除后顶栏「启动测试」的打勾消失，可继续调整参数；下轮跑完测试时仍会再次自动确认。"
+          onClick={() => {
+            unconfirmFlow('run')
+            setNotice('已解除确认：顶栏「启动测试」打勾已取消；下轮跑完测试后会再次自动确认')
+          }}
+        />
+      ) : (
+        <ConfirmFooter
+          label="确认参数"
+          count={params.length}
+          unit="项并启动测试"
+          onClick={bind('start').disabled ? undefined : bind('start').onClick}
+          hint={
+            green
+              ? `本流程可调 ${params.length} 项，安全闸门 ${gateItems.length} 条已全部确认，点此启动本轮（仍需在确认卡上再点一次）。`
+              : `本流程可调 ${params.length} 项；安全闸门还差 ${gateItems.length - g.acked.size} 条未确认，确认前不可启动。`
+          }
+        />
+      )}
     </div>
   )
 }

@@ -130,10 +130,16 @@ export async function reportExists(runId: string): Promise<boolean> {
   }
 }
 
-/** 状态的中文与语气，供界面统一使用（三档各自的说法要分清） */
+/**
+ * 状态的中文与语气，供界面统一使用。
+ *
+ * 2026-10-10 口径变更：系统内置模板即正式报告，后端默认返回 `ok`。
+ * `placeholder` 保留只为**兼容改版前落的历史轮次**（那时的报告确实是占位件），
+ * 新生成不会再走这一档；文案不再出现「可替换」。
+ */
 export const REPORT_STATUS_TEXT: Record<ReportStatus, { label: string; tone: 'ok' | 'warn' | 'alert' }> = {
-  ok: { label: '报告已生成（客户模板）', tone: 'ok' },
-  placeholder: { label: '报告已生成（系统自建模板）', tone: 'warn' },
+  ok: { label: '报告已生成', tone: 'ok' },
+  placeholder: { label: '报告已生成（历史占位版式）', tone: 'warn' },
   blocked: { label: '生成失败', tone: 'alert' },
 }
 

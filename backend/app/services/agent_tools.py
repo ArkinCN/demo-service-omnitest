@@ -209,19 +209,77 @@ WEB_SEARCH = {
     },
 }
 
-ALL_TOOLS = [KNOWLEDGE_SEARCH, DOC_LIBRARY_SEARCH, WEB_SEARCH]
+# ── 写类工具（2026-10-10 新增，权限切换修复）──
+#
+# 与三个检索工具不同，本工具**不在后端执行**：模型发起调用后，后端把这次调用
+# 挂起并推 tool_call(mutating=true) 给前端弹人工确认卡，人点「确认执行」后由
+# **前端**真正写入（写 store + 落库 report-instance），执行结果经 /api/agent/confirm
+# 回传，再作为 tool_result 回填模型继续作答。见 agent_chat_service 的挂起分支。
+#
+# 名字登记在 FRONTEND_EXECUTED_TOOLS，loop 据此走「挂起-回填」而非本地执行。
+WRITE_REPORT_HEADER = {
+    "name": "WriteReportHeader",
+    "description": (
+        "填写/修改测试报告的**报告表头字段**（如客户名称、工程师、Email 等抬头信息）。"
+        "当用户要求「填写/填写客户名称/改一下报告抬头里的某个字段」时调用此工具。\n"
+        "参数 field 用字段的中文名或英文键都行（如「客户名称」或 customer_name），"
+        "value 是要写入的值。\n"
+        "【重要】这是**写操作**：调用后会先由操作员人工确认，确认后才真正写入；"
+        "确认前不要声称已经写好。若工具返回未执行/失败，必须如实转述，不得谎称完成。"
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "field": {
+                "type": "string",
+                "description": "要填写的报告表头字段，中文名（如「客户名称」）或英文键（如 customer_name）。",
+            },
+            "value": {"type": "string", "description": "要写入该字段的值。"},
+        },
+        "required": ["field", "value"],
+    },
+}
+
+ALL_TOOLS = [KNOWLEDGE_SEARCH, DOC_LIBRARY_SEARCH, WEB_SEARCH, WRITE_REPORT_HEADER]
+
+# 由**前端**执行（需人工确认）的工具名集合。loop 遇到这些工具时挂起等待回执。
+FRONTEND_EXECUTED_TOOLS = {"WriteReportHeader"}
+
+# ── 权限档位 → 允许的工具名（**服务端硬上限**，不信任前端）──
+#
+# 三重防线中的第 2 层（第 1 层是 select_tools 的按档过滤让模型根本看不到写工具，
+# 第 3 层是 loop 内的 allowed_names 拦截 + 前端确认卡）。未知档位一律按只读处理
+# （安全默认），绝不因为传了个没见过的值就放开写能力。
+_READONLY_TOOLS = {"KnowledgeSearch", "DocLibrarySearch", "WebSearch"}
+_WRITE_TOOLS = {"WriteReportHeader"}
+
+PERMISSION_TOOLS = {
+    "readonly": _READONLY_TOOLS,
+    "params": _READONLY_TOOLS | _WRITE_TOOLS,
+    "hardware": _READONLY_TOOLS | _WRITE_TOOLS,  # 设备控制工具下一批再接
+}
 
 
-def select_tools(enabled: Optional[List[str]]) -> List[dict]:
-    """按前端传入的 enabled 工具名列表过滤 ALL_TOOLS。
+def allowed_tool_names(permission: Optional[str]) -> set:
+    """按权限档位取允许的工具名集合（服务端权威口径）。未知档位 → 只读。"""
+    return PERMISSION_TOOLS.get((permission or "readonly").strip().lower(), _READONLY_TOOLS)
+
+
+def select_tools(enabled: Optional[List[str]], permission: Optional[str] = None) -> List[dict]:
+    """按「前端 enabled 列表 ∩ 权限档位允许集」过滤 ALL_TOOLS。
 
     不再做「enabled 缺省 = 全开」的兼容——未显式声明启用的工具一律视为关闭，
     避免请求丢字段/漏传时静默放开全部工具（含用户已关闭的）。
+
+    ⚠️ permission 是**服务端硬上限**：即使前端 enabled 里混进了写工具，只要当前
+    档位是只读，这里也不会把它放进去。前端那层 enabled_tools 只是「用户开关」，
+    权限边界由后端这道兜底决定（不信任前端）。permission=None → 按只读处理。
     - enabled = None/[]  → 返回空列表（不启用任何工具，模型纯回答）。
-    - enabled = [...]    → 仅保留名字在列表里的工具，保持 ALL_TOOLS 原顺序，忽略未知名。
+    - 其余          → 仅保留「在 enabled 里」且「属于该档位允许集」的工具，保持原顺序。
     """
-    allowed = set(enabled or [])
-    return [t for t in ALL_TOOLS if t["name"] in allowed]
+    allow = allowed_tool_names(permission)
+    enabled_set = set(enabled or [])
+    return [t for t in ALL_TOOLS if t["name"] in enabled_set and t["name"] in allow]
 
 
 # ── 执行器 ──
