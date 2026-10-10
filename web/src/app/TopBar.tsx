@@ -5,6 +5,7 @@ import {
   Archive,
   Check,
   CheckCheck,
+  ChevronRight,
   CircleSlash,
   Eye,
   CheckCircle2,
@@ -32,6 +33,8 @@ import { FLOW_ICON, FLOW_SHORT, MODULE_ICON, MODULE_SHORT } from './icons'
 import { useKnowledgeTotal } from '../features/knowledge/data'
 import { RUN_PHASE_LABEL, flowStateOf, useAppStore } from '../state/useAppStore'
 import { useFlowActions } from '../features/redline'
+import { useStageReturnCue } from '../features/automation/useStageReturnCue'
+import { useFlowBarScale } from '../features/shared/useFlowBarScale'
 import { ProductCascader } from './ProductCascader'
 
 /** 动作条图标：按动作 id 映射，缺省给一枚通用图标 */
@@ -64,27 +67,17 @@ const ACTION_ICON: Record<string, LucideIcon> = {
 }
 
 /**
- * 把自动化阶段 id 映射到对应的五流程 id（route 取 /init 等）。
- * 阶段与流程不是一一对应（7 阶段 vs 5 流程），这里按 route 归属到流程，
- * 让顶部 stepper 能跟着自动化阶段点亮/失败。
+ * 把自动化阶段 id 映射到对应的五流程 id。
+ *
+ * 2026-10-10 修正：编排器的阶段 id **就是**五流程 id
+ * （`automationOrchestrator.ts` 的 DEFAULT_CONFIG：init / req / run / tune / report），
+ * 旧实现按早已废弃的 7 阶段 id（init-params / load-cases / …）做 switch，
+ * 对现编排器恒返回 null → 顶栏在自动化期间**永远不会**点亮/打勾/报错。
+ * 现改为按流程 id 直映射；非五个流程 id 一律 null（不误点亮）。
  */
 function flowOfAutomationStage(stageId: string | null): FlowId | null {
   if (!stageId) return null
-  switch (stageId) {
-    case 'init-params':
-      return 'init'
-    case 'load-cases':
-      return 'req'
-    case 'check-env':
-    case 'run-cases':
-    case 'collect-result':
-      return 'run'
-    case 'gen-report':
-    case 'download-report':
-      return 'report'
-    default:
-      return null
-  }
+  return (FLOWS.some((f) => f.id === stageId) ? stageId : null) as FlowId | null
 }
 
 /** 五流程 stepper：圆形序号 / 打勾，短名 ≤6 字。知识库不在其中。
@@ -110,6 +103,15 @@ function FlowStepper() {
   const autoStages = useAppStore((s) => s.automationStages)
   const autoCurrent = useAppStore((s) => s.automationCurrentStageId)
 
+  // ── 缩放：按可用槽宽等比缩放，保证任何分辨率单行；文字过小则进入紧凑模式 ──────
+  // 2026-10-10 调整：整体倍率由 2× 回落到 1.5×（用户反馈「显示尺寸过大」）。
+  // 基准：节点高 78、圆标 39、字号 19.5、图标 21、段宽 48、顶栏高 120。
+  // labelPx = 20（1.5× 后标签基准字号）；小于 10px 时隐藏文字、保留图标+序号+悬停全称
+  const { slotRef, barRef, scale, compact } = useFlowBarScale<HTMLDivElement>({
+    labelPx: 20,
+    compactTextPx: 10,
+  })
+
   // ── 滑动高亮块：测量当前激活项相对 nav 的 offsetLeft/offsetWidth ──────────────
   const navRef = useRef<HTMLElement>(null)
   // null = 尚未测量 / 非流程页（不显示高亮），避免首帧从 0 位滑入的抖动
@@ -128,27 +130,70 @@ function FlowStepper() {
         setPill(null)
         return
       }
-      // offsetLeft/offsetWidth 相对 offsetParent；nav 已设 relative → 恰好是相对 nav 的坐标
-      setPill({ x: el.offsetLeft, w: el.offsetWidth })
+      // ⚠️ 2026-10-10 修「选中阴影错位」残余项：原用 el.offsetLeft/offsetWidth，
+      // 但 offset* 是**当前布局快照**——scale 由 useFlowBarScale 异步落 DOM，
+      // 竞态帧里读到的是旧几何（实测 /report 最后一段恒定偏 +8px）。
+      // 改用 getBoundingClientRect 相对 nav 实时换算（读的是真实渲染位置，
+      // 且 nav 与 el 同源同帧，不受缩放/字体未就绪影响）；四舍五入到 0.5px 保证稳定。
+      const navRect = nav.getBoundingClientRect()
+      const elRect = el.getBoundingClientRect()
+      const x = Math.round((elRect.left - navRect.left) * 2) / 2
+      const w = Math.round(elRect.width * 2) / 2
+      setPill((p) => (p && Math.abs(p.x - x) < 0.5 && Math.abs(p.w - w) < 0.5 ? p : { x, w }))
     }
     measure()
+    // scale 落 DOM 是在下一帧（useFlowBarScale 的 useEffect→setScale→useLayoutEffect），
+    // 因此补一次 rAF 重测，消除「测量早于缩放落地」的最后一段错位。
+    const raf = window.requestAnimationFrame(measure)
     const ro = new ResizeObserver(measure)
     ro.observe(nav)
-    // 断点切换（lg）会改变连接线宽度 → 触发 nav 尺寸变化，ResizeObserver 已覆盖；
+    // 断点切换会改变连接线宽度 → 触发 nav 尺寸变化，ResizeObserver 已覆盖；
     // 另监听字体加载完成后的一次重测，避免 web font 落地后宽度跳动导致错位。
     if (document.fonts?.ready) void document.fonts.ready.then(measure)
-    return () => ro.disconnect()
-  }, [current.id, onFlow, autoCurrent, autoRunning])
+    return () => {
+      window.cancelAnimationFrame(raf)
+      ro.disconnect()
+    }
+    // scale / compact 变化会改变节点几何 → 一并重测高亮块位置
+  }, [current.id, onFlow, autoCurrent, autoRunning, scale, compact])
+
+  // 退回提示：自动化调优循环「tune 采纳 → 回 run 重跑」时，该段走反向动效
+  const returning = useStageReturnCue()
+
+  // 顶栏外框高度：随缩放放大到 132×s，但不低于 80px（上一轮已验收的高度）
+  useLayoutEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+    const header = nav.closest('header')
+    if (!header) return
+    header.style.setProperty('--topbar-h', `max(80px, ${Math.round(120 * scale)}px)`)
+  }, [scale])
 
   return (
-    <nav ref={navRef} aria-label="五流程" className="relative flex min-w-0 items-center justify-center">
+    <div ref={slotRef} className="flex min-w-0 flex-1 items-center justify-center">
+    <nav
+      ref={(el) => {
+        navRef.current = el
+        barRef.current = el
+      }}
+      aria-label="五流程"
+      data-flow-bar="top"
+      style={{ '--fb-scale': scale } as React.CSSProperties}
+      className="relative flex w-fit shrink-0 items-center justify-center"
+    >
       {/* 滑动高亮底：纯装饰（aria-hidden），随激活项做 transform 位移。
+          ⚠️ 2026-10-10 修「选中阴影错位」根因：此块 `absolute` 但未设 left，
+          nav 又是 justify-center 的 flex 容器 → 它作为首个静态子项被布局在
+          **内容流居中位置**（实测 static left ≈ 198px），于是最终位置 =
+          静态 left + translateX(offsetLeft)，凭空多出一段居中偏移（各路由实测
+          恒定 +233px，pill 跑到相邻/空白处）。修复：显式 left-0，让 translateX
+          从 nav 左边缘起算，与 offsetLeft 同源。
           --flow-pill-dur 由 CSS 控制（prefers-reduced-motion 下降级为 0）。 */}
       {pill && onFlow ? (
         <span
           aria-hidden
           data-testid="flow-stepper-pill"
-          className="flow-pill absolute inset-y-1 rounded-full bg-p50"
+          className="flow-pill absolute inset-y-1 left-0 rounded-full bg-p50"
           style={{ transform: `translateX(${pill.x}px)`, width: pill.w }}
         />
       ) : null}
@@ -163,31 +208,64 @@ function FlowStepper() {
         const autoStageForFlow = autoStages.find((s) => flowOfAutomationStage(s.id) === f.id)
         const autoDone = autoRunning && autoStageForFlow?.status === 'success'
         const autoFailed = autoRunning && autoStageForFlow?.status === 'failed'
+        // 退回段＝「调优运行」这一步之前的连接线（启动测试 → 调优运行），退回时反向闪
+        const isReturnSeg = f.id === 'tune'
         return (
-          <div key={f.id} className="flex min-w-0 items-center">
+          <div key={f.id} className="flex shrink-0 items-center">
             {i > 0 ? (
+              /* 连接段（2026-10-10 重构）：
+                 · 外层 = 段容器，高度足够容纳箭头（不再 overflow-hidden 裁掉箭头）；
+                 · 内层 = 细光带（固定宽 32×s，右向流光 / 退回时暖红反向）；
+                 · 箭头 = 独立绝对定位层，波浪相位错开（--fb-wave-dur 与 delay 由 i 决定）。 */
               <span
-                className={cn(
-                  // 2026-10-09 收窄：连接线 mx-1.5→mx-1、w-4→w-3、lg:w-7→lg:w-5
-                  'relative z-10 mx-1 h-px w-3 shrink-0 transition-colors lg:w-5',
-                  autoIsCurrent ? 'automation-arrow' : autoDone ? 'bg-p700' : 'bg-line',
-                )}
-              />
+                aria-hidden
+                data-testid="flow-stepper-link"
+                data-seg={i}
+                className="relative z-10 flex shrink-0 items-center"
+                style={{
+                  '--fb-wave-dur': '6.4s',
+                  '--fb-seg-travel': `calc(var(--fb-scale) * 34px)`,
+                  animationDelay: `${(i - 1) * 1.6}s`,
+                } as React.CSSProperties}
+              >
+                <span
+                  className={cn(
+                    'block h-[calc(var(--fb-scale)*3px)] w-[calc(var(--fb-scale)*48px)] rounded-full',
+                    isReturnSeg && returning ? 'flow-seg-return' : 'automation-rail-flow',
+                  )}
+                />
+                <ChevronRight
+                  size={21}
+                  strokeWidth={3.5}
+                  aria-hidden
+                  data-testid="flow-seg-arrow"
+                  className={cn(
+                    'absolute top-1/2 left-0 -translate-y-1/2',
+                    isReturnSeg && returning ? 'flow-seg-arrow-rev' : 'flow-seg-arrow',
+                  )}
+                  style={{
+                    width: 'calc(var(--fb-scale) * 21px)',
+                    height: 'calc(var(--fb-scale) * 21px)',
+                    animationDelay:
+                      isReturnSeg && returning ? '0s' : `${(i - 1) * 1.6}s`,
+                  }}
+                />
+              </span>
             ) : null}
             <NavLink
               to={f.path}
               data-active={on ? 'true' : undefined}
               title={`${f.index} ${f.label}${f.precondition ? ` · ${f.precondition}` : ''}`}
               className={cn(
-                // 2026-10-09：底色改由上面的滑动高亮块承担，这里只留 hover 的轻反馈；
-                // relative + z-10 让文字/圆标盖在高亮块之上。px-2.5→px-2、gap-2→gap-1.5 收窄。
-                'relative z-10 flex h-[40px] shrink-0 items-center gap-1.5 rounded-full px-2 transition-colors duration-150',
+                // 2026-10-09：底色改由上面的滑动高亮块承担，这里只留 hover 的轻反馈。
+                // 2026-10-10：整体放大 1.5 倍（h-[52px]→78×s、px/gap 同步），尺寸全部乘 --fb-scale。
+                'relative z-10 flex h-[calc(var(--fb-scale)*78px)] shrink-0 items-center gap-[calc(var(--fb-scale)*5px)] rounded-full px-[calc(var(--fb-scale)*8px)] transition-colors duration-150',
                 on ? '' : 'hover:bg-p50/60',
               )}
             >
               <span
                 className={cn(
-                  'flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full text-[12px] font-semibold transition-all duration-200 [&>svg]:block',
+                  'flex h-[calc(var(--fb-scale)*39px)] w-[calc(var(--fb-scale)*39px)] shrink-0 items-center justify-center rounded-full font-semibold transition-all duration-200 [&>svg]:block',
                   autoFailed
                     ? 'bg-alert text-white'
                     : autoIsCurrent
@@ -197,38 +275,46 @@ function FlowStepper() {
                         : done || autoDone
                           ? 'bg-p100 text-p700'
                           : 'border border-line bg-white text-t3',
+                  // 2026-10-10：已到达 / 当前节点发光脉冲，提示进度（当前节点上方分支已含该态）
+                  !autoIsCurrent && (done || autoDone || on) ? 'automation-pulse' : '',
                 )}
+                style={{ fontSize: 'calc(var(--fb-scale) * 19px)' }}
               >
                 {autoFailed ? (
-                  <AlertOctagon size={14} strokeWidth={2.5} />
+                  <AlertOctagon size={21} strokeWidth={2.5} style={{ width: 'calc(var(--fb-scale) * 21px)', height: 'calc(var(--fb-scale) * 21px)' }} />
                 ) : done || autoDone ? (
-                  <Check size={14} strokeWidth={2.5} />
+                  <Check size={21} strokeWidth={2.5} style={{ width: 'calc(var(--fb-scale) * 21px)', height: 'calc(var(--fb-scale) * 21px)' }} />
                 ) : on ? (
-                  <Icon size={14} strokeWidth={2} />
+                  <Icon size={21} strokeWidth={2} style={{ width: 'calc(var(--fb-scale) * 21px)', height: 'calc(var(--fb-scale) * 21px)' }} />
                 ) : (
                   f.index
                 )}
               </span>
-              <span
-                className={cn(
-                  'text-[13px] whitespace-nowrap transition-colors',
-                  autoFailed
-                    ? 'text-alert'
-                    : on
-                      ? 'font-semibold text-p700'
-                      : done || autoDone
-                        ? 'text-t2'
-                        : 'text-t3',
-                )}
-              >
-                {FLOW_SHORT[f.id]}
-              </span>
+              {/* 标签：紧凑模式（文字过小）下隐藏，仅保留圆标+序号，悬停 title 显示全称 */}
+              {!compact ? (
+                <span
+                  className={cn(
+                    'whitespace-nowrap transition-colors',
+                    autoFailed
+                      ? 'text-alert'
+                      : on
+                        ? 'font-semibold text-p700'
+                        : done || autoDone
+                          ? 'text-t2'
+                          : 'text-t3',
+                  )}
+                  style={{ fontSize: 'calc(var(--fb-scale) * 20px)' }}
+                >
+                  {FLOW_SHORT[f.id]}
+                </span>
+              ) : null}
               {state === 'alert' ? <StatusDot status="alert" /> : null}
             </NavLink>
           </div>
         )
       })}
     </nav>
+    </div>
   )
 }
 
@@ -272,14 +358,17 @@ export function TopBar() {
 
   return (
     <header className="shrink-0">
-      {/* 顶栏 64 · 品牌 / 六流程 stepper / 场景包与人 */}
-      <div className="flex h-[64px] items-center gap-4 border-b border-line bg-surface"
+      {/* 顶栏高度（2026-10-10）：随流程条放大到 1.5 倍（120px），窄屏回落但**保底 80px**
+          （不低于上一轮已验收的高度）。用 CSS 变量 --topbar-h 由 FlowStepper 的缩放驱动。 */}
+      <div className="flex h-[var(--topbar-h,80px)] items-center gap-4 border-b border-line bg-surface"
         style={{ paddingInline: 'clamp(18px, 1.7vw, 32px)' }}>
-        <div className="flex shrink-0 items-center gap-2.5">
-          <span className="grad-ink flex h-[32px] w-[32px] items-center justify-center rounded-tps text-[15px] font-bold text-white shadow-tpink">
+        {/* 品牌区（2026-10-10）：随 1.5× 流程条同步放大，与头部菜单栏文字/图标对齐。
+            宽屏（≥1536）放大到 1.25×；窄屏回落到原尺寸，避免挤占中间流程条的可用宽度。 */}
+        <div className="flex shrink-0 items-center gap-2.5 min-[1536px]:gap-3">
+          <span className="grad-ink flex h-[32px] w-[32px] items-center justify-center rounded-tps text-[15px] font-bold text-white shadow-tpink min-[1536px]:h-[40px] min-[1536px]:w-[40px] min-[1536px]:text-[19px]">
             O
           </span>
-          <span className="text-[19px] leading-none font-bold tracking-tight text-t1">
+          <span className="text-[19px] leading-none font-bold tracking-tight text-t1 min-[1536px]:text-[24px]">
             Omni<span className="text-p700">Test</span>
           </span>
         </div>
@@ -305,31 +394,30 @@ export function TopBar() {
           </Button>
         </Tooltip>
 
-        {/* 2026-10-09：给 stepper 套一层**居中槽**——槽用 flex-1 吸收剩余空间，
-            但 stepper 自身按内容宽度自适应（不再拉伸），于是整条**收窄居中**在顶栏中部。 */}
-        <div className="flex min-w-0 flex-1 items-center justify-center">
-          <FlowStepper />
-        </div>
+        {/* 2026-10-10：FlowStepper 自带「居中槽」（flex-1 吸收剩余空间 + 内容宽自适应 + 缩放），
+            外层不再重复包一层（避免槽宽测量被套娃容器影响）。 */}
+        <FlowStepper />
 
         <div className="flex shrink-0 items-center gap-2.5">
           {/* 知识库是基础模块不是第六步：与 stepper 之间隔一条竖线，
               视觉上跟五步主线断开 */}
-          <span className="h-[26px] w-px bg-line" />
+          <span className="h-[26px] w-px bg-line min-[1536px]:h-[30px]" />
+          {/* 头部右侧控件（2026-10-10）：宽屏随 1.5× 流程条同步放大，窄屏回落原尺寸 */}
           <Tooltip content="知识库 · 五条流程共用的基础模块">
             <NavLink
               to="/knowledge"
               className={({ isActive }) =>
                 cn(
-                  'flex h-[30px] items-center gap-1.5 rounded-full border px-2.5 transition-colors',
+                  'flex h-[30px] items-center gap-1.5 rounded-full border px-2.5 transition-colors min-[1536px]:h-[38px] min-[1536px]:px-3',
                   isActive
                     ? 'border-ink bg-ink-wash text-p700'
                     : 'border-line bg-white text-t2 hover:border-ink hover:text-p700',
                 )
               }
             >
-              <KnowledgeIcon size={14} strokeWidth={1.75} />
-              <span className="text-[12px]">{MODULE_SHORT.knowledge}</span>
-              <span className="num text-[11px] text-t3">{kbTotal}</span>
+              <KnowledgeIcon size={14} strokeWidth={1.75} className="min-[1536px]:h-[17px] min-[1536px]:w-[17px]" />
+              <span className="text-[12px] min-[1536px]:text-[15px]">{MODULE_SHORT.knowledge}</span>
+              <span className="num text-[11px] text-t3 min-[1536px]:text-[14px]">{kbTotal}</span>
             </NavLink>
           </Tooltip>
           <ProductCascader />
@@ -349,15 +437,15 @@ export function TopBar() {
             </span>
           </Tooltip>
           <Tooltip content={benchBusy ? `台架被 ${benchUser} 占用中` : '台架空闲，可排队启动'}>
-            <span className="flex h-[30px] items-center gap-1.5 rounded-full border border-line bg-white px-2.5">
+            <span className="flex h-[30px] items-center gap-1.5 rounded-full border border-line bg-white px-2.5 min-[1536px]:h-[38px] min-[1536px]:px-3">
               <StatusDot status={benchBusy ? 'alert' : 'done'} pulse={!benchBusy} />
-              <span className="text-[12px] text-t2">{benchBusy ? '占用' : '空闲'}</span>
+              <span className="text-[12px] text-t2 min-[1536px]:text-[15px]">{benchBusy ? '占用' : '空闲'}</span>
             </span>
           </Tooltip>
           <Tooltip content={pending ? `安全联锁还有 ${pending} 项待确认` : '安全联锁就绪'}>
-            <span className="flex h-[30px] items-center gap-1.5 rounded-full border border-line bg-white px-2.5 text-t2">
-              <ShieldCheck size={14} strokeWidth={1.75} className={pending ? 'text-warn' : 'text-p600'} />
-              <span className="num text-[12px]">{pending ? pending : '就绪'}</span>
+            <span className="flex h-[30px] items-center gap-1.5 rounded-full border border-line bg-white px-2.5 text-t2 min-[1536px]:h-[38px] min-[1536px]:px-3">
+              <ShieldCheck size={14} strokeWidth={1.75} className={cn('min-[1536px]:h-[17px] min-[1536px]:w-[17px]', pending ? 'text-warn' : 'text-p600')} />
+              <span className="num text-[12px] min-[1536px]:text-[15px]">{pending ? pending : '就绪'}</span>
             </span>
           </Tooltip>
           <Avatar name="张" size={30} />

@@ -387,6 +387,116 @@
 }
 
 /* ===========================================================================
+  流程条 · 常驻传递动效 + 退回动效（2026-10-10 新增，用户要求）
+  ---------------------------------------------------------------------------
+  用户口径：
+    · 「节点之间必须有一直向右流动的带颜色的线，以及向右滑动的箭头图标」；
+    · 「已到达的节点要有发光/闪烁」（复用既有 .automation-pulse，不重定义）；
+    · 「调优运行失败退回启动测试时，有反向流动/反向闪烁动效，然后继续跑」。
+
+  复用纪律：流动光带直接用既有 .automation-rail-flow（automation-rail-sweep 右向），
+  不重定义同义 keyframes。此处只新增两件既有基建没有的东西：
+    ① 向右滑动的**箭头图标**（用户新语义，非粒子）：flow-arrow-right / flow-arrow-left；
+    ② 退回段的反向扫光 + 轻 glow：flow-seg-reverse。
+  全部并入下方 prefers-reduced-motion 降级（去动画、留静态），低动效偏好下不闪。
+  =========================================================================== */
+
+/* 箭头图标：默认在连接线内自左向右滑动（波浪式，见下方 .flow-arrow--w*）。
+   ⚠️ 2026-10-10 修：上一轮箭头画在 h-[2px] + overflow-hidden 的连线里被裁成 2px 细条
+   → 肉眼不可见。现箭头是**独立层**（同段容器内 absolute 定位，容器不再裁切箭头），
+   亮绿实心 + 轻发光，尺寸随 --fb-scale 放大。 */
+.flow-seg-arrow {
+  color: var(--p-500);
+  filter: drop-shadow(0 0 3px rgba(77, 143, 109, 0.85));
+  opacity: 0;
+}
+.flow-seg-arrow > svg {
+  display: block;
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.9));
+}
+
+/* 波浪相位：一条 4 段的波，每段箭头占周期的 1/4 完成穿越，其余时间隐藏。
+   动画时长 = 4 × 单段时长；delay = 段序 × 单段时长 → 形成 1→2→3→4→5、
+   到 5 后由第 1 段无缝接续的连续滚动波。
+   位移用 translateX（合成层，不触发布局），容器高度足够容纳箭头 → 不被裁。 */
+@keyframes flow-arrow-wave {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  20% {
+    transform: translateX(var(--fb-seg-travel, 24px));
+    opacity: 1;
+  }
+  25% {
+    transform: translateX(var(--fb-seg-travel, 24px));
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(var(--fb-seg-travel, 24px));
+    opacity: 0;
+  }
+}
+.flow-seg-arrow {
+  animation: flow-arrow-wave var(--fb-wave-dur, 6.4s) linear infinite;
+}
+
+/* 退回：该段箭头自右向左滑（与正向相反，一眼可辨「退回」），约 0.9s 一程 */
+@keyframes flow-arrow-back {
+  0% {
+    transform: translateX(var(--fb-seg-travel, 24px));
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+}
+.flow-seg-arrow-rev {
+  color: var(--tp-alert);
+  animation: flow-arrow-back 0.9s linear infinite;
+}
+
+/* 退回段：暖色（告警红）反向扫光 + 轻 glow，覆盖默认的右向绿流光 */
+.flow-seg-return {
+  background: linear-gradient(90deg, var(--tp-p-200), var(--tp-alert), var(--tp-p-200));
+  background-size: 220% 100%;
+  animation: flow-seg-reverse 0.9s linear infinite;
+  box-shadow: 0 0 6px rgba(166, 53, 58, 0.55);
+}
+@keyframes flow-seg-reverse {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow-seg-arrow,
+  .flow-seg-arrow-rev,
+  .flow-seg-return {
+    animation: none;
+  }
+  /* 低动效偏好：箭头静态停在段中点，仍指示方向，不闪 */
+  .flow-seg-arrow,
+  .flow-seg-arrow-rev {
+    opacity: 1;
+    transform: translateX(calc(var(--fb-seg-travel, 24px) / 2));
+  }
+}
+
+/* ===========================================================================
   KaTeX 公式（2026-10-08 新增）
 
    为什么放全局：公式要同时在**助手回答**（agent-chat.css / --ac-* 变量）与
