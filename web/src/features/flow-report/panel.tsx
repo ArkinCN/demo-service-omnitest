@@ -998,8 +998,9 @@ function ReportPreview({ full }: { full?: boolean }) {
   )
 }
 
-/** 放大态：按模板节结构渲染的整篇预览 */
-function FullReport() {
+/** 放大态：按模板节结构渲染的整篇预览。
+ *  导出给自动化回归结果弹窗复用（「查看报告」= 原地弹窗预览，不跳 /report）。 */
+export function FullReport() {
   const pack = getPack()
   const h = useShared()
   const waves = useWaves()
