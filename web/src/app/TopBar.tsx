@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { NavLink, useLocation } from 'react-router'
 import {
+  Activity,
   AlertOctagon,
   Archive,
   Check,
@@ -333,6 +334,18 @@ export function TopBar() {
   // 人在屏上点「开始测试」才真调 startAutomation()。
   const setAutomationIntent = useAppStore((s) => s.setAutomationIntent)
   const stopAutomation = useAppStore((s) => s.stopAutomation)
+  /*
+   * 第三态「回到运行台」（2026-10-10 新增）。
+   *
+   * 场景：运行中人在浮层里点了「退出自动化测试」→ 浮层隐藏，但后台编排器
+   * 仍在跑、store 也仍在同步。此时这颗按钮就是**重新进入浮层**的入口
+   * （点它清掉隐藏位并置 intent；浮层一渲染就是运行时，不是引导屏）。
+   *
+   * ⚠️ 这里**不是**「再开一轮」：编排器的 start() 有幂等防线（running 时只提示
+   * 「自动化测试正在进行中」），所以不会出现两轮并行。
+   */
+  const overlayHidden = useAppStore((s) => s.automationOverlayHidden)
+  const backToConsole = autoRunning && overlayHidden
 
   // 动作条右端那行字只在流程 3 报运行态：别的流程没有「启动」这回事，
   // 报「待启动」等于给一条不存在的进度。
@@ -365,24 +378,43 @@ export function TopBar() {
           </span>
         </div>
 
-        {/* 「智能测试」一键自动化入口：初始化左侧。运行中变「终止」，点一下停掉整个自动化流程。
-            ⚠️ 非运行态点击只**打开引导屏**（不直接开跑），人在引导屏确认后才启动——
-            这样才有「点了发生什么」的可感知反馈，而不是界面一闪而过。 */}
+        {/* 「智能测试」一键自动化入口：初始化左侧。三态——
+              ① 非运行 → 「自动化测试」，点击只**打开引导屏**（不直接开跑），
+                 人在引导屏确认后才启动，这样才有「点了发生什么」的可感知反馈；
+              ② 运行中且浮层在 → 「终止」，点一下停掉整个自动化流程；
+              ③ 运行中但人已退出浮层 → 「回到运行台」，点一下重新进入看进度
+                 （后台那一轮没有中断，也没有重开第二轮）。 */}
         <Tooltip
           content={
-            autoRunning
-              ? '自动化回归进行中，点此终止'
-              : '一键自动化回归：全屏接管 · 自动选定参数 → 按五步推进 → 产出报告，全程可见可终止'
+            backToConsole
+              ? '本轮仍在后台继续运行（你退出的是界面，不是测试），点此回到运行台看进度'
+              : autoRunning
+                ? '自动化回归进行中，点此终止'
+                : '一键自动化回归：全屏接管 · 自动选定参数 → 按五步推进 → 产出报告，全程可见可终止'
           }
         >
           <Button
             size="sm"
-            data-action={autoRunning ? 'automation-stop' : 'automation-start'}
-            variant={autoRunning ? 'danger' : 'default'}
-            icon={<PlayCircle size={14} strokeWidth={1.75} />}
-            onClick={autoRunning ? stopAutomation : () => setAutomationIntent(true)}
+            data-action={
+              backToConsole ? 'automation-back' : autoRunning ? 'automation-stop' : 'automation-start'
+            }
+            variant={autoRunning && !backToConsole ? 'danger' : 'default'}
+            icon={
+              backToConsole ? (
+                <Activity size={14} strokeWidth={1.75} />
+              ) : (
+                <PlayCircle size={14} strokeWidth={1.75} />
+              )
+            }
+            onClick={
+              backToConsole
+                ? () => setAutomationIntent(true)
+                : autoRunning
+                  ? stopAutomation
+                  : () => setAutomationIntent(true)
+            }
           >
-            {autoRunning ? '终止' : '自动化测试'}
+            {backToConsole ? '回到运行台' : autoRunning ? '终止' : '自动化测试'}
           </Button>
         </Tooltip>
 

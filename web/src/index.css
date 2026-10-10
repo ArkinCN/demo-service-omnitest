@@ -461,28 +461,10 @@
   animation: flow-arrow-scroll var(--fb-wave-dur, 1.4s) linear infinite;
 }
 
-/* 静态暗箭头（仅 pending 段，即运行中未到达段）：不闪不滑、无循环动画，
-   只随 data-on 做一次淡入淡出；停在段中点指示「后面还有步骤」。
-   ⚠️ 2026-10-10 修「线下方多出一个小箭头」：`top: 50%` 定位的是箭头**顶边**，
-   只给 translateX 会让整个箭头挂在连接线下方半个箭头高（视觉像残留件）。
-   此处必须同时补 translateY(-50%)，与动效箭头同轴。
-   为什么动效箭头没这问题：它的居中来自 JSX class `-translate-y-1/2`，
-   Tailwind v4 该 class 生成的是独立 `translate` 属性，不会被 keyframes 的
-   `transform: translateX()` 覆盖；本类的位移写在自定义 transform 里，
-   必须自己带上垂直居中，否则两处轴心不一致。 */
-.flow-seg-arrow-static {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  color: var(--tp-text-3);
-  opacity: 0;
-  transform: translateX(calc(var(--fb-seg-travel, 24px) / 2)) translateY(-50%);
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-.flow-seg-arrow-static[data-on='true'] {
-  opacity: 0.75;
-}
+/* 未到达段（pending）：只有基底线，**不渲染任何箭头**。
+   2026-10-10 用户看效果后确认「这个暗色的小箭头不显示，影响观感」——
+   规则连同组件侧的渲染一起删除（`.flow-seg-arrow-static` 已不存在，
+   段内只留一条中性色静态线，是最干净的状态）。 */
 
 /* 退回：该段箭头自右向左滑（与正向相反，一眼可辨「退回」），约 0.9s 一程 */
 @keyframes flow-arrow-back {
@@ -526,9 +508,6 @@
   /* 段动效层：去缩放位移，只留一次淡入淡出 */
   .flow-seg-anim {
     transform: none;
-    transition: opacity 0.16s ease;
-  }
-  .flow-seg-arrow-static {
     transition: opacity 0.16s ease;
   }
   .flow-seg-arrow,
