@@ -294,6 +294,93 @@ def _precheck_dependencies(python_exe: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# 运行磁盘态工具（2026-10-12 新增：修「worker 重启丢状态 / 丢单设备锁」）
+#
+# 背景（2026-10-12 实测）：gunicorn `max_requests=2000` 到阈值时会**优雅替换 worker**
+# （uvicorn 把该值透传为 limit_max_requests；实测某 worker 服务到第 2099 个请求时被换下，
+# master 存活、日志无异常字样）。而本执行器的运行状态（单设备锁、样本、波形索引）
+# 原先**只存进程内存** → 替换即失忆，连锁反应：
+#   ① 前端轮询旧轮次 → 404「运行不存在」→ 自动化编排器误判失败并自动重试；
+#   ② 单设备锁同步失守 → 重试被放行，与仍在跑（硬件子进程还活着、示波器仍被持有）
+#      的旧轮次撞车 → `VI_ERROR_RSRC_BUSY`（2026-10-12 自动化失败事故根因）。
+# 修法：运行状态以磁盘 `runs/<id>/` 为准**可重建**；单设备锁**跨进程**判定。
+# 磁盘读取只读、不猜不编：events.jsonl / summary.json / 进程表。
+# ---------------------------------------------------------------------------
+
+def _runs_root_path() -> Path:
+    """运行根目录（= 配置文件同级 `hardware/v0.6/runs`）。
+
+    与 start.py 的推导一致：config 在 `hardware/v0.6/config/`，output.root="../runs"
+    解析到 `hardware/v0.6/runs`。FAN_RUNS_ROOT 环境变量可覆盖（分机部署 / 隔离测试用）。
+    """
+    override = os.environ.get("FAN_RUNS_ROOT")
+    if override:
+        return Path(override)
+    return _CONFIG_DIR.parent / "runs"
+
+
+def _iter_events(events_path: Path) -> list[dict]:
+    """容错解析 events.jsonl 为事件列表（坏行跳过；文件缺失/不可读返回空表）。"""
+    try:
+        text = events_path.read_text(encoding="utf-8")
+    except OSError:
+        return []
+    out: list[dict] = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            ev = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(ev, dict):
+            out.append(ev)
+    return out
+
+
+def _run_dir_freshness(run_dir: Path) -> float:
+    """运行目录的「最后活动时刻」（epoch 秒）：目录与 events.jsonl mtime 取较大者。
+
+    为什么要 max：运行中 events.jsonl 每 ~10s 追加一次，而目录 mtime 只在新子目录
+    （cycleXXX_...）创建时才变化 —— 只看目录 mtime 会把正在跑的轮次误判为"老旧"。
+    """
+    best = 0.0
+    for p in (run_dir, run_dir / "events.jsonl"):
+        try:
+            best = max(best, p.stat().st_mtime)
+        except OSError:
+            continue
+    return best
+
+
+def _runner_alive(run_id: str) -> bool:
+    """扫 /proc 判断 run_experiment 子进程是否仍存活（cmdline 同时含脚本名与 run_id）。
+
+    为什么扫进程表而不是只信事件里的 processId：processId 可被复用，且存在
+    「目录刚建、首事件还没写」的窗口；按 cmdline 精确匹配（run_id 为 32 位 hex，
+    几乎不可能误撞）同时覆盖这两种情况。非 Linux（无 /proc）返回 False，
+    由调用方按事件文件的新鲜度兜底。
+    """
+    proc_root = Path("/proc")
+    if not proc_root.is_dir():
+        return False
+    for entry in proc_root.iterdir():
+        if not entry.name.isdigit():
+            continue
+        try:
+            raw = (entry / "cmdline").read_bytes()
+        except OSError:
+            continue
+        if not raw:
+            continue
+        cmd = raw.replace(b"\x00", b" ").decode("utf-8", errors="replace")
+        if "run_experiment" in cmd and run_id in cmd:
+            return True
+    return False
+
+
+# ---------------------------------------------------------------------------
 # 波形读取（GET /api/fan-tests/{run_id}/captures/{capture_id} 的数据源）
 #
 # 示波器每次采集把每通道的**真实时序波形**写成 runs/<tag>/<profile>/CH{n}.csv，
@@ -639,6 +726,12 @@ class RealFanExecutor:
     # 早失败窗口（秒）：启动后此时间内既无事件流文件、进程也已退出 → 不等满超时，
     # 立即透传可行动原因（查 runs/<id>/stderr.log），让前端 ≤10s 看到真实失败。
     EARLY_FAIL_S = 10.0
+    # ---- 磁盘态判定窗口（2026-10-12 新增，供 _rebuild_state / 跨进程锁共用）----
+    # DISK_FRESH_S：运行中 events.jsonl 每 ~10s 追加一次，45s 无更新基本可判"已停"；
+    # DISK_SETTLING_S：收尾宽限 —— 进程刚退出、终态文件可能正在落盘，先按 running 报，
+    #                 下一轮轮询就会读到终态（宁可晚一拍，也不误报"中断"）。
+    DISK_FRESH_S = 45.0
+    DISK_SETTLING_S = 30.0
 
     def _cfg(self) -> tuple[str, str, str, str]:
         """返回 (start_script, stop_script, config_path, overlay_path)。
@@ -655,12 +748,191 @@ class RealFanExecutor:
         return start, stop, config, overlay
 
     def has_active_run(self) -> bool:
+        """单设备锁：内存活跃 OR 磁盘上有活跃运行（2026-10-12 跨进程化）。
+
+        为什么必须含磁盘判定：worker 被 gunicorn 优雅替换后内存锁清空，但硬件子进程
+        （run_experiment）仍在跑、示波器仍被持有 —— 只信内存会放行并发启动，直接撞出
+        `VI_ERROR_RSRC_BUSY`（2026-10-12 自动化失败事故的根因链之一）。
+        """
+        return self._active_run_id() is not None
+
+    def _active_run_id(self) -> str | None:
+        """当前活跃（running/stopping）运行的 run_id；无则 None。内存优先、磁盘兜底。"""
         with self._lock:
-            return any(s.status in ("running", "stopping") for s in self._runs.values())
+            for rid, s in self._runs.items():
+                if s.status in ("running", "stopping"):
+                    return rid
+        return self._disk_active_run_id()
+
+    def _disk_active_run_id(self) -> str | None:
+        """扫 runs/ 目录找「仍在跑」的轮次：无终态证据 且（进程存活 或 文件新鲜）。
+
+        只扫最近更新的前 20 个目录 —— 活跃轮次每 ~10s 写一次事件，必然在列；
+        更旧的目录（>1h 无更新）按列表有序性直接短路。判定**只读**，不写任何文件。
+        """
+        runs_root = _runs_root_path()
+        if not runs_root.is_dir():
+            return None
+        try:
+            cands: list[tuple[float, Path]] = []
+            for p in runs_root.iterdir():
+                if p.is_dir():
+                    cands.append((_run_dir_freshness(p), p))
+        except OSError:
+            return None
+        cands.sort(key=lambda t: t[0], reverse=True)
+        with self._lock:
+            in_memory_active = {
+                rid for rid, s in self._runs.items() if s.status in ("running", "stopping")
+            }
+        now = time.time()
+        for mtime, d in cands[:20]:
+            rid = d.name
+            if rid in in_memory_active:
+                continue  # 内存检查已覆盖（防御性：正常不会走到）
+            if now - mtime > 3600:
+                break  # 列表按新鲜度降序，后面只会更旧
+            if self._dir_has_terminal(d):
+                continue
+            if _runner_alive(rid):
+                return rid
+            if now - mtime < self.DISK_FRESH_S:
+                return rid
+        return None
+
+    @staticmethod
+    def _dir_has_terminal(run_dir: Path) -> bool:
+        """该运行目录是否已有终态证据（summary.json terminalPublished 或 run_finished 事件）。
+
+        有终态 = 该轮已收尾：不占单设备锁、重建时直接落终态。
+        """
+        try:
+            summary = json.loads((run_dir / "summary.json").read_text(encoding="utf-8"))
+            if summary.get("terminalPublished"):
+                return True
+        except (OSError, json.JSONDecodeError):
+            pass
+        for ev in _iter_events(run_dir / "events.jsonl"):
+            if ev.get("type") == "run_finished":
+                return True
+        return False
+
+    def _rebuild_state(self, run_id: str) -> FanRunState | None:
+        """从磁盘重建一次运行的状态（2026-10-12 新增：修 worker 重启后「运行不存在」）。
+
+        使用场景：worker 被优雅替换后内存失忆，但前端仍会轮询（status / samples /
+        capture_meta）。此时按 `runs/<run_id>/` 的**真实文件**重建：
+          · events.jsonl   —— 计划参数（run_started）、样本与波形索引（capture_completed）、
+                              终态（run_finished）；
+          · summary.json   —— 权威终态（terminalPublished:true）；
+          · 进程表 / mtime —— 无终态证据时二分「仍在跑」还是「被中断」，如实标注，不假装。
+        返回 None 表示磁盘上也没有该运行的痕迹（调用方维持 unknown → 404）。
+
+        ⚠️ 重建结果**不缓存**：运行可能仍在推进，每次调用按最新文件重建（事件文件
+        40KB 级、轮询 1Hz，成本可忽略），避免「缓存了却无人更新」把状态冻死。
+        """
+        run_dir = _runs_root_path() / run_id
+        if not run_dir.is_dir():
+            return None
+        events_path = run_dir / "events.jsonl"
+        events = _iter_events(events_path)
+
+        st = FanRunState(
+            run_id=run_id, simulation=False, mode="finite",
+            planned_duration_s=0.0, default_duration_s=60.0, cycles=0, steps=[],
+            status="running",
+        )
+        # 计划参数与终态：从事件流读取（run_started / run_finished，后到者覆盖）。
+        started_ev: dict = {}
+        finished_ev: dict = {}
+        for ev in events:
+            etype = ev.get("type")
+            if etype == "run_started" and not started_ev:
+                started_ev = ev.get("data") or {}
+            elif etype == "run_finished":
+                finished_ev = ev.get("data") or {}
+
+        steps = [
+            {"duration_s": float(started_ev.get("holdSeconds") or 0), "commanded_pwm_pct": d}
+            for d in (started_ev.get("dutiesPercent") or [])
+        ]
+        st.cycles = int(started_ev.get("requestedCycles") or 1)
+        st.default_duration_s = float(started_ev.get("holdSeconds") or 60)
+        if steps:
+            st.steps = steps
+            st.planned_duration_s = _planned_duration(steps, st.cycles)
+
+        # 样本与波形索引：复用 _drain_events（与实时路径同一套映射，不另写第二实现）。
+        self._drain_events(st, str(events_path), 0)
+
+        # 终态三级判定：summary（权威）→ run_finished → 进程/新鲜度兜底。
+        summary: dict | None
+        try:
+            summary = json.loads((run_dir / "summary.json").read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            summary = None
+        if summary and summary.get("terminalPublished"):
+            state = summary.get("state")
+            st.status = state if state in ("completed", "stopped", "failed") else "failed"
+            if st.status == "failed":
+                st.error = summary.get("failureMessage") or "运行失败（未提供原因）"
+            st.terminal = True
+        elif finished_ev:
+            state = finished_ev.get("state")
+            st.status = state if state in ("completed", "stopped", "failed") else "failed"
+            if st.status == "failed":
+                st.error = finished_ev.get("failureMessage") or ""
+            st.terminal = True
+        else:
+            # 无终态证据：按「仍在跑 or 被中断」二分，如实标注（不假装成功/失败）。
+            age = time.time() - _run_dir_freshness(run_dir)
+            if _runner_alive(run_id) or age < self.DISK_SETTLING_S:
+                st.status = "running"
+            else:
+                st.status = "failed"
+                st.error = (
+                    "运行被中断：采集进程已退出，且未产出收尾事件"
+                    "（多为服务/容器重启或脚本异常终止；已采数据仍可读）。"
+                )
+                st.terminal = True
+        self._restore_timing(st, events)
+        return st
+
+    @staticmethod
+    def _restore_timing(st: FanRunState, events: list[dict]) -> None:
+        """用事件流时间戳回推 started_at / finished_at（仅供展示的时长换算）。
+
+        FanRunState 的起止时刻与 time.monotonic() 同尺度（实时路径如此），这里反推
+        一个等价基准，使 _status_dict 的 actual_duration_s 对重建出来的轮次同样成立：
+          · 终态：started_at = now - (末事件时刻 - 首事件时刻)，finished_at = now → 时长为真实跨度；
+          · 运行中：started_at = now - (当前时刻 - 首事件时刻) → 时长随真实时间继续增长。
+        只用事件里真实存在的 timestampUtc；一个都没解析出来时保持 None（显示 0）。
+        """
+        from datetime import datetime, timezone  # noqa: PLC0415 - 仅此处使用
+
+        def _epoch(s: Any) -> float | None:
+            try:
+                return datetime.fromisoformat(str(s).replace("Z", "+00:00")).timestamp()
+            except (ValueError, TypeError):
+                return None
+
+        stamps = [t for t in (_epoch(ev.get("timestampUtc")) for ev in events) if t is not None]
+        if not stamps:
+            return
+        now_mono = time.monotonic()
+        if st.terminal:
+            span = max(0.0, stamps[-1] - stamps[0])
+            st.started_at = now_mono - span
+            st.finished_at = now_mono
+        else:
+            now_epoch = datetime.now(timezone.utc).timestamp()
+            st.started_at = now_mono - max(0.0, now_epoch - stamps[0])
+            st.finished_at = None
 
     def start(self, run_id: str, plan: dict) -> FanRunState:
-        if self.has_active_run():
-            raise ConflictException("已有风扇实验在进行，请先停止再启动")
+        active = self._active_run_id()
+        if active:
+            raise ConflictException(f"已有风扇实验在进行（{active}），请先停止再启动")
         start_script, stop_script, config_path, overlay_path = self._cfg()
         # 启动前预检：配置解析失败（如 serial.port 为空、overlay 缺失）时同步返回明确原因，
         # 不让子进程退出码 1 静默失败（那样要等 ≥10s 早失败窗口且原因可能缺失）。
@@ -716,23 +988,51 @@ class RealFanExecutor:
         于是这一复活会让锁**永久占住** → 之后每次启动都 409「已有风扇实验在进行」。
         实测复现：前端在 run 失败（terminal）后仍会调一次 /stop（running→estopped 边沿），
         正好命中该路径。修法：终态直接返回，不改状态、不置 stop_requested。
+
+        2026-10-12 补：内存无记录（worker 重启后）的运行走**磁盘重建**分支 ——
+        确认该轮仍活跃后直接调 stop.py 下发停止请求（stop.request + SET 0 等 ACK），
+        稍后 status 轮询由重建读到 run_finished(state=stopped) 如实收敛。
         """
         with self._lock:
             st = self._runs.get(run_id)
-            if not st or st.terminal:
+            if st is not None:
+                if st.terminal:
+                    return
+                st.stop_requested = True
+                st.status = "stopping"
                 return
-            st.stop_requested = True
-            st.status = "stopping"
+        rebuilt = self._rebuild_state(run_id)
+        if rebuilt is None or rebuilt.terminal:
+            return
+        threading.Thread(target=self._stop_rebuilt, args=(run_id,), daemon=True).start()
+
+    def _stop_rebuilt(self, run_id: str) -> None:
+        """对「磁盘重建出来的活跃运行」下发停止请求（后台线程，不阻塞请求线程）。
+
+        _request_stop 内部 subprocess.run 可能阻塞数秒~60s，必须在锁外/线程内执行。
+        run 目录按运行根目录推导（与 _rebuild_state 同源），meta 只带 directory。
+        """
+        try:
+            _start, stop_script, config_path, _overlay = self._cfg()
+            run_dir = _runs_root_path() / run_id
+            self._request_stop(stop_script, run_id, config_path, {"directory": str(run_dir)})
+            logger.info("[fan-executor] 磁盘重建运行 %s 已下发停止请求", run_id)
+        except Exception as e:  # noqa: BLE001 - 后台线程须吞异常
+            logger.warning("[fan-executor] 磁盘重建运行 %s 停止请求失败：%s", run_id, e)
 
     def status(self, run_id: str) -> FanRunState:
         with self._lock:
-            return self._runs.get(run_id, FanRunState(run_id=run_id, simulation=False, mode="finite", planned_duration_s=0, default_duration_s=60, cycles=0, steps=[], status="unknown"))
+            st = self._runs.get(run_id)
+        if st is not None:
+            return st
+        # worker 重启后内存失忆 → 从磁盘重建（不缓存，见 _rebuild_state 说明）
+        rebuilt = self._rebuild_state(run_id)
+        if rebuilt is not None:
+            return rebuilt
+        return FanRunState(run_id=run_id, simulation=False, mode="finite", planned_duration_s=0, default_duration_s=60, cycles=0, steps=[], status="unknown")
 
     def samples(self, run_id: str, after_sequence: int) -> tuple[list[dict], int]:
-        with self._lock:
-            st = self._runs.get(run_id)
-            if st is None:
-                return [], after_sequence
+        def _pick(st: FanRunState) -> tuple[list[dict], int]:
             picked = [s for s in st.samples if s["sequence"] > after_sequence]
             # ⚠️ 游标必须取「已交付样本的最大 sequence」，**不能**用 st.next_sequence：
             # 样本的 sequence 取自 events.jsonl 事件序号（见 _drain_events 的 `"sequence": seq`），
@@ -741,17 +1041,30 @@ class RealFanExecutor:
             latest = picked[-1]["sequence"] if picked else after_sequence
             return picked, max(after_sequence, latest)
 
+        with self._lock:
+            st = self._runs.get(run_id)
+            if st is not None:
+                return _pick(st)
+        # worker 重启后内存失忆 → 磁盘重建（复用同一套映射与游标口径）
+        rebuilt = self._rebuild_state(run_id)
+        if rebuilt is None:
+            return [], after_sequence
+        return _pick(rebuilt)
+
     def capture_meta(self, run_id: str, capture_id: str) -> dict | None:
         """返回某次采集的波形索引（含真实 CSV 绝对路径）；未采到的 id 返回 None。
 
-        只读内存索引（由 _drain_events 从 capture_completed 事件的 artifacts 建立），
-        不做磁盘扫描、不猜路径；未知即 None，由路由层如实返回 available=false。
+        内存有记录时读内存索引（由 _drain_events 从 capture_completed 事件的 artifacts
+        建立）；worker 重启后内存无记录时按磁盘重建（2026-10-12 补），仍**不做路径猜测、
+        不猜文件名**——未知即 None，由路由层如实返回 available=false。
         """
         with self._lock:
             st = self._runs.get(run_id)
-            if st is None:
-                return None
-            return st.captures.get(capture_id)
+        if st is None:
+            st = self._rebuild_state(run_id)
+        if st is None:
+            return None
+        return st.captures.get(capture_id)
 
     def _watch(
         self, run_id: str, start_script: str, stop_script: str,
@@ -1180,10 +1493,11 @@ class RealFanExecutor:
             if directory:
                 summary_path = os.path.join(directory, "summary.json")
             else:
-                # meta 缺失（stdout 未解析出来）：按脚本目录 + run_id 推导
-                summary_path = str(
-                    Path(str(_DEFAULT_START_SCRIPT)).resolve().parent / "runs" / st.run_id / "summary.json"
-                )
+                # meta 缺失（stdout 未解析出来）：按运行根目录 + run_id 推导。
+                # ⚠️ 2026-10-12 修历史笔误：原推导为「start.py 脚本目录 + runs」，
+                # 即 <hardware/py/entrypoints>/runs/<id>/summary.json —— 多了一层
+                # entrypoints，与 start.py 的 output.root="../runs"（= hardware/v0.6/runs）不符。
+                summary_path = str(_runs_root_path() / st.run_id / "summary.json")
         try:
             summary = json.loads(Path(summary_path).read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):

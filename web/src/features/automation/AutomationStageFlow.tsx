@@ -5,7 +5,7 @@ import { FLOW_ICON, FLOW_SHORT } from '../../app/icons'
 import { cn } from '../../components/ui'
 import { useAppStore } from '../../state/useAppStore'
 import { useFlowBarScale } from '../shared/useFlowBarScale'
-import { FlowSegLink, segPhaseOf } from '../shared/FlowSegLink'
+import { FlowSegLink, RUN_TUNE_LOOP_SEG, segPhaseOf } from '../shared/FlowSegLink'
 import type { StageView } from './automationViewModel'
 import { useStageReturnCue } from './useStageReturnCue'
 
@@ -89,7 +89,12 @@ export function AutomationStageFlow({ views }: { views: StageView[] }) {
           const isReturnSeg = f.id === 'tune'
           /* 段相位（与顶栏同一口径，见 shared/FlowSegLink）：
                仅「当前 → 下一」段有动效；已走过段与未到达段都是纯静态线（无箭头）；
-               非运行态整条安静。平滑消失由 CSS（.flow-seg-anim + data-on）承担。 */
+               非运行态整条安静。平滑消失由 CSS（.flow-seg-anim + data-on）承担。
+               ⚠️ 2026-10-10 补：段 3 同样传 loopSeg=RUN_TUNE_LOOP_SEG。
+               原因：自动化运行时是 fixed inset-0 z-50 全屏接管（见 AutomationRunOverlay），
+               **顶栏被完全遮住**，人实际盯着的是本条 → 只改顶栏等于用户根本看不到。
+               故运行台与顶栏同口径：当前节点 ∈ {启动测试, 调优运行} → 双轨反向流动，
+               进「测试报告」即静止。本组件只存在于自动化浮层内，人测页面不渲染它。 */
           const leftId = i > 0 ? FLOWS[i - 1].id : null
           const leftDone = !!leftId && views.find((s) => s.id === leftId)?.status === 'success'
           const segPhase =
@@ -101,6 +106,7 @@ export function AutomationStageFlow({ views }: { views: StageView[] }) {
                   running,
                   returning,
                   isReturnSeg,
+                  loopSeg: RUN_TUNE_LOOP_SEG,
                 })
               : null
           return (
@@ -113,8 +119,12 @@ export function AutomationStageFlow({ views }: { views: StageView[] }) {
                   arrowTestId="auto-seg-arrow"
                 />
               ) : null}
+              {/* ⚠️ 2026-10-12：节点加 `relative z-10` —— 与顶栏 NavLink 同层。
+                  闭环下线改折线后，折线的两段竖线会经过两侧标签的竖向中线，
+                  段容器本身是 z-10 且 DOM 在节点之前；节点若不提层，折线会盖在
+                  文字上（顶栏 NavLink 带 z-10 所以没有这个问题）。 */}
               <div
-                className="flex shrink-0 items-center gap-[calc(var(--fb-scale)*5px)]"
+                className="relative z-10 flex shrink-0 items-center gap-[calc(var(--fb-scale)*5px)]"
                 title={`${f.index} ${f.label}`}
               >
                 <span

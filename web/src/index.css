@@ -533,6 +533,129 @@
   }
 }
 
+/* ===========================================================================
+  闭环段 · 上下双轨（2026-10-10 新增，需求单「启动测试 ↔ 调优运行」）
+
+  背景：调优是闭环 —— 「启动测试」判出未达标 → 自动调参 → 回「调优运行」→
+  再回「启动测试」重跑。此前这段只有**单根**动效：当前节点=启动测试时向右流，
+  真实回退的 2.2s 内闪一次红向左；用户看不到「两根线同时反向传递」的闭环感。
+  现改为：上线「启动测试 → 调优运行」（右向）、下线「调优运行 → 启动测试」
+  （左向），**两根同时存在、同时运动**。
+
+  与 .flow-seg-return（红）的区别：那是「一次性告警闪烁」，这是「常驻闭环表达」，
+  所以下线沿用**品牌绿**而非红色 —— 红色在本系统语义是「失败/告警」，
+  而「回跑重测」不是失败。用户 2026-10-10 明确：取消红色退回闪烁。
+
+  作用域纪律：这两条类**只**由 shared/FlowSegLink 的 'loop' 相位渲染，
+  该相位由顶栏 FlowStepper 与自动化运行台 AutomationStageFlow 两处 opt-in 传入
+  （自动化运行时顶栏被 z-50 浮层遮住，两处都要有）；人测页面无 loop → 不受影响。
+  =========================================================================== */
+
+/* 下线：绿色反向扫光（与 .automation-rail-flow 的方向相反）。
+   ⚠️ 2026-10-12 起**停用**：loop 相位下线改为 U 形折线（.flow-seg-u-sweep 接管）。
+   规则保留备查/他处复用，**不再有组件引用**——若未来清理，可连同 flow-seg-back-sweep 一并删除。 */
+.flow-seg-back {
+  background: linear-gradient(90deg, var(--tp-p-200), var(--tp-p-700), var(--tp-p-200));
+  background-size: 220% 100%;
+  animation: flow-seg-back-sweep 0.9s linear infinite;
+}
+@keyframes flow-seg-back-sweep {
+  0% {
+    background-position: -120% 0;
+  }
+  100% {
+    background-position: 120% 0;
+  }
+}
+
+/* 下线箭头：绿色 + 轻发光，与 .flow-seg-arrow-rev（红）同一套反向平移 keyframes。
+   ⚠️ 2026-10-12 起**停用**：下箭头改 U 形 offset-path 版（.flow-seg-u-arrow），
+   本规则不再被引用（保留备查）。 */
+.flow-seg-arrow-back {
+  color: var(--p-500);
+  filter: drop-shadow(0 0 3px rgba(77, 143, 109, 0.85));
+  opacity: 0;
+  animation: flow-arrow-back var(--fb-wave-dur-back, 0.9s) linear infinite;
+}
+.flow-seg-arrow-back > svg {
+  display: block;
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.9));
+}
+
+/* ===========================================================================
+   闭环下线 · U 形折线动效（2026-10-12 第三轮：按用户红线扩大 + 割裂修复）
+
+   形状与坐标见 FlowSegLink.tsx 的 FLOW_SEG_U_PATH（**盒内局部坐标**，viewBox
+   "0 0 184 56" 零平移；外层 translateX(-43×scale)+scale）；本节只管**沿路径的动效**：
+     · .flow-seg-u-sweep —— 流光段（stroke-dash 沿路径流动）：
+       路径全长 272 单位（44 + 184 + 44）。dasharray「亮 36 / 间隔 236」
+       （周期 = 272 = 恰好路径全长，同时只有一段光可见，比例与原 11/58 同量级）；
+       dashoffset **36 → -236**（扫程 = 36-(-236) = 272 = 恰好一个完整周期）
+       让光段从右端（调优运行）沿 U 形跑到左端（启动测试）。
+     · .flow-seg-u-arrow —— 箭头（offset-path 沿 U 形跑）：
+       路径内联在组件 style（offsetPath，与 SVG 同一常量、同一盒内坐标系——
+       2026-10-12 修「箭头左偏 43px 与折线割裂」见该常量 ⚠️ 注释）；
+       offset-distance 0%→100% = 从调优运行端跑到启动测试端；
+       opacity 18%/82% 淡入淡出与 .flow-arrow-scroll 同口径（防两端口硬切）；
+       offset-rotate: auto 180deg 由组件内联给出（ChevronLeft 图形方向补偿）。
+   ⚠️ 节奏：**1.8s/程**（2026-10-12 用户「速度放慢一倍」，原 0.9s；流光与箭头同步）。
+
+   ⚠️ 相位关系（2026-10-12 箭头相位修正：让箭头压在流光前进方向的头部，核心不变式，勿轻动）：
+     箭头中心恒在 s = 272×f；亮段占 **[s−36, s]** ——亮段整体位于箭头**身后**，
+     即**箭头压在流光前进方向的头部**、亮段像拖尾一样跟在箭尾后面。
+     根因：此前 keyframes 为 0 → -272 时，亮段占 [s, s+36]（在箭头前方），
+     箭头恰好钉死在亮段**尾缘**——用户截图指出「箭头在前进方向的尾巴」。
+     修正 = 亮段相位整体提前 36 单位（= 亮段长度）：36 → -236，扫程与节奏不变。
+     ⚠️ 两条动画必须**同周期同相位**（都 linear 1.8s；同时挂载即天然同步），
+        否则箭头与亮段会在途中彼此漂移、割裂复现。
+   =========================================================================== */
+
+.flow-seg-u-sweep {
+  stroke-dasharray: 36 236; /* 亮 36 + 间隔 236 = 272（路径全长），单光扫全程 */
+  /* 1.8s/程（2026-10-12 用户「速度放慢一倍」：0.9 → 1.8；与 .flow-seg-u-arrow 同步） */
+  animation: flow-u-sweep 1.8s linear infinite;
+}
+@keyframes flow-u-sweep {
+  /* dashoffset 递减 → 虚线图案沿路径**前进方向**（起点→终点）流动。
+     ⚠️ 相位起点 +36（非 0，2026-10-12 箭头相位修正）：亮段整体相对箭头
+     滞后 36 单位（= 亮段长度）→ 箭头恒处于流光**前进方向的头部**；
+     36 → -236 的扫程 = 272 = 恰好一个完整周期（与箭头 1.8s/程 同速）。 */
+  0% {
+    stroke-dashoffset: 36;
+  }
+  100% {
+    stroke-dashoffset: -236;
+  }
+}
+
+.flow-seg-u-arrow {
+  color: var(--p-500);
+  filter: drop-shadow(0 0 3px rgba(77, 143, 109, 0.85));
+  opacity: 0;
+  /* 1.8s/程（2026-10-12 用户「速度放慢一倍」：0.9 → 1.8；与流光同步） */
+  animation: flow-u-arrow 1.8s linear infinite;
+}
+.flow-seg-u-arrow > svg {
+  display: block;
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.9));
+}
+@keyframes flow-u-arrow {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   /* 段动效层：去缩放位移，只留一次淡入淡出 */
   .flow-seg-anim {
@@ -541,14 +664,24 @@
   }
   .flow-seg-arrow,
   .flow-seg-arrow-rev,
-  .flow-seg-return {
+  .flow-seg-arrow-back,
+  .flow-seg-return,
+  .flow-seg-back,
+  .flow-seg-u-sweep,
+  .flow-seg-u-arrow {
     animation: none;
   }
   /* 低动效偏好：箭头静态停在段中点，仍指示方向，不闪 */
   .flow-seg-arrow,
-  .flow-seg-arrow-rev {
+  .flow-seg-arrow-rev,
+  .flow-seg-arrow-back {
     opacity: 1;
     transform: translateX(calc(var(--fb-seg-travel, 24px) / 2));
+  }
+  /* U 形箭头：低动效下静止在**路径中点**（U 形横穿段中央），可见且指示方向 */
+  .flow-seg-u-arrow {
+    opacity: 1;
+    offset-distance: 50%;
   }
 }
 

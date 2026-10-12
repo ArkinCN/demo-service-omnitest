@@ -10,13 +10,16 @@
      再用 *IDN? 验证身份；唯一候选即采用并告警；
   ③ 找不到则如实抛错（不伪造数据），错误里带上实际枚举到的资源列表。
 
-后端可配置（2026-10-07 新增，2026-10-08 调整默认）：环境变量 SCOPE_VISA_BACKEND，
-**默认按平台判定**（见 `_default_backend()`）：
+后端可配置（2026-10-07 新增，2026-10-08 调整默认，2026-10-11 Linux 复核）：
+环境变量 SCOPE_VISA_BACKEND，**默认按平台判定**（见 `_default_backend()`）：
 - Windows → `@ivi`（NI-VISA）。原因：pyvisa-py + libusbK 组合下大块读取不可靠
   （实测 `:WAVeform:DATA?` >~100 点、`:DISPlay:DATA?` BMP 截屏必超时，且超时后
   USB 层进入异常态、必须拔插才能恢复）。NI-VISA 的 USB-TMC 实现成熟，可稳定读大块。
-  代价：需将示波器 USB 驱动换为 NI-VISA 可识别类型（Windows 专属，放弃 Linux 兼容）。
-- 其它平台（Linux 等）→ `@py`（pyvisa-py）：内核自带 usbtmc，免驱动，跨平台。
+- Linux → **同样 `@ivi`**（2026-10-11 实测后改）：pyvisa-py(@py)+libusb 与 DS1104Z
+  固件 00.04.05.SP2 兼容性差（同一会话内第二次读波形起永久返回 inc=0）；
+  NI 官方 libvisa（挂在容器内）连续读数与 1200 点大块读取稳定。
+  ⚠️ 走 @ivi 时同样需要先解绑内核 usbtmc 驱动（设备重枚举后 udev 会自动绑回，
+  见 ScopeDevice.__init__ 内的注释；2026-10-12 实测）。
 
 仍可用 `SCOPE_VISA_BACKEND` 显式覆盖（一键回退）。默认后端枚举不到 USB 资源时，
 错误信息里会带上实际枚举结果，便于定位是「驱动问题」还是「后端选错」。
@@ -40,22 +43,28 @@ import pyvisa  # noqa: E402
 # RIGOL DS1000Z 系列 USB-TMC 的 VID/PID（与实测 USB\VID_1AB1&PID_04CE 一致）
 RIGOL_VID = "0X1AB1"
 DS1000Z_PID = "0X04CE"
+RIGOL_VID_INT = 0x1AB1
+DS1000Z_PID_INT = 0x04CE
 
 
 def _default_backend() -> str:
-    """平台感知的默认 VISA 后端（2026-10-08 改）。
+    """平台感知的默认 VISA 后端（2026-10-11 改）。
 
-    Windows → `@ivi`（NI-VISA）：本机已装 NI-VISA（visa64.dll 在 System32，NI 服务在跑）。
-      NI-VISA 的 USB-TMC 实现成熟，大块读取（1200 点波形 / BMP 截屏）稳定，
-      且超时具备完善复位语义，不会像 pyvisa-py + libusbK 那样一失败就必须拔插 USB。
-      代价：需要把示波器 USB 驱动换成 NI-VISA 可识别的类型（放弃 Linux 兼容）。
-    其它平台（Linux 等）→ `@py`（pyvisa-py）：内核自带 usbtmc，免驱动，跨平台。
+    **Windows 与 Linux 都走 `@ivi`（NI-VISA）**，理由是实测结论而非偏好：
+      NI-VISA 的 USB-TMC 实现成熟，大块读取稳定，超时具备完善复位语义。
+      反观 pyvisa-py(@py)+libusb 与 DS1104Z 固件 00.04.05.SP2 兼容性差：
+      实测同一会话内**第一次读波形成功、第二次起永久返回 inc=0**（preamble 全 0），
+      重设触发源/电平、新建 VISA 会话都救不回来，USB 复位只够恢复一次。
+      同型号机型在 GitHub pyvisa-py#414 也记录了 Linux 下 `:DISPlay:DATA?` 必超时。
+
+    Linux 侧用 `@ivi` 的两个前置条件（2026-10-11 在本机装好并实测通过）：
+      ① 宿主机装 NI-VISA runtime，`libvisa.so.26.5.0` + `ni-visa/` 通过 compose 挂进容器；
+      ② **必须先解绑内核 usbtmc 驱动**，否则资源被占用报 `VI_ERROR_RSRC_BUSY`
+         （`deploy/hardware-setup.sh` 第 8 步自动做，见 usb_env.detach_kernel_drivers）。
 
     仍允许 `SCOPE_VISA_BACKEND` 环境变量显式覆盖，保留一键回退能力。
     """
-    if os.name == "nt":
-        return "@ivi"
-    return "@py"
+    return "@ivi"
 
 
 def _loadable_backends() -> list[str]:
@@ -118,6 +127,23 @@ class ScopeDevice:
         self.backend = backend
         try:
             self._rm = pyvisa.ResourceManager(backend)
+            # Linux（@py 与 @ivi 都要）：先从内核 usbtmc 驱动解绑。
+            #
+            # 为什么 @py 需要（2026-10-11 实测）：libusb 不接管内核已绑定的接口
+            #   → `set_configuration()` 报 Errno 19，表现为「枚举得到、打不开」。
+            # 为什么 @ivi **也**需要（2026-10-12 实测）：
+            #   设备经 USB 重枚举（拔插/复位/内部重启）后，内核 udev 会把 usbtmc
+            #   自动绑回去；此时 NI-VISA 同样枚举不到该设备——`list_resources()`
+            #   只剩串口，真实运行报 "No RIGOL USB-TMC scope found"
+            #   （2026-10-12 实测：设备号 005→011 的重枚举后复现）。
+            #   显式解绑后 @ivi 立即恢复可见（实测 detached=1 → VISA 枚举成功）。
+            #   幂等且安全：未绑定时返回 0；Windows 上为 no-op（见 usb_env）。
+            try:
+                detached = usb_env.detach_kernel_drivers(RIGOL_VID_INT, DS1000Z_PID_INT)
+                if detached:
+                    print(f"[scope_visa] 已解绑 {detached} 个内核驱动接口（{backend}）")
+            except Exception as e:  # noqa: BLE001
+                print(f"[scope_visa] 内核驱动解绑跳过：{e}")
             target = (resource or "").strip()
             if not target:
                 # 未配置资源名（空串）→ 直接按 VID/PID 自动枚举
@@ -173,13 +199,19 @@ class ScopeDevice:
         resources = self._list_safe()
         if wanted and wanted in resources:
             return wanted
+        # 注意资源名不含 0x1AB1 字面量：pyvisa 把 VID 转成十进制厂商码，
+        # RIGOL(0x1AB1=6833) 在资源名里表现为 `USB0::6833::1230::<序列号>::0::INSTR`
+        # （见 acceptance.windows.json 实测值）。故两种写法都要匹配。
         usb = [r for r in resources if str(r).upper().startswith("USB")]
         if not usb:
             return None
         # 按 VID/PID 精确匹配（资源名大小写不一，统一大写比较）
+        vid_markers = (RIGOL_VID, "6833")  # "0X1AB1" 与十进制 "6833"
+        pid_markers = (DS1000Z_PID, "1230")  # "0X04CE" 与十进制 "1230"
         matches = [
             r for r in usb
-            if RIGOL_VID in str(r).upper() and DS1000Z_PID in str(r).upper()
+            if any(v in str(r).upper() for v in vid_markers)
+            and any(p in str(r).upper() for p in pid_markers)
         ]
         if not matches:
             # 退化：唯一 USB 资源（须恰好一个，避免误抓同厂商其它仪器）

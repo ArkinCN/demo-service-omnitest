@@ -30,6 +30,7 @@ import { assembleReport, computePassRate, fmtPassRate } from './assemble'
 import {
   downloadUrl,
   persistReportInstance,
+  removeTemplate,
   reportExists,
   resolveReportRunId,
   templateStatus,
@@ -87,9 +88,32 @@ function TemplateUploadRow() {
     try {
       const r = await uploadTemplate(f)
       setTpl({ ready: true, filename: r.filename, bytes: r.bytes })
-      st.setNotice(`客户模板已上传（${r.filename}，${r.bytes} 字节），重新生成报告将改用客户模板`)
+      // 提示语优先用后端返回的 note（按其**实际就绪状态**如实给：填充程序缺失时
+      // 会明说「现在生成会 blocked」，不再无条件写「重新生成即正式报告」）。
+      st.setNotice(r.note ?? `客户模板已上传（${r.filename}，${r.bytes} 字节）`)
     } catch (err) {
       st.setNotice(`模板上传失败：${err instanceof Error ? err.message : String(err)}`)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  /**
+   * 移除已上传的客户模板（2026-10-12 新增）。
+   *
+   * 为什么要有：生成报告被 blocked 时后端提示「删除已上传的客户模板以改用系统
+   * 内置模板」，但此前界面无此入口——补救不可达（实测：误传一份报告后，所有
+   * 报告生成全被 blocked 且无路可退）。移除后生成即回到系统内置模板路径。
+   */
+  const onRemove = async () => {
+    setBusy(true)
+    const st = useAppStore.getState()
+    try {
+      const r = await removeTemplate()
+      setTpl({ ready: false })
+      st.setNotice(r.note ?? (r.count > 0 ? '客户模板已移除，报告将改用系统内置模板' : '当前没有已上传的客户模板'))
+    } catch (err) {
+      st.setNotice(`移除模板失败：${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setBusy(false)
     }
@@ -105,7 +129,7 @@ function TemplateUploadRow() {
           ? `${tpl.filename}（${sizeText(tpl.bytes ?? 0)}）`
           : '系统内置（正式报告）'}
       </span>
-      <span className="ml-auto shrink-0">
+      <span className="ml-auto flex shrink-0 items-center gap-1.5">
         <input
           ref={inputRef}
           type="file"
@@ -113,6 +137,19 @@ function TemplateUploadRow() {
           className="hidden"
           onChange={onPick}
         />
+        {/* 移除按钮（2026-10-12 新增）：仅在「已上传」时出现。
+            补上 blocked 提示里「或删除已上传的客户模板」这条补救的界面入口。 */}
+        {tpl?.ready && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onRemove}
+            title="移除已上传的客户模板，报告将改用系统内置模板"
+            className="num cursor-pointer rounded-tpx border border-line px-2 py-1 text-[12px] text-t3 transition-colors hover:bg-p50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            移除
+          </button>
+        )}
         <button
           type="button"
           disabled={busy}

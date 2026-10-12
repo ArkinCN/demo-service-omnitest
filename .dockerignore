@@ -17,6 +17,12 @@ web/dist/
 **/.env
 **/.env.*
 !**/.env.example
+# ⚠️ 例外：web/.env 必须进构建上下文（2026-10-12 修「权限档位不生效」）。
+#   前端读 import.meta.env.VITE_AGENT_BACKEND 决定走真后端还是 mock：
+#   Vite 在**构建期**把它静态替换成字面量，拿不到 .env 就退化成 mock，
+#   dshAdapter 会被 tree-shaking 摇掉 → 权限档位/写工具确认/对话持久化全部失效。
+#   安全性：Vite 只注入 VITE_ 前缀变量，且本就随 JS 下发到浏览器，无额外暴露风险。
+!web/.env
 *.pem
 *.key
 id_rsa*

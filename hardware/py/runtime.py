@@ -297,11 +297,23 @@ def read_experiment_config(path: str | os.PathLike[str], *, allow_overlay: bool 
                 or t["supplyVoltageV"] is None or t["outputVoltageV"] is None
                 or t["outputVoltageV"] <= 0 or t["probeRatio"] not in (1, 10, 100)
                 or t["scaleVoltsPerDiv"] <= 0 or t["triggerLevelV"] is None
-                or t["timebaseSecondsPerDiv"] < 0.01 or t["timebaseSecondsPerDiv"] > 0.1
+                # ⚠️ 2026-10-12 下限从 0.01 放宽到 0.005（10ms/div → 5ms/div）：
+                #   原因：Linux + NI-VISA(@ivi) 下实测 **≥10ms/div 一律读不到波形**
+                #   （preamble 全 0；NORM/PEAK/AVERages/HRESolution 四种采集模式、
+                #   NORM/MAXimum/RAW 三种波形模式、多种触发电平与触发源都试过全失败）。
+                #   时基扫描实测：0.1~5ms/div 全部可读，10/20/50ms/div 全部 0 点。
+                #   故可用上限是 5ms/div —— 原下限 0.01 会让 tach 配置**永远无法通过校验**，
+                #   转速与 CH4 波形永远没有数据（这正是用户反馈的问题）。
+                #   代价：窗口从 0.6s（50ms/div×12）缩到 0.06s（5ms/div×12），
+                #   低转速档（周期 >30ms）可能装不满一个周期 → 由 PULSE_MIN_COUNT 放宽配合。
+                #   历史对照：Windows + 同版 NI-VISA 下 50ms/div 曾正常
+                #   （probe_ch4_008 实测 rpm=2142.86、21 个脉冲），故属 Linux 特有约束。
+                or t["timebaseSecondsPerDiv"] < 0.005 or t["timebaseSecondsPerDiv"] > 0.1
             ):
                 raise ConfigError(
                     "Tach requires verified sensor wiring/output/probe settings and an "
-                    "independent 10..100ms/div capture."
+                    "independent 5..100ms/div capture (下限 5ms/div：Linux 下更慢的时基"
+                    "无法通过 USB 读出波形，详见 runtime.py 注释)."
                 )
             if t.get("pulsesPerRevolution") is not None and (
                 t["pulsesPerRevolution"] <= 0 or t["pulsesPerRevolution"] != int(t["pulsesPerRevolution"])

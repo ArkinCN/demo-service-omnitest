@@ -51,6 +51,8 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
+from app.services import report_charts
+
 # ---------------------------------------------------------------- 常量
 
 #: 工作表名（简体；客户模板里是「LV 測試波型」这种繁体名）
@@ -184,6 +186,7 @@ def build_report_workbook(
     snapshot_counts: dict[str, int] | None,
     source_note: str,
     output: Path,
+    chart_data: dict[str, Any] | None = None,
 ) -> Path:
     """生成报告 xlsm，写到 `output`，返回该路径。
 
@@ -209,6 +212,10 @@ def build_report_workbook(
         source_note: 「报告来源」一行写什么（如「系统内置模板」）。**如实填**，
             不要写成自我表扬的话；这一行是给人核对出处用的。
         output: 输出路径（父目录会自动创建）
+        chart_data: 报告图表数据（2026-10-12 新增，`report_charts.collect` 的产出）。
+            `{"trend": [...折点...], "waves": {...}, "warnings": [...]}`。
+            None 或缺数据时，「六、趋势图」「七、波形图」两节如实写「（无）」，
+            **不产出空白图表**；图表数据落在隐藏数据表 `_图表数据` 里可审计。
     """
     wb = Workbook()
     ws = wb.active
@@ -340,6 +347,79 @@ def build_report_workbook(
     else:
         r = _kv(ws, r, "（无）", "本轮没有落任何产物", muted=True)
     r += 1
+
+    # ── ⑧ 趋势图与波形图（2026-10-12 新增：报告自带图表）
+    #
+    # 「在报告中会自带生成的趋势图和波形图」（用户需求原话）。
+    # 图表的生成方式、数据来源与「为什么用 Excel 原生图表而非 PNG」见
+    # `report_charts` 模块头。这里只负责排版与锚定：
+    #   · 图表数据落在一张**隐藏数据表**（_图表数据）里——可审计、可复算；
+    #   · 图表是活对象：客户在 Excel 里悬停即可读点、可缩放；
+    #   · 没数据时如实写「（无）」+ 原因，**不产出空白图表**。
+    #
+    # 行推进按图表物理高度估算（行高 15pt ≈ 0.53cm）：
+    #   趋势图 8.5cm ≈ 16 行 → 留 18 行；波形图 7cm ≈ 13 行 → 留 15 行。
+    _TREND_CHART_ROWS = 18
+    _WAVE_CHART_ROWS = 15
+
+    trend = (chart_data or {}).get("trend") or []
+    waves = (chart_data or {}).get("waves") or {}
+    chart_warnings = list((chart_data or {}).get("warnings") or [])
+
+    data_ws = None  # 隐藏数据表（有图才建）
+    data_row = 1
+
+    r = _section(ws, r, "六、趋势图")
+    if trend:
+        if data_ws is None:
+            data_ws = wb.create_sheet(report_charts.DATA_SHEET)
+            data_ws.sheet_state = "hidden"
+        ref = report_charts.write_trend_block(data_ws, data_row, trend)
+        data_row += len(trend) + 2
+        r = _kv(ws, r, "数据点数", f"{len(trend)} 个采集点（源：本轮 events.jsonl 逐次采集）")
+        # 纵轴口径**按实际出的图生成**（空列不再被写进说明，避免"说明里有、图里没有"）
+        r = _kv(ws, r, "纵轴口径", report_charts.trend_axis_note(ref))
+        r = _kv(ws, r, "缺测口径", "未采到的点为空白（图上断线），不补 0、不插值。", muted=True)
+        # 整列无数据的系列不绘图，但**必须写明**——否则读者会把"没采到"读成"值为 0"
+        skip_notes = report_charts.trend_skip_notes(ref)
+        if skip_notes:
+            r = _kv(ws, r, "未出图说明", "；".join(skip_notes) + "（缺测不等于 0）", muted=True)
+        trend_charts = report_charts.build_trend_chart(data_ws, ref)
+        if not trend_charts:
+            r = _kv(ws, r, "（无图）", "趋势数据每一列都是空白，无法成图（仅写入数据表备查）", muted=True)
+        for c in trend_charts:
+            ws.add_chart(c, f"A{r}")
+            r += _TREND_CHART_ROWS
+    else:
+        r = _kv(ws, r, "（无）", "本轮没有趋势数据（未找到 events.jsonl 或其中无采集记录）", muted=True)
+        r += 1
+
+    r = _section(ws, r, "七、波形图")
+    if waves.get("channels"):
+        if data_ws is None:
+            data_ws = wb.create_sheet(report_charts.DATA_SHEET)
+            data_ws.sheet_state = "hidden"
+        r = _kv(ws, r, "采集来源", str(waves.get("cycle") or "（未知）"))
+        r = _kv(
+            ws, r, "纵轴口径",
+            "每通道两张图：前一张为**全程**（整采集窗），后一张为**放大**"
+            "（时间范围更小、便于人眼读数）——"
+            "PWM 三通道放大到 80 μs（≈2 个 25 kHz 周期，方波边沿完整展开），"
+            "转速通道放大到 10 ms 并对准脉冲谷底（全程视图下脉冲只占宽度约 3%，肉眼难辨）。"
+            "四通道量程差异大，故一通道一图（同轴会把小信号压平）；"
+            "横轴单位按窗口自适应（μs/ms）。",
+        )
+        info = report_charts.write_wave_block(data_ws, data_row, waves)
+        for c in report_charts.build_wave_charts(data_ws, info):
+            ws.add_chart(c, f"A{r}")
+            r += _WAVE_CHART_ROWS
+    else:
+        r = _kv(ws, r, "（无）", "本轮没有可用的波形数据（未做示波器采集或采集文件缺失）", muted=True)
+        r += 1
+
+    if chart_warnings:
+        # 图表数据的诚实说明（缺文件/空文件等）——不吞、不美化。
+        r = _kv(ws, r, "图表数据说明", "；".join(chart_warnings)[:500], muted=True)
 
     # ── 收尾：冻结标题行 + 页签色
     #

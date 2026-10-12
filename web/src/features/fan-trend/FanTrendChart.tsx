@@ -274,6 +274,14 @@ export function FanTrendChart({ plan, samples, height = 360, onChartReady }: Fan
         {
           type: 'value',
           min: 0,
+          // 转速轴上限（2026-10-12 用户反馈修）：原用自动量程（≈1.1×数据max），
+          // 实测 100% 档转速 2222rpm 落在轴顶 ~90% 处，与左轴 100% 的命令占空比线
+          // 在图上视觉重合（两条都贴顶、分不清哪条是哪条）。
+          // 处置：固定下限 3600 —— 转速线整体下移到图的 ~62% 高度，与占空比线
+          // 拉开明显间距；3600 = 本台架满载（≈2222rpm）的 1.62 倍，留足视觉余量。
+          // 溢出保护 Math.max(3600, v.max×1.15)：未来换风扇/维修后若转速更高，
+          // 轴上限随数据自动扩展，**绝不裁剪曲线**（裁剪会把超范围的线切平顶）。
+          max: (v: { max: number }) => Math.max(3600, Math.ceil((v.max ?? 0) * 1.15)),
           position: 'right',
           name: '转速 (rpm)',
           nameTextStyle: { fontSize: 10, align: 'right' },

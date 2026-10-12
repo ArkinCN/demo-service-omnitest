@@ -29,7 +29,7 @@
     "resource": "",
     "expectedIdentity": "RIGOL TECHNOLOGIES,DS1104Z Plus,DS1ZC271600575,00.04.05.SP2",
     "inputImpedanceOhm": 1000000,
-    "pwmTimebaseSecondsPerDiv": 2E-05,
+    "pwmTimebaseSecondsPerDiv": 2e-05,
     "triggerLevelV": 2.5,
     "channels": {
       "current": {
@@ -87,7 +87,10 @@
       "supplyVoltageRangeV": [
         12,
         24
-      ]
+      ],
+      "_timebase_comment": "2026-10-12 晚 终修：回 0.05（50ms/div，窗口 0.6s）。当日早间『Linux 下 ≥10ms/div 读不到数据』的结论经复测【不成立】——那是两个已修 bug 的叠加假象：(a) :RUN 后未等扫描周期就 :STOP（慢时基扫描需 12×timebase=0.6s；该等待已按 max(0.6, 12×timebase×10) 实现）；(b) CH4 自触发电平 0.9V 永不满足（已改 triggerSource=pwm）。两处修复后时基复核（裸命令 + 项目真实采集函数两轮）：10/20/50 ms/div 全部可读、1200 点完整。故回 50ms/div：窗内低转速档（30%·周期 ~81ms）也能装 7 个周期，【四档转速全部可测】（实测 30/50/70/100% → 741/1250/1690/2222 rpm，与历史 Windows 值一致）。代价：tach 单次采集等待从 0.6s 增至 6s（扫描周期×10），整轮时长增加约 60~80s。",
+      "triggerSource": "pwm",
+      "_trigger_comment": "2026-10-12 增：触发源指向 PWM 通道，而不用转速通道自己。原因：实测 CH4 信号峰值仅 0.12~0.16V（传感器规格标称 1.8V），而 tach.triggerLevelV 配的是 0.9V → 边沿条件永不满足 → 整档 0 点、转速恒为 None。改用 PWM 通道触发后，实测 4/4 全成功、每次 1200 点，CH4 波形正常落盘。⚠️ 若日后修好传感器上拉（使 CH4 峰值回到 ~1.8V），可删掉本字段恢复自触发。"
     }
   }
 }

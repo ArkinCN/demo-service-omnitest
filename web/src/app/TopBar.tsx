@@ -35,7 +35,7 @@ import { RUN_PHASE_LABEL, flowStateOf, useAppStore } from '../state/useAppStore'
 import { useFlowActions } from '../features/redline'
 import { useStageReturnCue } from '../features/automation/useStageReturnCue'
 import { useFlowBarScale } from '../features/shared/useFlowBarScale'
-import { FlowSegLink, segPhaseOf } from '../features/shared/FlowSegLink'
+import { FlowSegLink, RUN_TUNE_LOOP_SEG, segPhaseOf } from '../features/shared/FlowSegLink'
 import { ProductCascader } from './ProductCascader'
 
 /** 动作条图标：按动作 id 映射，缺省给一枚通用图标 */
@@ -123,7 +123,7 @@ function FlowStepper() {
   })
 
   // ── 滑动高亮块：测量当前激活项相对 nav 的 offsetLeft/offsetWidth ──────────────
-  const navRef = useRef<HTMLElement>(null)
+  const navRef = useRef<HTMLDivElement>(null)
   // null = 尚未测量 / 非流程页（不显示高亮），避免首帧从 0 位滑入的抖动
   const [pill, setPill] = useState<{ x: number; w: number } | null>(null)
 
@@ -182,7 +182,7 @@ function FlowStepper() {
   return (
     <div ref={slotRef} className="flex min-w-0 flex-1 items-center justify-center">
     <nav
-      ref={(el) => {
+      ref={(el: HTMLDivElement | null) => {
         navRef.current = el
         barRef.current = el
       }}
@@ -223,7 +223,13 @@ function FlowStepper() {
              · 未到达段（运行中）纯静态暗线，无箭头（暗色小箭头已按用户指令移除）；
              · 空闲态全部静态、无箭头（完全安静）；
              · 退回段＝「调优运行」这一步之前的连接段（启动测试 → 调优运行），退回时反向。
-           平滑消失由 CSS（.flow-seg-anim + data-on 的 opacity/scale 过渡）承担。 */
+           平滑消失由 CSS（.flow-seg-anim + data-on 的 opacity/scale 过渡）承担。
+           ⚠️ 2026-10-10 第三轮（需求单编号 1）：段 3 传loopSeg=RUN_TUNE_LOOP_SEG
+           → 当前节点为「启动测试」或「调优运行」时，该段走'loop' 相位 =
+           **上下双轨同时反向流动**（上线右向 1.5s / 下线左向 0.9s，均为品牌绿），
+           顶栏不再播放该段的红色退回闪烁；进「测试报告」自然落 done → 双线静止。
+           ⚠️ 运行台 AutomationStageFlow 同样传 loopSeg：自动化运行时顶栏被
+           z-50 全屏浮层遮住，用户实际看的是运行台那条，两处需同口径。 */
         const leftId = i > 0 ? FLOWS[i - 1].id : null
         const leftDone =
           !!leftId &&
@@ -239,6 +245,7 @@ function FlowStepper() {
                 running: autoRunning,
                 returning,
                 isReturnSeg: f.id === 'tune',
+                loopSeg: RUN_TUNE_LOOP_SEG,
               })
             : null
         return (
@@ -249,6 +256,8 @@ function FlowStepper() {
                 phase={segPhase}
                 testId="flow-stepper-link"
                 arrowTestId="flow-seg-arrow"
+                // 闭环折线端点对齐：顶栏节点 NavLink 带 px-8 内边距（scale-1 口径）
+                edgePadPx={8}
               />
             ) : null}
             <NavLink

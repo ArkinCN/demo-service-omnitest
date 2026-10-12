@@ -34,6 +34,29 @@ from fan_serial import CancelSignal, FanSession, SerialWire
 from scope_visa import ScopeDevice
 
 
+# ---------------------------------------------------------------------------
+# 满载档的物理占空比上限（2026-10-12）
+# ---------------------------------------------------------------------------
+# 为什么 100% 档实际只跑 99%：
+#   100% 占空比下 PWM 输出**恒高电平、没有边沿**，示波器按边沿触发（CH3 为触发源）
+#   永远等不到触发点 → 该档读不到波形（preamble 全 0、`inc=0`），整档必然失败。
+#   实测：配置 100% 时该档 0 个 CSV，而 99% 仍有边沿，可正常采集。
+#
+# 口径（配置与展示不动，只动下发指令）：
+#   · **配置** `experiment.dutiesPercent` 仍是 100 —— 业务语义就是「满载档」；
+#   · **页面展示**仍是 100% —— 前端读的就是配置值，无需任何映射；
+#   · **实际下发**给 UNO 的指令用 99 —— 由此规避恒高电平；
+#   · **数据记录**如实留痕：commands.csv 里记的是 `SET 99`（真实指令），
+#     commandedPwmPercent 仍是 100（档位语义），实测占空比如实显示约 99%。
+# 这样「实跑 99 / 展示 100」只需本文件一处转换，前端与数据文件都不用改。
+PHYSICAL_DUTY_CAP = 99
+
+
+def _physical_duty(duty: int) -> int:
+    """档位配置值 → 实际下发给 UNO 的占空比（满载档降到 PHYSICAL_DUTY_CAP）。"""
+    return PHYSICAL_DUTY_CAP if duty >= 100 else duty
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -152,9 +175,13 @@ class Runner:
                         cycle_done = False
                         break
                     duty = int(d)
-                    ack = self.fan.command(f"SET {duty}", 2000)
+                    # 档位语义用 duty（100），实际指令用 physical（99）——
+                    # 见文件头 PHYSICAL_DUTY_CAP 的说明。log_command 记真实指令，
+                    # 便于事后核对「配置档位 vs 实际下发」。
+                    physical = _physical_duty(duty)
+                    ack = self.fan.command(f"SET {physical}", 2000)
                     hold_start = time.monotonic()
-                    self.log_command(duty, f"SET {duty}", ack, "acknowledged")
+                    self.log_command(duty, f"SET {physical}", ack, "acknowledged")
                     self.emit("step_started", {"cycle": self.cycle, "dutyPercent": duty,
                                                "targetHoldSeconds": exp["holdSeconds"]})
                     while (time.monotonic() - hold_start) < exp["settleSeconds"] and not self.stop_requested():
@@ -211,7 +238,11 @@ class Runner:
                         cycle_done = False
                         break
                     ack = self.fan.command("STATUS", 2000)
-                    if ack != f"OK DUTY {duty}":
+                    # ⚠️ 校验用 `physical`（实际下发值）而非 `duty`（档位语义值）：
+                    #   满载档下发的是 99，板子如实回 "OK DUTY 99"；若拿 duty=100 去比，
+                    #   会误判成 "Unexpected board status: OK DUTY 99" 让整轮 failed
+                    #   （2026-10-12 实测踩到）。见 PHYSICAL_DUTY_CAP 的说明。
+                    if ack != f"OK DUTY {physical}":
                         raise RuntimeError(f"Unexpected board status: {ack}")
                     self.log_command(duty, "STATUS", ack, "board_report")
                     self.emit("step_completed", {"cycle": self.cycle, "dutyPercent": duty,

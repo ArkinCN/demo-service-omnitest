@@ -18,7 +18,6 @@ import { useAppStore } from '../../state/useAppStore'
 import type {
   AutomationLiveState,
   AutomationLogEntry,
-  AutomationSummary,
   AutomationToolState,
 } from '../../state/useAppStore'
 import type { BackendVerdict } from '../flow-run/api'

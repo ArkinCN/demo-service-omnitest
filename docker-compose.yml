@@ -30,6 +30,59 @@ services:
       #    故把宿主机的 web/ 与 data/ 只读挂到对应层级。
       - ./web:/srv/omnitest/c/web:ro
       - ./data:/srv/omnitest/c/data:ro
+      # ---- 硬件采集（部署方案 A：硬件挂 Linux 本体机，容器内 subprocess 调本机脚本）----
+      # fan_executor.py:57 用 parents[3]/"hardware"/"py" 定位入口脚本，
+      # 在容器内解析为 /srv/omnitest/c/hardware/py，与本挂载点一致，**无需改代码**。
+      # 采集结果由 config 的 output.root="../runs" 落到 hardware/v0.6/runs/，
+      # 已包含在本挂载内（无需再单独挂 runs/，嵌套挂载反而会遮蔽父目录）。
+      - ./hardware:/srv/omnitest/c/hardware
+      # ---- libusb 访问 raw USB 节点（示波器采集必需）----
+      # 起因（2026-10-11 实测）：pyvisa-py 的 USB 通路底层是 pyusb/libusb，
+      # 它读 sysfs 枚举没问题，但**打开设备必须能访问 /dev/bus/usb/BBB/DDD**。
+      # 缺这个挂载时 pyusb 只能"看见"设备，一 set_configuration() 就 Errno 19。
+      # 实测加上后即可枚举出 USB0::6833::1230::DS1ZC271600575::0::INSTR。
+      - /dev/bus/usb:/dev/bus/usb
+      # ---- NI-VISA runtime（@ivi 后端）----
+      # 2026-10-11：pyvisa-py(@py)+libusb 与 DS1104Z 兼容性差（实测同一会话内
+      # 第二次读波形起永久返回 inc=0，USB 复位只够恢复一次）。改用 NI 官方
+      # libvisa（装在宿主机 /usr/lib/x86_64-linux-gnu/ni-visa/），容器内通过
+      # 挂载 + VISA_LIBRARY_PATH 使用，走厂商验证过的 USB-TMC 实现。
+      - /usr/lib/x86_64-linux-gnu/libvisa.so.26.5.0:/usr/lib/x86_64-linux-gnu/libvisa.so.26.5.0:ro
+      # 软链到标准名：pyvisa 的 @ivi 只按 `libvisa.so` 这个名字找库，
+      # 不认带版本号的 `libvisa.so.26.5.0`（找不到时报错且 errs 为空列表，很难排查）。
+      # 宿主上 NI 自己装的 libvisa.so 是真实文件，这里挂的是软链，故写到 /usr/lib 本级目录。
+      - /opt/nivisa/libvisa.so:/usr/lib/x86_64-linux-gnu/libvisa.so:ro
+      - /usr/lib/x86_64-linux-gnu/ni-visa:/usr/lib/x86_64-linux-gnu/ni-visa:ro
+      - /etc/ni-visa:/etc/ni-visa:ro
+      # /sys 只读：libusb 的 hotplug 订阅需要读 sysfs 的 uevent 节点。
+      - /sys:/sys:ro
+    # 直通硬件设备节点。⚠️ 三点务必注意：
+    #   1) 设备不存在时 `docker compose up` 会直接失败（报 error gathering device
+    #      information），后端将**连带起不来**——启动前务必先插好硬件。
+    #   2) 只写 `/dev/xxx`（不写 host:container）表示容器内沿用同名节点路径。
+    #   3) 示波器走 libusb 通路（见 usb_env.detach_kernel_drivers），
+    #      **不需要 /dev/usbtmc0**：该节点在本机内核上不会随设备重枚举而重建
+    #      （实测 authorized 翻转后即消失），写进 devices 会让容器直接起不来。
+    devices:
+      - /dev/ttyUSB0    # UNO 风扇 PWM（CH340，1a86:7523）— 必需，串口风扇控制
+      # 显式 cgroup 授权 RIGOL 的 raw USB 节点：仅 -v 挂载时容器能 ls 到文件，
+      # 但 libusb_open 会被设备 cgroup 拒绝（Errno 5）。
+      # ⚠️ 设备号 BBB/DDD 随 USB 重插会变（当前 001/005）。若 compose 报
+      #    "error gathering device information"，用 deploy/hardware-setup.sh
+      #    重新探测并更新这两位数字。
+      - /dev/bus/usb/001/005:/dev/bus/usb/001/005
+    # 附加组：访问 /dev/ttyUSB*、/dev/usbtmc* 的成员组。
+    # 当前镜像以 root 运行，group_add 实际不生效，属为将来加 USER 预留；
+    # 真正生效的是宿主机 udev 规则的 MODE=0666（见 deploy/hardware-setup.sh）。
+    group_add:
+      - dialout
+      - plugdev
+    # ---- NI-VISA runtime 环境（@ivi 后端）----
+    # 2026-10-11：示波器改走 NI 官方 libvisa（libvisa-py 的 @ivi 后端）。
+    # Linux 版 NI-VISA 需要自己指定库路径，pyvisa 才会去加载上面挂进来的那份。
+    environment:
+      VISA_LIBRARY_PATH: "/usr/lib/x86_64-linux-gnu/libvisa.so.26.5.0"
+      NIVISA_NO_CACHE: "1"
     mem_limit: 1g
     cpus: "1.0"
     healthcheck:

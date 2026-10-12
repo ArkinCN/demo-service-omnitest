@@ -4,6 +4,7 @@
 # ============================================================
 
 import multiprocessing
+import os
 
 # ---- 网络 ----
 bind = "0.0.0.0:5100"
@@ -28,9 +29,21 @@ timeout = 300
 graceful_timeout = 60
 keepalive = 5
 
-# 定期回收 worker，缓解潜在内存增长（1G 内存限制下的保守设置）
-max_requests = 2000
-max_requests_jitter = 200
+# 定期回收 worker，缓解潜在内存增长（1G 内存限制下的保守设置）。
+#
+# ⚠️ 2026-10-12 由 2000/200 大幅上调（**重要**）：实测原阈值在正常运行中段就触发
+#    worker 优雅替换（uvicorn 把它透传为 limit_max_requests；某 worker 服务到第
+#    2099 个请求时被换下，master 存活、日志无异常字样）。替换瞬间会：
+#      ① 进程内存里的运行状态与**单设备锁**全部丢失 → 前端轮询旧轮次报
+#         「运行不存在」，重试请求与仍在跑的真机轮次撞车（示波器
+#         VI_ERROR_RSRC_BUSY）——2026-10-12 自动化失败事故的触发源；
+#      ② 前端恰好落在替换窗口的轮询可能读到 404（现已由 fan_executor 的
+#         磁盘重建 + 跨进程锁兜底，但替换本身仍是抖动源，应尽量少发生）。
+#    上调后回收间隔从「约 1 小时」拉到数天级（按本部署实测峰值 ~33 req/min 估算），
+#    兼顾内存保守策略与运行连续性。如需调整可用环境变量覆盖；
+#    gunicorn 语义：0 = 不按请求数回收。
+max_requests = int(os.environ.get("GUNICORN_MAX_REQUESTS") or 50000)
+max_requests_jitter = int(os.environ.get("GUNICORN_MAX_REQUESTS_JITTER") or 2000)
 
 # ---- 日志 ----
 # 统一落到 /var/log/demo/（由 docker-compose 挂载宿主机同名目录）
@@ -47,8 +60,6 @@ proc_name = "omnitest"
 preload_app = True
 
 # 若设了环境变量 GUNICORN_WORKERS，则以其为准（部署方可临时覆盖，仍建议保持 1）
-import os  # noqa: E402
-
 if os.getenv("GUNICORN_WORKERS"):
     workers = int(os.environ["GUNICORN_WORKERS"])
 

@@ -1272,7 +1272,7 @@ export const useAppStore = create<AppState>((set) => ({
           const s = useAppStore.getState()
           return {
             logs: s.automationLogs,
-            stages: s.automationStages.map((x) => ({ id: x.id, name: x.name, status: String(x.status) })),
+            stages: s.automationStages.map((x) => ({ id: x.id, name: x.name, status: x.status })),
             runStatus: s.automationRunStatus,
             runId: s.automationSummary.runId,
           }
@@ -1828,6 +1828,7 @@ const updateProgress = () => {
         // 逐档完成 → 发一条 done 动作（带该档实测转速，缺测则如实写「未采集」）
         for (const s of samples) {
           const duty = s.commanded_pwm_pct
+          if (duty == null) continue
           if (s.measurement_finished_t_s == null) continue
           if (reportedDoneDuties.has(duty)) continue
           reportedDoneDuties.add(duty)

@@ -20,7 +20,7 @@
    （`startAutomation` 里也是函数内 `await import(...)`）。
    =========================================================================== */
 import { judgeNonFatal, type JudgeReport } from './nonFatalJudge'
-import type { AutomationRunStatus } from './automationOrchestrator'
+import type { AutomationRunStatus, AutomationStage } from './automationOrchestrator'
 import type { AutomationLogEntry } from '../../state/useAppStore'
 
 /** 已上报过的 runId 集合（模块级）：保证每轮仅上报一次 */
@@ -122,7 +122,7 @@ export function scheduleJudgeUpload(args: {
   /** 取快照：此刻重新读 store（日志/阶段/终态可能仍在变） */
   snapshot: () => {
     logs: AutomationLogEntry[]
-    stages: { id: string; name: string; status: string }[]
+    stages: Pick<AutomationStage, 'id' | 'name' | 'status'>[]
     runStatus: string
     runId: string | null
   }
