@@ -18,7 +18,7 @@
        不因「图不好看」而伪造；
      - 横轴单位自动从秒换算为 μs（PWM 波形窗口仅约 0.24ms，用 s 读数不便）。
    =========================================================================== */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import * as echarts from 'echarts/core'
 import { LineChart } from 'echarts/charts'
 import {
@@ -133,12 +133,151 @@ function pickTimeUnit(maxAbsS: number): { scale: number; unit: string } {
   return { scale: 1, unit: 's' }
 }
 
+/**
+ * 通道名称条（2026-10-13，需求单编号 1）：波形图上方的水平通道名，消除重叠。
+ *
+ * 背景：原先通道名是各 y 轴的轴名（nameLocation:'end'），多轴时横向挤在网格
+ * 顶带互相叠字（用户实拍截图红框处）。现搬出 canvas，由 React 渲染一条水平名称条，
+ * 与图例当初搬出 canvas 的思路一致。
+ *
+ * 空间不足时的降级优先级（需求单确认口径，按顺序）：
+ *   1. 缩小字号（11px → 10px），尽量塞进一行；
+ *   2. 仍放不下 → 允许换行（flex-wrap，自然两行内）；
+ *   3. 仍放不下（单条自身比容器还宽）→ 该条省略号显示，悬停（title）看完整名称。
+ *
+ * 实现：先在一条隐藏的测量行里按 11px 排出全部名称，量出总宽与单条最宽，
+ * 据此判定档位；容器宽度变化（ResizeObserver）时重判。
+ *
+ * 颜色（编号 2）：每个通道名前方画一个小色块，文字同色。颜色从曲线配置
+ * `CH_COLOR` 读取（series 的 itemStyle/lineStyle 也读同一份），**不硬编码**，
+ * 保证名称条与曲线颜色天然一致。
+ */
+type NameBarMode = 'full' | 'small' | 'wrap' | 'truncate'
+
+export interface ChannelNameItem {
+  /** 稳定 key（用角色），避免靠数组下标对齐 */
+  key: string
+  /** 完整名称，如「CH1 电流探头」 */
+  label: string
+  /** 通道配色，从 CH_COLOR 读取，与对应曲线颜色一致 */
+  color: string
+}
+
+function ChannelNameBar({ items }: { items: ChannelNameItem[] }) {
+  const boxRef = useRef<HTMLDivElement>(null)
+  const measureRef = useRef<HTMLDivElement>(null)
+  const [mode, setMode] = useState<NameBarMode>('full')
+
+  useLayoutEffect(() => {
+    const box = boxRef.current
+    const measure = measureRef.current
+    if (!box || !measure) return
+    // 判档：总宽（11px 口径）与可用宽比较；10px 按字面比例 10/11 估算（同一字体线性缩放）。
+    const decide = (): NameBarMode => {
+      const avail = box.clientWidth
+      if (avail <= 0) return 'full'
+      const total = measure.scrollWidth
+      if (total <= avail) return 'full'
+      if (total * (10 / 11) <= avail) return 'small'
+      // 换行：总宽 ≤ 2×可用宽且没有任何单条超宽时，flex-wrap 能在两行内装下
+      const perChild = Array.from(measure.children).map(
+        (el) => (el as HTMLElement).scrollWidth,
+      )
+      if (total <= avail * 2 && perChild.every((w) => w <= avail)) return 'wrap'
+      return 'truncate'
+    }
+    setMode(decide())
+    const ro = new ResizeObserver(() => setMode(decide()))
+    ro.observe(box)
+    return () => ro.disconnect()
+  }, [items])
+
+  const itemStyle: React.CSSProperties =
+    mode === 'truncate'
+      ? { minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }
+      : { whiteSpace: 'nowrap' }
+
+  return (
+    <div ref={boxRef} style={{ position: 'relative', width: '100%' }}>
+      {/* 隐藏测量行：恒定 11px、不换行，只用于量宽，不参与视觉 */}
+      <div
+        ref={measureRef}
+        aria-hidden
+        style={{
+          position: 'absolute',
+          visibility: 'hidden',
+          left: 0,
+          top: 0,
+          display: 'flex',
+          gap: 14,
+          whiteSpace: 'nowrap',
+          fontSize: 11,
+          pointerEvents: 'none',
+        }}
+      >
+        {items.map((it) => (
+          <span key={it.key}>
+            <span
+              style={{
+                display: 'inline-block',
+                width: 8,
+                height: 8,
+                borderRadius: 2,
+                marginRight: 4,
+                background: it.color,
+              }}
+            />
+            {it.label}
+          </span>
+        ))}
+      </div>
+      {/* 可见名称条：水平排列；truncate 档让每条均分宽度并截断，title 兜底完整名。
+          文字颜色与前方小色块同色（编号 2），从 CH_COLOR 读取，不硬编码。 */}
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: mode === 'wrap' ? 'wrap' : 'nowrap',
+          gap: '2px 14px',
+          fontSize: mode === 'full' ? 11 : 10,
+          lineHeight: '16px',
+          overflow: 'hidden',
+        }}
+      >
+        {items.map((it) => (
+          <span
+            key={it.key}
+            title={it.label}
+            style={{
+              ...itemStyle,
+              flex: mode === 'truncate' ? '1 1 0' : undefined,
+              color: it.color,
+            }}
+          >
+            <span
+              style={{
+                display: 'inline-block',
+                width: 8,
+                height: 8,
+                borderRadius: 2,
+                marginRight: 4,
+                verticalAlign: 'middle',
+                background: it.color,
+              }}
+            />
+            {it.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function FanWaveChart({ wave, height = 360, onChartReady, hiddenRoles }: FanWaveChartProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<echarts.ECharts | null>(null)
   const [compact, setCompact] = useState<'full' | 'slim'>('full')
-  // 上一次的结构签名（y 轴数:分区数:x 轴数）：用于判断是否需要 notMerge 全量重建。
-  const axisCountRef = useRef('')
+  // 上一次的 y 轴数量：用于判断是否需要 notMerge 全量重建（轴数变化时）。
+  const axisCountRef = useRef(0)
   // 上一次套用初始窄窗的采集 id：仅当采集变化时重设视野，避免每 tick 拽回用户缩放。
   const windowKeyRef = useRef<string>('')
   // 用 ref 存回调，避免 parent 每次重渲换函数导致 init effect 反复重建图表。
@@ -176,51 +315,28 @@ export function FanWaveChart({ wave, height = 360, onChartReady, hiddenRoles }: 
     if (!chart) return
 
     const channels = wave?.channels ?? []
-    // 横轴单位按「上/下分区」各自计算（见下方分区说明）——不再用全局单一单位：
-    // PWM 域（μs）与转速域（ms）相差 250 倍，共用一套单位必有一区不可读。
+    // 横轴单位：取所有可用通道里 |t| 最大者决定
+    let maxAbs = 0
+    for (const c of channels) {
+      if (!c.available || !c.time_s?.length) continue
+      for (const t of c.time_s) maxAbs = Math.max(maxAbs, Math.abs(t))
+    }
+    const { scale, unit } = pickTimeUnit(maxAbs || 1e-3)
 
     // 可用通道（有真实数据）——下方 y 轴、初始视野窗口、series 都要用，故先声明。
     const drawn = channels.filter((c) => c.available && c.time_s?.length)
 
-    // ── 分区（2026-10-12 用户反馈「波形图缺少 CH4 数据」后重构）──
-    //
-    // 为什么分区：PWM 档采集窗约 240μs，转速档采集窗约 60ms，相差 250 倍。
-    // 单 x 轴 + 单视野下，2026-10-09 为看清 25kHz 方波而设的初始窄窗（80μs）
-    // 会把 CH4 整条曲线（60ms 跨度）挤出视野——图上只有 3 条线、tooltip 只有
-    // 3 个通道（用户截图实证，且该缺陷自 2026-10-09 窄窗上线起就存在）。
-    // 处置：CH4 单独占**下方绘图区**（gridIndex=1 + 独立 x 轴，ms 单位、全窗），
-    // CH1~CH3 保持**上方绘图区**（μs 单位、80μs 初始窄窗）。两区各自清晰，
-    // 4 通道同时完整可见；滚轮缩放按区独立生效，互不拽动。
-    const isTachRole = (role: string) => role === 'tach'
-    const upperDrawn = drawn.filter((c) => !isTachRole(c.role))
-    const lowerDrawn = drawn.filter((c) => isTachRole(c.role))
-    const hasLower = lowerDrawn.length > 0
-
-    // 上/下区各自的横轴单位与缩放（数据纪律：按本区通道真实时间跨度决定，不猜）。
-    const pickUnit = (chs: typeof drawn) => {
-      let m = 0
-      for (const c of chs) {
-        if (!c.time_s?.length) continue
-        for (const t of c.time_s) m = Math.max(m, Math.abs(t))
-      }
-      return pickTimeUnit(m || 1e-3)
-    }
-    const upperUnit = pickUnit(upperDrawn)
-    const lowerUnit = pickUnit(lowerDrawn)
-    const scaleOf = (role: string) => (isTachRole(role) ? lowerUnit.scale : upperUnit.scale)
-
-    // 默认视野窗口（2026-10-09）：上区只显示约 2 个 PWM 周期的时宽，让方波看得清。
+    // 默认视野窗口（2026-10-09）：只显示约 2 个 PWM 周期的时宽，让方波看得清。
     //
     // 为什么：PWM 载波 25kHz（周期 40μs），采集窗 1200 点 ≈ 240μs ≈ 6 个周期；
     // 全窗铺满卡宽（约 500px）时一个周期只有 ~80px，方波挤成密集竖条（像毛刺）。
     // 取两周期（80μs）后边沿清晰；全窗仍可用滚轮缩小看到。
     // 实现：把这个窗口作为 **dataZoom 的初始 startValue/endValue**（不是 xAxis.min/max，
     // 那样会钳死轴范围、缩不出去）；且只在采集变化时给一次，避免每 tick 拽回用户缩放。
-    // ⚠️ 窗口按**上区通道**的时间跨度算（下区转速域独立全窗，见分区说明）。
     const span = (() => {
       let lo = Infinity
       let hi = -Infinity
-      for (const c of upperDrawn) {
+      for (const c of drawn) {
         if (!c.time_s?.length) continue
         lo = Math.min(lo, c.time_s[0])
         hi = Math.max(hi, c.time_s[c.time_s.length - 1])
@@ -229,9 +345,8 @@ export function FanWaveChart({ wave, height = 360, onChartReady, hiddenRoles }: 
     })()
     const targetSpan = Math.min(span?.width ?? 8e-5, 8e-5) // 80μs = 2 个 25kHz 周期
     const center = span ? (span.lo + span.hi) / 2 : 0 // 取时间轴中心（触发点附近最完整）
-    // 视野值换算用**上区**单位（μs）——窄窗本来就属于上区 PWM 域
-    const viewMin = (center - targetSpan / 2) * upperUnit.scale
-    const viewMax = (center + targetSpan / 2) * upperUnit.scale
+    const viewMin = (center - targetSpan / 2) * scale
+    const viewMax = (center + targetSpan / 2) * scale
     // 采集变化（capture_id 变了 / 首次出图）才重设视野；同一采集的刷新沿用用户缩放。
     const windowKey = wave?.capture_id ?? ''
     const applyInitialWindow = windowKeyRef.current !== windowKey
@@ -244,10 +359,8 @@ export function FanWaveChart({ wave, height = 360, onChartReady, hiddenRoles }: 
     // 约 0~5V。同轴绘制时 −60V 的 PWM 会把其它三条压成贴底直线（实测截图：
     // CH1/CH2 完全看不见）。一通道一轴后各自按自身量程铺满，四条都看得清。
     // 轴在左右两侧交替摆放，避免左边堆满刻度。
-    // y 轴索引：上区（PWM 三通道）轴在前，下区（转速）轴在后
     const roleIndex = new Map<string, number>()
-    upperDrawn.forEach((c, i) => roleIndex.set(c.role, i))
-    lowerDrawn.forEach((c, i) => roleIndex.set(c.role, upperDrawn.length + i))
+    drawn.forEach((c, i) => roleIndex.set(c.role, i))
 
     // 把后端返回的通道与「期望的 4 个角色」对齐：后端没返回的角色（如 tach 未启用）
     // 也补一条空 series，图例里如实写「（未采集）」，保证 4 通道都交代清楚。
@@ -268,16 +381,12 @@ export function FanWaveChart({ wave, height = 360, onChartReady, hiddenRoles }: 
       // 新旧 series。若不给 id，通道「未采集 ↔ 有数据」切换会让索引错位、出现残影。
       // 用 role 作 id（4 个角色恒定且唯一），与显示名无关。
       const id = `wave-${role}`
-      // x 轴归属：转速通道走下区（xAxisIndex 1，仅在下区确实存在时）；
-      // 其余（含未采集的空 series）走上区。空 series 若绑到不存在的轴会直接报错。
-      const xAxisIndex = hasLower && isTachRole(role) ? 1 : 0
       // 缺采集：不画线，图例项显示「（未采集）」——绝不伪造平线
       if (!data || !data.available || !data.time_s?.length) {
         return {
           id,
           name: `${label}（未采集）`,
           type: 'line' as const,
-          xAxisIndex,
           data: [] as [number, number][],
           itemStyle: { color },
           lineStyle: { color, width: 1, opacity: 0.35 },
@@ -289,7 +398,6 @@ export function FanWaveChart({ wave, height = 360, onChartReady, hiddenRoles }: 
         id,
         name: label,
         type: 'line' as const,
-        xAxisIndex,
         // 1200 点/通道：采样降频 + 大数组优化，避免卡顿（显示层策略，不改数据）
         sampling: 'lttb' as const,
         large: true,
@@ -297,9 +405,7 @@ export function FanWaveChart({ wave, height = 360, onChartReady, hiddenRoles }: 
         showSymbol: false,
         connectNulls: false,
         yAxisIndex: roleIndex.get(role) ?? 0,
-        // 时间缩放按**本区**单位（上区 μs / 下区 ms）——两区时基差 250 倍，
-        // 共用一套缩放会把其中一区的数据全挤到轴端（2026-10-12 分区重构）。
-        data: data.time_s.map((t, i) => [t * scaleOf(role), data.voltage_v[i]] as [number, number]),
+        data: data.time_s.map((t, i) => [t * scale, data.voltage_v[i]] as [number, number]),
         itemStyle: { color },
         lineStyle: { color, width: 1.2 },
         // tooltip 走 fmtNum：null → 未采集，不出现 0
@@ -309,58 +415,28 @@ export function FanWaveChart({ wave, height = 360, onChartReady, hiddenRoles }: 
       }
     })
 
-    // 每条可用通道配一条 y 轴：上区左右交替、分层错名（口径同改造前）；
-    // 下区（转速）单轴靠左、不参与交替。只有最左轴保留 splitLine（避免横线叠层）。
+    // 每条可用通道配一条 y 轴：左右交替，只有最左轴保留 splitLine（其余关掉，避免横线叠层）。
     // 同样给稳定 id（按角色），让增量合并按 id 对齐轴，避免通道增减时轴错位。
-    // 轴名承载「角色 + 通道」，是图例缩写后完整语义的落点（图例只剩 CH1~CH4）。
     //
-    // ⚠️ 2026-10-12 用户反馈修「右上角轴名叠字」：同侧两条轴（offset 0 与 44）的
-    // 轴名都摆在轴顶端，水平方向只差 44px 而轴名宽约 60~70px → 直接叠字。
-    // 处置：按「层」（Math.floor(i/2)）垂直错开——外侧轴名贴网格顶线（nameGap 12），
-    // 内侧轴名再往画布上沿抬一行（nameGap 32），两行分行显示。
-    // 配套 grid.top 36 → 52：为两行轴名留高度（外侧 [28,40]、内侧 [8,20] 都在画布内）。
-    const yAxis = [
-      ...upperDrawn.map((c, i) => {
-        const isLeft = i % 2 === 0
-        const layer = Math.floor(i / 2) // 0 = 外侧轴（offset 0）；1+ = 内侧轴（offset 44…）
-        return {
-          id: `axis-${c.role}`,
-          type: 'value' as const,
-          gridIndex: 0,
-          name: ROLE_LABEL[c.role] ?? `CH${c.channel}`,
-          nameLocation: 'end' as const,
-          nameGap: layer === 0 ? 12 : 32,
-          nameTextStyle: { fontSize: 10, align: isLeft ? 'left' : 'right' },
-          axisLabel: { fontSize: 10, color: CH_COLOR[c.role] ?? '#666' },
-          axisLine: { show: true, lineStyle: { color: CH_COLOR[c.role] ?? '#666' } },
-          position: isLeft ? ('left' as const) : ('right' as const),
-          offset: layer * 44,
-          scale: true, // 不设 min:0：PWM 档为负值，强制 0 起会压扁波形
-          splitLine: { show: i === 0 },
-        }
-      }),
-      // 下区轴（转速通道）：单轴靠左，与上区最左轴垂直对齐（同一 left 边距）
-      ...lowerDrawn.map((c) => ({
+    // ⚠️ 2026-10-13（需求单编号 1）：通道名不再作为轴名（nameLocation:'end'）画在
+    // canvas 顶部——多轴时横向挤在同一水平带互相叠字（用户实拍截图红框处）。
+    // 通道名改由图表上方的 React 名称条（ChannelNameBar）承担。轴名必须**显式置
+    // name:''**：增量 setOption（合并模式）下省略字段会保留旧值，残留旧轴名。
+    const yAxis = drawn.map((c, i) => {
+      const isLeft = i % 2 === 0
+      return {
         id: `axis-${c.role}`,
         type: 'value' as const,
-        gridIndex: 1,
-        name: ROLE_LABEL[c.role] ?? `CH${c.channel}`,
-        nameLocation: 'end' as const,
-        nameGap: 12,
-        nameTextStyle: { fontSize: 10, align: 'left' as const },
+        name: '', // 通道名已搬到上方名称条（见上注释）；置空防合并残留
         axisLabel: { fontSize: 10, color: CH_COLOR[c.role] ?? '#666' },
         axisLine: { show: true, lineStyle: { color: CH_COLOR[c.role] ?? '#666' } },
-        position: 'left' as const,
-        offset: 0,
-        scale: true,
-        splitLine: { show: false },
-      })),
-    ]
-    // 上/下区各自的轴列数（左右各一组 offset 列），取大者作为统一左右边距，
-    // 保证两区的轴在同一垂直线上（视觉连续，不跳）。
-    const upperCols = Math.max(1, Math.ceil(upperDrawn.length / 2))
-    const lowerCols = Math.max(1, Math.ceil(lowerDrawn.length / 2))
-    const axisCount = Math.max(upperCols, lowerCols)
+        position: isLeft ? ('left' as const) : ('right' as const),
+        offset: Math.floor(i / 2) * 44,
+        scale: true, // 不设 min:0：PWM 档为负值，强制 0 起会压扁波形
+        splitLine: { show: i === 0 },
+      }
+    })
+    const axisCount = Math.max(1, Math.ceil(drawn.length / 2))
 
     const option: echarts.EChartsCoreOption = {
       color: ordered.map((o) => CH_COLOR[o.role] ?? '#666'),
@@ -387,138 +463,62 @@ export function FanWaveChart({ wave, height = 360, onChartReady, hiddenRoles }: 
         ),
         data: series.map((s) => s.name),
       },
-      // grid.top：图例已移出 canvas，故只需给 y 轴名留高度。
-      // ⚠️ 2026-10-09 修「电压 (V) 轴名被上方工具行盖住」：原 20px < nameGap(12) + 轴名
-      // 字行高（10~12px）→ `nameLocation:'end'` 的轴名**顶边越出 canvas 上沿被裁切**，
-      // 而 canvas 距工具行仅 6px 间距，视觉上即「被盖住」（空态兜底轴「电压 (V)」最明显）。
-      // containLabel 只含刻度标签、不含轴名，不会自动让位。改为 36px（+16px ≈ 一个文字
-      // 高度）：轴名完整落入画布内并整体下移一个文字高度。轴名口径（nameLocation/nameGap）不变。
-      // ⚠️ 2026-10-12 再增到 52px：轴名改为**两行**（外侧 nameGap 12 / 内侧 nameGap 32，
-      // 见下方 yAxis 注释「右上角轴名叠字」修复）——两行轴名共需约 44px（两行字高 +
-      // 行距 + 网格顶线余量），52 实测足够且不越界。
+      // grid.top：通道名已搬出 canvas（上方名称条），轴名不再占顶带，
+      // 只需少量上边距即可（36 → 12）。坐标轴/刻度口径不变。
       // grid.bottom 34：为**居中置底的 x 轴名**留一行（同趋势图口径），
       // 否则轴名会压住末端刻度数字（2026-10-09 修「右下角文字遮挡」）。
-      //
-      // ⚠️ 2026-10-12 分区：有转速通道时拆两个 grid —— 上区（PWM，top 52 起、
-      // 约占 54% 高）与下区（转速，约占 38% 高，两者之间留约 36px 给上区 x 轴名）。
-      // 两区用同一左右边距，轴列垂直对齐；没有转速通道时退化为单 grid（原口径）。
-      grid: hasLower
-        ? [
-            {
-              left: 52 + (axisCount - 1) * 44,
-              right: 52 + (axisCount - 1) * 44,
-              top: 52,
-              bottom: '46%',
-              containLabel: true,
-            },
-            {
-              left: 52 + (axisCount - 1) * 44,
-              right: 52 + (axisCount - 1) * 44,
-              top: '62%',
-              bottom: 34,
-              containLabel: true,
-            },
-          ]
-        : {
-            left: 52 + (axisCount - 1) * 44,
-            right: 52 + (axisCount - 1) * 44,
-            top: 52,
-            bottom: 34,
-            containLabel: true,
-          },
+      grid: {
+        left: 52 + (axisCount - 1) * 44,
+        right: 52 + (axisCount - 1) * 44,
+        top: 12,
+        bottom: 34,
+        containLabel: true,
+      },
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'cross' },
         // 不在全局设 valueFormatter（各 series 自带）
       },
-      // 横轴按区各一条（分区重构）：上区 μs 级（PWM 方波），下区 ms 级（转速脉冲），
-      // 单位不同、刻度各自适配——共用一条轴会把 250 倍的时基差压成其中一区不可读。
-      // 横轴上下限交给 dataZoom 管（不写 min/max）：
-      // 写死 min/max 会**钳死**轴范围，用户滚轮缩不出去（只能看到窄窗）。
-      // 上区初始 dataZoom 窗口收窄到 ~2 个 PWM 周期，用户可自由滚轮拉回全窗；
-      // 下区直接全窗（60ms 内 2~3 个转速脉冲，节律清晰）。
-      xAxis: hasLower
-        ? [
-            {
-              type: 'value' as const,
-              gridIndex: 0,
-              name: `时间 (${upperUnit.unit})`,
-              nameLocation: 'middle' as const,
-              nameGap: 22,
-              nameTextStyle: { fontSize: 10, align: 'center', verticalAlign: 'top' },
-              axisLabel: { fontSize: 11 },
-            },
-            {
-              type: 'value' as const,
-              gridIndex: 1,
-              name: `时间 (${lowerUnit.unit})`,
-              nameLocation: 'middle' as const,
-              nameGap: 22,
-              nameTextStyle: { fontSize: 10, align: 'center', verticalAlign: 'top' },
-              axisLabel: { fontSize: 11 },
-            },
-          ]
-        : [
-            {
-              type: 'value' as const,
-              name: `时间 (${upperUnit.unit})`,
-              // ⚠️ 2026-10-09 修「右下角文字遮挡」：value 轴默认把轴名摆在**末端**，
-              // 压住最后一个刻度数字。改为居中置底（middle），与趋势图同一口径。
-              nameLocation: 'middle' as const,
-              nameGap: 22,
-              nameTextStyle: { fontSize: 10, align: 'center', verticalAlign: 'top' },
-              axisLabel: { fontSize: 11 },
-            },
-          ],
-      // 无可用通道时的兜底轴：同样给 nameGap，避免轴名与图例叠字（与上面口径一致）。
-      yAxis: yAxis.length
-        ? yAxis
-        : [{ type: 'value' as const, name: '电压 (V)', nameLocation: 'end' as const, nameGap: 12, scale: true }],
-      dataZoom: hasLower
-        ? [
-            // 上区：初始窗口仅在**首次看到该采集**时给出 start/end 百分比
-            // （收窄到约 2 个周期），同一采集的后续刷新**不带** start/end，
-            // 从而保留用户当前缩放（不每 tick 拽回）。
-            applyInitialWindow
-              ? {
-                  type: 'inside' as const,
-                  xAxisIndex: 0,
-                  filterMode: 'none' as const,
-                  startValue: viewMin,
-                  endValue: viewMax,
-                }
-              : { type: 'inside' as const, xAxisIndex: 0, filterMode: 'none' as const },
-            // 下区（转速域）：全窗起步，不做窄窗——转速脉冲周期 27~84ms，
-            // 窄窗会把「脉冲节律」本身切碎；要细看某个脉冲用户可自行滚轮放大。
-            { type: 'inside' as const, xAxisIndex: 1, filterMode: 'none' as const },
-          ]
-        : [
-            applyInitialWindow
-              ? {
-                  type: 'inside' as const,
-                  xAxisIndex: 0,
-                  filterMode: 'none' as const,
-                  startValue: viewMin,
-                  endValue: viewMax,
-                }
-              : { type: 'inside' as const, xAxisIndex: 0, filterMode: 'none' as const },
-          ],
+      xAxis: {
+        type: 'value',
+        name: `时间 (${unit})`,
+        // ⚠️ 2026-10-09 修「右下角文字遮挡」：value 轴默认把轴名摆在**末端**，
+        // 压住最后一个刻度数字。改为居中置底（middle），与趋势图同一口径。
+        nameLocation: 'middle',
+        nameGap: 22,
+        nameTextStyle: { fontSize: 10, align: 'center', verticalAlign: 'top' },
+        axisLabel: { fontSize: 11 },
+        // 横轴上下限交给 dataZoom 管（不写 min/max）：
+        // 写死 min/max 会**钳死**轴范围，用户滚轮缩不出去（只能看到窄窗）。
+        // 改为初始 dataZoom 窗口收窄到 ~2 个 PWM 周期，用户可自由滚轮拉回全窗。
+      },
+      // 无可用通道时的兜底轴：通道名同样在上方名称条，canvas 内不再画轴名。
+      yAxis: yAxis.length ? yAxis : [{ type: 'value' as const, name: '', scale: true }],
+      dataZoom: [
+        // 初始窗口：仅在**首次看到该采集**时给出 start/end 百分比（收窄到约 2 个周期），
+        // 同一采集的后续刷新**不带** start/end，从而保留用户当前缩放（不每 tick 拽回）。
+        applyInitialWindow
+          ? {
+              type: 'inside' as const,
+              xAxisIndex: 0,
+              filterMode: 'none' as const,
+              startValue: viewMin,
+              endValue: viewMax,
+            }
+          : { type: 'inside' as const, xAxisIndex: 0, filterMode: 'none' as const },
+      ],
       series,
     }
     // 增量更新（2026-10-09 改）：原为 `setOption(option, true)`（notMerge 全量重建），
     // 每次采集刷新都要重建 4×1200 点的全部曲线，重绘成本可感知。
     // 现默认走合并模式：配合 series/yAxis 的稳定 id，ECharts 只更新变化的部分。
     //
-    // ⚠️ 例外：**结构签名**变化时（y 轴数量 / 分区数 / x 轴数量）用 notMerge 全量
-    // 重建一次，避免合并模式下轴与 grid 增减产生错位/残影。典型触发：CH4 由
-    // 「未采集」空 series 变为有数据（单 grid → 双 grid、x 轴 1→2、y 轴 3→4）。
-    // 结构不变时（绝大多数刷新）走增量，保持低开销。
-    const structureKey = `${yAxis.length}:${hasLower ? 2 : 1}:${(option.xAxis as unknown[]).length}`
-    // 首次（ref 为空串）不算结构变化：首帧本该全量下发，走默认合并也无妨；
-    // 之后签名变化才 notMerge 重建。
-    const structureChanged = axisCountRef.current !== '' && axisCountRef.current !== structureKey
-    axisCountRef.current = structureKey
-    chart.setOption(option, structureChanged)
+    // ⚠️ 唯一例外：y 轴**数量变化**时（如 CH4 由「未采集」空 series 变为有数据，
+    // 可用通道数增加 → 轴数量增加）用 notMerge 全量重建一次，避免合并模式下
+    // 轴数量增减产生错位/残影。轴数量不变时（绝大多数刷新）走增量，保持低开销。
+    const axisCountChanged = axisCountRef.current !== yAxis.length
+    axisCountRef.current = yAxis.length
+    chart.setOption(option, axisCountChanged)
     // hiddenRoles 进依赖：面板点通道开关时要重下发 option（仅改 legend.selected）。
     // ⚠️ 它**不影响 yAxis/series 数量**，所以 axisCountChanged 语义不变，
     //   切换显隐走增量合并，不会整图重建、也不会拽回用户的缩放窗口。
@@ -529,29 +529,54 @@ export function FanWaveChart({ wave, height = 360, onChartReady, hiddenRoles }: 
     [wave],
   )
 
+  // 通道名称条的数据：与 setOption 里的 ordered 同一排序口径
+  // （期望 4 角色在前、后端额外通道追加在后），未采集的通道也照常列出。
+  const nameItems = useMemo<ChannelNameItem[]>(() => {
+    const channels = wave?.channels ?? []
+    const byRole = new Map(channels.map((c) => [c.role, c]))
+    const items: ChannelNameItem[] = EXPECTED_ROLES.map((exp) => ({
+      key: exp.role,
+      label: ROLE_LABEL[exp.role] ?? `CH${exp.channel}`,
+      color: CH_COLOR[exp.role] ?? '#666',
+    }))
+    for (const exp of EXPECTED_ROLES) byRole.delete(exp.role)
+    for (const [role, c] of byRole) {
+      items.push({
+        key: role,
+        label: ROLE_LABEL[role] ?? `CH${c.channel}`,
+        color: CH_COLOR[role] ?? '#666',
+      })
+    }
+    return items
+  }, [wave])
+
   return (
-    <div style={{ position: 'relative', width: '100%', height }}>
-      <div ref={hostRef} style={{ width: '100%', height: '100%' }} />
-      {!hasAny && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#999',
-            fontSize: 13,
-            pointerEvents: 'none',
-            textAlign: 'center',
-            padding: '0 16px',
-          }}
-        >
-          {wave
-            ? '本次采集未读到波形文件（详见上方提示）；不伪造曲线。'
-            : '暂无波形：启动测试并完成首次采集后，CH1~CH4 真实时序波形将在此显示。'}
-        </div>
-      )}
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height }}>
+      {/* 通道名称条（编号 1）：从 canvas 内轴名搬出，水平排列、不重叠 */}
+      <ChannelNameBar items={nameItems} />
+      <div style={{ position: 'relative', width: '100%', flex: 1, minHeight: 0 }}>
+        <div ref={hostRef} style={{ width: '100%', height: '100%' }} />
+        {!hasAny && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#999',
+              fontSize: 13,
+              pointerEvents: 'none',
+              textAlign: 'center',
+              padding: '0 16px',
+            }}
+          >
+            {wave
+              ? '本次采集未读到波形文件（详见上方提示）；不伪造曲线。'
+              : '暂无波形：启动测试并完成首次采集后，CH1~CH4 真实时序波形将在此显示。'}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
