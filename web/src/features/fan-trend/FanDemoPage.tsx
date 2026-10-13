@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 /* ===========================================================================
    风扇实验演示页 /fan-demo。
 
@@ -11,17 +12,19 @@ import { FanTrendChart } from './FanTrendChart'
 import { useFanTrend } from './useFanTrend'
 
 export function FanDemoPage() {
+  const uiT = useT()
+
   const { plan, samples, phase, error, requestStart, requestStop } = useFanTrend()
   const busy = phase === 'running' || phase === 'stopping'
 
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <h2 style={{ margin: 0, fontSize: 18 }}>风扇趋势实验</h2>
+        <h2 style={{ margin: 0, fontSize: 18 }}>{uiT("风扇趋势实验")}</h2>
         <span style={{ fontSize: 13, color: '#888' }}>
-          {plan ? (plan.simulation ? '模拟数据（simulation=true）' : '真实台架数据') : '未启动'}
+          {plan ? (plan.simulation ? uiT('模拟数据（simulation=true）') : uiT('真实台架数据')) : uiT('未启动')}
         </span>
-        <span style={{ fontSize: 13, color: '#888' }}>状态：{phase}</span>
+        <span style={{ fontSize: 13, color: '#888' }}>{uiT("状态：")}{phase}</span>
       </div>
 
       <div style={{ display: 'flex', gap: 12 }}>
@@ -31,25 +34,23 @@ export function FanDemoPage() {
           disabled={busy}
           style={{ padding: '8px 16px', cursor: 'pointer' }}
         >
-          开始测试
-        </button>
+          {uiT("开始测试")}</button>
         <button
           type="button"
           onClick={requestStop}
           disabled={phase !== 'running'}
           style={{ padding: '8px 16px', cursor: 'pointer' }}
         >
-          停止
-        </button>
+          {uiT("停止")}</button>
       </div>
 
-      {error && <div style={{ color: '#A6353A', fontSize: 13 }}>错误：{error}</div>}
+      {error && <div style={{ color: '#A6353A', fontSize: 13 }}>{uiT("错误：")}{uiT(error)}</div>}
 
       {plan && (
         <div style={{ fontSize: 13, color: '#888' }}>
-          计划时长 {plan.planned_duration_s}s
-          {plan.overrun ? '（已延期）' : ''}
-          {plan.actual_duration_s != null ? ` · 实际 ${plan.actual_duration_s}s` : ''}
+          {uiT("计划时长 ")}{plan.planned_duration_s}s
+          {plan.overrun ? uiT('（已延期）') : ''}
+          {plan.actual_duration_s != null ? uiT(" · 实际 {v1}s", { v1: plan.actual_duration_s }) : ''}
         </div>
       )}
 
@@ -57,8 +58,7 @@ export function FanDemoPage() {
         <FanTrendChart plan={plan} samples={samples} height={420} />
       ) : (
         <div style={{ fontSize: 13, color: '#999', height: 420, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          暂无数据：点击「开始测试」后曲线将随时间动态刷新
-        </div>
+          {uiT("暂无数据：点击「开始测试」后曲线将随时间动态刷新")}</div>
       )}
     </div>
   )

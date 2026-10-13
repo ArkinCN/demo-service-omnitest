@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import { useCallback, useRef, useState } from 'react'
 import { copilotActionIcon } from '../../app/icons'
 import type { ActionDef } from './actions'
@@ -30,6 +31,8 @@ export function ActionBar(props: {
   busy: boolean
   onPick: (def: ActionDef) => void
 }) {
+  const uiT = useT()
+
   const { defs, env, busy, onPick } = props
   const [width, setWidth] = useState(0)
   const ro = useRef<ResizeObserver | null>(null)
@@ -55,10 +58,10 @@ export function ActionBar(props: {
   // 能放几枚：先按 5 枚封顶，再按容器宽度递减，下限 2 枚加「更多」
   let visible = Math.min(MAX_VISIBLE, defs.length)
   if (width > 0) {
-    const reserve = defs.length > visible ? MORE_W : 0
-    while (visible > MIN_VISIBLE) {
-      const used = defs.slice(0, visible).reduce((a, d) => a + widthOf(d.label) + 6, 0)
-      if (used + reserve <= width) break
+    const minimum = uiT('更多') === '更多' ? MIN_VISIBLE : 1
+    while (visible > minimum) {
+      const used = defs.slice(0, visible).reduce((a, d) => a + widthOf(uiT(d.label)) + 6, 0)
+      if (used + (defs.length > visible ? MORE_W : 0) <= width) break
       visible -= 1
     }
   }
@@ -83,10 +86,11 @@ export function ActionBar(props: {
 
   const title = (d: ActionDef, why: string) =>
     why
-      ? `${d.label} · 暂不可用\n${why}`
-      : `${d.label}\n${d.echo}\n类型：${TYPE_LABEL[d.type]}　规程：${d.skill_ref}${
-          d.skill_verify === 'unverified' ? '（待核实）' : ''
-        }`
+      ? uiT('{v1} · 暂不可用 {v2}', { v1: uiT(d.label), v2: uiT(why) })
+      : uiT('{v1} {v2} 类型：{v3} 规程：{v4}{v5}', {
+          v1: uiT(d.label), v2: uiT(d.echo), v3: uiT(TYPE_LABEL[d.type]),
+          v4: d.skill_ref, v5: d.skill_verify === 'unverified' ? uiT('（待核实）') : '',
+        })
 
   const fire = (d: ActionDef) => {
     setOpen(false)
@@ -110,7 +114,7 @@ export function ActionBar(props: {
             onClick={() => fire(d)}
           >
             <Icon size={13} strokeWidth={1.9} />
-            {d.label}
+            {uiT(d.label)}
           </button>
         )
       })}
@@ -121,9 +125,9 @@ export function ActionBar(props: {
             className="cp-act cp-act--more"
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
-            title={`另有 ${rest.length} 枚预置动作`}
+            title={uiT("另有 {v1} 枚预置动作", { v1: rest.length })}
           >
-            更多 {rest.length}
+            {uiT("更多 ")}{rest.length}
           </button>
           {open ? (
             <div className="cp-more__menu" role="menu">
@@ -141,8 +145,8 @@ export function ActionBar(props: {
                     onClick={() => fire(d)}
                   >
                     <Icon size={13} strokeWidth={1.9} />
-                    {d.label}
-                    <span className="cp-more__type">{TYPE_LABEL[d.type]}</span>
+                    {uiT(d.label)}
+                    <span className="cp-more__type">{uiT(TYPE_LABEL[d.type])}</span>
                   </button>
                 )
               })}

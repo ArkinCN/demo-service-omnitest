@@ -1,3 +1,4 @@
+import { useT } from '../../../i18n'
 import { useEffect, useRef, useState } from 'react';
 import {
   MODEL_OPTIONS,
@@ -37,6 +38,8 @@ function getSpeechCtor(): SpeechCtor | null {
 }
 
 export function Composer(props: Props) {
+  const uiT = useT()
+
   const { busy, model, permission, autoRun } = props;
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
@@ -96,7 +99,7 @@ export function Composer(props: Props) {
           ref={taRef}
           className="ac-textarea"
           rows={1}
-          placeholder="描述现象或下达指令，Enter 发送，Shift+Enter 换行"
+          placeholder={uiT("描述现象或下达指令，Enter 发送，Shift+Enter 换行")}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
@@ -112,25 +115,23 @@ export function Composer(props: Props) {
           data-on={String(listening)}
           disabled={!micAvailable}
           onClick={toggleMic}
-          title={micAvailable ? (listening ? '停止录音' : '语音输入（中文）') : '当前浏览器不支持语音识别'}
-          aria-label="语音输入"
+          title={micAvailable ? (listening ? uiT('停止录音') : uiT('语音输入（中文）')) : uiT('当前浏览器不支持语音识别')}
+          aria-label={uiT("语音输入")}
         >
           ●
         </button>
         {busy ? (
           <button type="button" className="ac-send" onClick={props.onStop}>
-            停止
-          </button>
+            {uiT("停止")}</button>
         ) : (
           <button type="button" className="ac-send" disabled={!text.trim()} onClick={submit}>
-            发送
-          </button>
+            {uiT("发送")}</button>
         )}
       </div>
 
       <div className="ac-controls">
         <span className="ac-field">
-          <label htmlFor="ac-model">模型</label>
+          <label htmlFor="ac-model">{uiT("模型")}</label>
           <select
             id="ac-model"
             className="ac-select"
@@ -139,13 +140,13 @@ export function Composer(props: Props) {
           >
             {MODEL_OPTIONS.map((m) => (
               <option key={m.value} value={m.value}>
-                {m.label}
+                {uiT(m.label)}
               </option>
             ))}
           </select>
         </span>
         <span className="ac-field">
-          <label id="ac-perm-label">权限</label>
+          <label id="ac-perm-label">{uiT("权限")}</label>
           {/* 权限档位是三选一的即时切换，用分段控件比下拉更直观，
               每档的完整含义挂在 title 上，不在界面上平铺整句。 */}
           <span className="ac-seg" role="tablist" aria-labelledby="ac-perm-label">
@@ -154,12 +155,12 @@ export function Composer(props: Props) {
                 key={p.value}
                 type="button"
                 role="tab"
-                title={p.hint}
+                title={uiT(p.hint)}
                 aria-selected={permission === p.value}
                 data-on={String(permission === p.value)}
                 onClick={() => props.onPermission(p.value)}
               >
-                {p.label}
+                {uiT(p.label)}
               </button>
             ))}
           </span>
@@ -167,14 +168,12 @@ export function Composer(props: Props) {
         <label className="ac-switch">
           <input type="checkbox" checked={autoRun} onChange={(e) => props.onAutoRun(e.target.checked)} />
           <span className="ac-switch__track" />
-          <span title="只对只读类工具免去逐次确认；写参数与控硬件一律仍需人工点确认">只读工具免确认</span>
+          <span title={uiT("只对只读类工具免去逐次确认；写参数与控硬件一律仍需人工点确认")}>{uiT("只读工具免确认")}</span>
         </label>
       </div>
       <div className="ac-hint" data-warn={String(!micAvailable || Boolean(notice))}>
         {notice ||
-          `${permHint}　写参数与控硬件一律需人工点确认，自动执行不覆盖。${
-            micAvailable ? '' : '当前浏览器不支持语音识别，麦克风已停用。'
-          }`}
+          uiT("{v1}　写参数与控硬件一律需人工点确认，自动执行不覆盖。{v2}", { v1: uiT(permHint), v2: micAvailable ? '' : uiT('当前浏览器不支持语音识别，麦克风已停用。') })}
       </div>
     </div>
   );

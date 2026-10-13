@@ -1,3 +1,4 @@
+import { useT } from '../i18n'
 import { useEffect, useState, type ReactNode } from 'react'
 import { CheckCircle2, Lock, Sliders } from 'lucide-react'
 import {
@@ -33,10 +34,12 @@ function Checklist({
   items: ScenePackage['flows'][FlowId]['checklist']
   onLocate: (groupId: string) => void
 }) {
+  const uiT = useT()
+
   return (
     <div className="shrink-0 border-b border-line bg-sunk/60">
       <div className="flex items-center gap-2 px-3 pt-1.5 pb-1">
-        <span className="text-[12px] text-t2">本流程输入清单</span>
+        <span className="text-[12px] text-t2">{uiT("本流程输入清单")}</span>
         <span className="num ml-auto text-[11px] text-t3">
           {items.filter((i) => i.status === 'done').length} / {items.length}
         </span>
@@ -70,8 +73,7 @@ function Checklist({
                 onClick={() => onLocate(it.groupId)}
                 className="rounded-tps border border-line px-1.5 text-[11px] leading-[18px] text-t3 transition-colors hover:border-ink hover:text-ink"
               >
-                定位
-              </button>
+                {uiT("定位")}</button>
             </span>
           </li>
         ))}
@@ -93,6 +95,8 @@ function ParamRow({
   item: ParamItem
   locked: boolean
 }) {
+  const uiT = useT()
+
   const key = paramKey(flow, group, sub, item.id)
   const override = useAppStore((s) => s.overrides[key])
   const touched = useAppStore((s) => s.touched[key])
@@ -118,10 +122,9 @@ function ParamRow({
             // 所以给的是弱描边角标，不进暗红异常态，不占每屏 ≤3 处的暗红名额。
             <span
               className="shrink-0 rounded-tps border border-line px-1 text-[10px] leading-[15px] text-t3"
-              title={`待核实 · ${item.pending}`}
+              title={uiT("待核实 · {v1}", { v1: item.pending })}
             >
-              待核实
-            </span>
+              {uiT("待核实")}</span>
           ) : null}
           {source ? (
             <span className="shrink-0">
@@ -129,7 +132,7 @@ function ParamRow({
               source={source}
               title={
                 touched
-                  ? `人工改过，原值 ${item.value}${item.unit ?? ''}`
+                  ? uiT("人工改过，原值 {v1}{v2}", { v1: item.value, v2: item.unit ?? '' })
                   : item.evidence
               }
             />
@@ -144,7 +147,7 @@ function ParamRow({
       <div className="ml-auto flex shrink-0 items-center gap-1.5">
         {item.kind === 'number' && typeof value === 'number' ? (
           <Stepper
-            label={item.name}
+            label={uiT(item.name)}
             value={value}
             unit={item.unit}
             step={item.step ?? 1}
@@ -186,7 +189,7 @@ function ParamRow({
         {item.evidence ? (
           <button
             type="button"
-            title={`依据：${item.evidence}`}
+            title={uiT("依据：{v1}", { v1: item.evidence })}
             className="h-[18px] w-[18px] shrink-0 rounded-tps border border-line text-[10px] leading-none text-t3 transition-colors hover:border-ink hover:text-ink"
           >
             ?
@@ -208,10 +211,11 @@ function SubGroup({
   sub: ParamSubGroup
   locked: boolean
 }) {
+  const uiT = useT()
   return (
     <div className="border-t border-line-soft first:border-t-0">
       <div className="flex h-[22px] items-center gap-2 bg-sunk/50 px-3">
-        <span className="text-[11px] text-t2">{sub.title}</span>
+        <span className="text-[11px] text-t2">{uiT(sub.title)}</span>
         <span className="num ml-auto text-[11px] text-t3">{sub.items.length}</span>
       </div>
       <div className="divide-y divide-line-soft">
@@ -241,6 +245,7 @@ function GroupBlock({
   locked: boolean
   open?: boolean
 }) {
+  const uiT = useT()
   const total = group.subgroups.reduce((n, s) => n + s.items.length, 0)
   const done = group.subgroups.reduce(
     (n, s) => n + s.items.filter((i) => i.status === 'done').length,
@@ -254,17 +259,16 @@ function GroupBlock({
     <div id={`grp-${group.id}`}>
       <Collapsible
         index={group.index}
-        title={group.title}
+        title={uiT(group.title)}
         defaultOpen={open ?? group.defaultOpen ?? true}
         right={
           <span className="flex items-center gap-2">
             {alerts ? (
               <span className="rounded-tps border border-alert px-1 text-[10px] leading-[15px] text-alert">
-                {alerts} 异常
-              </span>
+                {alerts} {uiT("异常")}</span>
             ) : null}
             <span className="num text-[11px] text-t3">
-              已填 {done}/{total}
+              {uiT("已填")}{done}/{total}
             </span>
           </span>
         }
@@ -278,6 +282,8 @@ function GroupBlock({
 }
 
 export function LeftPanel({ flow, scene }: { flow: FlowId; scene: ScenePackage }) {
+  const uiT = useT()
+
   const content = scene.flows[flow]
   const locked = !!useAppStore((s) => s.confirmed[flow])
   const confirmFlow = useAppStore((s) => s.confirmFlow)
@@ -311,16 +317,14 @@ export function LeftPanel({ flow, scene }: { flow: FlowId; scene: ScenePackage }
     <Panel>
       <PanelHeader
         icon={<Sliders size={17} strokeWidth={1.9} />}
-        title="参数"
+        title={uiT("参数")}
         right={
           locked ? (
             <Badge tone="soft" dot>
-              已锁定
-            </Badge>
+              {uiT("已锁定")}</Badge>
           ) : alerts ? (
             <Badge tone="warn" dot>
-              {alerts} 待处理
-            </Badge>
+              {alerts} {uiT("待处理")}</Badge>
           ) : null
         }
       />
@@ -345,17 +349,15 @@ export function LeftPanel({ flow, scene }: { flow: FlowId; scene: ScenePackage }
             <span className="num">
               {content.checklist.filter((c) => c.status === 'done').length}/{content.checklist.length}
             </span>
-            <span className="truncate">已就绪</span>
+            <span className="truncate">{uiT("已就绪")}</span>
           </span>
         </Tooltip>
         {locked ? (
           <Button block size="lg" variant="secondary" icon={<Lock size={15} strokeWidth={2} />} onClick={() => unconfirmFlow(flow)}>
-            解除确认
-          </Button>
+            {uiT("解除确认")}</Button>
         ) : (
           <Button block size="lg" variant="primary" icon={<CheckCircle2 size={15} strokeWidth={2} />} onClick={() => confirmFlow(flow)}>
-            确认参数
-          </Button>
+            {uiT("确认参数")}</Button>
         )}
       </footer>
     </Panel>
@@ -364,13 +366,15 @@ export function LeftPanel({ flow, scene }: { flow: FlowId; scene: ScenePackage }
 
 /** Core and complete configuration share the same field presentation. */
 export function ConfigOverview({ quick, children, count }: { quick: ReactNode; children: ReactNode; count: number }) {
+  const uiT = useT()
+
   const [expanded, setExpanded] = useState(false)
   const sceneId = useAppStore((state) => state.sceneId)
   useEffect(() => setExpanded(false), [sceneId])
-  return <section className="config-overview" aria-label="本流程配置">
-    <div className="config-mode-bar"><div><strong>配置工作区</strong><span>{count} 项 · 原始场景参数</span></div><div role="group" aria-label="配置显示模式">
-      <button type="button" aria-pressed={!expanded} onClick={() => setExpanded(false)}>常用配置</button>
-      <button type="button" aria-pressed={expanded} onClick={() => setExpanded(true)}>更多配置</button>
+  return <section className="config-overview" aria-label={uiT("本流程配置")}>
+    <div className="config-mode-bar"><div><strong>{uiT("配置工作区")}</strong><span>{count} {uiT(" 项 · 原始场景参数")}</span></div><div role="group" aria-label={uiT("配置显示模式")}>
+      <button type="button" aria-pressed={!expanded} onClick={() => setExpanded(false)}>{uiT("常用配置")}</button>
+      <button type="button" aria-pressed={expanded} onClick={() => setExpanded(true)}>{uiT("更多配置")}</button>
     </div></div>
     {expanded ? <div className="config-complete">{children}</div> : <div className="config-quick">{quick}</div>}
   </section>

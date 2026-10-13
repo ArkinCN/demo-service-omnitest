@@ -1,3 +1,4 @@
+import { useT } from '../i18n'
 import { createElement, useState } from 'react'
 import {
   Activity,
@@ -159,6 +160,8 @@ function BridgeRail({
 }: {
   onOpen: (v: { tool: BridgeTool; layer: BridgeLayer }) => void
 }) {
+  const uiT = useT()
+
   const bridge = useBridgeDevice()
   const redline = useRedlineGate()
   const setNotice = useAppStore((s) => s.setNotice)
@@ -166,13 +169,12 @@ function BridgeRail({
   if (bridge.link !== 'online')
     return (
       <div className="flex w-full flex-col items-center gap-1 border-t border-line-soft px-2 pt-3">
-        <Tooltip content={bridge.reason ?? '正在探设备桥'}>
+        <Tooltip content={bridge.reason ?? uiT('正在探设备桥')}>
           <span className="flex items-center justify-center gap-1 text-[12px] leading-none text-t3">
             <Cable size={11} strokeWidth={1.9} />
-            设备
-          </span>
+            {uiT("设备")}</span>
         </Tooltip>
-        <Tooltip content={bridge.reason ?? '正在探设备桥'}>
+        <Tooltip content={bridge.reason ?? uiT('正在探设备桥')}>
           <span
             data-testid="rail-bridge-offline"
             className="flex h-[34px] w-[34px] cursor-help items-center justify-center rounded-tps border border-line bg-white text-t3 [&>svg]:block"
@@ -212,18 +214,16 @@ function BridgeRail({
             key={layer}
             className="flex w-full flex-col items-center gap-1.5 border-t border-line-soft px-2 pt-3"
           >
-            <Tooltip content={`设备桥 · ${BRIDGE_LAYER_TITLE[layer]} · ${tools.length} 个工具`}>
+            <Tooltip content={uiT("设备桥 · {v1} · {v2} 个工具", { v1: BRIDGE_LAYER_TITLE[layer], v2: tools.length })}>
               <span className="mb-0.5 flex items-center justify-center gap-1 text-[12px] leading-none whitespace-nowrap text-t3">
                 <LayerIcon size={11} strokeWidth={1.9} />
-                {LAYER_SHORT[layer]}
+                {uiT(LAYER_SHORT[layer])}
               </span>
             </Tooltip>
             {tools.map((t) => (
               <Tooltip
                 key={t.name}
-                content={`${t.title ?? t.name} · ${t.description ?? ''}${
-                  t.guarded ? ' · 红线动作：点下去只拿凭据，执行要人再确认一次' : ''
-                }`}
+                content={uiT("{v1} · {v2}{v3}", { v1: t.title ?? t.name, v2: t.description ?? '', v3: t.guarded ? uiT(' · 红线动作：点下去只拿凭据，执行要人再确认一次') : '' })}
               >
                 <button
                   type="button"
@@ -249,6 +249,21 @@ function BridgeRail({
 }
 
 export function ToolRail({ groups }: { groups: ToolGroup[] }) {
+  const uiT = useT()
+  const toolLabel = (tool: ToolItem) => {
+    const translated = uiT(tool.label)
+    if (translated !== tool.label || !tool.label.endsWith('…')) return translated
+    // The scene adapter already clipped these captions; recover their approved UI topics.
+    const original = tool.hint?.split(' · ')[0] ?? tool.label
+    for (const topic of ['同电压同转速常态', '程控电源读回']) {
+      if (original.startsWith(topic)) return uiT(topic)
+    }
+    if (original.startsWith('本轮 /api/')) {
+      return `${uiT('本轮')} ${/^本轮 (\/api\/[^\s]+)/.exec(original)?.[1] ?? ''}`
+    }
+    return uiT(original)
+  }
+
   const [active, setActive] = useState<{ tool: ToolItem; group: string } | null>(null)
   const [bridgeTool, setBridgeTool] = useState<{ tool: BridgeTool; layer: BridgeLayer } | null>(null)
   const [busy, setBusy] = useState(false)
@@ -264,10 +279,10 @@ export function ToolRail({ groups }: { groups: ToolGroup[] }) {
   return (
     <>
       <aside className="fade-tb no-scrollbar flex w-[56px] shrink-0 flex-col items-center gap-3 overflow-y-auto border-l border-line-soft bg-p50/50 py-3">
-        <Tooltip content="重新枚举设备">
+        <Tooltip content={uiT("重新枚举设备")}>
           <button
             type="button"
-            aria-label="刷新设备"
+            aria-label={uiT("刷新设备")}
             onClick={refresh}
             className={cn(
               'flex h-[28px] w-[40px] items-center justify-center rounded-tps border border-line bg-white',
@@ -288,10 +303,10 @@ export function ToolRail({ groups }: { groups: ToolGroup[] }) {
                 gi > 0 && 'border-t border-line-soft pt-3',
               )}
             >
-              <Tooltip content={g.title}>
+              <Tooltip content={uiT(g.title)}>
                 <span className="mb-0.5 flex items-center justify-center gap-1 text-[12px] leading-none whitespace-nowrap text-t3">
                   {createElement(TOOL_GROUP_ICON[g.id] ?? Wind, { size: 11, strokeWidth: 1.9 })}
-                  {GROUP_SHORT[g.id] ?? ''}
+                  {uiT(GROUP_SHORT[g.id] ?? '')}
                 </span>
               </Tooltip>
               {g.tools.map((t, ti) => {
@@ -300,11 +315,11 @@ export function ToolRail({ groups }: { groups: ToolGroup[] }) {
                 return (
                   <Tooltip
                     key={t.id}
-                    content={`${t.label} · ${STATE_TEXT[t.state]}${t.hint ? ` · ${t.hint}` : ''} · 可拖入画板建「${CANVAS_NODE_META[type].label}」节点`}
+                    content={uiT("{v1} · {v2}{v3} · 可拖入画板建「{v4}」节点", { v1: toolLabel(t), v2: uiT(STATE_TEXT[t.state]), v3: t.hint ? ` · ${uiT('原文')}: ${t.hint}` : '', v4: uiT(CANVAS_NODE_META[type].label) })}
                   >
                     <button
                       type="button"
-                      aria-label={t.label}
+                      aria-label={toolLabel(t)}
                       draggable
                       onDragStart={(e) => {
                         const payload: CanvasDragPayload = { type, label: t.label }
@@ -335,27 +350,25 @@ export function ToolRail({ groups }: { groups: ToolGroup[] }) {
         open={!!bridgeTool}
         onClose={() => setBridgeTool(null)}
         title={bridgeTool ? (bridgeTool.tool.title ?? bridgeTool.tool.name) : ''}
-        meta={bridgeTool ? `设备桥 · ${BRIDGE_LAYER_TITLE[bridgeTool.layer]}` : ''}
+        meta={bridgeTool ? uiT("设备桥 · {v1}", { v1: BRIDGE_LAYER_TITLE[bridgeTool.layer] }) : ''}
       >
         {bridgeTool ? (
           <div className="space-y-3">
-            <p className="text-[13px] leading-6 text-t2">{bridgeTool.tool.description ?? '桥未给描述'}</p>
+            <p className="text-[13px] leading-6 text-t2">{bridgeTool.tool.description ?? uiT('桥未给描述')}</p>
             <div className="surface-2 p-3">
-              <div className="tick">工具名</div>
+              <div className="tick">{uiT("工具名")}</div>
               <div className="num mt-1 text-[13px] text-t2">{bridgeTool.tool.name}</div>
             </div>
             <div className="surface-2 p-3">
-              <div className="tick">红线</div>
+              <div className="tick">{uiT("红线")}</div>
               <div className="mt-1 text-[13px] leading-6 text-t2">
                 {bridgeTool.tool.guarded
-                  ? `受人工闸口约束：${bridgeTool.tool.risk ?? '执行前必须由人在确认卡上批准一张凭据'}`
-                  : '不受闸口约束，只读，模型与人都可以直接调'}
+                  ? uiT("受人工闸口约束：{v1}", { v1: bridgeTool.tool.risk ?? '执行前必须由人在确认卡上批准一张凭据' })
+                  : uiT('不受闸口约束，只读，模型与人都可以直接调')}
               </div>
             </div>
             <p className="text-[12px] leading-5 text-t3">
-              调用结果的摘要在页面底部那条提示里；完整返回见设备桥自己的日志
-              （[源] evidence/bridge.log）。
-            </p>
+              {uiT("调用结果的摘要在页面底部那条提示里；完整返回见设备桥自己的日志 （[源] evidence/bridge.log）。")}</p>
           </div>
         ) : null}
       </Drawer>
@@ -363,7 +376,7 @@ export function ToolRail({ groups }: { groups: ToolGroup[] }) {
       <Drawer
         open={!!active}
         onClose={() => setActive(null)}
-        title={active?.tool.label ?? ''}
+        title={active ? toolLabel(active.tool) : ''}
         meta={active?.group}
       >
         {active ? (
@@ -373,18 +386,15 @@ export function ToolRail({ groups }: { groups: ToolGroup[] }) {
                 status={
                   active.tool.state === 'online' ? 'done' : active.tool.state === 'fault' ? 'alert' : 'empty'
                 }
-                label={STATE_TEXT[active.tool.state]}
+                label={uiT(STATE_TEXT[active.tool.state])}
               />
               <span className="text-[12px] text-t3">{active.tool.hint ?? '—'}</span>
             </div>
             <p className="text-[13px] leading-6 text-t2">
-              设备一律以 MCP 节点的形式落在画板上：节点只显示挂了几个工具、健康状态与接入形态，
-              取数走设备侧采集出口，跑脚本走命令行会话，要看原生界面走远程桌面。终端只在节点放大态里出现。
-              连接参数与凭据由场景包的设备记录提供，不写在前端。
-            </p>
+              {uiT("设备一律以 MCP 节点的形式落在画板上：节点只显示挂了几个工具、健康状态与接入形态， 取数走设备侧采集出口，跑脚本走命令行会话，要看原生界面走远程桌面。终端只在节点放大态里出现。 连接参数与凭据由场景包的设备记录提供，不写在前端。")}</p>
             <div className="surface-2 p-3">
-              <div className="tick">拖入画板</div>
-              <div className="num mt-1 text-[13px] text-t2">按住本工具拖到画板落点即建节点</div>
+              <div className="tick">{uiT("拖入画板")}</div>
+              <div className="num mt-1 text-[13px] text-t2">{uiT("按住本工具拖到画板落点即建节点")}</div>
             </div>
           </div>
         ) : null}

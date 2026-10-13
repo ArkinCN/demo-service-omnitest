@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import { useMemo } from 'react'
 import { PlayCircle, ShieldCheck, Sliders, Timer, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -33,6 +34,8 @@ export function AutomationIntro({
   onStart: () => void
   onCancel: () => void
 }) {
+  const uiT = useT()
+
   /**
    * 闸门清单**自己从场景包读**，不读 store 的 `gateTotal`。
    *
@@ -86,11 +89,9 @@ export function AutomationIntro({
             <span className="grad-ink absolute inset-[22px] rounded-full shadow-tpink" />
           </div>
           <h1 className="mt-4 text-[22px] leading-tight font-bold tracking-tight text-t1">
-            一键自动化回归
-          </h1>
+            {uiT("一键自动化回归")}</h1>
           <p className="mt-1.5 text-[13px] text-t3">
-            自动选参数 · 自动跑完五个流程 · 直到产出报告。全程可见、可终止、可回溯。
-          </p>
+            {uiT("自动选参数 · 自动跑完五个流程 · 直到产出报告。全程可见、可终止、可回溯。")}</p>
         </div>
 
         {/* 五步清单 */}
@@ -104,7 +105,7 @@ export function AutomationIntro({
               <span className="num flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-p100 text-[11px] font-semibold text-p700">
                 {f.index}
               </span>
-              <span className="shrink-0 text-[13px] font-medium text-t1">{f.label}</span>
+              <span className="shrink-0 text-[13px] font-medium text-t1">{uiT(f.label)}</span>
               <span className="min-w-0 flex-1 truncate text-[12px] text-t3">
                 {STAGE_HINT[f.id] ?? ''}
               </span>
@@ -123,7 +124,7 @@ export function AutomationIntro({
               >
                 <Icon size={15} strokeWidth={1.9} className="mt-0.5 shrink-0 text-p700" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[12.5px] font-semibold text-t1">{n.title}</p>
+                  <p className="text-[12.5px] font-semibold text-t1">{uiT(n.title)}</p>
                   <p className="mt-0.5 text-[12px] leading-5 text-t2">{n.body}</p>
                 </div>
               </div>
@@ -132,9 +133,7 @@ export function AutomationIntro({
         </div>
 
         <p className="mt-3 rounded-tps border border-line-soft bg-surface px-3 py-2 text-[12px] leading-5 text-t3">
-          运行期间可随时点「终止」：当前阶段收口，已采数据与已落库产物保留；
-          报告无论成败都会尝试产出，未产出时如实写明原因。
-        </p>
+          {uiT("运行期间可随时点「终止」：当前阶段收口，已采数据与已落库产物保留； 报告无论成败都会尝试产出，未产出时如实写明原因。")}</p>
 
         <div className="mt-4 flex shrink-0 items-center gap-2 pb-1">
           <Button
@@ -144,8 +143,7 @@ export function AutomationIntro({
             onClick={onStart}
             data-testid="auto-intro-start"
           >
-            开始自动回归
-          </Button>
+            {uiT("开始自动回归")}</Button>
           <Button
             variant="ghost"
             size="lg"
@@ -153,9 +151,8 @@ export function AutomationIntro({
             onClick={onCancel}
             data-testid="auto-intro-cancel"
           >
-            取消
-          </Button>
-          <span className="ml-auto text-[11.5px] text-t3">取消不产生任何副作用</span>
+            {uiT("取消")}</Button>
+          <span className="ml-auto text-[11.5px] text-t3">{uiT("取消不产生任何副作用")}</span>
         </div>
       </div>
     </div>

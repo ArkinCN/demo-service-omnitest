@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 /* ===========================================================================
    知识库上传面板（主文档 3.1，P3）。
 
@@ -39,6 +40,8 @@ function sizeText(n: number): string {
 }
 
 function StageBar({ stages }: { stages: KbDocStage[] }) {
+  const uiT = useT()
+
   const done = stages.filter((s) => s.done).length
   return (
     <div className="flex items-center gap-1 pt-1">
@@ -63,7 +66,7 @@ function StageBar({ stages }: { stages: KbDocStage[] }) {
                   {ok ? <Check size={10} strokeWidth={2.6} /> : i + 1}
                 </span>
                 <span className={`truncate text-[11px] ${ok ? 'text-p700' : 'text-t3'}`}>
-                  {STAGE_LABEL[key]}
+                  {uiT(STAGE_LABEL[key])}
                 </span>
               </div>
               <div
@@ -78,6 +81,8 @@ function StageBar({ stages }: { stages: KbDocStage[] }) {
 }
 
 export function UploadPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const uiT = useT()
+
   const pack = getPack()
   const [file, setFile] = useState<File | null>(null)
   // 用途 = 三轴之一 + 可空的自定义标签（见 UsagePicker 的契约说明）
@@ -168,7 +173,7 @@ export function UploadPanel({ open, onClose }: { open: boolean; onClose: () => v
     <Drawer
       open={open}
       onClose={close}
-      title="上传资料到知识库"
+      title={uiT("上传资料到知识库")}
       // 面包屑显示**即将使用的归属**（不是当前产品）——人改了归属要立刻看到改到哪了
       meta={[ownerSel.l1, ownerSel.l2, ownerSel.l3].filter(Boolean).join(' › ')}
       width={480}
@@ -197,11 +202,10 @@ export function UploadPanel({ open, onClose }: { open: boolean; onClose: () => v
             >
               <Upload size={20} strokeWidth={1.8} className="text-p600" />
               <span className="text-[12.5px] text-t2">
-                {file ? file.name : '拖一份文件到这里，或点击选择'}
+                {file ? file.name : uiT('拖一份文件到这里，或点击选择')}
               </span>
               <span className="text-[11px] text-t3">
-                支持 PDF / DOCX / DOC / MD / TXT / 源码；单份不超过 100 MB
-              </span>
+                {uiT("支持 PDF / DOCX / DOC / MD / TXT / 源码；单份不超过 100 MB")}</span>
               {file ? (
                 <span className="num text-[11px] text-t3">{sizeText(file.size)}</span>
               ) : null}
@@ -232,7 +236,7 @@ export function UploadPanel({ open, onClose }: { open: boolean; onClose: () => v
             {error ? (
               <p className="flex items-start gap-1.5 rounded-tps border border-alert/40 bg-alert-wash px-2.5 py-2 text-[12px] leading-5 text-alert">
                 <AlertTriangle size={13} strokeWidth={2} className="mt-[3px] shrink-0" />
-                {error}
+                {uiT(error)}
               </p>
             ) : null}
 
@@ -243,11 +247,10 @@ export function UploadPanel({ open, onClose }: { open: boolean; onClose: () => v
                 icon={busy ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
                 onClick={() => void submit()}
               >
-                {busy ? '上传并转化…' : '上传并转化'}
+                {busy ? uiT('上传并转化…') : uiT('上传并转化')}
               </Button>
               <Button size="sm" variant="secondary" onClick={close}>
-                取消
-              </Button>
+                {uiT("取消")}</Button>
             </div>
           </>
         ) : (
@@ -275,7 +278,7 @@ export function UploadPanel({ open, onClose }: { open: boolean; onClose: () => v
               {doc.confidence !== null ? (
                 <>
                   <span>·</span>
-                  <span>置信度 {doc.confidence}</span>
+                  <span>{uiT("置信度 ")}{doc.confidence}</span>
                 </>
               ) : null}
             </div>
@@ -284,43 +287,35 @@ export function UploadPanel({ open, onClose }: { open: boolean; onClose: () => v
 
             {doc.status === 'failed' ? (
               <p className="rounded-tps border border-alert/40 bg-alert-wash px-2.5 py-2 text-[12px] leading-5 text-alert">
-                转化失败于「{STAGE_LABEL[doc.failed_stage as keyof typeof STAGE_LABEL] ?? doc.failed_stage}」阶段：
-                {doc.fail_reason ?? '未给出原因'}
+                {uiT("转化失败于「")}{STAGE_LABEL[doc.failed_stage as keyof typeof STAGE_LABEL] ?? doc.failed_stage}{uiT("」阶段：")}{doc.fail_reason ?? uiT('未给出原因')}
               </p>
             ) : null}
             {doc.status === 'needs_review' ? (
               <p className="rounded-tps border border-warn/40 bg-warn-wash px-2.5 py-2 text-[12px] leading-5 text-t2">
-                已解析但**结构化置信度低于阈值**，进「需人工校对」——不静默通过。
-                这类文件的层级信息不全，建议人工核对后再用于判定。
-              </p>
+                {uiT("已解析但**结构化置信度低于阈值**，进「需人工校对」——不静默通过。 这类文件的层级信息不全，建议人工核对后再用于判定。")}</p>
             ) : null}
             {doc.status === 'indexed' ? (
               <p className="rounded-tps border border-p200 bg-p50 px-2.5 py-2 text-[12px] leading-5 text-t2">
-                五个阶段全部完成，<span className="num">{doc.entry_count}</span> 条已写入知识库，
-                助手现在检索得到这份资料。
-              </p>
+                {uiT("五个阶段全部完成，")}<span className="num">{doc.entry_count}</span> {uiT(" 条已写入知识库， 助手现在检索得到这份资料。")}</p>
             ) : null}
             {!settled && busy ? (
               <p className="flex items-center gap-1.5 text-[12px] text-t3">
                 <Loader2 size={12} className="animate-spin" />
-                正在转化…
-              </p>
+                {uiT("正在转化…")}</p>
             ) : null}
 
             {error ? (
               <p className="flex items-start gap-1.5 rounded-tps border border-alert/40 bg-alert-wash px-2.5 py-2 text-[12px] leading-5 text-alert">
                 <AlertTriangle size={13} strokeWidth={2} className="mt-[3px] shrink-0" />
-                {error}
+                {uiT(error)}
               </p>
             ) : null}
 
             <div className="flex items-center gap-2 pt-1">
               <Button size="sm" variant="secondary" icon={<X size={13} />} onClick={close}>
-                关闭
-              </Button>
+                {uiT("关闭")}</Button>
               <Button size="sm" onClick={reset}>
-                再传一份
-              </Button>
+                {uiT("再传一份")}</Button>
             </div>
           </>
         )}

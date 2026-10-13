@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import type { ReactNode } from 'react'
 import { cn } from './cn'
 
@@ -21,6 +22,8 @@ export function Tabs({
   onChange: (id: string) => void
   className?: string
 }) {
+  const uiT = useT()
+
   return (
     <div role="tablist" className={cn('flex items-end gap-5 border-b border-line-soft', className)}>
       {items.map((it) => {
@@ -38,7 +41,7 @@ export function Tabs({
             )}
           >
             {it.icon}
-            {it.label}
+            {uiT(it.label)}
             {it.badge ? <span className="num text-[12px] text-t3">{it.badge}</span> : null}
           </button>
         )

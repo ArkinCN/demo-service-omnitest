@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import { useEffect, useRef, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { cn } from './cn'
@@ -30,6 +31,8 @@ export function Select({
   label?: string
   disabled?: boolean
 }) {
+  const uiT = useT()
+
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const current = options.find((o) => o.value === value)
@@ -67,7 +70,7 @@ export function Select({
         )}
       >
         <span className={cn('truncate', !current && 'text-t3')}>
-          {current?.label ?? placeholder}
+          {current?.label ?? uiT(placeholder)}
         </span>
         {current?.meta ? (
           <span className="num ml-auto shrink-0 text-[10px] text-t3">{current.meta}</span>

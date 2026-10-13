@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 /* ===========================================================================
    四通道时序波形图（ECharts）——示波器一次采集的真实电压–时间曲线。
 
@@ -164,6 +165,8 @@ export interface ChannelNameItem {
 }
 
 function ChannelNameBar({ items }: { items: ChannelNameItem[] }) {
+  const uiT = useT()
+
   const boxRef = useRef<HTMLDivElement>(null)
   const measureRef = useRef<HTMLDivElement>(null)
   const [mode, setMode] = useState<NameBarMode>('full')
@@ -227,7 +230,7 @@ function ChannelNameBar({ items }: { items: ChannelNameItem[] }) {
                 background: it.color,
               }}
             />
-            {it.label}
+            {uiT(it.label)}
           </span>
         ))}
       </div>
@@ -246,7 +249,7 @@ function ChannelNameBar({ items }: { items: ChannelNameItem[] }) {
         {items.map((it) => (
           <span
             key={it.key}
-            title={it.label}
+            title={uiT(it.label)}
             style={{
               ...itemStyle,
               flex: mode === 'truncate' ? '1 1 0' : undefined,
@@ -264,7 +267,7 @@ function ChannelNameBar({ items }: { items: ChannelNameItem[] }) {
                 background: it.color,
               }}
             />
-            {it.label}
+            {uiT(it.label)}
           </span>
         ))}
       </div>
@@ -273,6 +276,8 @@ function ChannelNameBar({ items }: { items: ChannelNameItem[] }) {
 }
 
 export function FanWaveChart({ wave, height = 360, onChartReady, hiddenRoles }: FanWaveChartProps) {
+  const uiT = useT()
+
   const hostRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<echarts.ECharts | null>(null)
   const [compact, setCompact] = useState<'full' | 'slim'>('full')
@@ -375,7 +380,7 @@ export function FanWaveChart({ wave, height = 360, onChartReady, hiddenRoles }: 
     for (const [role, c] of byRole) ordered.push({ channel: c.channel, role, data: c })
 
     const series = ordered.map(({ role, channel, data }) => {
-      const label = ROLE_LABEL[role] ?? `CH${channel}`
+      const label = uiT(ROLE_LABEL[role] ?? `CH${channel}`)
       const color = CH_COLOR[role] ?? '#666'
       // 稳定 id（2026-10-09）：增量 setOption（不 notMerge）时，ECharts 按 id 对齐
       // 新旧 series。若不给 id，通道「未采集 ↔ 有数据」切换会让索引错位、出现残影。
@@ -385,7 +390,7 @@ export function FanWaveChart({ wave, height = 360, onChartReady, hiddenRoles }: 
       if (!data || !data.available || !data.time_s?.length) {
         return {
           id,
-          name: `${label}（未采集）`,
+          name: uiT("{v1}（未采集）", { v1: label }),
           type: 'line' as const,
           data: [] as [number, number][],
           itemStyle: { color },
@@ -456,7 +461,7 @@ export function FanWaveChart({ wave, height = 360, onChartReady, hiddenRoles }: 
         // 故这里按 role 反查 ROLE_LABEL 前缀，**不做 name 精确匹配**。
         selected: Object.fromEntries(
           series.map((s) => {
-            const hit = Object.entries(ROLE_LABEL).find(([, label]) => s.name.startsWith(label))
+            const hit = Object.entries(ROLE_LABEL).find(([, label]) => s.name.startsWith(uiT(label)))
             const role = hit?.[0]
             return [s.name, !(role && hiddenRoles?.has(role))]
           }),
@@ -481,7 +486,7 @@ export function FanWaveChart({ wave, height = 360, onChartReady, hiddenRoles }: 
       },
       xAxis: {
         type: 'value',
-        name: `时间 (${unit})`,
+        name: uiT("时间 ({v1})", { v1: unit }),
         // ⚠️ 2026-10-09 修「右下角文字遮挡」：value 轴默认把轴名摆在**末端**，
         // 压住最后一个刻度数字。改为居中置底（middle），与趋势图同一口径。
         nameLocation: 'middle',
@@ -522,7 +527,7 @@ export function FanWaveChart({ wave, height = 360, onChartReady, hiddenRoles }: 
     // hiddenRoles 进依赖：面板点通道开关时要重下发 option（仅改 legend.selected）。
     // ⚠️ 它**不影响 yAxis/series 数量**，所以 axisCountChanged 语义不变，
     //   切换显隐走增量合并，不会整图重建、也不会拽回用户的缩放窗口。
-  }, [wave, compact, hiddenRoles])
+  }, [wave, compact, hiddenRoles, uiT])
 
   const hasAny = useMemo(
     () => Boolean(wave?.channels?.some((c) => c.available && c.time_s?.length)),
@@ -536,19 +541,19 @@ export function FanWaveChart({ wave, height = 360, onChartReady, hiddenRoles }: 
     const byRole = new Map(channels.map((c) => [c.role, c]))
     const items: ChannelNameItem[] = EXPECTED_ROLES.map((exp) => ({
       key: exp.role,
-      label: ROLE_LABEL[exp.role] ?? `CH${exp.channel}`,
+      label: uiT(ROLE_LABEL[exp.role] ?? `CH${exp.channel}`),
       color: CH_COLOR[exp.role] ?? '#666',
     }))
     for (const exp of EXPECTED_ROLES) byRole.delete(exp.role)
     for (const [role, c] of byRole) {
       items.push({
         key: role,
-        label: ROLE_LABEL[role] ?? `CH${c.channel}`,
+        label: uiT(ROLE_LABEL[role] ?? `CH${c.channel}`),
         color: CH_COLOR[role] ?? '#666',
       })
     }
     return items
-  }, [wave])
+  }, [wave, uiT])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height }}>
@@ -572,8 +577,8 @@ export function FanWaveChart({ wave, height = 360, onChartReady, hiddenRoles }: 
             }}
           >
             {wave
-              ? '本次采集未读到波形文件（详见上方提示）；不伪造曲线。'
-              : '暂无波形：启动测试并完成首次采集后，CH1~CH4 真实时序波形将在此显示。'}
+              ? uiT('本次采集未读到波形文件（详见上方提示）；不伪造曲线。')
+              : uiT('暂无波形：启动测试并完成首次采集后，CH1~CH4 真实时序波形将在此显示。')}
           </div>
         )}
       </div>

@@ -1,5 +1,6 @@
 import type { AgentAdapter, AgentEvent, SendRequest } from '../agent-chat'
 import type { EvidenceItem, Verdict } from '../agent-chat'
+import { rememberScriptMessages, uiMessage, type UiMessageText } from '../../i18n/messages'
 
 /* ===========================================================================
    按流程回放的脚本化适配器。
@@ -11,7 +12,7 @@ import type { EvidenceItem, Verdict } from '../agent-chat'
    =========================================================================== */
 
 export type Step =
-  | { kind: 'say'; text: string }
+  | { kind: 'say'; text: string; uiText?: UiMessageText }
   | {
       kind: 'tool'
       callId: string
@@ -41,11 +42,12 @@ async function* play(steps: Step[], req: SendRequest, pace: number): AsyncGenera
   let seg = 0
   for (const s of steps) {
     if (s.kind === 'say') {
+      rememberScriptMessages([s.text])
       seg += 1
       const messageId = `m${t}-${seg}`
       for (let i = 0; i < s.text.length; i += 6) {
         await wait(22)
-        yield { type: 'message_delta', messageId, delta: s.text.slice(i, i + 6) }
+        yield { type: 'message_delta', messageId, delta: s.text.slice(i, i + 6), uiText: s.uiText ?? uiMessage(s.text) }
       }
       continue
     }
@@ -53,6 +55,7 @@ async function* play(steps: Step[], req: SendRequest, pace: number): AsyncGenera
       await wait(240)
       yield {
         type: 'tool_call',
+        uiAuthored: true,
         callId: uid(s.callId),
         name: s.name,
         title: s.title,
@@ -67,6 +70,7 @@ async function* play(steps: Step[], req: SendRequest, pace: number): AsyncGenera
         if (!ok) {
           yield {
             type: 'tool_result',
+            uiAuthored: true,
             callId: uid(s.callId),
             status: 'error',
             durationMs: 0,
@@ -80,6 +84,7 @@ async function* play(steps: Step[], req: SendRequest, pace: number): AsyncGenera
       await wait(Math.min(900, s.durationMs))
       yield {
         type: 'tool_result',
+        uiAuthored: true,
         callId: uid(s.callId),
         status: 'ok',
         durationMs: s.durationMs,
@@ -110,6 +115,7 @@ export function makeAdapter(
   steps: Step[] | ((req: SendRequest) => Step[]),
   pace = 1,
 ): AgentAdapter {
+  if (Array.isArray(steps)) rememberScriptMessages(steps.filter((step) => step.kind === 'say').map((step) => step.text))
   return {
     id,
     label,

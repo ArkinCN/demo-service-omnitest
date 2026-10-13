@@ -1,3 +1,4 @@
+import { useT, useLocale } from '../../i18n'
 import { useLayoutEffect } from 'react'
 import { AlertOctagon, Check } from 'lucide-react'
 import { FLOWS } from '../../data/flows'
@@ -40,6 +41,9 @@ function tone(status: StageView['status'], isCurrent: boolean): string {
 }
 
 export function AutomationStageFlow({ views }: { views: StageView[] }) {
+  const uiT = useT()
+  const { locale } = useLocale()
+
   // 退回提示：编排器调优循环「tune 采纳 → 回 run 重跑」时，该段走反向动效
   const returning = useStageReturnCue()
   // 运行态与当前节点下标：仅「当前 → 下一」段播放进度动效，非运行态整条安静
@@ -48,6 +52,7 @@ export function AutomationStageFlow({ views }: { views: StageView[] }) {
   const curIdx = curViewId ? FLOWS.findIndex((f) => f.id === curViewId) : -1
   // 缩放：与顶栏同口径（2026-10-10 由 2× 回落到 1.5×；标签基准 20px×s < 10px 进紧凑模式）
   const { slotRef, barRef, scale, compact } = useFlowBarScale<HTMLDivElement>({
+    contentKey: locale,
     labelPx: 20,
     compactTextPx: 10,
   })
@@ -125,7 +130,7 @@ export function AutomationStageFlow({ views }: { views: StageView[] }) {
                   文字上（顶栏 NavLink 带 z-10 所以没有这个问题）。 */}
               <div
                 className="relative z-10 flex shrink-0 items-center gap-[calc(var(--fb-scale)*5px)]"
-                title={`${f.index} ${f.label}`}
+                title={`${f.index} ${uiT(f.label)}`}
               >
                 <span
                   className={cn(
@@ -161,7 +166,7 @@ export function AutomationStageFlow({ views }: { views: StageView[] }) {
                     )}
                     style={{ fontSize: 'calc(var(--fb-scale) * 20px)' }}
                   >
-                    {FLOW_SHORT[f.id]}
+                    {uiT(FLOW_SHORT[f.id])}
                   </span>
                 ) : null}
               </div>

@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import {
@@ -110,6 +111,8 @@ const iconOf = (name: string, size = 14) => {
 }
 
 function AttrRow({ a }: { a: RawAttribute }) {
+  const uiT = useT()
+
   const key = paramKey('init', 'pa', a.group, a.key)
   const override = useAppStore((s) => s.overrides[key])
   const touched = useAppStore((s) => s.touched[key])
@@ -137,24 +140,24 @@ function AttrRow({ a }: { a: RawAttribute }) {
 
   const detail = (
     <span className="block space-y-1">
-      <span className="block font-medium">{a.name}</span>
+      <span className="block font-medium">{uiT(a.name)}</span>
       <span className="num block opacity-75">
         {a.key.toUpperCase()}
         {a.min !== null && a.max !== null ? ` · ${a.min}~${a.max}` : ''}
         {a.unit ? ` · ${a.unit}` : ''}
       </span>
-      <span className="block opacity-75">{sourceLine(a._source) || '源材料未登记出处'}</span>
+      <span className="block opacity-75">{sourceLine(a._source) || uiT('源材料未登记出处')}</span>
       {/* ⚠️ 占位项要分清「人已填」与「还没填」（2026-09-28）：
           人填过值后再写「待确认」是说不通的（用户实测反馈过）。
           填过的改为「已确认」，只留「这个值是现场给的、不是源材料的」这层信息。 */}
       {a._placeholder ? (
         touched ? (
-          <span className="block">已确认：源材料没给这一项，当前值由现场填写</span>
+          <span className="block">{uiT("已确认：源材料没给这一项，当前值由现场填写")}</span>
         ) : (
-          <span className="block">待现场确认：源材料没给这一项，需现场实测或由客户确认</span>
+          <span className="block">{uiT("待现场确认：源材料没给这一项，需现场实测或由客户确认")}</span>
         )
       ) : null}
-      {statusOf(a) ? <span className="block opacity-75">待核实 · {statusOf(a)}</span> : null}
+      {statusOf(a) ? <span className="block opacity-75">{uiT("待核实 · ")}{statusOf(a)}</span> : null}
     </span>
   )
 
@@ -163,12 +166,12 @@ function AttrRow({ a }: { a: RawAttribute }) {
       <Tooltip className="min-w-0" content={detail}>
         <span className="flex min-w-0 items-center gap-1.5">
           <SourceTag source={touched ? '人工' : a._placeholder ? '建议' : '文档'} />
-          <span className="cursor-help truncate text-[13px] font-medium text-t1">{short(a.name)}</span>
+          <span className="cursor-help truncate text-[13px] font-medium text-t1">{uiT(a.name) === a.name ? short(a.name) : uiT(a.name)}</span>
           {/* 小圆点只给「还没填」的占位项——填过的就不再是待办 */}
           {a._placeholder && !touched ? (
             <span
               className="h-[6px] w-[6px] shrink-0 rounded-full bg-t3/45"
-              aria-label="待现场确认"
+              aria-label={uiT("待现场确认 ")}
             />
           ) : null}
         </span>
@@ -176,20 +179,20 @@ function AttrRow({ a }: { a: RawAttribute }) {
 
       <span className="ml-auto shrink-0">
         {a.not_applicable ? (
-          <span className="text-[12px] text-t3">不适用</span>
+          <span className="text-[12px] text-t3">{uiT("不适用")}</span>
         ) : a.options?.length ? (
           <Select
             size="sm"
             className="w-[150px]"
-            label={a.name}
-            options={a.options.map((o) => ({ value: String(o.value), label: o.label }))}
+            label={uiT(a.name)}
+            options={a.options.map((o) => ({ value: String(o.value), label: uiT(o.label) }))}
             value={String(value)}
             onChange={(v) => setParam(key, v)}
           />
         ) : wantsEdit ? (
           <Stepper
             size="sm"
-            label={a.name}
+            label={uiT(a.name)}
             value={stepperValue}
             unit={a.unit ?? undefined}
             step={a.step ?? 1}
@@ -213,6 +216,8 @@ function AttrRow({ a }: { a: RawAttribute }) {
 
 /** 控制参数行：与本体属性行同形，只是取数换成 control-parameters.json */
 function ParamRow({ p }: { p: RawControlParam }) {
+  const uiT = useT()
+
   const key = paramKey('init', 'cp', p.group, p.key)
   const override = useAppStore((s) => s.overrides[key])
   const touched = useAppStore((s) => s.touched[key])
@@ -226,14 +231,14 @@ function ParamRow({ p }: { p: RawControlParam }) {
 
   const detail = (
     <span className="block space-y-1">
-      <span className="block font-medium">{p.name}</span>
+      <span className="block font-medium">{uiT(p.name)}</span>
       <span className="num block opacity-75">
         {p.key.toUpperCase()}
         {p.min !== null && p.max !== null ? ` · ${p.min}~${p.max}` : ''}
-        {p.value_shell ? ` · 外壳 ${p.value_shell}` : ''}
+        {p.value_shell ? uiT(" · 外壳 {v1}", { v1: p.value_shell }) : ''}
       </span>
       <span className="block opacity-75">{sourceLine(p._source)}</span>
-      {statusOf(p) ? <span className="block opacity-75">待核实 · {statusOf(p)}</span> : null}
+      {statusOf(p) ? <span className="block opacity-75">{uiT("待核实 · ")}{statusOf(p)}</span> : null}
     </span>
   )
 
@@ -242,7 +247,7 @@ function ParamRow({ p }: { p: RawControlParam }) {
       <Tooltip className="min-w-0" content={detail}>
         <span className="flex min-w-0 items-center gap-1.5">
           <SourceTag source={touched ? '人工' : '文档'} />
-          <span className="cursor-help truncate text-[13px] font-medium text-t1">{short(p.name)}</span>
+          <span className="cursor-help truncate text-[13px] font-medium text-t1">{uiT(p.name) === p.name ? short(p.name) : uiT(p.name)}</span>
         </span>
       </Tooltip>
       <span className="ml-auto shrink-0">
@@ -250,15 +255,15 @@ function ParamRow({ p }: { p: RawControlParam }) {
           <Select
             size="sm"
             className="w-[150px]"
-            label={p.name}
-            options={p.options.map((o) => ({ value: String(o.value), label: o.label }))}
+            label={uiT(p.name)}
+            options={p.options.map((o) => ({ value: String(o.value), label: uiT(o.label) }))}
             value={String(value)}
             onChange={(v) => setParam(key, v)}
           />
         ) : editable ? (
           <Stepper
             size="sm"
-            label={p.name}
+            label={uiT(p.name)}
             value={stepperValue}
             unit={p.unit ?? undefined}
             step={p.step ?? 1}
@@ -359,23 +364,25 @@ function leafKeyOf(x: Leaf): string {
 }
 
 function FieldRow({ f }: { f: RawHeaderField }) {
+  const uiT = useT()
+
   const key = paramKey('init', 'rp', 'header', f.key)
   const v = useAppStore((s) => s.overrides[key])
   const setParam = useAppStore((s) => s.setParam)
   return (
     <div className="flex min-h-[36px] items-center gap-2 px-4 py-1 transition-colors hover:bg-p50/60">
-      <Tooltip className="min-w-0" content={`${simp(f.name)} · 报告模板取值位 ${f.value_slot || '—'}；本项在流程 5 只带入不重填。`}>
+      <Tooltip className="min-w-0" content={uiT("{v1} · 报告模板取值位 {v2}；本项在流程 5 只带入不重填。", { v1: simp(f.name), v2: f.value_slot || '—' })}>
         <span className="flex min-w-0 items-center gap-1.5">
           <SourceTag source={v ? '人工' : '建议'} />
-          <span className="cursor-help truncate text-[13px] font-medium text-t1">{short(simp(f.name), 7)}</span>
+          <span className="cursor-help truncate text-[13px] font-medium text-t1">{uiT(simp(f.name)) === simp(f.name) ? short(simp(f.name), 7) : uiT(simp(f.name))}</span>
         </span>
       </Tooltip>
       <span className="ml-auto shrink-0">
         <Input
           value={String(v ?? '')}
           onChange={(e) => setParam(key, e.target.value)}
-          aria-label={simp(f.name)}
-          placeholder="待填"
+          aria-label={uiT(simp(f.name))}
+          placeholder={uiT("待填")}
           className="h-[26px] w-[142px] text-[12.5px]"
         />
       </span>
@@ -384,11 +391,12 @@ function FieldRow({ f }: { f: RawHeaderField }) {
 }
 
 function IlkRow({ i }: { i: RawInterlock }) {
+  const uiT = useT()
   return (
     <Tooltip className="w-full" content={`${i.id} ${i.name} · ${i.action}`}>
       <div className="flex min-h-[32px] w-full cursor-help items-center gap-2 px-4 py-1">
         <Lock size={12} strokeWidth={1.9} className="shrink-0 text-t3" />
-        <span className="truncate text-[12.5px] text-t1">{short(i.name, 10)}</span>
+        <span className="truncate text-[12.5px] text-t1">{uiT(i.name) === i.name ? short(i.name, 10) : uiT(i.name)}</span>
         <span className="num ml-auto shrink-0 text-[12px] text-t3">{i.id}</span>
       </div>
     </Tooltip>
@@ -396,12 +404,17 @@ function IlkRow({ i }: { i: RawInterlock }) {
 }
 
 function InfoRow({ x }: { x: Extract<Leaf, { k: 'info' }> }) {
+  const uiT = useT()
+  const displayValue = x.id.startsWith('ch-') && x.value.endsWith(BENCH_CHANNEL_PENDING)
+    ? x.value.slice(0, -BENCH_CHANNEL_PENDING.length) + uiT(BENCH_CHANNEL_PENDING)
+    : uiT(x.value)
+
   return (
-    <Tooltip className="w-full" content={x.hint}>
+    <Tooltip className="w-full" content={uiT(x.hint)}>
       <div className="flex min-h-[32px] w-full cursor-help items-center gap-2 px-4 py-1">
-        <span className="truncate text-[12.5px] font-medium text-t1">{x.label}</span>
+        <span className="truncate text-[12.5px] font-medium text-t1">{uiT(x.label)}</span>
         {x.pending ? <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-t3/45" /> : null}
-        <span className="num ml-auto shrink-0 truncate text-[12.5px] text-t2">{x.value}</span>
+        <span className="num ml-auto shrink-0 truncate text-[12.5px] text-t2">{displayValue}</span>
       </div>
     </Tooltip>
   )
@@ -428,7 +441,7 @@ function autoSubs(items: Leaf[], prefix: string) {
     bag.get(x.g)!.push(x)
   }
   if (order.length < 2) return []
-  return order.map((g, i) => ({ id: `${prefix}-s${i}`, title: short(g, 7), items: bag.get(g)! }))
+  return order.map((g, i) => ({ id: `${prefix}-s${i}`, title: g, items: bag.get(g)! }))
 }
 
 const tierOf = (id: string, title: string, groups: BuiltGroup<Leaf>[]): BuiltTier<Leaf> => ({
@@ -554,6 +567,8 @@ function outputTier(pack: RawPack): BuiltTier<Leaf> {
 }
 
 export function InitLeftPanel() {
+  const uiT = useT()
+
   const pack = getPack()
   const nav = useNavigate()
   const locked = !!useAppStore((s) => s.confirmed.init)
@@ -691,7 +706,7 @@ export function InitLeftPanel() {
       })
   }, [sceneId, pack])
 
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
 
   const attrs = pack.attributes.attributes
   /**
@@ -773,7 +788,7 @@ export function InitLeftPanel() {
     <div className="flex h-full min-h-0 w-full flex-col">
       <header className="flex h-[44px] shrink-0 items-center gap-2.5 border-b border-line-soft px-4">
         <Boxes size={17} strokeWidth={1.9} className="shrink-0 text-p700" />
-        <h2 className="text-[16px] leading-none font-semibold tracking-tight text-t1">初始化配置</h2>
+        <h2 className="text-[16px] leading-none font-semibold tracking-tight text-t1">{uiT("初始化配置")}</h2>
         <span className="num text-[12px] text-t3">{total}</span>
         <div className="ml-auto flex items-center gap-1.5">
           {/* ⚠️ 措辞与口径（2026-09-28 用户拍板）：
@@ -786,9 +801,9 @@ export function InitLeftPanel() {
             <Badge
               tone="neutral"
               mono
-              title={`${holes} 项在源材料里没有值、且尚未填写，需现场实测或由客户确认${holesFilled ? `（已补 ${holesFilled} 项）` : ''}`}
+              title={uiT("{v1} 项在源材料里没有值、且尚未填写，需现场实测或由客户确认{v2}", { v1: holes, v2: holesFilled ? `（已补 ${holesFilled} 项）` : '' })}
             >
-              待现场确认 {holes}
+              {uiT("待现场确认")}{holes}
             </Badge>
           ) : null}
         </div>
@@ -861,7 +876,7 @@ export function InitLeftPanel() {
               给需要核对的人看），但**不摆在按钮上**，避免与菜单数字打架。 */}
           {locked ? (
             <Tooltip
-              content={`已确认并锁定（轮次快照已写入，后续流程可取用）。解除后可再编辑，下游基线同步失效。`}
+              content={uiT(`已确认并锁定（轮次快照已写入，后续流程可取用）。解除后可再编辑，下游基线同步失效。`)}
               className="flex-1"
             >
               <Button
@@ -871,22 +886,21 @@ export function InitLeftPanel() {
                 icon={<Lock size={15} strokeWidth={2} />}
                 onClick={() => unconfirmFlow('init')}
               >
-                解除确认 · {total} 项
-              </Button>
+                {uiT("解除确认 · ")}{total} {uiT(" 项")}</Button>
             </Tooltip>
           ) : (
             <span className="flex-1">
               <ConfirmFooter
-                label={locking ? '锁定中…' : '确认并锁定'}
+                label={locking ? uiT('锁定中…') : uiT('确认并锁定')}
                 count={total}
                 unit="项"
                 hint={
-                  `一次保存并锁定全部参数：菜单共 ${total} 项。` +
+                  uiT("一次保存并锁定全部参数：菜单共 {v1} 项。", { v1: total }) +
                   (holes
-                    ? `其中 ${holes} 项源材料没给值、你还没填（已补 ${holesFilled} 项）——` +
-                      `这些项**不阻塞锁定**，会继续按「待现场确认」跟踪。`
-                    : `源材料缺的项已全部补齐。`) +
-                  `点击后写入配置快照（locked:true）并进入流程 2。`
+                    ? uiT("其中 {v1} 项源材料没给值、你还没填（已补 {v2} 项）——", { v1: holes, v2: holesFilled }) +
+                      uiT(`这些项**不阻塞锁定**，会继续按「待现场确认」跟踪。`)
+                    : uiT(`源材料缺的项已全部补齐。`)) +
+                  uiT(`点击后写入配置快照（locked:true）并进入流程 2。`)
                 }
                 onClick={() => void confirmAndSnapshot()}
               />
@@ -920,15 +934,17 @@ function imageOf(pack: RawPack, file: string) {
 }
 
 function ProductHero({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const pack = getPack()
   const [pick, setPick] = useState(-1)
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
 
   const vs = pack.scene.schematic_variants
   const srcOf = (v: { file: string; rendered?: string }) =>
     v.rendered ?? (v.file.startsWith('assets/') ? v.file : imageOf(pack, v.file))
   if (!vs.length)
-    return <EmptyState icon={<CircuitBoard size={24} strokeWidth={1.5} />} title="未登记图纸" />
+    return <EmptyState icon={<CircuitBoard size={24} strokeWidth={1.5} />} title={uiT("未登记图纸")} />
 
   const first = Math.max(0, vs.findIndex((v) => srcOf(v)))
   const i = pick >= 0 ? Math.min(pick, vs.length - 1) : first
@@ -947,13 +963,13 @@ function ProductHero({ full }: { full?: boolean }) {
       {src ? (
         <img
           src={pack.base + src}
-          alt={img?.title ?? cur.name}
+          alt={uiT(img?.title ?? cur.name)}
           className={cn('h-full w-full', full ? 'object-contain' : 'object-cover object-center')}
         />
       ) : (
         <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 bg-p50 px-6 text-center">
           <CircuitBoard size={24} strokeWidth={1.5} className="text-p400" />
-          <span className="text-[13px] text-t2">该变体未渲染分页图</span>
+          <span className="text-[13px] text-t2">{uiT("该变体未渲染分页图")}</span>
           <span className="num max-w-full truncate text-[12px] text-t3" title={cur.file}>
             {fileName(cur.file)}
           </span>
@@ -962,22 +978,22 @@ function ProductHero({ full }: { full?: boolean }) {
 
       {/* 芯片徽标 */}
       <Tooltip
-        content={`${chipText}；图为${img?.title ?? cur.name}${img?.render ? `（${img.render}）` : ''}，场景包未登记产品实物照片，不拿渲染图冒充实物。`}
+        content={uiT("{v1}；图为{v2}{v3}，场景包未登记产品实物照片，不拿渲染图冒充实物。", { v1: chipText, v2: img?.title ?? cur.name, v3: img?.render ? `（${img.render}）` : '' })}
       >
         <span className="absolute top-2.5 left-2.5 inline-flex h-[26px] cursor-help items-center gap-1.5 rounded-full border border-white/70 bg-white/85 px-2.5 shadow-[0_1px_6px_rgba(31,42,36,.12)] backdrop-blur">
           <Cpu size={14} strokeWidth={1.9} className="text-p700" />
-          <span className="num text-[12.5px] font-semibold text-t1">{chip}</span>
+          <span className="num text-[12.5px] font-semibold text-t1">{uiT(chip)}</span>
         </span>
       </Tooltip>
 
       {/* 变体切换 */}
       <div className="absolute right-2.5 bottom-2.5 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/85 px-2.5 py-1.5 shadow-[0_1px_6px_rgba(31,42,36,.12)] backdrop-blur">
         {vs.slice(0, 3).map((v, k) => (
-          <Tooltip key={v.name} content={`${v.name} · ${fileName(v.file)}`}>
+          <Tooltip key={v.name} content={`${uiT(v.name)} · ${fileName(v.file)}`}>
             <button
               type="button"
               onClick={() => setPick(k)}
-              aria-label={v.name}
+              aria-label={uiT(v.name)}
               aria-pressed={i === k}
               className={cn(
                 'h-[8px] w-[8px] rounded-full transition-colors',
@@ -986,7 +1002,7 @@ function ProductHero({ full }: { full?: boolean }) {
             />
           </Tooltip>
         ))}
-        <span className="text-[12px] font-medium text-t2">{shortVariant(cur.name)}</span>
+        <span className="text-[12px] font-medium text-t2">{uiT(cur.name) === cur.name ? uiT(shortVariant(cur.name)) : uiT(cur.name)}</span>
       </div>
     </div>
   )
@@ -1024,11 +1040,13 @@ function keyDocs(pack: RawPack): KeyDoc[] {
 }
 
 function DocIntake({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const pack = getPack()
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
   const docs = keyDocs(pack)
   if (!docs.length)
-    return <EmptyState icon={<FileText size={24} strokeWidth={1.5} />} title="未登记文档" />
+    return <EmptyState icon={<FileText size={24} strokeWidth={1.5} />} title={uiT("未登记文档")} />
   const attrs = pack.attributes.attributes
   const filled = attrs.filter((a) => !a._placeholder && a.value !== null).length
 
@@ -1051,7 +1069,7 @@ function DocIntake({ full }: { full?: boolean }) {
               <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-tpx bg-p50 text-p700">
                 <d.icon size={14} strokeWidth={1.75} />
               </span>
-              <span className="truncate text-[13px] font-medium text-t1">{d.label}</span>
+              <span className="truncate text-[13px] font-medium text-t1">{uiT(d.label)}</span>
               {d.extra && d.extra > 1 ? (
                 <span className="num shrink-0 text-[12px] text-t3">×{d.extra}</span>
               ) : null}
@@ -1063,14 +1081,12 @@ function DocIntake({ full }: { full?: boolean }) {
         ))}
         {full ? (
           <p className="pt-2 text-[12px] leading-5 text-t3">
-            回填只认这几份源文件里写死的值：数据手册给芯片电气规格，Customer.h 给整机配置，
-            原理图给采样链路与分压网络。源材料没写的项留空标「待确认」，不按经验值补。
-          </p>
+            {uiT("回填只认这几份源文件里写死的值：数据手册给芯片电气规格，Customer.h 给整机配置， 原理图给采样链路与分压网络。源材料没写的项留空标「待确认」，不按经验值补。")}</p>
         ) : null}
       </div>
       {/* 回填进度：让这张卡除了文件名之外还有一条可读的量 */}
       <div className="flex shrink-0 items-center gap-2 pt-1.5">
-        <span className="text-[12px] text-t3">回填</span>
+        <span className="text-[12px] text-t3">{uiT("回填")}</span>
         <span className="h-[5px] min-w-0 flex-1 overflow-hidden rounded-full bg-p100">
           <span
             className="block h-full rounded-full bg-p600 transition-[width] duration-500"
@@ -1083,11 +1099,10 @@ function DocIntake({ full }: { full?: boolean }) {
         </span>
       </div>
       <div className="shrink-0 pt-2">
-        <Tooltip content={`已从源文件填得 ${filled} / ${attrs.length} 项；其余项源材料确实没给。`}>
+        <Tooltip content={uiT("已从源文件填得 {v1} / {v2} 项；其余项源材料确实没给。", { v1: filled, v2: attrs.length })}>
           <span className="block">
             <Button block size="sm" variant="secondary" icon={<Wand2 size={13} strokeWidth={1.9} />}>
-              按这三份回填
-            </Button>
+              {uiT("按这三份回填")}</Button>
           </span>
         </Tooltip>
       </div>
@@ -1175,13 +1190,15 @@ function buildTree(pack: RawPack) {
 }
 
 function ProjectTree({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const pack = getPack()
   const [open, setOpen] = useState<Record<string, boolean>>({})
   const tree = useMemo(() => (pack ? buildTree(pack) : null), [pack])
 
-  if (!pack || !tree) return <Empty text="场景包未加载" />
+  if (!pack || !tree) return <Empty text={uiT("场景包未加载")} />
   if (!tree.node.children.size)
-    return <EmptyState icon={<Folder size={24} strokeWidth={1.5} />} title="未登记源文件" />
+    return <EmptyState icon={<Folder size={24} strokeWidth={1.5} />} title={uiT("未登记源文件")} />
 
   const count = (n: TNode): number =>
     (n.doc ? 1 : 0) + [...n.children.values()].reduce((s, c) => s + count(c), 0)
@@ -1211,7 +1228,7 @@ function ProjectTree({ full }: { full?: boolean }) {
           {isDir ? (
             <button
               type="button"
-              aria-label={isOpen ? '折叠' : '展开'}
+              aria-label={isOpen ? uiT('折叠') : uiT('展开')}
               aria-expanded={isOpen}
               onClick={() => setOpen((o) => ({ ...o, [id]: !isOpen }))}
               className="flex h-[16px] w-[14px] shrink-0 items-center text-t3 transition-colors hover:text-p700"
@@ -1254,7 +1271,7 @@ function ProjectTree({ full }: { full?: boolean }) {
     <div className="flex h-full min-h-0 w-full flex-col">
       <div className="flex shrink-0 items-baseline gap-1.5 pb-1">
         <Tooltip
-          content={`${pack.scene.product.name}\n场景包 ${pack.scene.id}\n${tree.prefix ?? '本场景包的源材料不在同一个工程目录下'}`}
+          content={uiT("{v1}\n场景包 {v2}\n{v3}", { v1: pack.scene.product.name, v2: pack.scene.id, v3: tree.prefix ?? '本场景包的源材料不在同一个工程目录下' })}
         >
           <span className="cursor-help truncate text-[12.5px] font-medium text-t1">
             {productShort(pack)}
@@ -1281,8 +1298,9 @@ function ProjectTree({ full }: { full?: boolean }) {
 const TYPE_ORDER = ['硬件', '流程', '人员'] as const
 
 function InterlockRing({ full }: { full?: boolean }) {
+  const uiT = useT()
   const pack = getPack()
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
   const items = pack.interlocks.interlocks
   const counts = TYPE_ORDER.map((t) => ({ t, n: items.filter((i) => i.type === t).length }))
   // 环形进度表示「已带可核验阈值」的条数占比：硬件项多数有固件阈值，流程与人员项靠人放行。
@@ -1294,7 +1312,7 @@ function InterlockRing({ full }: { full?: boolean }) {
 
   return (
     <div className="flex h-full min-h-0 w-full items-center gap-4">
-      <Tooltip content={`共 ${items.length} 条联锁，其中 ${withTh} 条带可核验阈值；流程与人员共 ${human} 条要在流程 4 逐条放行。`}>
+      <Tooltip content={uiT("共 {v1} 条联锁，其中 {v2} 条带可核验阈值；流程与人员共 {v3} 条要在流程 4 逐条放行。", { v1: items.length, v2: withTh, v3: human })}>
         <div className="relative shrink-0 cursor-help">
           <svg width="58" height="58" viewBox="0 0 58 58">
             <circle cx="29" cy="29" r={R} fill="none" stroke="var(--p-100)" strokeWidth="6" />
@@ -1323,7 +1341,7 @@ function InterlockRing({ full }: { full?: boolean }) {
           <Tooltip
             key={t}
             className="w-full"
-            content={`${t}：${pack.interlocks.types[t] ?? ''}${t === '硬件' ? '' : `（${human} 条待放行，流程 4 逐条确认）`}`}
+            content={uiT("{v1}：{v2}{v3}", { v1: uiT(t), v2: uiT(pack.interlocks.types[t] ?? ''), v3: t === '硬件' ? '' : uiT('（{v1} 条待放行，流程 4 逐条确认）', { v1: human }) })}
           >
             <div className="flex w-full cursor-help items-center gap-1.5 border-b border-line-soft py-[5px] text-[12.5px] text-t2 last:border-b-0">
               <span
@@ -1332,7 +1350,7 @@ function InterlockRing({ full }: { full?: boolean }) {
                   t === '硬件' ? 'bg-p600' : t === '流程' ? 'bg-p300' : 'bg-warn',
                 )}
               />
-              {t}
+              {uiT(t)}
               <span className="num ml-auto text-[13px] font-semibold text-t1">{n}</span>
             </div>
           </Tooltip>
@@ -1412,6 +1430,8 @@ function instrumentsOf(pack: RawPack) {
 }
 
 function BenchLive({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const pack = getPack()
   const [state, setState] = useState<ConnState>('connecting')
   useEffect(() => {
@@ -1423,7 +1443,7 @@ function BenchLive({ full }: { full?: boolean }) {
       alive = false
     }
   }, [])
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
 
   const online = state === 'connected'
   const rows = [
@@ -1458,14 +1478,14 @@ function BenchLive({ full }: { full?: boolean }) {
       }}
     >
       {rows.map((r) => (
-        <Tooltip key={r.name} className="w-full" content={r.hint}>
+        <Tooltip key={r.name} className="w-full" content={uiT(r.hint)}>
           <div className="flex w-full cursor-help items-center gap-2.5 border-b border-line-soft py-[7px] last:border-b-0">
             <span className="shrink-0 text-p600 [&>svg]:block">
               <r.icon size={14} strokeWidth={1.8} />
             </span>
-            <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-t1">{r.name}</span>
-            <span className="num shrink-0 text-[12px] text-t3">{r.meta}</span>
-            <StatusDot status={r.status} label={r.text} />
+            <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-t1">{uiT(r.name)}</span>
+            <span className="num shrink-0 text-[12px] text-t3">{uiT(r.meta)}</span>
+            <StatusDot status={r.status} label={uiT(r.text)} />
           </div>
         </Tooltip>
       ))}
@@ -1474,8 +1494,8 @@ function BenchLive({ full }: { full?: boolean }) {
         className="w-full"
         content={
           online
-            ? `最近一次取图来自台架工控机${BENCH_PULL_DIR ? ` ${BENCH_PULL_DIR}` : ''}，点开可看全图。`
-            : '网关未启动，本场景包里也没有留档的台架截图，这里是占位框——不拿别处的图冒充台架实况。'
+            ? uiT("最近一次取图来自台架工控机{v1}，点开可看全图。", { v1: BENCH_PULL_DIR ? ` ${BENCH_PULL_DIR}` : '' })
+            : uiT('网关未启动，本场景包里也没有留档的台架截图，这里是占位框——不拿别处的图冒充台架实况。')
         }
       >
         <div className="mt-1.5 flex w-full shrink-0 cursor-help items-center gap-2.5">
@@ -1483,16 +1503,14 @@ function BenchLive({ full }: { full?: boolean }) {
             <ImageIcon size={16} strokeWidth={1.75} />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[12.5px] font-medium text-t2">最近一次截图</span>
-            <span className="block truncate text-[12px] text-t3">{online ? '待取图' : '无留档'}</span>
+            <span className="block truncate text-[12.5px] font-medium text-t2">{uiT("最近一次截图")}</span>
+            <span className="block truncate text-[12px] text-t3">{online ? uiT('待取图') : uiT('无留档')}</span>
           </span>
         </div>
       </Tooltip>
       {full ? (
         <p className="pt-2 text-[12px] leading-5 text-t3">
-          浏览器不持有任何凭据；私钥只在网关一侧，devices.json 里写的是环境变量名 FORTIOR_WIN_KEY。
-          初始化配置阶段只核对设备在不在，不下发任何动作。
-        </p>
+          {uiT("浏览器不持有任何凭据；私钥只在网关一侧，devices.json 里写的是环境变量名 FORTIOR_WIN_KEY。 初始化配置阶段只核对设备在不在，不下发任何动作。")}</p>
       ) : null}
     </div>
   )

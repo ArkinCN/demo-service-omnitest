@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import { useEffect, useRef, useState } from 'react'
 import { LogOut } from 'lucide-react'
 import { cn, Modal } from '../../components/ui'
@@ -56,6 +57,8 @@ import { AutoExitConfirm } from './AutoExitConfirm'
 type Phase = 'intro' | 'running' | 'result'
 
 export function AutomationRunOverlay() {
+  const uiT = useT()
+
   const intent = useAppStore((s) => s.automationIntent)
   const runStatus = useAppStore((s) => s.automationRunStatus)
   const stages = useAppStore((s) => s.automationStages)
@@ -274,7 +277,7 @@ export function AutomationRunOverlay() {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="一键自动化回归"
+      aria-label={uiT("一键自动化回归")}
       data-testid="automation-overlay"
       data-phase={phase}
       className="automation-takeover fixed inset-0 z-50 flex flex-col bg-page"
@@ -342,8 +345,8 @@ export function AutomationRunOverlay() {
       <Modal
         open={reportOpen}
         onClose={() => setReportOpen(false)}
-        title="报告预览"
-        meta="按模板节结构渲染 · 非最终成稿"
+        title={uiT("报告预览")}
+        meta={uiT("按模板节结构渲染 · 非最终成稿")}
         width={880}
         zIndex={70}
       >
@@ -363,6 +366,8 @@ function HeaderBar({
   views?: ReturnType<typeof buildStageViews>['views']
   onExit: () => void
 }) {
+  const uiT = useT()
+
   return (
     <header
       className="flex h-[max(56px,var(--auto-header-h,56px))] shrink-0 items-center gap-3 border-b border-line bg-surface px-4"
@@ -396,8 +401,7 @@ function HeaderBar({
             paddingBlock: 'calc(var(--fb-scale, 1) * 4px)',
           }}
         >
-          全屏自动回归
-        </span>
+          {uiT("全屏自动回归")}</span>
       </div>
 
       {views && views.length ? (
@@ -431,12 +435,14 @@ function HeaderBar({
  * 图标取 LogOut：一眼能认出是「退出」，不必靠文字猜。
  */
 function ExitButton({ onExit }: { onExit: () => void }) {
+  const uiT = useT()
+
   return (
     <button
       type="button"
       data-testid="auto-exit-button"
       onClick={onExit}
-      title="退出AI自动化测试：只关闭当前界面，后台测试继续跑完"
+      title={uiT("退出AI自动化测试：只关闭当前界面，后台测试继续跑完")}
       className={cn(
         'inline-flex shrink-0 cursor-pointer items-center rounded-full border border-line bg-white text-t3 transition-colors duration-150',
         'hover:border-p300 hover:bg-p50 hover:text-p700',
@@ -459,7 +465,6 @@ function ExitButton({ onExit }: { onExit: () => void }) {
           height: 'calc(var(--fb-scale, 1) * 16px)',
         }}
       />
-      退出AI自动化测试
-    </button>
+      {uiT("退出AI自动化测试")}</button>
   )
 }

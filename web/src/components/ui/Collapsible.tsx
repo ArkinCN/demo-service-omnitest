@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import { useState, type ReactNode } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { cn } from './cn'
@@ -66,6 +67,8 @@ export function Collapsible({
   className?: string
   dense?: boolean
 }) {
+  const uiT = useT()
+
   const stored = useAppStore((s) => (storeKey ? s.collapse[storeKey] : undefined))
   const setCollapse = useAppStore((s) => s.setCollapse)
   const [local, setLocal] = useState(defaultOpen)
@@ -81,15 +84,15 @@ export function Collapsible({
       <span className="ml-auto flex shrink-0 items-center gap-1.5">
         {stat.alert ? (
           <span
-            title={`异常 ${stat.alert} 项`}
+            title={uiT("异常 {v1} 项", { v1: stat.alert })}
             className="num inline-flex h-[17px] items-center rounded-full border border-alert px-1.5 text-[11px] leading-none text-alert"
           >
-            异常 {stat.alert}
+            {uiT("异常 ")}{stat.alert}
           </span>
         ) : null}
         {stat.pending ? (
           <span
-            title={`待核实 ${stat.pending} 项`}
+            title={uiT("待核实 {v1} 项", { v1: stat.pending })}
             className="num inline-flex h-[17px] items-center gap-1 rounded-full border border-line px-1.5 text-[11px] leading-none text-t2"
           >
             <span className="h-[5px] w-[5px] rounded-full bg-t3/45" />
@@ -97,7 +100,7 @@ export function Collapsible({
           </span>
         ) : null}
         {stat.total !== undefined ? (
-          <span className="num text-[12px] text-t3" title={`已填 ${stat.done ?? 0}/${stat.total}`}>
+          <span className="num text-[12px] text-t3" title={uiT("已填 {v1}/{v2}", { v1: stat.done ?? 0, v2: stat.total })}>
             {stat.done ?? 0}
             <span className="text-t3/70">/{stat.total}</span>
           </span>

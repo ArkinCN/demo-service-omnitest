@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 /* ===========================================================================
    C 区统一画板（React Flow 本体）。
 
@@ -147,22 +148,23 @@ function toFlowEdges(layout: CanvasLayout): Edge[] {
    缩略导航图让到左下角，两个控件仍分处两角、互不遮挡。 */
 
 function ZoomBar({ onReset }: { onReset: () => void }) {
+  const uiT = useT()
+
   const { zoomIn, zoomOut } = useReactFlow()
   const zoom = useStore((s) => s.transform[2])
   return (
     <div className="cv-zoom">
-      <button type="button" aria-label="缩小" onClick={() => zoomOut({ duration: 120 })}>
+      <button type="button" aria-label={uiT("缩小")} onClick={() => zoomOut({ duration: 120 })}>
         −
       </button>
       <span className="pct" data-testid="canvas-zoom">
         {Math.round(zoom * 100)}%
       </span>
-      <button type="button" aria-label="放大画布" onClick={() => zoomIn({ duration: 120 })}>
+      <button type="button" aria-label={uiT("放大画布")} onClick={() => zoomIn({ duration: 120 })}>
         +
       </button>
       <button type="button" onClick={onReset}>
-        复位
-      </button>
+        {uiT("复位")}</button>
     </div>
   )
 }
@@ -212,6 +214,8 @@ function CanvasInner({
   scene: ScenePackage
   nodes?: CanvasNode[]
 }) {
+  const uiT = useT()
+
   const sceneId = scene.meta.id
   const selected = useAppStore((s) => s.canvasSelected)
   const setSelected = useAppStore((s) => s.setCanvasSelected)
@@ -389,16 +393,14 @@ function CanvasInner({
         <div className="cv-legend">
           <span>
             <i />
-            物理接线
-          </span>
+            {uiT("物理接线")}</span>
           <span>
             <i className="dash" />
-            数据流
-          </span>
-          <span>通道映射{BENCH_CHANNEL_PENDING}</span>
+            {uiT("数据流")}</span>
+          <span>{uiT("通道映射")} {uiT(BENCH_CHANNEL_PENDING)}</span>
         </div>
         <ZoomBar onReset={reset} />
-        {dragOver ? <div className="cv-drop">松手即在此处建节点</div> : null}
+        {dragOver ? <div className="cv-drop">{uiT("松手即在此处建节点")}</div> : null}
       </div>
 
       <Modal
@@ -412,11 +414,9 @@ function CanvasInner({
         footer={
           <>
             <Button size="sm" variant="ghost" onClick={() => setExpanded(null)}>
-              关闭
-            </Button>
+              {uiT("关闭")}</Button>
             <Button size="sm" variant="secondary">
-              在新窗口打开
-            </Button>
+              {uiT("在新窗口打开")}</Button>
           </>
         }
       >

@@ -1,3 +1,5 @@
+import { uiMessage, rememberScriptMessages } from '../../i18n/messages'
+import { useT } from '../../i18n'
 /* ===========================================================================
    知识库模块页 /knowledge 的整页版式。
 
@@ -147,6 +149,8 @@ function FilterRow({
 /* -------------------------------------------------------------------- 左栏 */
 
 function FilterColumn({ entries }: { entries: KnowledgeEntry[] }) {
+  const uiT = useT()
+
   const kbFilter = useAppStore((s) => s.kbFilter)
   const setKbFilter = useAppStore((s) => s.setKbFilter)
   const owner = entries[0]?.owner ?? ['', '', '']
@@ -173,10 +177,10 @@ function FilterColumn({ entries }: { entries: KnowledgeEntry[] }) {
   const Filter = KNOWLEDGE_ICON.filter
 
   return (
-    <Panel style={{ width: 'clamp(248px, 17vw, 320px)' }} className="shrink-0">
+    <Panel style={{ width: 'clamp(248px, 17vw, 320px)' }} className="knowledge-axis-panel shrink-0">
       <PanelHeader
         icon={<Filter size={17} strokeWidth={1.9} />}
-        title="分类筛选"
+        title={uiT("分类筛选")}
         right={
           dirty ? (
             <Button
@@ -184,18 +188,17 @@ function FilterColumn({ entries }: { entries: KnowledgeEntry[] }) {
               variant="ghost"
               onClick={() => setKbFilter({ usage: [], origin: [], owner: [] })}
             >
-              重置
-            </Button>
+              {uiT("重置")}</Button>
           ) : (
-            <Badge tone="neutral">三轴</Badge>
+            <Badge tone="neutral">{uiT("三轴")}</Badge>
           )
         }
       />
       <div className="fade-b min-h-0 flex-1 overflow-y-auto">
         <Collapsible
-          title="归属"
+          title={uiT("归属 ")}
           icon={<Owner size={14} strokeWidth={1.9} />}
-          meta={kbFilter.owner.length ? `${kbFilter.owner.length} 项` : '三级'}
+          meta={kbFilter.owner.length ? uiT("{v1} 项", { v1: kbFilter.owner.length }) : uiT('三级')}
           defaultOpen
           storeKey={collapseKey('knowledge', 'owner')}
           dense
@@ -204,7 +207,7 @@ function FilterColumn({ entries }: { entries: KnowledgeEntry[] }) {
             lv ? (
               <FilterRow
                 key={lv}
-                label={lv}
+                label={uiT(lv)}
                 indent={i}
                 count={countFor('owner', lv)}
                 active={kbFilter.owner.includes(lv)}
@@ -215,9 +218,9 @@ function FilterColumn({ entries }: { entries: KnowledgeEntry[] }) {
         </Collapsible>
 
         <Collapsible
-          title="来源"
+          title={uiT("来源")}
           icon={<Origin size={14} strokeWidth={1.9} />}
-          meta={kbFilter.origin.length ? `${kbFilter.origin.length} 项` : '两类'}
+          meta={kbFilter.origin.length ? uiT("{v1} 项", { v1: kbFilter.origin.length }) : uiT('两类')}
           defaultOpen={false}
           storeKey={collapseKey('knowledge', 'origin')}
           dense
@@ -225,7 +228,7 @@ function FilterColumn({ entries }: { entries: KnowledgeEntry[] }) {
           {ORIGINS.map((o) => (
             <FilterRow
               key={o}
-              label={KNOWLEDGE_ORIGIN_LABEL[o]}
+              label={uiT(KNOWLEDGE_ORIGIN_LABEL[o])}
               count={countFor('origin', o)}
               active={kbFilter.origin.includes(o)}
               onClick={() => setKbFilter({ origin: toggle(kbFilter.origin, o) })}
@@ -234,9 +237,9 @@ function FilterColumn({ entries }: { entries: KnowledgeEntry[] }) {
         </Collapsible>
 
         <Collapsible
-          title="用途"
+          title={uiT("用途 ")}
           icon={<Usage size={14} strokeWidth={1.9} />}
-          meta={kbFilter.usage.length ? `${kbFilter.usage.length} 项` : '三类'}
+          meta={kbFilter.usage.length ? uiT("{v1} 项", { v1: kbFilter.usage.length }) : uiT('三类')}
           defaultOpen={false}
           storeKey={collapseKey('knowledge', 'usage')}
           dense
@@ -244,7 +247,7 @@ function FilterColumn({ entries }: { entries: KnowledgeEntry[] }) {
           {USAGES.map((u) => (
             <FilterRow
               key={u}
-              label={KNOWLEDGE_USAGE_LABEL[u]}
+              label={uiT(KNOWLEDGE_USAGE_LABEL[u])}
               count={countFor('usage', u)}
               active={kbFilter.usage.includes(u)}
               onClick={() => setKbFilter({ usage: toggle(kbFilter.usage, u) })}
@@ -276,6 +279,8 @@ function EntryRow({
   isNew: boolean
   onClick: () => void
 }) {
+  const uiT = useT()
+
   const Doc = KNOWLEDGE_ICON.doc
   const Exp = KNOWLEDGE_ICON.experience
   return (
@@ -288,7 +293,7 @@ function EntryRow({
       )}
     >
       <Badge tone={USAGE_TONE[entry.usage]} className="w-[76px] justify-center">
-        {KNOWLEDGE_USAGE_LABEL[entry.usage]}
+        {uiT(KNOWLEDGE_USAGE_LABEL[entry.usage])}
       </Badge>
       {entry.origin === 'doc' ? (
         <Doc size={14} strokeWidth={1.8} className="shrink-0 text-p600" />
@@ -305,8 +310,7 @@ function EntryRow({
           但形状用圆角胶囊，不会与三轴徽标混淆。 */}
       {isNew ? (
         <span className="shrink-0 rounded-full border border-p300 bg-p50 px-1.5 text-[10.5px] leading-[16px] text-p700">
-          新增
-        </span>
+          {uiT("新增")}</span>
       ) : null}
       <span className="shrink-0 truncate text-[12px] text-t3" style={{ maxWidth: 140 }}>
         {entry.docType ?? entry.evidenceLevel ?? ''}
@@ -337,6 +341,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
  * 查不到抽取稿时（后端 404）两个入口置灰并说明原因，不弹空窗、不假装有内容。
  */
 function SourceFileField({ entry }: { entry: KnowledgeEntry }) {
+  const uiT = useT()
+
   const label = entry.path ?? entry.url ?? ''
   const ownerL3 = entry.owner[2]
   const setNotice = useAppStore((s) => s.setNotice)
@@ -421,13 +427,13 @@ function SourceFileField({ entry }: { entry: KnowledgeEntry }) {
   return (
     <>
       <div className="border-b border-line-soft py-2">
-        <div className="pb-1 text-[12px] text-t3">源文件</div>
+        <div className="pb-1 text-[12px] text-t3">{uiT("源文件")}</div>
         <div className="flex items-start gap-1.5">
           <Tooltip content={tip}>
             <button
               type="button"
               disabled={disabled}
-              aria-label="下载源文件抽取稿"
+              aria-label={uiT("下载源文件抽取稿")}
               onClick={onDownload}
               className={cn(
                 'mt-[1px] flex h-5 w-5 shrink-0 items-center justify-center rounded-tpx transition-colors',
@@ -459,18 +465,17 @@ function SourceFileField({ entry }: { entry: KnowledgeEntry }) {
         open={open}
         onClose={() => setOpen(false)}
         title={entry.title}
-        meta={combined ? '系统合成图文稿' : '系统抽取稿 · Markdown'}
+        meta={combined ? uiT('系统合成图文稿') : uiT('系统抽取稿 · Markdown')}
         width={920}
       >
         {busy ? (
-          <div className="py-10 text-center text-[12.5px] text-t3">正在读取内容…</div>
+          <div className="py-10 text-center text-[12.5px] text-t3">{uiT("正在读取内容…")}</div>
         ) : error ? (
           <div className="py-10 text-center text-[12.5px] text-alert">
-            {error}
+            {uiT(error)}
             <div className="pt-2">
               <Button size="sm" onClick={() => void load()}>
-                重试
-              </Button>
+                {uiT("重试")}</Button>
             </div>
           </div>
         ) : combined ? (
@@ -485,9 +490,7 @@ function SourceFileField({ entry }: { entry: KnowledgeEntry }) {
         ) : content ? (
           <div className="max-h-[70vh] overflow-y-auto">
             <div className="mb-3 rounded-tpx border border-line-soft bg-p50 px-3 py-2 text-[12px] text-t2">
-              ⚠️ 本内容为**系统抽取稿**（docling 从原件抽出的 Markdown），不是客户原件 PDF。
-              原件在客户侧、未随包交付，故只能查看/下载抽取稿。
-            </div>
+              {uiT("⚠️ 本内容为**系统抽取稿**（docling 从原件抽出的 Markdown），不是客户原件 PDF。 原件在客户侧、未随包交付，故只能查看/下载抽取稿。")}</div>
             <Markdown text={content.text} />
           </div>
         ) : null}
@@ -507,20 +510,22 @@ function SourceFileField({ entry }: { entry: KnowledgeEntry }) {
  * 渐隐带回到视口真正的下沿；末个字段的下框线一并去掉，免得与卡底连成双线。
  */
 function DetailColumn({ entry }: { entry: KnowledgeEntry | null }) {
+  const uiT = useT()
+
   const Usage = KNOWLEDGE_ICON.usage
   return (
     <Panel style={{ width: 'clamp(300px, 21vw, 400px)' }} className="shrink-0">
       <PanelHeader
         icon={<Usage size={17} strokeWidth={1.9} />}
-        title="条目详情"
+        title={uiT("条目详情")}
         right={entry ? <Badge tone="neutral" mono>{entry.id}</Badge> : null}
       />
       {!entry ? (
         <div className="min-h-0 flex-1">
           <EmptyState
             icon={<Library size={24} strokeWidth={1.5} />}
-            title="选一条看详情"
-            hint="中栏点任意一行，这里出它的三轴取值、归类依据与源文件全名。"
+            title={uiT("选一条看详情")}
+            hint={uiT("中栏点任意一行，这里出它的三轴取值、归类依据与源文件全名。")}
           />
         </div>
       ) : (
@@ -529,33 +534,31 @@ function DetailColumn({ entry }: { entry: KnowledgeEntry | null }) {
             {entry.title}
           </h3>
           <div className="flex flex-wrap gap-1.5 pb-2">
-            <Badge tone={USAGE_TONE[entry.usage]}>{KNOWLEDGE_USAGE_LABEL[entry.usage]}</Badge>
-            <Badge tone="neutral">{KNOWLEDGE_ORIGIN_LABEL[entry.origin]}</Badge>
+            <Badge tone={USAGE_TONE[entry.usage]}>{uiT(KNOWLEDGE_USAGE_LABEL[entry.usage])}</Badge>
+            <Badge tone="neutral">{uiT(KNOWLEDGE_ORIGIN_LABEL[entry.origin])}</Badge>
             <Badge tone="neutral">{entry.owner[2]}</Badge>
-            {entry.needsReview ? <Badge tone="warn">待人工复核</Badge> : null}
+            {entry.needsReview ? <Badge tone="warn">{uiT("待人工复核")}</Badge> : null}
           </div>
-          <Field label="归类依据">{entry.usageClass}</Field>
-          <Field label="材料类型">{entry.docType}</Field>
-          <Field label="证据级">{entry.evidenceLevel}</Field>
+          <Field label={uiT("归类依据")}>{entry.usageClass}</Field>
+          <Field label={uiT("材料类型")}>{entry.docType}</Field>
+          <Field label={uiT("证据级")}>{entry.evidenceLevel}</Field>
           {entry.case ? (
             <>
-              <Field label="现象">{entry.case.symptom}</Field>
-              <Field label="成因">{entry.case.cause}</Field>
-              <Field label="动作">{entry.case.action}</Field>
-              <Field label="结果">{entry.case.result}</Field>
+              <Field label={uiT("现象")}>{entry.case.symptom}</Field>
+              <Field label={uiT("成因")}>{entry.case.cause}</Field>
+              <Field label={uiT("动作")}>{entry.case.action}</Field>
+              <Field label={uiT("结果")}>{entry.case.result}</Field>
             </>
           ) : null}
-          <Field label="转化状态">
+          <Field label={uiT("转化状态")}>
             {entry.conversion
-              ? `${entry.conversion}${entry.chunks ? ` · ${entry.chunks} 切片` : ''}${
-                  entry.pages ? ` · ${entry.pages} 页` : ''
-                }`
+              ? uiT("{v1}{v2}{v3}", { v1: entry.conversion, v2: entry.chunks ? ` · ${entry.chunks} 切片` : '', v3: entry.pages ? ` · ${entry.pages} 页` : '' })
               : ''}
           </Field>
-          <Field label="体量">{entry.sizeBytes ? sizeText(entry.sizeBytes) : ''}</Field>
+          <Field label={uiT("体量")}>{entry.sizeBytes ? sizeText(entry.sizeBytes) : ''}</Field>
           <SourceFileField entry={entry} />
-          <Field label="待核实">{entry.status}</Field>
-          <Field label="备注">{entry.note}</Field>
+          <Field label={uiT("待核实")}>{entry.status}</Field>
+          <Field label={uiT("备注")}>{entry.note}</Field>
         </div>
       )}
     </Panel>
@@ -566,6 +569,7 @@ function DetailColumn({ entry }: { entry: KnowledgeEntry | null }) {
 
 const GREETING =
   '知识库模块。左栏三轴筛选、中栏条目、右栏详情；条目的用途轴取自场景包里每条新补的 usage 字段。'
+rememberScriptMessages([GREETING])
 
 /* 知识库助手高度（像素）。为什么用像素不用比例：
    流程页是「上内容 / 下助手」两行按比例分，比例语义成立；知识库页助手是 flex 纵列
@@ -590,6 +594,8 @@ function maxKbAssistH(): number {
 }
 
 function AssistantBar({ total }: { total: number }) {
+  const uiT = useT()
+
   const sceneId = useAppStore((s) => s.sceneId)
   const noteChatRound = useAppStore((s) => s.noteChatRound)
   const [open, setOpen] = useState(true)
@@ -597,7 +603,7 @@ function AssistantBar({ total }: { total: number }) {
   // 那四枚的定义已由 copilot 包整份登记好（scope = 'knowledge'），这里只负责渲染与代发。
   const [api, setApi] = useState<AgentChatApi | null>(null)
   const [busy, setBusy] = useState(false)
-  const send = useCallback((text: string) => api?.send(text), [api])
+  const send = useCallback((text: string) => api?.send(text, uiMessage(text)), [api])
   const adapter = useKnowledgeAdapter()
 
   // 高度：可拖（像素），初值 320、范围 [300, maxKbAssistH()]
@@ -670,12 +676,12 @@ function AssistantBar({ total }: { total: number }) {
         <div
           role="separator"
           aria-orientation="horizontal"
-          aria-label="拖动调整助手高度（双击复位）"
+          aria-label={uiT("拖动调整助手高度（双击复位）")}
           aria-valuenow={Math.round(h)}
           aria-valuemin={KB_ASSISTANT_MIN}
           aria-valuemax={maxKbAssistH()}
           tabIndex={0}
-          title="拖动调整助手高度（双击复位）"
+          title={uiT("拖动调整助手高度（双击复位）")}
           onPointerDown={startDrag}
           onDoubleClick={resetH}
           onKeyDown={(e) => {
@@ -695,11 +701,11 @@ function AssistantBar({ total }: { total: number }) {
       ) : null}
       <PanelHeader
         icon={<MessageSquare size={16} strokeWidth={1.9} />}
-        title="助手"
-        meta={`本产品 ${total} 条知识`}
+        title={uiT("助手")}
+        meta={uiT("本产品 {v1} 条知识", { v1: total })}
         right={
           <Button size="sm" variant="ghost" onClick={() => setOpen((v) => !v)}>
-            {open ? '收起' : '展开'}
+            {open ? uiT('收起') : uiT('展开')}
           </Button>
         }
       />
@@ -707,11 +713,11 @@ function AssistantBar({ total }: { total: number }) {
         <div className="min-h-0 flex-1">
           <AgentChat
             adapter={adapter}
-            assistantName="助手"
+            assistantName={uiT("助手")}
             operator="张工"
             defaultPermission="readonly"
             initialItems={[
-              { kind: 'message', id: 'kb-hello', role: 'assistant', text: GREETING },
+              { kind: 'message', id: 'kb-hello', role: 'assistant', text: GREETING, uiText: uiMessage(GREETING) },
             ]}
             // 会话标识与流程页同构（shell-<场景>-<scope>），后端据此维护上下文，避免与流程页串会话
             sessionId={`shell-${sceneId}-knowledge`}
@@ -732,6 +738,8 @@ function AssistantBar({ total }: { total: number }) {
 /* -------------------------------------------------------------------- 整页 */
 
 export function KnowledgeModule() {
+  const uiT = useT()
+
   const { entries, loading, error } = useKnowledge()
   const kbFilter = useAppStore((s) => s.kbFilter)
   const sceneId = useAppStore((s) => s.sceneId)
@@ -861,12 +869,12 @@ export function KnowledgeModule() {
         <span className="flex h-[30px] w-[30px] items-center justify-center rounded-tpx bg-p50 text-p700">
           <Library size={17} strokeWidth={1.9} />
         </span>
-        <span className="text-[16px] font-semibold tracking-tight text-t1">知识库</span>
+        <span className="text-[16px] font-semibold tracking-tight text-t1">{uiT("知识库")}</span>
         <span className="h-[22px] w-px bg-line" />
         <span className="truncate text-[13px] text-t2">
           {owner.filter(Boolean).join(' › ')}
         </span>
-        <span className="num text-[12px] text-t3">{entries.length} 条</span>
+        <span className="num text-[12px] text-t3">{entries.length} {uiT(" 条")}</span>
         {/* 「返回」= 回到知识库**首页**（不是跳别的页）：把三轴筛选、只看新增、页码
             一并重置，看到本库全部条目。
             用户口径（2026-09-29）：筛成只剩 8 条时点它，应回到 134 条的原始首页，
@@ -882,8 +890,7 @@ export function KnowledgeModule() {
           className="flex items-center gap-1 rounded-full border border-line bg-surface px-2 py-[2px] text-[11.5px] text-t2 transition-colors hover:bg-p50 hover:text-p700"
         >
           <ChevronLeft size={11} strokeWidth={2.2} />
-          返回
-        </button>
+          {uiT("返回")}</button>
         {/* 「查看新增」：一眼看到有哪几条是刚导入还没看的，点了就把三轴放开只看新增。
             没有新增时不显示——一个永远点不出东西的按钮比没有更糟。 */}
         {newCount ? (
@@ -898,14 +905,13 @@ export function KnowledgeModule() {
             className="flex items-center gap-1 rounded-full border border-p300 bg-p50 px-2 py-[2px] text-[11.5px] text-p700 transition-colors hover:bg-p100"
           >
             <span className="num">{newCount}</span>
-            条新增
-            <ChevronRight size={11} strokeWidth={2.2} />
+            {uiT("条新增")}<ChevronRight size={11} strokeWidth={2.2} />
           </button>
         ) : null}
         {/* 取数失败必须说在页面上：不显示的话，人会把「后端没起」当成「这个产品
             没有知识条目」，而静态回退又会让人以为看的是新数据——两头都不能骗。 */}
-        {error ? <span className="text-[12px] text-danger">取数失败：{error}</span> : null}
-        {loading ? <span className="text-[12px] text-t3">取数中…</span> : null}
+        {error ? <span className="text-[12px] text-danger">{uiT("取数失败：")}{uiT(error)}</span> : null}
+        {loading ? <span className="text-[12px] text-t3">{uiT("取数中…")}</span> : null}
         <div className="ml-auto flex items-center gap-2">
           {/* 「上传」开上传面板（选文件 → 定归属/用途 → 五阶段转化），
               不是跳到别处——这里就是知识库页，没有更"里面"的地方可跳。 */}
@@ -915,8 +921,7 @@ export function KnowledgeModule() {
             icon={<Upload size={14} strokeWidth={1.9} />}
             onClick={() => setUploadLocal(true)}
           >
-            上传
-          </Button>
+            {uiT("上传")}</Button>
           {/* 「重跑流水线」此前是空壳（无 onClick，点了没反应）。现按用户口径
               改为跳转到「阶段3 启动测试」（路由 /run），与流程 2 确认后 nav('/run')
               同一落点；不在此处真跑五阶段重转（那是上传面板里按文档触发的重活）。 */}
@@ -925,8 +930,7 @@ export function KnowledgeModule() {
             icon={<RefreshCw size={14} strokeWidth={1.9} />}
             onClick={() => nav('/run')}
           >
-            重跑流水线
-          </Button>
+            {uiT("重跑流水线")}</Button>
           {/* 「导出」此前是空壳（无 onClick，点了没反应）。现在真下载一个 zip：
               整个所属知识库的全量条目清单 + 有产物的文档文件（含插图与合成稿）。
 
@@ -945,7 +949,7 @@ export function KnowledgeModule() {
                 return
               }
               setExporting(true)
-              setNotice(`正在打包「${l3}」知识库…（含插图，约需几秒）`)
+              setNotice(uiT("正在打包「{v1}」知识库…（含插图，约需几秒）", { v1: l3 }))
               // 先探一次：后端打包失败会返回非 2xx（空 owner / 无条目 / 打包异常），
               // 这时不能让浏览器去下那个错误 JSON 当 zip——如实报错，不假装成功。
               void fetch(kbExportUrl(l3, sceneId), { method: 'GET' })
@@ -955,7 +959,7 @@ export function KnowledgeModule() {
                       .json()
                       .then((b: { message?: string }) => b.message || `HTTP ${resp.status}`)
                       .catch(() => `HTTP ${resp.status}`)
-                    setNotice(`导出失败：${msg}`)
+                    setNotice(uiT("导出失败：{v1}", { v1: msg }))
                     return
                   }
                   const a = document.createElement('a')
@@ -964,15 +968,15 @@ export function KnowledgeModule() {
                   document.body.appendChild(a)
                   a.click()
                   a.remove()
-                  setNotice(`已开始下载「${l3}」知识库压缩包（全量 ${entries.length} 条）`)
+                  setNotice(uiT("已开始下载「{v1}」知识库压缩包（全量 {v2} 条）", { v1: l3, v2: entries.length }))
                 })
                 .catch((e: unknown) => {
-                  setNotice(`导出失败：${e instanceof Error ? e.message : String(e)}`)
+                  setNotice(uiT("导出失败：{v1}", { v1: e instanceof Error ? e.message : String(e) }))
                 })
                 .finally(() => setExporting(false))
             }}
           >
-            {exporting ? '导出中…' : '导出'}
+            {exporting ? uiT('导出中…') : uiT('导出')}
           </Button>
         </div>
       </Panel>
@@ -984,14 +988,14 @@ export function KnowledgeModule() {
         <Panel className="min-w-0 flex-1 border border-p200 shadow-tp2">
           <PanelHeader
             icon={<Usage size={17} strokeWidth={1.9} />}
-            title="知识条目"
-            meta={`${shown.length} 条`}
+            title={uiT("知识条目")}
+            meta={uiT("{v1} 条", { v1: shown.length })}
             right={
               <div className="flex items-center gap-1.5">
                 <Button
                   size="sm"
                   variant="ghost"
-                  aria-label="上一页"
+                  aria-label={uiT("上一页")}
                   disabled={page === 0}
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
                   icon={<ChevronLeft size={14} strokeWidth={1.9} />}
@@ -1002,7 +1006,7 @@ export function KnowledgeModule() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  aria-label="下一页"
+                  aria-label={uiT("下一页")}
                   disabled={page + 1 >= pages}
                   onClick={() => setPage((p) => Math.min(pages - 1, p + 1))}
                   icon={<ChevronRight size={14} strokeWidth={1.9} />}
@@ -1013,15 +1017,15 @@ export function KnowledgeModule() {
 
           {/* 三轴当前取值，一行讲清这一屏是怎么筛出来的 */}
           <div className="flex h-[30px] shrink-0 items-center gap-2 border-b border-line-soft bg-p50/50 px-4 text-[12px] text-t2">
-            <span>归属 {axisText(kbFilter.owner, owner.filter(Boolean).join(' › '))}</span>
+            <span>{uiT("归属")}{' '}{axisText(kbFilter.owner, owner.filter(Boolean).join(' › '))}</span>
             <span className="text-t3">·</span>
             <span>
-              来源{' '}
-              {axisText(kbFilter.origin.map((o) => KNOWLEDGE_ORIGIN_LABEL[o]), '全部')}
+              {uiT("来源")}{' '}
+              {axisText(kbFilter.origin.map((o) => KNOWLEDGE_ORIGIN_LABEL[o]), uiT('全部'))}
             </span>
             <span className="text-t3">·</span>
             <span>
-              用途 {axisText(kbFilter.usage.map((u) => KNOWLEDGE_USAGE_LABEL[u]), '全部')}
+              {uiT("用途")}{' '}{axisText(kbFilter.usage.map((u) => KNOWLEDGE_USAGE_LABEL[u]), uiT('全部'))}
             </span>
             {/* 「只看新增」开着时必须说出来：否则人看到条数变少会以为库出问题了。
                 ⚠️ 点「取消」= **整批把这批新增标记为已看过**（不只是退出视图）：
@@ -1036,8 +1040,7 @@ export function KnowledgeModule() {
                 }}
                 className="ml-1 flex items-center gap-1 rounded-full border border-p300 bg-p50 px-1.5 text-[11px] text-p700 hover:bg-p100"
               >
-                只看新增 {shown.length} 条 · 点此取消
-              </button>
+                {uiT("只看新增 ")}{shown.length} {uiT(" 条 · 点此取消")}</button>
             ) : null}
           </div>
 
@@ -1061,8 +1064,8 @@ export function KnowledgeModule() {
             ) : (
               <EmptyState
                 icon={<Library size={24} strokeWidth={1.5} />}
-                title="没有命中的条目"
-                hint="把左栏的三轴筛选放宽一点再看。"
+                title={uiT("没有命中的条目")}
+                hint={uiT("把左栏的三轴筛选放宽一点再看。")}
               />
             )}
           </div>

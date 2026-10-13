@@ -28,6 +28,8 @@ export const MODEL_OPTIONS: { value: string; label: string }[] = [
 
 /** 一次工具调用的完整记录（调用 + 结果） */
 export interface ToolCall {
+  /** Local scripted UI summaries, distinct from live backend free text. */
+  uiAuthored?: boolean;
   id: string;
   /** 工具名，如 rigol_measure */
   name: string;
@@ -99,7 +101,7 @@ export interface EvidenceItem {
 
 /** 消息流里的一项 */
 export type ChatItem =
-  | { kind: 'message'; id: string; role: 'user' | 'assistant'; text: string; streaming?: boolean }
+  | { kind: 'message'; id: string; role: 'user' | 'assistant'; text: string; streaming?: boolean; uiText?: import('../../i18n/messages').UiMessageText }
   | { kind: 'tool'; id: string; call: ToolCall }
   | { kind: 'verdict'; id: string; verdict: Verdict };
 

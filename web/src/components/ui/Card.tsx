@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import { useState, type HTMLAttributes, type ReactNode } from 'react'
 import { ChevronDown, Maximize2, RefreshCw, Replace } from 'lucide-react'
 import { cn } from './cn'
@@ -106,6 +107,8 @@ export function PanelCard({
   bodyClassName?: string
   style?: React.CSSProperties
 }) {
+  const uiT = useT()
+
   const [swapOpen, setSwapOpen] = useState(false)
   return (
     <article
@@ -146,9 +149,9 @@ export function PanelCard({
             <div className="relative">
               <IconButton
                 size={24}
-                aria-label={`${title} 换卡`}
+                aria-label={uiT("{v1} 换卡", { v1: title })}
                 aria-expanded={swapOpen}
-                title="换成卡片库里的另一张卡"
+                title={uiT("换成卡片库里的另一张卡")}
                 onClick={() => setSwapOpen((v) => !v)}
               >
                 <Replace size={14} strokeWidth={1.75} />
@@ -157,7 +160,7 @@ export function PanelCard({
                 <>
                   <button
                     type="button"
-                    aria-label="关闭换卡"
+                    aria-label={uiT("关闭换卡")}
                     className="fixed inset-0 z-10 cursor-default"
                     onClick={() => setSwapOpen(false)}
                   />
@@ -177,7 +180,7 @@ export function PanelCard({
                           }}
                           className="block w-full truncate px-2.5 py-1.5 text-left text-[12px] text-t2 transition-colors hover:bg-p50 hover:text-p700"
                         >
-                          {o.label}
+                          {uiT(o.label)}
                         </button>
                       </li>
                     ))}
@@ -187,12 +190,12 @@ export function PanelCard({
             </div>
           ) : null}
           {onRefresh ? (
-            <IconButton size={24} aria-label={`${title} 刷新`} onClick={onRefresh} title="刷新">
+            <IconButton size={24} aria-label={uiT("{v1} 刷新", { v1: title })} onClick={onRefresh} title={uiT("刷新")}>
               <RefreshCw size={14} strokeWidth={1.75} />
             </IconButton>
           ) : null}
           {onExpand ? (
-            <IconButton size={24} aria-label={`${title} 放大`} onClick={onExpand} title="放大">
+            <IconButton size={24} aria-label={uiT("{v1} 放大", { v1: title })} onClick={onExpand} title={uiT("放大")}>
               <Maximize2 size={14} strokeWidth={1.75} />
             </IconButton>
           ) : null}

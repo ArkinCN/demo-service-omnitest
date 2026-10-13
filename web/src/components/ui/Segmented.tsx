@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import type { ReactNode } from 'react'
 import { cn } from './cn'
 
@@ -24,6 +25,8 @@ export function Segmented({
   className?: string
   ariaLabel?: string
 }) {
+  const uiT = useT()
+
   return (
     <div
       role="tablist"
@@ -41,7 +44,7 @@ export function Segmented({
             role="tab"
             type="button"
             aria-selected={on}
-            title={it.title ?? it.label}
+            title={uiT(it.title ?? it.label)}
             onClick={() => onChange(it.value)}
             className={cn(
               'inline-flex items-center gap-1.5 rounded-tpx font-medium transition-all duration-150 [&>svg]:block',
@@ -52,7 +55,7 @@ export function Segmented({
             )}
           >
             {it.icon}
-            {it.label}
+            {uiT(it.label)}
           </button>
         )
       })}

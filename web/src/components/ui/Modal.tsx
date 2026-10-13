@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import { useEffect, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
@@ -33,6 +34,8 @@ export function Modal({
   /** 遮罩层 z-index（默认 50）；当上层有更高 z 的容器（如自动化回归结果弹窗 z-60）时需调高 */
   zIndex?: number
 }) {
+  const uiT = useT()
+
   useEscape(open, onClose)
   if (!open) return null
   return createPortal(
@@ -55,7 +58,7 @@ export function Modal({
           <button
             type="button"
             onClick={onClose}
-            aria-label="关闭"
+            aria-label={uiT("关闭")}
             className="ml-auto flex h-7 w-7 items-center justify-center rounded-tpx text-t3 transition-colors hover:bg-p50 hover:text-p700"
           >
             <X size={16} strokeWidth={1.75} />
@@ -89,6 +92,8 @@ export function Drawer({
   children: ReactNode
   width?: number
 }) {
+  const uiT = useT()
+
   useEscape(open, onClose)
   if (!open) return null
   return createPortal(
@@ -113,7 +118,7 @@ export function Drawer({
           <button
             type="button"
             onClick={onClose}
-            aria-label="关闭"
+            aria-label={uiT("关闭")}
             className="ml-auto flex h-7 w-7 items-center justify-center rounded-tpx text-t3 transition-colors hover:bg-p50 hover:text-p700"
           >
             <X size={16} strokeWidth={1.75} />

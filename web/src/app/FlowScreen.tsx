@@ -1,3 +1,4 @@
+import { useT } from '../i18n'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { FlowId } from '../data/types'
 import { useAppStore } from '../state/useAppStore'
@@ -163,6 +164,8 @@ function releaseBody() {
 }
 
 export function FlowScreen({ flow }: { flow: FlowId }) {
+  const uiT = useT()
+
   const scene = useAppStore((s) => s.scene)
   // 自动化运行期间：左栏收起、右上大屏与右下 AI 拉伸铺满（有过渡，见 index.css）。
   const autoRunning = useAppStore((s) => s.automationRunStatus === 'running')
@@ -353,12 +356,11 @@ export function FlowScreen({ flow }: { flow: FlowId }) {
             type="button"
             onClick={() => persistCollapsed(false)}
             aria-expanded={false}
-            title="展开助手"
+            title={uiT("展开助手")}
             className="mt-2 flex h-9 w-full items-center justify-center gap-2 rounded-tp border border-line-soft bg-surface text-[12px] text-t2 transition-colors hover:border-ink hover:text-ink"
           >
             <span aria-hidden>▲</span>
-            展开助手
-          </button>
+            {uiT("展开助手")}</button>
         ) : (
           <>
             {/*
@@ -376,7 +378,7 @@ export function FlowScreen({ flow }: { flow: FlowId }) {
             <div
               role="separator"
               aria-orientation="horizontal"
-              aria-label="调整助手高度"
+              aria-label={uiT("调整助手高度")}
               aria-valuenow={Math.round(eff * 100)}
               aria-valuemin={Math.round(bounds.lo * 100)}
               aria-valuemax={Math.round(bounds.hi * 100)}
@@ -396,7 +398,7 @@ export function FlowScreen({ flow }: { flow: FlowId }) {
                 }
               }}
               className="group flex cursor-row-resize items-center justify-center focus-visible:outline-none"
-              title="拖动调整助手高度（双击复位）"
+              title={uiT("拖动调整助手高度（双击复位）")}
             >
               {/*
                 ⚠️ 2026-10-09 用户反馈「没注意到这里有拖动条」——原设计**平时几乎不可见**

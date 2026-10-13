@@ -1,3 +1,4 @@
+import { uiMessage } from '../../i18n/messages'
 import type { RawPack } from '../scene/pack'
 import type { Step } from './adapter'
 import type { ActionDef } from './actions'
@@ -89,11 +90,13 @@ export function stepsForAction(def: ActionDef, pack: RawPack | null, env: Envelo
   steps.push({
     kind: 'say',
     text: `${def.echo}\n依据：${verify}。预置内容共 ${def.operation.length} 步，先摊开给你看再动手。`,
+          uiText: uiMessage("{v1}\n依据：{v2}。预置内容共 {v3} 步，先摊开给你看再动手。", { v1: def.echo, v2: verify, v3: def.operation.length }, ["v1","v2"]),
   })
   if (def.touches_redline && def.redline_action) {
     steps.push({
       kind: 'say',
       text: `这枚按钮碰到的是「${REDLINE_LABEL[def.redline_action]}」，属六个只能人点的动作之一。我做到「备好等人点」为止：检查跑完、草稿生成好、B 区的人工按钮由灰点亮，真正那一下由你在 B 区点。`,
+          uiText: uiMessage("这枚按钮碰到的是「{v1}」，属六个只能人点的动作之一。我做到「备好等人点」为止：检查跑完、草稿生成好、B 区的人工按钮由灰点亮，真正那一下由你在 B 区点。", { v1: REDLINE_LABEL[def.redline_action] }, ["v1"]),
     })
   }
 
@@ -149,6 +152,7 @@ export function stepsForAction(def: ActionDef, pack: RawPack | null, env: Envelo
   steps.push({
     kind: 'say',
     text: `${def.success_feedback}${tail}\n本轮是演示态：没有接后端，上面的工具调用是按场景包数据的脚本化回放，不是真设备返回。接上 DeepSeek Harness 之后，同一枚按钮会把这段预置 prompt 与上下文包一起发给后端，回放通路整条换成真事件流。`,
+          uiText: uiMessage("{v1}{v2}\n本轮是演示态：没有接后端，上面的工具调用是按场景包数据的脚本化回放，不是真设备返回。接上 DeepSeek Harness 之后，同一枚按钮会把这段预置 prompt 与上下文包一起发给后端，回放通路整条换成真事件流。", { v1: def.success_feedback, v2: tail }, ["v1","v2"]),
   })
   return steps
 }

@@ -2,6 +2,7 @@
 import type { EvidenceItem, PermissionLevel, Verdict } from './types';
 import { getToolExecutor, type ToolExecResult } from './toolExec';
 import { heldEnv } from '../copilot/held';
+import { rememberScriptMessages, uiMessage } from '../../i18n/messages';
 import {
   REDLINE_ACTIONS,
   requestRedlineAsync,
@@ -32,10 +33,12 @@ export interface MessageDeltaEvent {
   type: 'message_delta';
   messageId: string;
   delta: string;
+  uiText?: import('../../i18n/messages').UiMessageText;
 }
 
 /** 工具开始调用。前端建卡片并置为 running。 */
 export interface ToolCallEvent {
+  uiAuthored?: boolean;
   type: 'tool_call';
   callId: string;
   name: string;
@@ -59,6 +62,7 @@ export interface ToolCallEvent {
 
 /** 工具返回。前端按 callId 回填同一张卡片。 */
 export interface ToolResultEvent {
+  uiAuthored?: boolean;
   type: 'tool_result';
   callId: string;
   status: 'ok' | 'error';
@@ -196,11 +200,12 @@ async function playScript(req: SendRequest, emit: Emit, pace: number): Promise<v
   let seg = 0;
   /** 每段叙述占一个独立气泡：工具卡片之后继续说话时应新起一条消息 */
   const say = async (text: string) => {
+    rememberScriptMessages([text]);
     seg += 1;
     const messageId = `m-assist-${seg}`;
     for (let i = 0; i < text.length; i += 6) {
       await wait(26);
-      emit({ type: 'message_delta', messageId, delta: text.slice(i, i + 6) });
+      emit({ type: 'message_delta', messageId, delta: text.slice(i, i + 6), uiText: uiMessage(text) });
     }
   };
   /** 改动类动作的确认闸门；未注入闸门时按"不放行"处理，绝不默认执行 */
@@ -313,7 +318,7 @@ function toStream(req: SendRequest, pace: number): AsyncGenerator<AgentEvent, vo
   let notify: (() => void) | null = null;
   let finished = false;
   const emit: Emit = (ev) => {
-    queue.push(ev);
+    queue.push(ev.type === 'tool_call' || ev.type === 'tool_result' ? { ...ev, uiAuthored: true } : ev);
     notify?.();
   };
   const task = playScript(req, emit, pace).finally(() => {
@@ -547,6 +552,9 @@ export const dshAdapter: AgentAdapter = {
         if (!dataLine) continue;
         try {
           const ev = JSON.parse(dataLine) as AgentEvent;
+          // Translation provenance belongs to local UI producers, never to a remote free-text event.
+          if (ev.type === 'message_delta') delete ev.uiText;
+          if (ev.type === 'tool_call' || ev.type === 'tool_result') delete ev.uiAuthored;
           if (ev.type === 'tool_call') seen.set(ev.callId, ev);
           if (ev.type === 'tool_call' && ev.mutating) void confirmAt(seen.get(ev.callId) ?? ev);
           yield ev;

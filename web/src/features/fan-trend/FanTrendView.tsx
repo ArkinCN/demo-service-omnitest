@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 /* ===========================================================================
    风扇时序曲线**受控展示卡**（2026-10-09 从 FanTrendPanel 抽出）。
 
@@ -76,6 +77,8 @@ export function FanTrendView({
   chartMinH = 260,
   full,
 }: FanTrendViewProps) {
+  const uiT = useT()
+
   const effectiveRunId = runId ?? plan?.run_id ?? null
 
   /** 图表实例句柄（只用于「回到全程」）。趋势图与波形图句柄同形（都只有 `resetZoom`），
@@ -164,11 +167,11 @@ export function FanTrendView({
           「回到全程」只动视图缩放，不碰采集与判定，属显示层。 */}
       <div className="flex shrink-0 flex-wrap items-center gap-2 pb-1.5">
         <span className="text-[12px] text-t3">
-          {plan ? (plan.simulation ? '模拟数据（simulation=true）' : '真实台架数据') : '未启动'}
+          {plan ? (plan.simulation ? uiT('模拟数据（simulation=true）') : uiT('真实台架数据')) : uiT('未启动')}
         </span>
         <Segmented
           size="sm"
-          ariaLabel="图表视图切换"
+          ariaLabel={uiT("图表视图切换")}
           items={[
             { value: 'trend', label: '趋势', title: '按档位聚合的趋势（占空比/电压/电流/转速随时间）' },
             { value: 'wave', label: '波形', title: '示波器一次采集的 CH1~CH4 真实时序波形' },
@@ -176,19 +179,18 @@ export function FanTrendView({
           value={view}
           onChange={(v) => setView(v as ViewMode)}
         />
-        {phaseLabel !== undefined && <span className="text-[12px] text-t3">状态：{phaseLabel}</span>}
+        {phaseLabel !== undefined && <span className="text-[12px] text-t3">{uiT("状态：")}{phaseLabel}</span>}
         {plan && (
           <span className="num text-[12px] text-t3">
-            计划 {plan.planned_duration_s}s
-            {plan.overrun ? '（已延期）' : ''}
-            {plan.actual_duration_s != null ? ` · 实际 ${plan.actual_duration_s}s` : ''}
+            {uiT("计划 ")}{plan.planned_duration_s}s
+            {plan.overrun ? uiT('（已延期）') : ''}
+            {plan.actual_duration_s != null ? uiT(" · 实际 {v1}s", { v1: plan.actual_duration_s }) : ''}
           </span>
         )}
         {/* 已采样本点数：多采后一眼可见密度（每档 N 次 × 档数），便于核对链路是否生效 */}
         {samples.length > 0 && (
-          <span className="num text-[12px] text-t3" title="已采到的样本点数（每档连续采集多次后应明显多于档位数）">
-            样本 {samples.length} 点
-          </span>
+          <span className="num text-[12px] text-t3" title={uiT("已采到的样本点数（每档连续采集多次后应明显多于档位数）")}>
+            {uiT("样本 ")}{samples.length} {uiT(" 点")}</span>
         )}
         {/* 活性指示：显示曲线数据最近一次刷新距今多久，让人一眼看出「系统在动」而非怀疑卡死。
             自带 1s tick，不引发整卡重渲。 */}
@@ -196,25 +198,23 @@ export function FanTrendView({
         {/* ⚠️ 转速读数（`RecentRpm`）已**并入图表上方的四通道读数行**（LatestReadouts），
             此处不再单独出一项，避免「转速」在卡上出现两处。波形视图仍显示当前档位。 */}
         {view === 'wave' && (
-          <span className="num text-[12px] text-t3" title="当前波形对应的采集档位、采集类型与是否实时">
-            波形
-            {commandedPct != null ? ` @ ${commandedPct}% 档` : ''}
+          <span className="num text-[12px] text-t3" title={uiT("当前波形对应的采集档位、采集类型与是否实时")}>
+            {uiT("波形")}{commandedPct != null ? uiT(" @ {v1}% 档", { v1: commandedPct }) : ''}
             {/* 采集类型三态（2026-10-09 改）：backend 现已把同一次物理采集的 pwm 与
                 tach 两档合并为一条记录，`profile` 因此可能是 `pwm+tach` —— 原二值判断
                 会把合并采集**误标成「PWM 采集」**（明明含 CH4 转速）。
                 三态：仅 pwm → CH1~CH3；仅 tach → CH4；合并 → 四通道全含。
                 如实标注，避免误判「为什么没有 CH4」。 */}
-            {wave?.profile ? ` · ${CAPTURE_PROFILE_LABEL[wave.profile] ?? `${wave.profile} 采集`}` : ''}
-            {waveLoading ? ' · 加载中…' : ''}
+            {wave?.profile ? uiT(" · {v1}", { v1: CAPTURE_PROFILE_LABEL[wave.profile] ?? `${wave.profile} 采集` }) : ''}
+            {waveLoading ? uiT(' · 加载中…') : ''}
             {/* 保留态：明确标注「非实时 + 轮次前 8 位」，避免把上一轮波形当成本轮结果。 */}
             {stale && (
               <span
                 className="ml-1 rounded-tpx border border-line px-1 py-0 text-[11px] text-t3"
                 data-testid="wave-stale-badge"
-                title="本轮暂无新采集（通常已收工）；此处展示的是最近一次成功采集的波形，非实时数据"
+                title={uiT("本轮暂无新采集（通常已收工）；此处展示的是最近一次成功采集的波形，非实时数据")}
               >
-                非实时
-                {staleRunId ? ` · 上一轮 ${staleRunId.slice(0, 8)}` : ''}
+                {uiT("非实时")}{staleRunId ? uiT(" · 上一轮 {v1}", { v1: staleRunId.slice(0, 8) }) : ''}
               </span>
             )}
           </span>
@@ -241,8 +241,8 @@ export function FanTrendView({
             disabled={!canResetZoom}
             title={
               view === 'trend'
-                ? '把横轴缩放复位到 0 ~ 全程（趋势视图）'
-                : '把波形缩放复位到整个采集窗口（波形视图）'
+                ? uiT('把横轴缩放复位到 0 ~ 全程（趋势视图）')
+                : uiT('把波形缩放复位到整个采集窗口（波形视图）')
             }
             className={
               canResetZoom
@@ -250,14 +250,13 @@ export function FanTrendView({
                 : 'cursor-not-allowed rounded-tpx border border-line px-1.5 py-[2px] text-[12px] text-t3 opacity-50'
             }
           >
-            回到全程
-          </button>
+            {uiT("回到全程")}</button>
         </div>
       </div>
 
-      {error && <div className="shrink-0 pb-1.5 text-[12px] text-alert">错误：{error}</div>}
+      {error && <div className="shrink-0 pb-1.5 text-[12px] text-alert">{uiT("错误：")}{uiT(error)}</div>}
       {view === 'wave' && waveError && (
-        <div className="shrink-0 pb-1.5 text-[12px] text-t3">波形：{waveError}</div>
+        <div className="shrink-0 pb-1.5 text-[12px] text-t3">{uiT("波形：")}{waveError}</div>
       )}
 
       {/* 四通道常驻读数行：把「图上 4 条线当前是多少」直接摆在图表上方，
@@ -282,7 +281,7 @@ export function FanTrendView({
           ) : (
             <div className="flex h-full items-center justify-center px-3 text-center text-[13px] text-t3">
               {emptyHint ??
-                '暂无数据：点击左栏底部「确认参数并启动测试」后，曲线将随时间动态刷新'}
+                uiT('暂无数据：点击左栏底部「确认参数并启动测试」后，曲线将随时间动态刷新')}
             </div>
           )
         ) : (
@@ -301,7 +300,7 @@ export function FanTrendView({
           数据纪律：如实列出，不补 0、不臆测。 */}
       {view === 'wave' && wave && missingChannels.length > 0 && (
         <div className="shrink-0 pt-1 text-[12px] text-t3">
-          未采集通道：{missingChannels.join('；')}
+          {uiT("未采集通道：")}{missingChannels.join('；')}
         </div>
       )}
     </div>
@@ -330,10 +329,12 @@ function WaveChannelToggles({
   hiddenRoles: Set<string>
   onToggle: (role: string) => void
 }) {
+  const uiT = useT()
+
   const byRole = new Map(channels.map((c) => [c.role, c]))
   const roles = ['current', 'voltage', 'pwm', 'tach']
   return (
-    <div className="flex items-center gap-1" role="group" aria-label="通道显隐开关">
+    <div className="flex items-center gap-1" role="group" aria-label={uiT("通道显隐开关")}>
       {roles.map((role) => {
         const ch = byRole.get(role)
         const available = Boolean(ch?.available)
@@ -387,6 +388,8 @@ function WaveChannelToggles({
  * 不显示 0 或假值（数据纪律：没采到就如实说没采到）。
  */
 function UpdateAgo({ updatedAt }: { updatedAt: number | null }) {
+  const uiT = useT()
+
   const [, force] = useState(0)
   useEffect(() => {
     if (updatedAt == null) return
@@ -396,19 +399,17 @@ function UpdateAgo({ updatedAt }: { updatedAt: number | null }) {
 
   if (updatedAt == null) {
     return (
-      <span className="num text-[12px] text-t3" title="尚未取到本轮波形数据">
-        等待首次采集
-      </span>
+      <span className="num text-[12px] text-t3" title={uiT("尚未取到本轮波形数据")}>
+        {uiT("等待首次采集")}</span>
     )
   }
   const ageS = Math.max(0, (Date.now() - updatedAt) / 1000)
   return (
     <span
       className="num text-[12px] text-t3"
-      title="曲线数据最近一次刷新距今多久；采集本身约 1.5~2s 一次，约 2s 内跳动属正常"
+      title={uiT("曲线数据最近一次刷新距今多久；采集本身约 1.5~2s 一次，约 2s 内跳动属正常")}
     >
-      更新于 {ageS < 10 ? ageS.toFixed(1) : Math.round(ageS)}s 前
-    </span>
+      {uiT("更新于 ")}{ageS < 10 ? ageS.toFixed(1) : Math.round(ageS)}{uiT("s 前")}</span>
   )
 }
 
@@ -433,6 +434,8 @@ function UpdateAgo({ updatedAt }: { updatedAt: number | null }) {
  *   格式化统一走 `fmtNum`：`null` → 「未采集」，**严禁 `Number(v) || 0`**（不补 0、不插值）。
  */
 function LatestReadouts({ samples }: { samples: FanSample[] }) {
+  const uiT = useT()
+
   const latest = useMemo(() => {
     // 逐个量取「最后一个非 null 样本」，返回 { value, why }
     const pick = (
@@ -515,10 +518,10 @@ function LatestReadouts({ samples }: { samples: FanSample[] }) {
       {items.map((it) => {
         const missing = it.text === '未采集'
         return (
-          <span key={it.label} className="num flex items-baseline gap-1 text-[12px] text-t3" title={it.title}>
-            {it.label}
+          <span key={it.label} className="num flex items-baseline gap-1 text-[12px] text-t3" title={uiT(it.title)}>
+            {uiT(it.label)}
             <span className={`text-[13px] font-semibold ${missing ? 'text-t3' : it.accent ? 'text-t1' : 'text-t2'}`}>
-              {it.text}
+              {uiT(it.text)}
             </span>
             <span className="text-[11px] text-t3">{it.unit}</span>
             {/* 缺测原因原样透传（如 not_connected），不翻译、不吞 */}

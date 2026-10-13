@@ -1,3 +1,4 @@
+import { useT } from '../../../i18n'
 import { useNavigate } from 'react-router';
 import { EVIDENCE_KIND_LABEL, type EvidenceItem, type EvidenceKind } from '../types';
 import { useAppStore } from '../../../state/useAppStore';
@@ -25,6 +26,8 @@ interface Props {
 }
 
 export function EvidencePanel({ items, onClose }: Props) {
+  const uiT = useT()
+
   const nav = useNavigate();
   // 知识库条目：用知识库自己的取数 hook（含缓存与订阅），不另存一份到 store，
   // 也不在这里单独 fetch——取数口径只能有一处。
@@ -54,14 +57,13 @@ export function EvidencePanel({ items, onClose }: Props) {
   };
 
   return (
-    <aside className="ac-drawer" aria-label="依据面板">
+    <aside className="ac-drawer" aria-label={uiT("依据面板")}>
       <div className="ac-drawer__head">
-        <span className="ac-drawer__title">依据</span>
-        <span className="ac-group__count">共 {items.length} 条</span>
+        <span className="ac-drawer__title">{uiT("依据")}</span>
+        <span className="ac-group__count">{uiT("共 ")}{items.length} {uiT(" 条")}</span>
         <span className="ac-drawer__spacer" />
         <button type="button" className="ac-iconbtn" onClick={onClose}>
-          关闭 ✕
-        </button>
+          {uiT("关闭 ✕")}</button>
       </div>
       <div className="ac-drawer__body">
         {ORDER.map((kind) => {
@@ -69,11 +71,11 @@ export function EvidencePanel({ items, onClose }: Props) {
           return (
             <section className="ac-group" key={kind}>
               <div className="ac-group__head">
-                <span className="ac-group__name">{EVIDENCE_KIND_LABEL[kind]}</span>
-                <span className="ac-group__count">{group.length} 条</span>
+                <span className="ac-group__name">{uiT(EVIDENCE_KIND_LABEL[kind])}</span>
+                <span className="ac-group__count">{group.length} {uiT(" 条")}</span>
               </div>
               {group.length === 0 ? (
-                <div className="ac-empty">本次判定未命中该类依据</div>
+                <div className="ac-empty">{uiT("本次判定未命中该类依据")}</div>
               ) : (
                 group.map((it) => {
                   const go = locate(it);
@@ -88,16 +90,14 @@ export function EvidencePanel({ items, onClose }: Props) {
                         <span className="ac-ev__spacer" />
                         {it.href ? (
                           <a className="ac-link" href={it.href}>
-                            查看原文
-                          </a>
+                            {uiT("查看原文")}</a>
                         ) : go ? (
                           // 无 PDF 链接但知识库有这条：跳到知识库页并选中它
                           <button type="button" className="ac-link" onClick={go}>
-                            查看知识库条目
-                          </button>
+                            {uiT("查看知识库条目")}</button>
                         ) : (
                           // 知识库里也没有（如经验条目）：如实说明，不假装能点
-                          <span className="ac-empty">原文未随包提供</span>
+                          <span className="ac-empty">{uiT("原文未随包提供")}</span>
                         )}
                       </div>
                     </article>

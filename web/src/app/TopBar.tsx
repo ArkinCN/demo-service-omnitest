@@ -1,4 +1,5 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useT } from '../i18n'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { NavLink, useLocation } from 'react-router'
 import {
   Activity,
@@ -37,6 +38,7 @@ import { useStageReturnCue } from '../features/automation/useStageReturnCue'
 import { useFlowBarScale } from '../features/shared/useFlowBarScale'
 import { FlowSegLink, RUN_TUNE_LOOP_SEG, segPhaseOf } from '../features/shared/FlowSegLink'
 import { ProductCascader } from './ProductCascader'
+import { useLocale } from '../i18n'
 
 /** 动作条图标：按动作 id 映射，缺省给一枚通用图标 */
 const ACTION_ICON: Record<string, LucideIcon> = {
@@ -93,6 +95,17 @@ function flowOfAutomationStage(stageId: string | null): FlowId | null {
  *      测量用 `useLayoutEffect` + `ResizeObserver`（断点/窗口变化时重测），避免错位。
  */
 function FlowStepper() {
+  const uiT = useT()
+  const { locale } = useLocale()
+  const [narrowViewport, setNarrowViewport] = useState(() => window.matchMedia('(max-width: 1799px)').matches)
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 1799px)')
+    const update = () => setNarrowViewport(query.matches)
+    query.addEventListener('change', update)
+    return () => query.removeEventListener('change', update)
+  }, [])
+  const compactEnglish = locale === 'en' && narrowViewport
+
   const { pathname } = useLocation()
   // 模块路由（/knowledge）不属于任何一步，此时 stepper 不点亮任何一步
   const current = FLOW_BY_PATH[pathname] ?? FLOWS[0]
@@ -118,6 +131,8 @@ function FlowStepper() {
   // 基准：节点高 78、圆标 39、字号 19.5、图标 21、段宽 48、顶栏高 120。
   // labelPx = 20（1.5× 后标签基准字号）；小于 10px 时隐藏文字、保留图标+序号+悬停全称
   const { slotRef, barRef, scale, compact } = useFlowBarScale<HTMLDivElement>({
+    contentKey: `${locale}:${compactEnglish}`,
+    fixedScale: compactEnglish ? 0.5 : undefined,
     labelPx: 20,
     compactTextPx: 10,
   })
@@ -165,7 +180,7 @@ function FlowStepper() {
       ro.disconnect()
     }
     // scale / compact 变化会改变节点几何 → 一并重测高亮块位置
-  }, [current.id, onFlow, autoCurrent, autoRunning, scale, compact])
+  }, [current.id, onFlow, autoCurrent, autoRunning, scale, compact, uiT])
 
   // 退回提示：自动化调优循环「tune 采纳 → 回 run 重跑」时，该段走反向动效
   const returning = useStageReturnCue()
@@ -180,13 +195,13 @@ function FlowStepper() {
   }, [scale])
 
   return (
-    <div ref={slotRef} className="flex min-w-0 flex-1 items-center justify-center">
+    <div ref={slotRef} className={cn('flex flex-1 items-center justify-center', compactEnglish ? 'min-w-[240px]' : 'min-w-0')}>
     <nav
       ref={(el: HTMLDivElement | null) => {
         navRef.current = el
         barRef.current = el
       }}
-      aria-label="五流程"
+      aria-label={uiT("五流程")}
       data-flow-bar="top"
       style={{ '--fb-scale': scale } as React.CSSProperties}
       className="relative flex w-fit shrink-0 items-center justify-center"
@@ -262,8 +277,9 @@ function FlowStepper() {
             ) : null}
             <NavLink
               to={f.path}
+              aria-label={uiT(f.label)}
               data-active={on ? 'true' : undefined}
-              title={`${f.index} ${f.label}${f.precondition ? ` · ${f.precondition}` : ''}`}
+              title={`${f.index} ${uiT(f.label)}${f.precondition ? ` · ${uiT(f.precondition)}` : ''}`}
               className={cn(
                 // 2026-10-09：底色改由上面的滑动高亮块承担，这里只留 hover 的轻反馈。
                 // 2026-10-10：整体放大 1.5 倍（h-[52px]→78×s、px/gap 同步），尺寸全部乘 --fb-scale。
@@ -305,7 +321,7 @@ function FlowStepper() {
                 )}
               </span>
               {/* 标签：紧凑模式（文字过小）下隐藏，仅保留圆标+序号，悬停 title 显示全称 */}
-              {!compact ? (
+              {!compact && !compactEnglish ? (
                 <span
                   className={cn(
                     'whitespace-nowrap transition-colors',
@@ -319,7 +335,7 @@ function FlowStepper() {
                   )}
                   style={{ fontSize: 'calc(var(--fb-scale) * 20px)' }}
                 >
-                  {FLOW_SHORT[f.id]}
+                  {uiT(FLOW_SHORT[f.id])}
                 </span>
               ) : null}
               {state === 'alert' ? <StatusDot status="alert" /> : null}
@@ -335,6 +351,9 @@ function FlowStepper() {
 const KnowledgeIcon = MODULE_ICON.knowledge
 
 export function TopBar() {
+  const uiT = useT()
+
+  const { locale, setLocale } = useLocale()
   const { pathname } = useLocation()
   const onFlow = !!FLOW_BY_PATH[pathname]
   const current = FLOW_BY_PATH[pathname] ?? FLOWS[0]
@@ -410,10 +429,10 @@ export function TopBar() {
           side="bottom"
           content={
             backToConsole
-              ? '本轮仍在后台继续运行（你退出的是界面，不是测试），点此回到运行台看进度'
+              ? uiT('本轮仍在后台继续运行（你退出的是界面，不是测试），点此回到运行台看进度')
               : autoRunning
-                ? '自动化回归进行中，点此终止'
-                : '一键自动化回归：全屏接管 · 自动选定参数 → 按五步推进 → 产出报告，全程可见可终止'
+                ? uiT('自动化回归进行中，点此终止')
+                : uiT('一键自动化回归：全屏接管 · 自动选定参数 → 按五步推进 → 产出报告，全程可见可终止')
           }
         >
           <Button
@@ -437,7 +456,7 @@ export function TopBar() {
                   : () => setAutomationIntent(true)
             }
           >
-            {backToConsole ? '回到运行台' : autoRunning ? '终止' : 'AI自动化测试'}
+            {backToConsole ? uiT('回到运行台') : autoRunning ? uiT('终止') : uiT('AI自动化测试')}
           </Button>
         </Tooltip>
 
@@ -450,7 +469,7 @@ export function TopBar() {
               视觉上跟五步主线断开 */}
           <span className="h-[26px] w-px bg-line min-[1536px]:h-[30px]" />
           {/* 头部右侧控件（2026-10-10）：宽屏随 1.5× 流程条同步放大，窄屏回落原尺寸 */}
-          <Tooltip side="bottom" content="知识库 · 五条流程共用的基础模块">
+          <Tooltip side="bottom" content={uiT("知识库 · 五条流程共用的基础模块")}>
             <NavLink
               to="/knowledge"
               className={({ isActive }) =>
@@ -463,26 +482,30 @@ export function TopBar() {
               }
             >
               <KnowledgeIcon size={14} strokeWidth={1.75} className="min-[1536px]:h-[17px] min-[1536px]:w-[17px]" />
-              <span className="text-[12px] min-[1536px]:text-[15px]">{MODULE_SHORT.knowledge}</span>
+              <span className="text-[12px] min-[1536px]:text-[15px]">{uiT(MODULE_SHORT.knowledge)}</span>
               <span className="num text-[11px] text-t3 min-[1536px]:text-[14px]">{kbTotal}</span>
             </NavLink>
           </Tooltip>
           <ProductCascader />
+          <Button size="sm" data-testid="locale-toggle" lang={locale === 'zh-CN' ? 'en' : 'zh-CN'}
+            onClick={() => setLocale(locale === 'zh-CN' ? 'en' : 'zh-CN')}>
+            {locale === 'zh-CN' ? 'English' : uiT('中文')}
+          </Button>
           {/* 2026-10-10（用户反馈）：顶栏的「演示 / 全量」分段控件**已删除**，不再作为可见入口。
               展示口径仍由 store 的 `demoMode` 决定（真源、持久化与 `?mode=demo|full`
               强制口都保留，见 state/useAppStore.ts 的 readDemoMode）：现取值与删除前
               完全一致，只少一颗可点的按钮。若要改成「恒为全量」或整条演示链路一并下线，
               需另外确认。 */}
-          <Tooltip side="bottom" content={benchBusy ? `台架被 ${benchUser} 占用中` : '台架空闲，可排队启动'}>
+          <Tooltip side="bottom" content={benchBusy ? uiT("台架被 {v1} 占用中", { v1: benchUser }) : uiT('台架空闲，可排队启动')}>
             <span className="flex h-[30px] items-center gap-1.5 rounded-full border border-line bg-white px-2.5 min-[1536px]:h-[38px] min-[1536px]:px-3">
               <StatusDot status={benchBusy ? 'alert' : 'done'} pulse={!benchBusy} />
-              <span className="text-[12px] text-t2 min-[1536px]:text-[15px]">{benchBusy ? '占用' : '空闲'}</span>
+              <span className="text-[12px] text-t2 min-[1536px]:text-[15px]">{benchBusy ? uiT('占用') : uiT('空闲')}</span>
             </span>
           </Tooltip>
-          <Tooltip side="bottom" content={pending ? `安全联锁还有 ${pending} 项待确认` : '安全联锁就绪'}>
+          <Tooltip side="bottom" content={pending ? uiT("安全联锁还有 {v1} 项待确认", { v1: pending }) : uiT('安全联锁就绪')}>
             <span className="flex h-[30px] items-center gap-1.5 rounded-full border border-line bg-white px-2.5 text-t2 min-[1536px]:h-[38px] min-[1536px]:px-3">
               <ShieldCheck size={14} strokeWidth={1.75} className={cn('min-[1536px]:h-[17px] min-[1536px]:w-[17px]', pending ? 'text-warn' : 'text-p600')} />
-              <span className="num text-[12px] min-[1536px]:text-[15px]">{pending ? pending : '就绪'}</span>
+              <span className="num text-[12px] min-[1536px]:text-[15px]">{pending ? pending : uiT('就绪')}</span>
             </span>
           </Tooltip>
           <Avatar name="张" size={30} />
@@ -509,11 +532,11 @@ export function TopBar() {
               variant={a.primary ? 'primary' : a.danger ? 'danger' : 'default'}
               icon={<Icon size={14} strokeWidth={1.75} />}
             >
-              {a.label}
+              {uiT(a.label)}
             </Button>
           )
           return reason ? (
-            <Tooltip key={a.id} content={reason} side="bottom">
+            <Tooltip key={a.id} content={uiT(reason)} side="bottom">
               <span className="cursor-not-allowed">{btn}</span>
             </Tooltip>
           ) : (
@@ -522,7 +545,7 @@ export function TopBar() {
         })}
         <span className="ml-auto flex items-center gap-2 text-[12px] text-t2">
           <StatusDot status={statusTone} pulse={runPhase === 'running'} />
-          {statusText}
+          {uiT(statusText)}
         </span>
       </div>
       ) : null}

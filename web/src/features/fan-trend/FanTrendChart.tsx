@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 /* ===========================================================================
    风扇趋势动态折线图（ECharts，line-race 风格）。
 
@@ -119,8 +120,11 @@ type Point = [number, number | null]
 const DENSE_POINTS = 12
 
 export function FanTrendChart({ plan, samples, height = 360, onChartReady }: FanTrendChartProps) {
+  const uiT = useT()
+
   const hostRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<echarts.ECharts | null>(null)
+  const legendNamesRef = useRef<Record<string, string>>({})
   /**
    * 两级紧凑（按卡片高度渐进降级）。
    *
@@ -185,6 +189,13 @@ export function FanTrendChart({ plan, samples, height = 360, onChartReady }: Fan
   useEffect(() => {
     const chart = chartRef.current
     if (!chart) return
+    const previousSelection = (chart.getOption()?.legend as { selected?: Record<string, boolean> }[] | undefined)?.[0]?.selected ?? {}
+    const selected = Object.fromEntries(Object.keys(LEGEND_SHORT).map((source) => {
+      const oldName = legendNamesRef.current[source] ?? source
+      const name = uiT(source)
+      legendNamesRef.current[source] = name
+      return [name, previousSelection[oldName] !== false]
+    }))
 
     const point = (t: number | null, v: number | null): Point => [t ?? 0, v]
     // 稀疏点（≤ DENSE_POINTS）显示标记便于逐点读数；密集点弱化标记，以细线为主。
@@ -192,7 +203,8 @@ export function FanTrendChart({ plan, samples, height = 360, onChartReady }: Fan
     const line = (name: string, pick: (s: FanSample) => number | null, spec: LineSpec = {}) => {
       const { dashed = false, yAxisIndex = 0, digits = 2, scale = 1 } = spec
       return {
-        name,
+        id: `trend-${name}`,
+        name: uiT(name),
         type: 'line' as const,
         // 自适应：稀疏时显点，密集时只在 hover/emphasis 处显点（避免糊成一片）
         showSymbol: sparse,
@@ -203,7 +215,7 @@ export function FanTrendChart({ plan, samples, height = 360, onChartReady }: Fan
         data: samples.map((s) => point(s.t_s, pick(s))),
         lineStyle: dashed ? { type: 'dashed' as const } : undefined,
         // tooltip / 读数统一走 fmtNum：null → 未采集，绝不出现 0
-        tooltip: { valueFormatter: (v: unknown) => fmtNum(v as number | null, digits, scale) },
+        tooltip: { valueFormatter: (v: unknown) => uiT(fmtNum(v as number | null, digits, scale)) },
       }
     }
 
@@ -220,17 +232,18 @@ export function FanTrendChart({ plan, samples, height = 360, onChartReady }: Fan
       // 极矮档（tiny）整条隐藏：此时连 18px 都留不出，曲线比图例重要，
       // 数值仍可在 tooltip 里逐项读到。
       legend: {
+        selected,
         show: compact !== 'tiny',
         top: 0,
         type: 'scroll',
         textStyle: { fontSize: 12 },
-        formatter: (name: string) => LEGEND_SHORT[name] ?? name,
+        formatter: (name: string) => uiT(Object.entries(LEGEND_SHORT).find(([full]) => uiT(full) === name)?.[1] ?? name),
       },
       // right 56 → 92：右侧要摆**两条**轴（转速 + 电流探头偏轴），各留刻度与轴名的位置。
       // 紧凑档再收一收：把滑块让掉、边距压到最小，保住绘图区。
       grid: {
         left: 48,
-        right: 92,
+        right: uiT('转速 (rpm)') === '转速 (rpm)' ? 92 : 164,
         top: compact === 'tiny' ? 8 : 34,
         // bottom 2026-10-09 微调：x 轴名改为居中置底后，需要在刻度数字行**之下**
         // 再留出轴名的高度（full 档还要在轴名之下容纳 dataZoom 滑块 20px + 8px 边距）。
@@ -249,7 +262,7 @@ export function FanTrendChart({ plan, samples, height = 360, onChartReady }: Fan
         type: 'value',
         min: 0,
         max: axisEnd,
-        name: '时间 (s)',
+        name: uiT('时间 (s)'),
         // ⚠️ 2026-10-09 修复「时间字样重叠」：value 轴默认把轴名摆在**末端**，
         // 正好压住最后一个刻度数字（截图右下角「时间 (s)」与 `60` 叠字）。
         // 改为居中置于轴下方（middle），并给足 gap 让开刻度数字行；
@@ -267,7 +280,7 @@ export function FanTrendChart({ plan, samples, height = 360, onChartReady }: Fan
         {
           type: 'value',
           min: 0,
-          name: '占空比 % / 电压 V',
+          name: uiT('占空比 % / 电压 V'),
           nameTextStyle: { fontSize: 10 },
           axisLabel: { fontSize: 11 },
         },
@@ -283,7 +296,10 @@ export function FanTrendChart({ plan, samples, height = 360, onChartReady }: Fan
           // 轴上限随数据自动扩展，**绝不裁剪曲线**（裁剪会把超范围的线切平顶）。
           max: (v: { max: number }) => Math.max(3600, Math.ceil((v.max ?? 0) * 1.15)),
           position: 'right',
-          name: '转速 (rpm)',
+          name: uiT('转速 (rpm)'),
+          nameLocation: uiT('转速 (rpm)') === '转速 (rpm)' ? 'end' : 'middle',
+          nameRotate: uiT('转速 (rpm)') === '转速 (rpm)' ? 0 : 90,
+          nameGap: uiT('转速 (rpm)') === '转速 (rpm)' ? 15 : 52,
           nameTextStyle: { fontSize: 10, align: 'right' },
           axisLabel: { fontSize: 11 },
           splitLine: { show: false },
@@ -292,8 +308,11 @@ export function FanTrendChart({ plan, samples, height = 360, onChartReady }: Fan
           type: 'value',
           min: 0,
           position: 'right',
-          offset: 44,
-          name: '电流 (V)',
+          offset: uiT('电流 (V)') === '电流 (V)' ? 44 : 76,
+          name: uiT('电流 (V)'),
+          nameLocation: uiT('电流 (V)') === '电流 (V)' ? 'end' : 'middle',
+          nameRotate: uiT('电流 (V)') === '电流 (V)' ? 0 : 90,
+          nameGap: uiT('电流 (V)') === '电流 (V)' ? 15 : 44,
           nameTextStyle: { fontSize: 10, align: 'right' },
           axisLabel: { fontSize: 10 },
           splitLine: { show: false },
@@ -317,7 +336,7 @@ export function FanTrendChart({ plan, samples, height = 360, onChartReady }: Fan
       ],
     }
     chart.setOption(option)
-  }, [samples, axisEnd, compact])
+  }, [samples, axisEnd, compact, uiT])
 
   return (
     <div style={{ position: 'relative', width: '100%', height }}>
@@ -335,8 +354,7 @@ export function FanTrendChart({ plan, samples, height = 360, onChartReady }: Fan
             pointerEvents: 'none',
           }}
         >
-          暂无数据：点击「确认参数 · N 项并启动测试」后，四通道（占空比 / 电压 / 电流 / 转速）曲线将随时间动态刷新
-        </div>
+          {uiT("暂无数据：点击「确认参数 · N 项并启动测试」后，四通道（占空比 / 电压 / 电流 / 转速）曲线将随时间动态刷新")}</div>
       )}
     </div>
   )

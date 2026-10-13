@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 /* ===========================================================================
    上传面板的「用途」选择器：三轴固定三类 + 可新建自定义标签。
 
@@ -34,6 +35,8 @@ export function UsagePicker({
   value: UsageChoice
   onChange: (v: UsageChoice) => void
 }) {
+  const uiT = useT()
+
   const [open, setOpen] = useState(false)
   const [creating, setCreating] = useState(false)
   const [draft, setDraft] = useState({ axis: value.usage, label: '' })
@@ -45,8 +48,7 @@ export function UsagePicker({
   return (
     <div className="flex flex-col gap-1">
       <span className="flex items-center gap-2 text-[12px] text-t2">
-        用途
-        <span className="text-[11px] text-t3">归入三轴之一；可另加更细的说法</span>
+        {uiT("用途")}<span className="text-[11px] text-t3">{uiT("归入三轴之一；可另加更细的说法")}</span>
         <button
           type="button"
           onClick={() => {
@@ -57,14 +59,14 @@ export function UsagePicker({
           className="ml-auto flex items-center gap-0.5 rounded-tps px-1.5 text-[11px] text-p700 transition-colors hover:bg-p50"
         >
           <Plus size={11} strokeWidth={2.2} />
-          {creating ? '取消新建' : '新建用途'}
+          {creating ? uiT('取消新建') : uiT('新建用途')}
         </button>
       </span>
 
       {creating ? (
         <div className="flex flex-col gap-1.5 rounded-tps border border-p300 bg-p50/60 p-2">
           <div className="flex items-center gap-1.5">
-            <span className="shrink-0 text-[11.5px] text-t3">归入</span>
+            <span className="shrink-0 text-[11.5px] text-t3">{uiT("归入")}</span>
             <div className="flex gap-1">
               {OPTIONS.map((u) => (
                 <button
@@ -78,15 +80,15 @@ export function UsagePicker({
                       : 'border-line text-t2 hover:border-p300')
                   }
                 >
-                  {KNOWLEDGE_USAGE_LABEL[u]}
+                  {uiT(KNOWLEDGE_USAGE_LABEL[u])}
                 </button>
               ))}
             </div>
           </div>
           <Input
             value={draft.label}
-            placeholder="更细的说法，如「启动测试」「量产工艺」"
-            aria-label="自定义用途"
+            placeholder={uiT("更细的说法，如「启动测试」「量产工艺」")}
+            aria-label={uiT("自定义用途")}
             onChange={(e) => setDraft({ ...draft, label: e.target.value })}
             className="h-[26px] text-[12px]"
           />
@@ -100,11 +102,9 @@ export function UsagePicker({
               }}
               className="rounded-tps border border-p300 bg-white px-2 py-[3px] text-[11.5px] text-p700 transition-colors hover:bg-p50 disabled:opacity-45"
             >
-              用这个用途
-            </button>
+              {uiT("用这个用途")}</button>
             <span className="text-[11px] text-t3">
-              三轴仍是原有三类（筛选与计数靠它），自定义标签只是更细的说法
-            </span>
+              {uiT("三轴仍是原有三类（筛选与计数靠它），自定义标签只是更细的说法")}</span>
           </div>
         </div>
       ) : (
@@ -113,7 +113,7 @@ export function UsagePicker({
             type="button"
             aria-haspopup="listbox"
             aria-expanded={open}
-            aria-label="用途"
+            aria-label={uiT("用途")}
             onClick={() => setOpen((v) => !v)}
             className={
               'flex h-[28px] w-full items-center gap-1.5 rounded-tps border bg-white px-2.5 text-left text-[12px] font-medium transition-colors ' +
@@ -153,11 +153,10 @@ export function UsagePicker({
                         : 'text-t2 hover:bg-p50/70 hover:text-p700')
                     }
                   >
-                    {KNOWLEDGE_USAGE_LABEL[u]}
+                    {uiT(KNOWLEDGE_USAGE_LABEL[u])}
                     {u === value.usage && value.customLabel ? (
                       <span className="ml-auto num shrink-0 text-[10.5px] text-t3">
-                        当前归入
-                      </span>
+                        {uiT("当前归入")}</span>
                     ) : null}
                     {u === value.usage && !value.customLabel ? (
                       <Check size={12} strokeWidth={2.4} className="ml-auto shrink-0 text-p600" />

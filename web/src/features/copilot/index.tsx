@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FlowId } from '../../data/types'
 import { registerCopilotActions } from '../../registry'
@@ -12,6 +13,7 @@ import { USE_DSH } from './backend'
 import { heldEnv, takePending } from './held'
 import { stepsForAction } from './actionScripts'
 import { scriptFor } from './scripts'
+import { rememberScriptMessages, uiMessage } from '../../i18n/messages'
 import './copilot.css'
 
 /**
@@ -62,13 +64,16 @@ export function FlowCopilot({
    *  放在头部而不是绝对定位浮在右上角——浮层会压住这里的「沉淀为经验 / 依据」。 */
   onCollapse?: () => void
 }) {
+  const uiT = useT()
+
   const pack = getPack()
   const sceneId = useAppStore((s) => s.sceneId)
   const operator = useAppStore((s) => s.benchUser)
   // 对话的命令式接口与忙态由 AgentChat 交回来，不再从 DOM 上反推
   const [api, setApi] = useState<AgentChatApi | null>(null)
   const [busy, setBusy] = useState(false)
-  const send = useCallback((text: string) => api?.send(text), [api])
+  const send = useCallback((text: string) => api?.send(text, uiMessage(text)), [api])
+  const openingUiText = useMemo(() => uiMessage(PROMPT[flow]), [flow])
   const noteChatRound = useAppStore((s) => s.noteChatRound)
 
   /**
@@ -111,6 +116,7 @@ export function FlowCopilot({
     // 联调档：直连后端适配层。确认闸门由 AgentChat 注入 requestConfirm，
     // dshAdapter 内部已有实现，宿主这一侧不用另接。
     if (USE_DSH) return dshAdapter
+    rememberScriptMessages(scriptFor(flow, pack).filter((step) => step.kind === 'say').map((step) => step.text))
     /**
      * 一轮发什么，按发的是什么决定：
      * 刚点过的那枚预置动作认领得上，就放它那段脚本；否则回落到本流程的默认脚本。
@@ -129,8 +135,7 @@ export function FlowCopilot({
   if (!adapter) {
     return (
       <div className="flex h-full items-center justify-center text-[12px] text-t3">
-        场景包加载中…
-      </div>
+        {uiT("场景包加载中…")}</div>
     )
   }
 
@@ -139,10 +144,11 @@ export function FlowCopilot({
       <AgentChat
         key={flow}
         adapter={adapter}
-        assistantName="助手"
+        assistantName={uiT("助手")}
         operator={operator}
         defaultPermission="readonly"
         autoStartPrompt={PROMPT[flow]}
+        autoStartUiText={openingUiText}
         // 等上下文包挂上持有位再发开场提问，保证第一轮就带真现场数据
         autoStartReady={envReady}
         onReady={setApi}

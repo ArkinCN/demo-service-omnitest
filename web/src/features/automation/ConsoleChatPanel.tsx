@@ -1,3 +1,5 @@
+import { useT } from '../../i18n'
+import { uiMessage, rememberScriptMessages } from '../../i18n/messages'
 import { useMemo } from 'react'
 import type { AgentAdapter, ChatItem, SendRequest } from '../agent-chat'
 import { AgentChat, dshAdapter } from '../agent-chat'
@@ -49,6 +51,10 @@ const GREETING: ChatItem = {
     '我只查资料、不改设备——真要动台架请用运行台左下角的各项控制。',
   streaming: false,
 }
+if (GREETING.kind === 'message') {
+  GREETING.uiText = uiMessage(GREETING.text)
+  rememberScriptMessages([GREETING.text])
+}
 
 /**
  * 运行台助手适配器。
@@ -78,6 +84,8 @@ export function ConsoleChatPanel({
   /** 点助手卡头部「收起」→ 切回日志卡（由 AutomationConsole 控制卷动） */
   onCollapse: () => void
 }) {
+  const uiT = useT()
+
   const sceneId = useAppStore((s) => s.sceneId)
   const operator = useAppStore((s) => s.benchUser)
   const adapter = useConsoleChatAdapter()
@@ -89,7 +97,7 @@ export function ConsoleChatPanel({
     <div className="console-chat h-full min-h-0">
       <AgentChat
         adapter={adapter}
-        assistantName="助手"
+        assistantName={uiT("助手")}
         operator={operator}
         defaultPermission="readonly"
         // 独立的持久化键：运行台一份、人测页各流程各一份，互不覆盖

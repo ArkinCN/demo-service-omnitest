@@ -1,3 +1,4 @@
+import { useT } from '../i18n'
 /* ===========================================================================
    知识库模块页 · 空壳。
 
@@ -12,18 +13,20 @@ import { EmptyState, Panel, PanelHeader } from '../components/ui'
 import { hasModulePage, renderModulePage, useRegistryVersion } from '../registry'
 
 export function KnowledgePage() {
+  const uiT = useT()
+
   useRegistryVersion()
   if (hasModulePage('knowledge')) return <>{renderModulePage('knowledge')}</>
 
   return (
     <div className="flex min-h-0 w-full flex-1 [&>*]:flex-1">
       <Panel>
-        <PanelHeader icon={<Library size={17} strokeWidth={1.9} />} title="知识库" />
+        <PanelHeader icon={<Library size={17} strokeWidth={1.9} />} title={uiT("知识库")} />
         <div className="min-h-0 flex-1">
           <EmptyState
             icon={<Library size={24} strokeWidth={1.5} />}
-            title="知识库模块待接入"
-            hint="三轴分类与条目列表由知识库模块提供，本轮先落路由与壳。"
+            title={uiT("知识库模块待接入")}
+            hint={uiT("三轴分类与条目列表由知识库模块提供，本轮先落路由与壳。")}
           />
         </div>
       </Panel>

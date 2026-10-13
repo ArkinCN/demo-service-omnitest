@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 /* ===========================================================================
    知识库上传的「归属」选择器：三级（场景 › 子类 › 产品类型）。
 
@@ -70,6 +71,8 @@ export function OwnerPicker({
   /** 当前产品（缺省候选，也是「用作归属」的一键入口） */
   defaultOwner: OwnerTriple
 }) {
+  const uiT = useT()
+
   const catalog = useAppStore((s) => s.catalog) as CatalogNode[] | undefined
   const options = useMemo(() => {
     const list = flatten(catalog)
@@ -90,8 +93,7 @@ export function OwnerPicker({
   return (
     <div className="flex flex-col gap-1">
       <span className="flex items-center gap-2 text-[12px] text-t2">
-        归属
-        <span className="text-[11px] text-t3">三级：场景 › 子类 › 产品类型</span>
+        {uiT("归属")}<span className="text-[11px] text-t3">{uiT("三级：场景 › 子类 › 产品类型")}</span>
         <button
           type="button"
           onClick={() => {
@@ -102,7 +104,7 @@ export function OwnerPicker({
           className="ml-auto flex items-center gap-0.5 rounded-tps px-1.5 text-[11px] text-p700 transition-colors hover:bg-p50"
         >
           <Plus size={11} strokeWidth={2.2} />
-          {creating ? '取消新建' : '新建归属'}
+          {creating ? uiT('取消新建') : uiT('新建归属')}
         </button>
       </span>
 
@@ -113,22 +115,22 @@ export function OwnerPicker({
           <div className="grid grid-cols-3 gap-1.5">
             <Input
               value={draft.l1}
-              placeholder="一级，如 通用"
-              aria-label="归属一级"
+              placeholder={uiT("一级，如 通用")}
+              aria-label={uiT("归属一级")}
               onChange={(e) => setDraft({ ...draft, l1: e.target.value })}
               className="h-[26px] text-[12px]"
             />
             <Input
               value={draft.l2}
-              placeholder="二级（可空）"
-              aria-label="归属二级"
+              placeholder={uiT("二级（可空）")}
+              aria-label={uiT("归属二级")}
               onChange={(e) => setDraft({ ...draft, l2: e.target.value })}
               className="h-[26px] text-[12px]"
             />
             <Input
               value={draft.l3}
-              placeholder="三级（可空）"
-              aria-label="归属三级"
+              placeholder={uiT("三级（可空）")}
+              aria-label={uiT("归属三级")}
               onChange={(e) => setDraft({ ...draft, l3: e.target.value })}
               className="h-[26px] text-[12px]"
             />
@@ -144,11 +146,9 @@ export function OwnerPicker({
               }}
               className="rounded-tps border border-p300 bg-white px-2 py-[3px] text-[11.5px] text-p700 transition-colors hover:bg-p50 disabled:opacity-45"
             >
-              用这个归属
-            </button>
+              {uiT("用这个归属")}</button>
             <span className="text-[11px] text-t3">
-              新建的只是归属名，不会创建场景包；三级可留空
-            </span>
+              {uiT("新建的只是归属名，不会创建场景包；三级可留空")}</span>
           </div>
         </div>
       ) : (
@@ -157,7 +157,7 @@ export function OwnerPicker({
             type="button"
             aria-haspopup="listbox"
             aria-expanded={open}
-            aria-label="归属"
+            aria-label={uiT("归属")}
             onClick={() => setOpen((v) => !v)}
             className={
               'flex h-[28px] w-full items-center gap-1.5 rounded-tps border bg-white px-2.5 text-left text-[12px] font-medium transition-colors ' +
@@ -165,7 +165,7 @@ export function OwnerPicker({
             }
           >
             <span className={'truncate ' + (currentLabel ? '' : 'text-t3')}>
-              {currentLabel || '选一个归属，或新建'}
+              {currentLabel || uiT('选一个归属，或新建')}
             </span>
             <ChevronDown
               size={14}
@@ -201,7 +201,7 @@ export function OwnerPicker({
                     >
                       <span className="truncate">{labelOf(o)}</span>
                       {keyOf(o) === keyOf(defaultOwner) ? (
-                        <span className="ml-auto shrink-0 text-[10.5px] text-t3">当前产品</span>
+                        <span className="ml-auto shrink-0 text-[10.5px] text-t3">{uiT("当前产品")}</span>
                       ) : null}
                       {keyOf(o) === keyOf(value) ? (
                         <Check size={12} strokeWidth={2.4} className="ml-auto shrink-0 text-p600" />
@@ -211,8 +211,7 @@ export function OwnerPicker({
                 ))
               ) : (
                 <li className="px-2.5 py-2 text-[12px] text-t3">
-                  已有归属目录取不到，请用上方「新建归属」手填。
-                </li>
+                  {uiT("已有归属目录取不到，请用上方「新建归属」手填。")}</li>
               )}
             </ul>
           ) : null}

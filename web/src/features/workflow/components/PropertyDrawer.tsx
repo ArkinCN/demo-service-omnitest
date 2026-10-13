@@ -1,3 +1,4 @@
+import { useT } from '../../../i18n'
 /** 右侧属性抽屉：把节点 params 摊成键值表，标量可就地编辑。 */
 import { useMemo, useState } from 'react'
 import { NODE_GROUPS } from '../lib/nodeCatalog'
@@ -32,6 +33,8 @@ export function PropertyDrawer({
   onParamChange,
   onLabelChange,
 }: PropertyDrawerProps) {
+  const uiT = useT()
+
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   const rows = useMemo<Row[]>(() => {
@@ -44,7 +47,7 @@ export function PropertyDrawer({
   if (!node) {
     return (
       <aside className="wf-drawer">
-        <div className="wf-drawer-empty">在画布上点选一个节点查看配置</div>
+        <div className="wf-drawer-empty">{uiT("在画布上点选一个节点查看配置")}</div>
       </aside>
     )
   }
@@ -64,16 +67,16 @@ export function PropertyDrawer({
     <aside className="wf-drawer">
       <header className="wf-drawer-head">
         <span className="wf-chip" style={{ borderColor: meta.color, color: meta.color }}>
-          {meta.label}
+          {uiT(meta.label)}
         </span>
         {readonly ? (
-          <h2 className="wf-drawer-title">{node.label}</h2>
+          <h2 className="wf-drawer-title">{uiT(node.label)}</h2>
         ) : (
           <input
             className="wf-drawer-title-input"
             value={node.label}
             onChange={(e) => onLabelChange?.(node.id, e.target.value)}
-            aria-label="节点名称"
+            aria-label={uiT("节点名称")}
           />
         )}
         <code className="wf-drawer-type">{node.type}</code>
@@ -81,12 +84,11 @@ export function PropertyDrawer({
 
       {node.embedded && (
         <div className="wf-drawer-note">
-          内嵌子流程：{node.embedded.nodes.length} 节点 / {node.embedded.edges.length} 连线
-        </div>
+          {uiT("内嵌子流程：")}{node.embedded.nodes.length} {uiT(" 节点 / ")}{node.embedded.edges.length} {uiT(" 连线")}</div>
       )}
 
       {rows.length === 0 ? (
-        <div className="wf-drawer-empty">该节点没有额外参数</div>
+        <div className="wf-drawer-empty">{uiT("该节点没有额外参数")}</div>
       ) : (
         <dl className="wf-params">
             {rows.map(({ key, value, editable }) => {

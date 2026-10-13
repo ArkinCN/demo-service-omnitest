@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 /* ===========================================================================
    B 区顶部「本流程可用知识」窄条与抽屉。
 
@@ -28,6 +29,8 @@ const USAGE_ORDER: KnowledgeUsage[] = ['spec', 'requirement', 'process']
 const MAX_ROWS = 5
 
 function Group({ usage, items }: { usage: KnowledgeUsage; items: KnowledgeEntry[] }) {
+  const uiT = useT()
+
   const [open, setOpen] = useState(usage === 'requirement')
   if (!items.length) return null
   const Doc = KNOWLEDGE_ICON.doc
@@ -45,7 +48,7 @@ function Group({ usage, items }: { usage: KnowledgeUsage; items: KnowledgeEntry[
           strokeWidth={2}
           className={`shrink-0 text-t3 transition-transform duration-200 ${open ? 'rotate-90 text-p600' : ''}`}
         />
-        <span className="text-[13px] font-semibold text-t1">{KNOWLEDGE_USAGE_LABEL[usage]}</span>
+        <span className="text-[13px] font-semibold text-t1">{uiT(KNOWLEDGE_USAGE_LABEL[usage])}</span>
         <span className="tick ml-auto">{items.length}</span>
       </button>
       {open ? (
@@ -65,8 +68,7 @@ function Group({ usage, items }: { usage: KnowledgeUsage; items: KnowledgeEntry[
           ))}
           {items.length > MAX_ROWS ? (
             <li className="py-[5px] pl-6 text-[12px] text-t3">
-              还有 {items.length - MAX_ROWS} 条，去知识库页看全部
-            </li>
+              {uiT("还有 ")}{items.length - MAX_ROWS} {uiT(" 条，去知识库页看全部")}</li>
           ) : null}
         </ul>
       ) : null}
@@ -75,6 +77,8 @@ function Group({ usage, items }: { usage: KnowledgeUsage; items: KnowledgeEntry[
 }
 
 export function KnowledgeDrawer({ flow, count, children }: KnowledgeDrawerProps) {
+  const uiT = useT()
+
   const nav = useNavigate()
   const [open, setOpen] = useState(false)
   const { entries } = useKnowledge()
@@ -88,15 +92,14 @@ export function KnowledgeDrawer({ flow, count, children }: KnowledgeDrawerProps)
     <>
       <div className="flex h-[30px] shrink-0 items-center gap-2 border-b border-line-soft bg-p50/60 px-3">
         <Icon size={13} strokeWidth={1.9} className="shrink-0 text-p600" />
-        <span className="truncate text-[12px] text-t2">本流程可用知识</span>
-        <span className="num text-[11px] text-t3">{n} 条</span>
+        <span className="truncate text-[12px] text-t2">{uiT("本流程可用知识")}</span>
+        <span className="num text-[11px] text-t3">{n} {uiT(" 条")}</span>
         <button
           type="button"
           onClick={() => setOpen(true)}
           className="ml-auto rounded-tps px-1.5 text-[11px] text-t2 transition-colors hover:bg-white hover:text-p700"
         >
-          查看
-        </button>
+          {uiT("查看")}</button>
         {/* 「上传」= **上传一个文件到知识库**（用户明确的口径，2026-09-24 更正）。
             此前写法变过两次，记下来免得再走回头路：
               ① 最早：没有任何 onClick，点了没反应；
@@ -106,8 +109,8 @@ export function KnowledgeDrawer({ flow, count, children }: KnowledgeDrawerProps)
                  人立刻就能选文件，不用再自己找入口。 */}
         <button
           type="button"
-          aria-label="上传知识"
-          title="上传一份资料到知识库"
+          aria-label={uiT("上传知识")}
+          title={uiT("上传一份资料到知识库")}
           onClick={() => {
             useAppStore.getState().requestKbUpload(true)
             nav('/knowledge')
@@ -115,34 +118,32 @@ export function KnowledgeDrawer({ flow, count, children }: KnowledgeDrawerProps)
           className="flex h-5 items-center gap-1 rounded-tps px-1.5 text-[11px] text-t2 transition-colors hover:bg-white hover:text-p700"
         >
           <Upload size={12} strokeWidth={1.9} />
-          上传
-        </button>
+          {uiT("上传")}</button>
       </div>
 
       <Drawer
         open={open}
         onClose={() => setOpen(false)}
-        title="本流程可用知识"
-        meta={`${n} 条`}
+        title={uiT("本流程可用知识")}
+        meta={uiT("{v1} 条", { v1: n })}
         width={460}
       >
         {children ??
           (mine.length ? (
             <div className="px-1">
               <p className="pb-2 text-[12px] text-t3">
-                只列本流程会调用的条目，按用途轴分三组。
-              </p>
+                {uiT("只列本流程会调用的条目，按用途轴分三组。")}</p>
               {USAGE_ORDER.map((u) => (
                 <Group key={u} usage={u} items={mine.filter((e) => e.usage === u)} />
               ))}
               <div className="flex items-center gap-2 pt-3">
-                <Badge tone="soft">去知识库页管理全部条目</Badge>
+                <Badge tone="soft">{uiT("去知识库页管理全部条目")}</Badge>
               </div>
             </div>
           ) : (
             <EmptyState
-              title="本流程暂无调用"
-              hint="场景包登记里没有标到这条流程的知识条目。"
+              title={uiT("本流程暂无调用")}
+              hint={uiT("场景包登记里没有标到这条流程的知识条目。")}
             />
           ))}
       </Drawer>

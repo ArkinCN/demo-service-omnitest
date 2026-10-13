@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
@@ -11,9 +12,11 @@ const STATE_TEXT: Record<ConnState, string> = {
 };
 
 export function ConnBadge({ state, detail }: { state: ConnState; detail?: string }) {
+  const uiT = useT()
+
   return (
     <span className="rt-badge" data-state={state} title={detail}>
-      <i className="dot" />{STATE_TEXT[state]}
+      <i className="dot" />{uiT(STATE_TEXT[state])}
     </span>
   );
 }
@@ -35,6 +38,8 @@ export interface RemoteTerminalProps {
 export function RemoteTerminal({
   deviceId, target, title, presets = [], onOutput, onStateChange,
 }: RemoteTerminalProps) {
+  const uiT = useT()
+
   const hostRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
@@ -133,21 +138,19 @@ export function RemoteTerminal({
       <div className="rt-bar">
         {presets.map((p) => (
           <button key={p.label} className="rt-btn" disabled={!online} onClick={() => runPreset(p.cmd)} title={p.cmd}>
-            {p.label}
+            {uiT(p.label)}
           </button>
         ))}
         <span className="rt-spacer" />
-        <button className="rt-btn" onClick={copyAll}>复制输出</button>
+        <button className="rt-btn" onClick={copyAll}>{uiT("复制输出")}</button>
         {online
-          ? <button className="rt-btn" data-variant="accent" onClick={disconnect}>断开</button>
-          : <button className="rt-btn" data-variant="solid" onClick={connect}>重连</button>}
+          ? <button className="rt-btn" data-variant="accent" onClick={disconnect}>{uiT("断开")}</button>
+          : <button className="rt-btn" data-variant="solid" onClick={connect}>{uiT("重连")}</button>}
       </div>
 
       <div className="rt-screen" ref={hostRef} />
       <p className="rt-note">
-        私钥留在网关侧，浏览器只拿到 WebSocket 帧。SSH 落在 Session 0，
-        <b>看不到桌面上的 GUI 窗口</b>，需要点按钮的操作仍要人工或计划任务。
-      </p>
+        {uiT("私钥留在网关侧，浏览器只拿到 WebSocket 帧。SSH 落在 Session 0，")}<b>{uiT("看不到桌面上的 GUI 窗口")}</b>{uiT("，需要点按钮的操作仍要人工或计划任务。")}</p>
     </div>
   );
 }

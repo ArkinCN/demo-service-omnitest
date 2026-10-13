@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import { TimeSeriesChart } from './TimeSeriesChart';
 import './timeseries.css';
 import type { Annotation, Series, Threshold } from './types';
@@ -43,6 +44,8 @@ export function WaveformCard({
   height = 120,
   onExpand,
 }: WaveformCardProps) {
+  const uiT = useT()
+
   const clickable = typeof onExpand === 'function';
   const shown = metrics.slice(0, 3);
 
@@ -70,7 +73,7 @@ export function WaveformCard({
         </div>
         {verdict && (
           <span className={`ts-card-verdict ts-card-verdict--${verdict}`}>
-            {verdictLabel ?? (verdict === 'pass' ? '合格' : '不合格')}
+            {verdictLabel ?? (verdict === 'pass' ? uiT('合格') : uiT('不合格'))}
           </span>
         )}
       </div>
@@ -91,8 +94,8 @@ export function WaveformCard({
         <div className="ts-card-metrics">
           {shown.map((m) => (
             <div className="ts-card-metric" key={m.label}>
-              <div className="ts-card-metric-label" title={m.label}>
-                {m.label}
+              <div className="ts-card-metric-label" title={uiT(m.label)}>
+                {uiT(m.label)}
               </div>
               <div
                 className="ts-card-metric-value"

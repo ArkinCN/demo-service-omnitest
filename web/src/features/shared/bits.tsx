@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import type { ReactNode } from 'react'
 import { CheckCircle2, LockOpen } from 'lucide-react'
 import { Button, Collapsible, Tooltip, cn } from '../../components/ui'
@@ -24,9 +25,11 @@ export function GroupBar({
   onClick?: () => void
   active?: boolean
 }) {
+  const uiT = useT()
+
   const inner = (
     <>
-      <span className="truncate">{title}</span>
+      <span className="truncate">{uiT(title)}</span>
       {count !== undefined ? <span className="num ml-auto shrink-0 text-t3">{count}</span> : null}
       {right}
     </>
@@ -56,9 +59,11 @@ export function KV({
   alert?: boolean
   title?: string
 }) {
+  const uiT = useT()
+
   return (
     <div className="flex items-baseline gap-2 py-[2px]" title={title}>
-      <span className="shrink-0 text-[11px] text-t3">{k}</span>
+      <span className="shrink-0 text-[11px] text-t3">{uiT(k)}</span>
       <span className={cn('num ml-auto truncate text-[11.5px]', alert ? 'text-alert' : 'text-t1')}>{v}</span>
     </div>
   )
@@ -170,6 +175,8 @@ export function ConfirmFooter({
   /** confirm = 勾选图标，unlock = 解锁图标 */
   icon?: 'confirm' | 'unlock'
 }) {
+  const uiT = useT()
+
   return (
     <footer className="shrink-0 border-t border-line-soft bg-white/85 px-4 py-3 backdrop-blur">
       <Tooltip content={hint} className="w-full">
@@ -186,7 +193,7 @@ export function ConfirmFooter({
           }
           onClick={onClick}
         >
-          {label} · {count} {unit}
+          {uiT(label)} · {count} {uiT(unit)}
         </Button>
       </Tooltip>
     </footer>
@@ -245,6 +252,8 @@ export function TierTree<T>({
   /** 默认展开第几个一级类（只展开这一个），其余全部折叠 */
   defaultOpen?: number
 }) {
+  const uiT = useT()
+
   const stat = (items: T[]) => (flags ? tally(items, flags) : { ...ZERO, total: items.length })
   return (
     <>
@@ -263,7 +272,7 @@ export function TierTree<T>({
             level={1}
             index={String(i + 1)}
             icon={tierIcon?.(t.title)}
-            title={t.title}
+            title={uiT(t.title)}
             storeKey={collapseKey(flow, t.id)}
             defaultOpen={i === defaultOpen}
             lockOpen={lockTier?.(t)}
@@ -276,7 +285,7 @@ export function TierTree<T>({
                 key={g.id}
                 level={2}
                 icon={groupIcon?.(g.title)}
-                title={g.title}
+                title={uiT(g.title)}
                 storeKey={collapseKey(flow, g.id)}
                 defaultOpen={j === openGroup}
                 stat={flags ? stat(g.items) : { total: g.items.length }}
@@ -286,7 +295,7 @@ export function TierTree<T>({
                       <Collapsible
                         key={sub.id}
                         level={3}
-                        title={sub.title}
+                        title={uiT(sub.title)}
                         storeKey={collapseKey(flow, sub.id)}
                         defaultOpen={k === 0}
                         stat={flags ? stat(sub.items) : { total: sub.items.length }}

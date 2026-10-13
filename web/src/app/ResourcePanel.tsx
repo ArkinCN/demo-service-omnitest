@@ -1,3 +1,4 @@
+import { useT } from '../i18n'
 import { useMemo, useState, createElement } from 'react'
 import { LayoutGrid, Layers, Network } from 'lucide-react'
 import { useAppStore } from '../state/useAppStore'
@@ -44,6 +45,8 @@ function slotStyle(i: number, n: number): React.CSSProperties {
 }
 
 export function ResourcePanel({ flow, scene }: { flow: FlowId; scene: ScenePackage }) {
+  const uiT = useT()
+
   useRegistryVersion()
   // 人点过按人的，没点过按场景包的 ui.defaultView，场景包没给才落代码兜底
   const view = useFlowView(flow, scene)
@@ -99,15 +102,14 @@ export function ResourcePanel({ flow, scene }: { flow: FlowId; scene: ScenePacka
       {autoRunning ? (
         <div className="pointer-events-none absolute right-3 bottom-3 z-10 flex items-center gap-1.5 rounded-full border border-ink bg-surface/95 px-2.5 py-1 text-[11.5px] text-t2 shadow-tp2">
           <span className="automation-pulse h-[6px] w-[6px] rounded-full bg-ink" />
-          自动化测试进行中
-        </div>
+          {uiT("自动化测试进行中")}</div>
       ) : null}
       <PanelHeader
         icon={<Layers size={17} strokeWidth={1.9} />}
-        title="面板"
+        title={uiT("面板")}
         right={
           <Segmented
-            ariaLabel="面板视图"
+            ariaLabel={uiT("面板视图")}
             value={view}
             onChange={(v) => setView(flow, v as View)}
             items={[
@@ -141,7 +143,7 @@ export function ResourcePanel({ flow, scene }: { flow: FlowId; scene: ScenePacka
                 <PanelCard
                   key={c.id}
                   icon={cardIcon(c.id, i === 0 ? 14 : 13)}
-                  title={c.title ?? CARD_LIB[c.id]?.title ?? regById.get(c.id)?.label ?? c.id}
+                  title={uiT(c.title ?? CARD_LIB[c.id]?.title ?? regById.get(c.id)?.label ?? c.id)}
                   stamp={c.stamp}
                   active={c.active}
                   hero={i === 0}
@@ -171,19 +173,16 @@ export function ResourcePanel({ flow, scene }: { flow: FlowId; scene: ScenePacka
         open={!!open}
         onClose={() => setOpen(null)}
         width={1220}
-        title={open ? (open.title ?? CARD_LIB[open.id]?.title ?? open.id) : ''}
+        title={open ? uiT(open.title ?? CARD_LIB[open.id]?.title ?? open.id) : ''}
         meta={open?.summary}
         footer={
           <>
             <Button size="sm" variant="ghost" onClick={() => setOpen(null)}>
-              关闭
-            </Button>
+              {uiT("关闭")}</Button>
             <Button size="sm" variant="secondary">
-              在新窗口打开
-            </Button>
+              {uiT("在新窗口打开")}</Button>
             <Button size="sm" variant="primary">
-              固定到卡槽
-            </Button>
+              {uiT("固定到卡槽")}</Button>
           </>
         }
       >

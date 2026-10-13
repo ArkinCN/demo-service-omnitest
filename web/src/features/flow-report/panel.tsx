@@ -1,3 +1,4 @@
+import { useT, useLocale } from '../../i18n'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Archive,
@@ -66,6 +67,8 @@ function short(s: string, n = 6) {
  * 而是「当前就用内置的正式模板」——措辞不能写成待办。上传客户 .xlsm 是**可选**能力。
  */
 function TemplateUploadRow() {
+  const uiT = useT()
+
   const [tpl, setTpl] = useState<{ ready: boolean; filename?: string; bytes?: number } | null>(null)
   const [busy, setBusy] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -98,12 +101,12 @@ function TemplateUploadRow() {
   return (
     <div className="flex min-h-[40px] items-center gap-2 px-4 py-1.5">
       <span className="shrink-0 whitespace-nowrap text-[13px] font-medium text-t1">
-        {tpl?.ready ? '客户模板' : '报告模板'}
+        {tpl?.ready ? uiT('客户模板') : uiT('报告模板')}
       </span>
       <span className="num truncate text-[12px] text-t3">
         {tpl?.ready
           ? `${tpl.filename}（${sizeText(tpl.bytes ?? 0)}）`
-          : '系统内置（正式报告）'}
+          : uiT('系统内置（正式报告）')}
       </span>
       <span className="ml-auto shrink-0">
         <input
@@ -119,7 +122,7 @@ function TemplateUploadRow() {
           onClick={() => inputRef.current?.click()}
           className="num cursor-pointer rounded-tpx border border-line px-2 py-1 text-[12px] text-t1 transition-colors hover:bg-p50 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {busy ? '上传中…' : tpl?.ready ? '更换' : '改用客户模板'}
+          {busy ? uiT('上传中…') : tpl?.ready ? uiT('更换') : uiT('改用客户模板')}
         </button>
       </span>
     </div>
@@ -274,17 +277,19 @@ const iconOf = (name: string, size = 14) => {
 }
 
 function FieldRow({ f }: { f: RawHeaderField }) {
+  const uiT = useT()
+
   const h = useShared()
   const up = upstream(f)
   const filled = !!h[f.key]
   const detail = (
     <span className="block space-y-1">
-      <span className="block font-medium">{f.name}</span>
+      <span className="block font-medium">{uiT(f.name)}</span>
       <span className="num block opacity-75">
-        标题位 {f.label_slot || '—'} → 取值位 {f.value_slot || '—'}
+        {uiT("标题位 ")}{f.label_slot || '—'} {uiT(" → 取值位 ")}{f.value_slot || '—'}
         {f.label_section ? ` · ${f.label_section}` : ''}
       </span>
-      <span className="block opacity-75">{up ? `由 ${f.from_flow} 带入` : '本流程补全'}</span>
+      <span className="block opacity-75">{up ? uiT("由 {v1} 带入", { v1: f.from_flow }) : uiT('本流程补全')}</span>
     </span>
   )
 
@@ -293,20 +298,20 @@ function FieldRow({ f }: { f: RawHeaderField }) {
       <Tooltip className="min-w-0" content={detail}>
         <span className="flex min-w-0 items-center gap-1.5">
           <SourceTag source={up ? '文档' : filled ? '人工' : '建议'} />
-          <span className="cursor-help truncate text-[13px] font-medium text-t1">{fieldShort(f)}</span>
+          <span className="cursor-help truncate text-[13px] font-medium text-t1">{uiT(f.name) === f.name ? fieldShort(f) : uiT(f.name)}</span>
         </span>
       </Tooltip>
       <span className="ml-auto shrink-0">
         {up ? (
           <span className={cn('num text-[13px]', filled ? 'text-t1' : 'text-t3')}>
-            {h[f.key] || '由上游带入'}
+            {h[f.key] || uiT('由上游带入')}
           </span>
         ) : (
           <Input
             value={h[f.key] ?? ''}
             onChange={(e) => setHeader(f.key, e.target.value)}
-            aria-label={f.name}
-            placeholder="待填"
+            aria-label={uiT(f.name)}
+            placeholder={uiT("待填")}
             className="h-[28px] w-[152px] text-[13px]"
           />
         )}
@@ -368,6 +373,8 @@ function useConfirmReportHeader(opts: {
 }
 
 export function ReportLeftPanel() {
+  const uiT = useT()
+
   const pack = getPack()
   seed()
   // G-04：进报告页时按 runId 把 config-snapshot 读回来填表头（仍保留装配，
@@ -401,7 +408,7 @@ export function ReportLeftPanel() {
   useEffect(() => () => setPreviewOpen(false), [setPreviewOpen])
 
   // hook 全部就位后再做空值分支
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
 
   const fields = pack.report.header_fields
   const mine = fields.filter((f) => !upstream(f))
@@ -429,18 +436,17 @@ export function ReportLeftPanel() {
     <div className="flex h-full min-h-0 w-full flex-col">
       <header className="flex h-[44px] shrink-0 items-center gap-2.5 border-b border-line-soft px-4">
         <FileText size={17} strokeWidth={1.9} className="shrink-0 text-p700" />
-        <h2 className="text-[16px] leading-none font-semibold tracking-tight text-t1">报告信息</h2>
+        <h2 className="text-[16px] leading-none font-semibold tracking-tight text-t1">{uiT("报告信息")}</h2>
         <span className="num text-[12px] text-t3">
           {filled}/{fields.length}
         </span>
         {left > 0 ? (
           <Badge tone="neutral" dot className="ml-auto">
-            待补 {left}
+            {uiT("待补 ")}{left}
           </Badge>
         ) : (
           <Badge tone="soft" dot className="ml-auto">
-            已齐
-          </Badge>
+            {uiT("已齐")}</Badge>
         )}
       </header>
 
@@ -459,7 +465,7 @@ export function ReportLeftPanel() {
               <span className="block space-y-1">
                 <span className="block font-medium">{raw}</span>
                 {pack.report.filled_sample_file ? (
-                  <span className="block opacity-75">已填样例 {pack.report.filled_sample_file}</span>
+                  <span className="block opacity-75">{uiT("已填样例 ")}{pack.report.filled_sample_file}</span>
                 ) : null}
                 {pack.report.filler_tool ? (
                   <span className="num block opacity-75">{pack.report.filler_tool.cli}</span>
@@ -475,12 +481,12 @@ export function ReportLeftPanel() {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[13px] font-semibold text-t1">
-                  {REPORT_DOC_TITLE}
+                  {uiT(REPORT_DOC_TITLE)}
                 </span>
                 <span className="num block truncate text-[12px] text-t3">
                   {pack.report.sheets.length
-                    ? `${pack.report.sheets.length} 分页 · ${pack.report.spec_sections.length} 节`
-                    : `${pack.report.spec_sections.length} 节`}
+                    ? uiT("{v1} 分页 · {v2} 节", { v1: pack.report.sheets.length, v2: pack.report.spec_sections.length })
+                    : uiT("{v1} 节", { v1: pack.report.spec_sections.length })}
                 </span>
               </span>
               <Badge tone="soft" mono>
@@ -522,7 +528,7 @@ export function ReportLeftPanel() {
         <Collapsible
           level={1}
           icon={<LayoutList size={15} strokeWidth={1.9} />}
-          title="模板分节"
+          title={uiT("模板分节")}
           storeKey={collapseKey('report', 'rp-sec')}
           defaultOpen={false}
           stat={{ total: pack.report.spec_sections.length }}
@@ -533,7 +539,7 @@ export function ReportLeftPanel() {
               key={grp.title}
               level={2}
               icon={<LayoutList size={14} strokeWidth={1.9} />}
-              title={grp.title}
+              title={uiT(grp.title)}
               storeKey={collapseKey('report', `rp-sec-${gi}`)}
               defaultOpen={gi === 0}
               stat={{ total: grp.items.length }}
@@ -544,22 +550,21 @@ export function ReportLeftPanel() {
               className="block w-full"
               content={
                 <span className="block space-y-1">
-                  <span className="block font-medium">{simp(sec.section)}</span>
+                  <span className="block font-medium">{sectionDisplay(sec.section, uiT)}</span>
                   <span className="num block opacity-75">
-                    {sec.rows} · 由 {sec.from_flow} 写入
-                  </span>
-                  <span className="block opacity-75">{sec.fields.map(simp).join(' · ')}</span>
+                    {sec.rows} {uiT(" · 由 ")}{sec.from_flow} {uiT(" 写入")}</span>
+                  <span className="block opacity-75">{sec.fields.map((field) => uiT(simp(field))).join(' · ')}</span>
                 </span>
               }
             >
               <span className="flex min-h-[40px] w-full cursor-help items-center gap-2 px-4 py-1.5 transition-colors hover:bg-p50/60">
                 <SourceTag source={sec.from_flow.startsWith('F6') ? '建议' : '文档'} />
                 <span className="truncate text-[13px] font-medium text-t1">
-                  {sectionShort(sec.section)}
+                  {sectionDisplay(sec.section, uiT)}
                 </span>
                 <span className="num ml-auto shrink-0 text-[13px] font-semibold text-t1">
                   {sec.fields.length}
-                  <span className="ml-1 text-[12px] font-normal text-t3">字段</span>
+                  <span className="ml-1 text-[12px] font-normal text-t3">{uiT("字段")}</span>
                 </span>
               </span>
             </Tooltip>
@@ -577,12 +582,12 @@ export function ReportLeftPanel() {
           确认后变「解除确认」，与流程 1/2 的形态一致（反悔出口保留）。 */}
       {confirmed ? (
         <ConfirmFooter
-          label="解除确认"
+          label={uiT("解除确认")}
           count={fields.length}
           unit="项"
           variant="secondary"
           icon="unlock"
-          hint={`表头已确认并写入轮次产物（${filled}/${fields.length} 项有值）。点此解除后可继续修改；生成报告时按确认值填写表头。`}
+          hint={uiT("表头已确认并写入轮次产物（{v1}/{v2} 项有值）。点此解除后可继续修改；生成报告时按确认值填写表头。", { v1: filled, v2: fields.length })}
           onClick={() => {
             unconfirmFlow('report')
             setNotice('已解除确认：可继续修改表头，改完再点「确认表头」')
@@ -590,15 +595,15 @@ export function ReportLeftPanel() {
         />
       ) : (
         <ConfirmFooter
-          label={saving ? '确认中…' : '确认表头'}
+          label={saving ? uiT('确认中…') : uiT('确认表头')}
           count={fields.length}
           unit="项"
           onClick={() => void confirmHeader()}
           hint={
             (left === 0
-              ? `表头 ${fields.length} 项已补全。`
-              : `表头 ${fields.length} 项，本流程还差 ${left} 项未填；未填字段一律留空，不编。`) +
-            '点击后写入轮次产物（生成报告时按此填写表头），不会触发生成。'
+              ? uiT("表头 {v1} 项已补全。", { v1: fields.length })
+              : uiT("表头 {v1} 项，本流程还差 {v2} 项未填；未填字段一律留空，不编。", { v1: fields.length, v2: left })) +
+            uiT('点击后写入轮次产物（生成报告时按此填写表头），不会触发生成。')
           }
         />
       )}
@@ -609,8 +614,8 @@ export function ReportLeftPanel() {
       <Modal
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
-        title="报告预览"
-        meta="按模板节结构渲染 · 非最终成稿"
+        title={uiT("报告预览")}
+        meta={uiT("按模板节结构渲染 · 非最终成稿")}
         width={880}
       >
         <div className="max-h-[70vh] overflow-y-auto bg-p50 p-3">
@@ -689,13 +694,14 @@ function useVerdictRows() {
 
 /** 横向分段条：只用墨绿明度 + 一处暗红，不引第三色相 */
 function StackBar({ seg }: { seg: { n: number; cls: string; title: string }[] }) {
+  const uiT = useT()
   const total = seg.reduce((a, b) => a + b.n, 0) || 1
   return (
     <span className="flex h-[7px] w-full overflow-hidden rounded-full bg-p100">
       {seg.map((s) => (
         <span
           key={s.title}
-          title={`${s.title} ${s.n}`}
+          title={`${uiT(s.title)} ${s.n}`}
           className={cn('block h-full', s.cls)}
           style={{ width: `${(s.n / total) * 100}%`, transition: 'width .5s cubic-bezier(.22,.75,.3,1)' }}
         />
@@ -751,7 +757,7 @@ function MiniWave({ w, h = 34 }: { w: Wave; h?: number }) {
 
 function SheetTitle({ children }: { children: React.ReactNode }) {
   return (
-    <span className="block shrink-0 border-l-2 border-p700 pl-1.5 text-[12px] leading-none font-semibold text-t1">
+    <span className="block min-w-0 max-w-full truncate border-l-2 border-p700 pl-1.5 text-[12px] leading-none font-semibold text-t1">
       {children}
     </span>
   )
@@ -778,19 +784,22 @@ function useBoxHeight() {
  * 以下，所以这里按「横开的一页」排，宁可不守 A4 比例，也不破 12 px 字号下限。
  */
 function ReportPreview({ full }: { full?: boolean }) {
+  const uiT = useT()
+  const { locale } = useLocale()
+
   const pack = getPack()
   seed()
   const h = useShared()
   const waves = useWaves()
   const rows = useVerdictRows()
   const [box, boxH] = useBoxHeight()
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
   if (full) return <FullReport />
   const compact = boxH > 0 && boxH < 180
 
   const raw = pack.report.template_file
   // 标题统一显示「测试报告」；真实模板名由外层 Tooltip（content={raw}）承载
-  const title = REPORT_DOC_TITLE
+  const title = uiT(REPORT_DOC_TITLE)
   const fields = pack.report.header_fields.slice(0, 6)
   const verdicts = rows.slice(0, 5)
   const shots = Object.values(pack.report.waveform_image_slots?.counted_images ?? {}).reduce(
@@ -831,14 +840,13 @@ function ReportPreview({ full }: { full?: boolean }) {
                 compact ? 'text-[13px]' : 'text-[14px]',
               )}
             >
-              {title}
+              {uiT(title)}
             </span>
           </Tooltip>
           <span className="num shrink-0 text-[12px] text-t3">{pack.scene.generated_at}</span>
           {pack.caps.syntheticData ? (
             <Badge tone="warn" className="ml-auto" title={pack.caps.syntheticBanner}>
-              合成
-            </Badge>
+              {uiT("合成")}</Badge>
           ) : null}
         </div>
 
@@ -849,11 +857,10 @@ function ReportPreview({ full }: { full?: boolean }) {
         >
           {/* 表头 */}
           <div className="flex min-h-0 flex-col gap-1.5">
-            <span className="flex shrink-0 items-baseline gap-1.5">
-              <SheetTitle>表头</SheetTitle>
-              <span className="shrink-0 text-[12px] text-t3" title="这一列的字段名照抄模板原文，模板本身是繁体，界面其余各处一律用简体">
-                模板原文
-              </span>
+            <span className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-1">
+              <SheetTitle>{uiT("表头")}</SheetTitle>
+              <span className="min-w-0 max-w-full truncate text-[12px] text-t3" title={locale === 'en' ? uiT('报告模板') : uiT("这一列的字段名照抄模板原文，模板本身是繁体，界面其余各处一律用简体")}>
+                {locale === 'en' ? uiT('报告字段') : uiT("模板原文")}</span>
             </span>
             <ul className="no-scrollbar min-h-0 flex-1 overflow-hidden" style={mask}>
               {fields.map((f) => (
@@ -861,14 +868,14 @@ function ReportPreview({ full }: { full?: boolean }) {
                   key={f.key}
                   className="flex items-baseline gap-2 border-b border-line-soft py-[3px] last:border-b-0"
                 >
-                  <span className="shrink-0 text-[12px] text-t3">{rawFieldLabel(f)}</span>
+                  <span className="shrink-0 text-[12px] text-t3" title={uiT(f.name)}>{uiT(f.name) === f.name ? uiT(rawFieldLabel(f)) : uiT(f.name)}</span>
                   <span
                     className={cn(
                       'num ml-auto truncate text-[12px]',
                       h[f.key] ? 'text-t1' : 'text-t3',
                     )}
                   >
-                    {h[f.key] || (upstream(f) ? '上游带入' : '待填')}
+                    {h[f.key] || (upstream(f) ? uiT('上游带入') : uiT('待填'))}
                   </span>
                 </li>
               ))}
@@ -882,7 +889,7 @@ function ReportPreview({ full }: { full?: boolean }) {
               compact ? 'pl-3' : 'pl-5',
             )}
           >
-            <SheetTitle>波形图位</SheetTitle>
+            <SheetTitle>{uiT("波形图位")}</SheetTitle>
             <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden" style={mask}>
               {waves.slice(0, 2).map((w) => (
                 <figure key={w.id} className="m-0 shrink-0">
@@ -890,12 +897,12 @@ function ReportPreview({ full }: { full?: boolean }) {
                     <MiniWave w={w} h={compact ? 18 : 22} />
                   </span>
                   <figcaption className="num truncate pt-[3px] text-[12px] text-t3">
-                    {w.id} · 峰值 {w.metrics.peak.toFixed(2)} {w.unit}
+                    {w.id} {uiT(" · 峰值 ")}{w.metrics.peak.toFixed(2)} {w.unit}
                   </figcaption>
                 </figure>
               ))}
               {waves.length === 0 ? (
-                <span className="text-[12px] text-t3">读取时序</span>
+                <span className="text-[12px] text-t3">{uiT("读取时序")}</span>
               ) : null}
             </div>
           </div>
@@ -907,14 +914,14 @@ function ReportPreview({ full }: { full?: boolean }) {
               compact ? 'pl-3' : 'pl-5',
             )}
           >
-            <SheetTitle>判定表</SheetTitle>
+            <SheetTitle>{uiT("判定表")}</SheetTitle>
             <ul className="no-scrollbar min-h-0 flex-1 overflow-hidden" style={mask}>
               {verdicts.map((r) => (
                 <li
                   key={r.req.id}
                   className="flex items-baseline gap-2 border-b border-line-soft py-[3px] last:border-b-0"
                 >
-                  <span className="truncate text-[12px] text-t1">{short(r.req.name, 7)}</span>
+                  <span className="truncate text-[12px] text-t1">{uiT(r.req.name) === r.req.name ? short(r.req.name, 7) : uiT(r.req.name)}</span>
                   <span
                     className={cn(
                       'num ml-auto shrink-0 text-[12px]',
@@ -922,7 +929,7 @@ function ReportPreview({ full }: { full?: boolean }) {
                       r.state === 'fail' ? `px-1.5 text-[11.5px] ${CLAY_MARK}` : 'text-t3',
                     )}
                   >
-                    {STATE_TEXT[r.state]}
+                    {uiT(STATE_TEXT[r.state])}
                   </span>
                 </li>
               ))}
@@ -939,7 +946,7 @@ function ReportPreview({ full }: { full?: boolean }) {
         >
           <span className="truncate">{fileName(raw)}</span>
           <span className="ml-auto shrink-0">
-            首页 / 共 {pack.report.sheets.length || pack.report.spec_sections.length} 页 · 图位{' '}
+            {uiT("首页 / 共 ")}{pack.report.sheets.length || pack.report.spec_sections.length} {uiT(" 页 · 图位")}{' '}
             {shots}
           </span>
         </div>
@@ -949,10 +956,10 @@ function ReportPreview({ full }: { full?: boolean }) {
           非破坏性，不弹卡、直接下。原先并排还有一颗「导出」（红线动作）已删除：
           「生成报告」成功后已自动下载，导出是重复的第二入口（2026-09-30 用户口径）。 */}
       <span className="absolute top-1 right-1 flex items-center gap-1">
-        <Tooltip content="下载报告文件（取回已生成的文件，无需确认）">
+        <Tooltip content={uiT("下载报告文件（取回已生成的文件，无需确认）")}>
           <button
             type="button"
-            aria-label="下载报告"
+            aria-label={uiT("下载报告")}
             data-action="download-report"
             onClick={async () => {
               const st = useAppStore.getState()
@@ -970,7 +977,7 @@ function ReportPreview({ full }: { full?: boolean }) {
                 a.click()
                 a.remove()
               } catch (e) {
-                st.setNotice(`下载失败：${e instanceof Error ? e.message : String(e)}`)
+                st.setNotice(uiT("下载失败：{v1}", { v1: e instanceof Error ? e.message : String(e) }))
               }
             }}
             className="flex h-[24px] w-[24px] cursor-pointer items-center justify-center rounded-tpx bg-white/70 text-t3 transition-colors hover:bg-white hover:text-p700 [&>svg]:block"
@@ -986,11 +993,13 @@ function ReportPreview({ full }: { full?: boolean }) {
 /** 放大态：按模板节结构渲染的整篇预览。
  *  导出给自动化回归结果弹窗复用（「查看报告」= 原地弹窗预览，不跳 /report）。 */
 export function FullReport() {
+  const uiT = useT()
+
   const pack = getPack()
   const h = useShared()
   const waves = useWaves()
   const rows = useVerdictRows()
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
   // 通过率（B 口径）：与判定汇总卡、后端自建报告同一条公式（唯一实现见 assemble.ts）
   const passRateText = fmtPassRate(
     computePassRate(
@@ -1005,17 +1014,17 @@ export function FullReport() {
     <div className="h-full w-full min-h-0 overflow-y-auto">
       <div className="mx-auto max-w-[760px] bg-white px-5 py-4">
         <h1 title={raw} className="border-b border-p700 pb-1.5 text-center text-[16px] font-semibold text-t1">
-          {REPORT_DOC_TITLE}
+          {uiT(REPORT_DOC_TITLE)}
         </h1>
         <table className="mt-2.5 w-full border-collapse text-[12px]">
           <tbody>
             {pack.report.header_fields.map((f) => (
               <tr key={f.key} className="border-b border-line-soft">
                 <td className="w-[34%] py-1 text-t3">
-                  {simp(f.name)} <span className="num text-t3">{f.value_slot || '—'}</span>
+                  {uiT(simp(f.name))} <span className="num text-t3">{f.value_slot || '—'}</span>
                 </td>
                 <td className={cn('num py-1', h[f.key] ? 'text-t1' : 'text-t3')}>
-                  {h[f.key] || (upstream(f) ? '由上游流程带入' : '待补全')}
+                  {h[f.key] || (upstream(f) ? uiT('由上游流程带入') : uiT('待补全'))}
                 </td>
               </tr>
             ))}
@@ -1023,27 +1032,25 @@ export function FullReport() {
         </table>
 
         <h2 className="mt-4 border-l-2 border-p700 pl-2 text-[13px] font-semibold text-t1">
-          分节 · {pack.report.spec_sections.length} 节
-        </h2>
+          {uiT("分节 · ")}{pack.report.spec_sections.length} {uiT(" 节")}</h2>
         {pack.report.spec_sections.map((s) => (
           <div key={s.section} className="border-b border-line-soft py-1.5">
             <div className="flex items-baseline gap-2">
-              <span className="text-[12.5px] text-t1">{simp(s.section)}</span>
+              <span className="text-[12.5px] text-t1">{sectionDisplay(s.section, uiT)}</span>
               <span className="num ml-auto text-[12px] text-t3">{s.rows}</span>
             </div>
-            <p className="pt-0.5 text-[12px] leading-5 text-t2">{simp(s.fields.join(' · '))}</p>
+            <p className="pt-0.5 text-[12px] leading-5 text-t2">{s.fields.map((field) => uiT(simp(field))).join(' · ')}</p>
           </div>
         ))}
 
         {pt ? (
           <>
             <h2 className="mt-4 border-l-2 border-p700 pl-2 text-[13px] font-semibold text-t1">
-              {simp(pt.sheet)} · 通过条件 {pt.pass_condition.length} 条
-            </h2>
+              {uiT(simp(pt.sheet))} {uiT(" · 通过条件 ")}{pt.pass_condition.length} {uiT(" 条")}</h2>
             <ul className="m-0 list-none p-0 pt-1">
               {pt.pass_condition.map((c) => (
                 <li key={c.key} className="flex items-baseline gap-2 py-[2px] text-[12px]">
-                  <span className="text-t1">{simp(c.text)}</span>
+                  <span className="text-t1">{uiT(simp(c.text))}</span>
                   <span className="num ml-auto text-t3">{c.maps_to}</span>
                 </li>
               ))}
@@ -1055,11 +1062,9 @@ export function FullReport() {
                     <th
                       key={c.key}
                       className="px-1 py-1 text-left font-medium text-t2"
-                      title={`${simp(c.note ?? '')}${
-                        c.scale_factor && c.scale_factor !== 1 ? ` · CSV 值 ×${c.scale_factor}` : ''
-                      }`}
+                      title={uiT("{v1}{v2}", { v1: simp(c.note ?? ''), v2: c.scale_factor && c.scale_factor !== 1 ? ` · CSV 值 ×${c.scale_factor}` : '' })}
                     >
-                      {simp(c.name)}
+                      {uiT(simp(c.name))}
                     </th>
                   ))}
                 </tr>
@@ -1069,7 +1074,7 @@ export function FullReport() {
                   <tr key={d} className="border-b border-line-soft">
                     {pt.columns.slice(0, 10).map((c, j) => (
                       <td key={c.key} className="num px-1 py-1 text-t3">
-                        {j === 0 ? `${d}%` : i === 0 && j > 0 ? '—' : '待填'}
+                        {j === 0 ? `${d}%` : i === 0 && j > 0 ? '—' : uiT('待填')}
                       </td>
                     ))}
                   </tr>
@@ -1080,11 +1085,9 @@ export function FullReport() {
         ) : null}
 
         <h2 className="mt-4 border-l-2 border-p700 pl-2 text-[13px] font-semibold text-t1">
-          波形图位
-          {pack.caps.syntheticData ? (
+          {uiT("波形图位")}{pack.caps.syntheticData ? (
             <span className="ml-2 rounded-full border border-warn/30 bg-warn-wash px-2 text-[12px] font-normal text-warn">
-              合成数据，非实测
-            </span>
+              {uiT("合成数据，非实测")}</span>
           ) : null}
         </h2>
         <div className="mt-1.5 grid grid-cols-2 gap-2">
@@ -1100,16 +1103,15 @@ export function FullReport() {
                 xLabel=""
               />
               <figcaption className="num pt-1 text-[12px] text-t3">
-                {simp(w.id)} · {simp(w.verdictText)} · 峰值 {w.metrics.peak.toFixed(2)} {w.unit}
+                {uiT(simp(w.id))} · {uiT(simp(w.verdictText))} {uiT(" · 峰值 ")}{w.metrics.peak.toFixed(2)} {w.unit}
               </figcaption>
             </figure>
           ))}
         </div>
 
         <h2 className="mt-4 border-l-2 border-p700 pl-2 text-[13px] font-semibold text-t1">
-          判定表
-          {/* 通过率（B 口径）：分母只含已判定的通过/不通过；无判定数据时显示「—」 */}
-          <span className="num ml-2 font-normal text-t2">通过率 {passRateText}</span>
+          {uiT("判定表")}{/* 通过率（B 口径）：分母只含已判定的通过/不通过；无判定数据时显示「—」 */}
+          <span className="num ml-2 font-normal text-t2">{uiT("通过率 ")}{passRateText}</span>
         </h2>
         <table className="mt-1.5 w-full border-collapse text-[12px]">
           <tbody>
@@ -1127,14 +1129,14 @@ export function FullReport() {
                 >
                   {r.req.id}
                 </td>
-                <td className="py-1 text-t1">{simp(r.req.name)}</td>
+                <td className="py-1 text-t1">{uiT(simp(r.req.name))}</td>
                 <td
                   className={cn(
                     'num w-[72px] py-1 text-right',
                     r.state === 'fail' ? `px-1.5 text-[11.5px] ${CLAY_MARK}` : 'text-t3',
                   )}
                 >
-                  {STATE_TEXT[r.state]}
+                  {uiT(STATE_TEXT[r.state])}
                 </td>
               </tr>
             ))}
@@ -1144,15 +1146,14 @@ export function FullReport() {
         {pack.report.conclusion_binding ? (
           <>
             <h2 className="mt-4 border-l-2 border-p700 pl-2 text-[13px] font-semibold text-t1">
-              结论聚合规则
-            </h2>
-            <p className="pt-1 text-[12px] leading-5 text-t2">{simp(pack.report.conclusion_binding.note)}</p>
+              {uiT("结论聚合规则")}</h2>
+            <p className="pt-1 text-[12px] leading-5 text-t2">{uiT(simp(pack.report.conclusion_binding.note))}</p>
           </>
         ) : null}
 
         <p className="pt-3 text-[12px] leading-5 text-t3">
-          预览按 report-template.json 的节结构渲染，不是最终成稿。模板全名：{raw}
-          {pack.report.known_gap ? ` ${simp(pack.report.known_gap.text)}` : ''}
+          {uiT("预览按 report-template.json 的节结构渲染，不是最终成稿。模板全名：")}{raw}
+          {pack.report.known_gap ? ` ${uiT(simp(pack.report.known_gap.text))}` : ''}
         </p>
       </div>
     </div>
@@ -1162,11 +1163,13 @@ export function FullReport() {
 /* ------------------------------------------------------- 卡片 · 产物留档 */
 
 function Artifacts({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const bind = useFlowActions()
   const pack = getPack()
   const rows = useVerdictRows()
   useShared()
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
 
   const inPack = pack.datasets.datasets.filter((d) => d.mode.includes('into_pack'))
   const registered = pack.datasets.datasets.filter((d) => !d.mode.includes('into_pack'))
@@ -1241,7 +1244,7 @@ function Artifacts({ full }: { full?: boolean }) {
           const Icon = it.icon
           return (
             <li key={it.key}>
-              <Tooltip className="block w-full" content={it.tip}>
+              <Tooltip className="block w-full" content={it.key === 'report' ? it.tip : uiT(it.tip)}>
                 <span className="flex w-full cursor-help items-center gap-2.5 border-b border-line-soft py-[7px] last:border-b-0">
                   <span
                     className={cn(
@@ -1251,15 +1254,15 @@ function Artifacts({ full }: { full?: boolean }) {
                   >
                     <Icon size={13} strokeWidth={1.8} />
                   </span>
-                  <span className="min-w-0 truncate text-[13px] font-medium text-t1">{it.name}</span>
-                  <span className="num shrink-0 text-[12px] text-t3">{it.meta}</span>
+                  <span className="min-w-0 truncate text-[13px] font-medium text-t1">{uiT(it.name)}</span>
+                  <span className="num shrink-0 text-[12px] text-t3">{uiT(it.meta)}</span>
                   {it.tag ? (
                     <Badge tone="warn" className="ml-auto" title={pack.caps.syntheticBanner}>
-                      {it.tag}
+                      {uiT(it.tag)}
                     </Badge>
                   ) : null}
                   <Badge tone={it.ready ? 'soft' : 'neutral'} mono className={it.tag ? '' : 'ml-auto'}>
-                    {it.size}
+                    {uiT(it.size)}
                   </Badge>
                 </span>
               </Tooltip>
@@ -1277,8 +1280,7 @@ function Artifacts({ full }: { full?: boolean }) {
           onClick={bind('archive-kb').onClick}
           icon={<Archive size={13} strokeWidth={1.9} />}
         >
-          归档到知识库
-        </Button>
+          {uiT("归档到知识库")}</Button>
       </div>
       {full ? (
         <div className="mt-3 min-h-0 flex-1 overflow-y-auto border-t border-line-soft pt-2">
@@ -1291,7 +1293,7 @@ function Artifacts({ full }: { full?: boolean }) {
               <span className="num shrink-0 text-[12px] text-t3">{d.id}</span>
               <span className="truncate text-[12.5px] text-t1">{fileName(d.file_path)}</span>
               <span className="num ml-auto shrink-0 text-[12px] text-t3">
-                {d.mode.includes('into_pack') ? sizeText(d.file_size_bytes) : '仅登记'}
+                {d.mode.includes('into_pack') ? sizeText(d.file_size_bytes) : uiT('仅登记')}
               </span>
             </div>
           ))}
@@ -1304,9 +1306,11 @@ function Artifacts({ full }: { full?: boolean }) {
 /* ------------------------------------------------------- 卡片 · 判定汇总 */
 
 function VerdictSummary({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const pack = getPack()
   const rows = useVerdictRows()
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
   const pass = rows.filter((r) => r.state === 'pass').length
   const fail = rows.filter((r) => r.state === 'fail').length
   const missing = rows.filter((r) => r.state === 'missing').length
@@ -1353,37 +1357,33 @@ function VerdictSummary({ full }: { full?: boolean }) {
           {passRateText}
         </span>
         <span className="flex items-center gap-1.5 pb-1">
-          <span className="text-[12px] text-t3">通过率</span>
+          <span className="text-[12px] text-t3">{uiT("通过率")}</span>
           <InfoTip
-            content={`全表 ${rows.length} 条判据，可自动求值 ${pack.requirements.evaluable_count} 条，本轮已求值 ${judged} 条。通过率 = 通过 ÷（通过 + 不通过），「未采集」与「本台架不适用」都不计入分母；本轮没有可判定的通过/不通过项时显示「—」，不显示 0%。${
-              notApplicable
+            content={uiT("全表 {v1} 条判据，可自动求值 {v2} 条，本轮已求值 {v3} 条。通过率 = 通过 ÷（通过 + 不通过），「未采集」与「本台架不适用」都不计入分母；本轮没有可判定的通过/不通过项时显示「—」，不显示 0%。{v4}结论段按判定结果聚合，不自由撰写。", { v1: rows.length, v2: pack.requirements.evaluable_count, v3: judged, v4: notApplicable
                 ? `其中 ${notApplicable} 条为「本台架不适用」：需本台架未配置的测量手段（MCU 故障寄存器 / FG 转速信号 / 母线电流探头 / 程控电源等），逐条写明缺什么，不计入通过或不通过。`
-                : ''
-            }结论段按判定结果聚合，不自由撰写。`}
+                : '' })}
           />
         </span>
         {fail > 0 ? (
           /* 温和汇总（改动点 ⑤）：只在真有未达标项时出现；0 项时整块不显示，不做「0 项需改善」的噪音 */
           <span className={cn('mb-1 ml-auto shrink-0 px-2.5 py-[3px] text-[11.5px]', CLAY_MARK)}>
-            {fail} 项需改善
-          </span>
+            {fail} {uiT(" 项需改善")}</span>
         ) : pass > 0 ? (
           /* 「完美通过」印章（改动点 ⑤）：仅「有已判定项且不通过为 0」（即通过率 100%）时出现。
              无判定数据时整块留空——绝不假装完美（口径见样式说明第 5 节）。 */
           <span className="mb-1 ml-auto inline-flex shrink-0 items-center gap-2 rounded-tps border-[1.5px] border-p700 bg-gradient-to-b from-white to-p50 px-3 py-1 text-[12.5px] font-semibold tracking-wide text-p700 shadow-[0_1px_2px_rgba(46,94,69,0.10)]">
             <span className="h-[15px] w-[15px] shrink-0 rounded-full bg-[radial-gradient(circle_at_34%_30%,#E6D391,#C9A227_72%)] shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.6)]" />
-            完美通过
-          </span>
+            {uiT("完美通过")}</span>
         ) : null}
       </div>
       <div className="flex shrink-0 items-start gap-2 pt-2.5 pb-2.5">
-        <Stat n={pass} label="通过" tone="ok" />
-        <Stat n={fail} label="不通过" tone="bad" />
+        <Stat n={pass} label={uiT("通过")} tone="ok" />
+        <Stat n={fail} label={uiT("不通过")} tone="bad" />
         {/* 有「本台架不适用」项时优先展示它：已写明缺什么设备，比笼统的未采集更利于决策 */}
         {notApplicable > 0 ? (
-          <Stat n={notApplicable} label="本台架不适用" tone="mute" />
+          <Stat n={notApplicable} label={uiT("本台架不适用")} tone="mute" />
         ) : (
-          <Stat n={missing} label="未采集" tone="mute" />
+          <Stat n={missing} label={uiT("未采集")} tone="mute" />
         )}
       </div>
       <div
@@ -1397,7 +1397,7 @@ function VerdictSummary({ full }: { full?: boolean }) {
           <Tooltip
             key={r.req.id}
             className="w-full"
-            content={`${r.req.criterion_text}${r.missing.length ? ` · 缺 ${r.missing.join('、')}` : ''}`}
+            content={uiT("{v1}{v2}", { v1: r.req.criterion_text, v2: r.missing.length ? ` · 缺 ${r.missing.join('、')}` : '' })}
           >
             <div className="flex w-full items-center gap-2 border-b border-line-soft py-[5px] last:border-b-0">
               <span
@@ -1407,8 +1407,8 @@ function VerdictSummary({ full }: { full?: boolean }) {
                   r.state === 'pass' ? 'bg-p600' : r.state === 'fail' ? CLAY_DOT : 'bg-t3/35',
                 )}
               />
-              <span className="truncate text-[12.5px] text-t1">{short(r.req.name, 12)}</span>
-              <span className="num ml-auto shrink-0 text-[12px] text-t3">{STATE_TEXT[r.state]}</span>
+              <span className="truncate text-[12.5px] text-t1">{uiT(r.req.name) === r.req.name ? short(r.req.name, 12) : uiT(r.req.name)}</span>
+              <span className="num ml-auto shrink-0 text-[12px] text-t3">{uiT(STATE_TEXT[r.state])}</span>
             </div>
           </Tooltip>
         ))}
@@ -1424,9 +1424,11 @@ function VerdictSummary({ full }: { full?: boolean }) {
  * 20260811 启动故障实验批的标注结果，与本轮判定。口径差异写在 tooltip 里。
  */
 function ReportHistory({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const pack = getPack()
   const rows = useVerdictRows()
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
 
   const st = pack.datasets.package_stats as Record<string, number | undefined>
   const hPass = Number(st.pass ?? 0)
@@ -1470,10 +1472,10 @@ function ReportHistory({ full }: { full?: boolean }) {
       {batches.map((b) => {
         const rate = b.total ? Math.round((b.pass / b.total) * 100) : 0
         return (
-          <Tooltip key={b.key} className="block w-full" content={b.tip}>
+          <Tooltip key={b.key} className="block w-full" content={uiT(b.tip)}>
             <span className="block w-full cursor-help">
               <span className="flex items-baseline gap-2 pb-1.5">
-                <span className="truncate text-[13px] font-medium text-t1">{b.name}</span>
+                <span className="truncate text-[13px] font-medium text-t1">{uiT(b.name)}</span>
                 <span className="num shrink-0 text-[12px] text-t3">{b.total}</span>
                 <span className="num ml-auto shrink-0 text-[17px] leading-none font-semibold text-t1">
                   {rate}
@@ -1499,9 +1501,7 @@ function ReportHistory({ full }: { full?: boolean }) {
           {(pack.report.sheets.length
             ? pack.report.sheets.map((s) => ({
                 k: s.name,
-                v: `${s.max_row ?? '—'} 行 × ${s.max_column ?? '—'} 列${
-                  s.image_count ? ` · 图 ${s.image_count}` : ''
-                }`,
+                v: uiT("{v1} 行 × {v2} 列{v3}", { v1: s.max_row ?? '—', v2: s.max_column ?? '—', v3: s.image_count ? ` · 图 ${s.image_count}` : '' }),
               }))
             : pack.report.spec_sections.map((s) => ({ k: s.section, v: s.rows }))
           ).map((r) => (
@@ -1523,18 +1523,29 @@ function sectionShort(s: string) {
   const body = s.includes('、') ? s.split('、')[1] : s
   return simp(short(body.replace(/[A-Za-z][A-Za-z /]*$/, '').trim(), 6))
 }
+function sectionDisplay(s: string, t: (source: string) => string): string {
+  const exact = t(s)
+  if (exact !== s) return exact
+  const body = (s.includes('、') ? s.split('、')[1] : s)
+  const heading = simp(body).replace(/順/g, '顺').replace(/須/g, '须').match(/^[\u3400-\u9fff]+/)?.[0] ?? body
+  const topic = heading === '其他必须测试功能' ? '其他必须测试' : heading
+  const alias = t(topic)
+  return alias !== topic ? alias : t(sectionShort(s))
+}
 
 function TemplateFields({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const pack = getPack()
   const h = useShared()
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
   const fields = pack.report.header_fields
   const filled = fields.filter((f) => h[f.key]).length
   const secs = pack.report.spec_sections
   const max = Math.max(1, ...secs.map((s) => s.fields.length))
 
   if (!secs.length)
-    return <EmptyState icon={<LayoutList size={24} strokeWidth={1.5} />} title="模板未登记分节" />
+    return <EmptyState icon={<LayoutList size={24} strokeWidth={1.5} />} title={uiT("模板未登记分节")} />
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
@@ -1543,9 +1554,9 @@ function TemplateFields({ full }: { full?: boolean }) {
           {filled}
           <span className="font-normal text-t3">/{fields.length}</span>
         </span>
-        <span className="text-[12px] text-t3">表头已填</span>
-        <span className="num ml-auto text-[12px] text-t3">{secs.length} 节</span>
-        <InfoTip content="条宽是本节字段数占比，不是填充进度——规格表各节由上游流程写入，实际填充要等 writeFile_rust 把模板写出来才可知。" />
+        <span className="text-[12px] text-t3">{uiT("表头已填")}</span>
+        <span className="num ml-auto text-[12px] text-t3">{secs.length} {uiT(" 节")}</span>
+        <InfoTip content={uiT("条宽是本节字段数占比，不是填充进度——规格表各节由上游流程写入，实际填充要等 writeFile_rust 把模板写出来才可知。")} />
       </div>
       <div
         className="no-scrollbar min-h-0 flex-1 overflow-y-auto"
@@ -1560,11 +1571,11 @@ function TemplateFields({ full }: { full?: boolean }) {
             className="block w-full"
             content={
               <span className="block space-y-1">
-                <span className="block font-medium">{s.section}</span>
+                <span className="block font-medium">{sectionDisplay(s.section, uiT)}</span>
                 <span className="num block opacity-75">
                   {s.rows} · {s.from_flow}
                 </span>
-                <span className="block opacity-75">{s.fields.join(' · ')}</span>
+                <span className="block opacity-75">{s.fields.map((field) => uiT(field)).join(' · ')}</span>
               </span>
             }
           >
@@ -1575,7 +1586,7 @@ function TemplateFields({ full }: { full?: boolean }) {
                   full ? 'w-[210px]' : 'w-[76px]',
                 )}
               >
-                {full ? simp(s.section) : sectionShort(s.section)}
+                {sectionDisplay(s.section, uiT)}
               </span>
               <span className="min-w-0 flex-1">
                 <StackBar

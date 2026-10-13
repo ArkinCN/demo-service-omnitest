@@ -35,6 +35,7 @@
    的安全口径一致。
    =========================================================================== */
 import { Fragment, type ReactNode } from 'react'
+import { useT } from '../../../i18n'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
 
@@ -85,13 +86,16 @@ function tex(latex: string, displayMode: boolean, key: string): ReactNode {
  */
 const NOT_DECODED_RE = /\be\d+\s*:\s*formula not decoded\b\s*[→>\-—:：]?\s*/i
 
-function notDecodedNode(key: string): ReactNode {
+function MissingFormula() {
+  const uiT = useT()
   return (
-    <span key={key} className="ac-md__math-missing" title="该公式未能从原文中自动提取">
-      公式未能自动提取
+    <span className="ac-md__math-missing" title={uiT('该公式未能从原文中自动提取')}>
+      {uiT('公式未能自动提取')}
     </span>
   )
 }
+
+function notDecodedNode(key: string): ReactNode { return <MissingFormula key={key} /> }
 
 /** 行内解析：粗体、行内代码、行内公式、未解出公式占位。 */
 function inline(text: string, keyPrefix: string): ReactNode[] {

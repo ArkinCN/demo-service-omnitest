@@ -28,6 +28,10 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
    =========================================================================== */
 
 export interface FlowBarScaleOpts {
+  /** Layout content changed without a viewport resize, e.g. a language switch. */
+  contentKey?: string
+  /** A deliberately compact icon row uses fixed geometry instead of text measurements. */
+  fixedScale?: number
   /** 标签字号基准值（×2 后），用于判定紧凑模式；不传则不启用紧凑判定 */
   labelPx?: number
   /** 标签小于该像素值时进入紧凑模式（隐藏文字、保留图标+序号） */
@@ -48,7 +52,7 @@ export interface FlowBarScaleApi<T extends HTMLElement = HTMLDivElement> {
 export function useFlowBarScale<T extends HTMLElement = HTMLDivElement>(
   opts: FlowBarScaleOpts = {},
 ): FlowBarScaleApi<T> {
-  const { labelPx, compactTextPx = 10 } = opts
+  const { labelPx, compactTextPx = 10, contentKey, fixedScale } = opts
   const slotRef = useRef<T | null>(null)
   const barRef = useRef<T | null>(null)
   const [scale, setScale] = useState(1)
@@ -75,6 +79,11 @@ export function useFlowBarScale<T extends HTMLElement = HTMLDivElement>(
     const slot = slotRef.current
     const bar = barRef.current
     if (!slot || !bar) return
+    bar.dataset.fbContent = contentKey ?? ''
+    if (fixedScale !== undefined) {
+      apply(fixedScale, true)
+      return
+    }
     const cs = window.getComputedStyle(slot)
     const padL = parseFloat(cs.paddingLeft) || 0
     const padR = parseFloat(cs.paddingRight) || 0
@@ -95,7 +104,7 @@ export function useFlowBarScale<T extends HTMLElement = HTMLDivElement>(
     const s = Math.max(0.1, Math.min(1, (avail - safeMargin) / natural))
     const nextCompact = labelPx !== undefined && labelPx * s < compactTextPx
     apply(s, nextCompact)
-  }, [labelPx, compactTextPx, apply])
+  }, [labelPx, compactTextPx, apply, contentKey, fixedScale])
 
   // 挂载 / 槽尺寸变化时测量；紧凑切换后也复测一次以收敛。
   // ⚠️ 只用一个 effect 驱动测量，且 measure 不依赖 compact（用 ref 读），

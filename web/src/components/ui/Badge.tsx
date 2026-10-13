@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useT } from '../../i18n'
 import type { ItemStatus, ParamSource } from '../../data/types'
 import { cn } from './cn'
 
@@ -68,6 +69,7 @@ export function Badge({
 
 /** 来源标记：小圆点色标，不写字（悬停出全称） */
 export function SourceTag({ source, title }: { source: ParamSource; title?: string }) {
+  const uiT = useT()
   const map: Record<ParamSource, { cls: string; name: string }> = {
     文档: { cls: 'bg-p600', name: '来文档' },
     人工: { cls: 'bg-warn', name: '来人工' },
@@ -76,8 +78,8 @@ export function SourceTag({ source, title }: { source: ParamSource; title?: stri
   const s = map[source] ?? map['文档']
   return (
     <span
-      title={title ? `${s.name} · ${title}` : s.name}
-      aria-label={s.name}
+      title={title ? `${uiT(s.name)} · ${title}` : uiT(s.name)}
+      aria-label={uiT(s.name)}
       className={cn('inline-block h-[6px] w-[6px] shrink-0 rounded-full', s.cls)}
     />
   )
@@ -99,16 +101,17 @@ export function StatusDot({
     alert: { cls: 'bg-alert', text: '异常', txt: 'text-alert' },
     na: { cls: 'bg-t3/45', text: '不适用', txt: 'text-t3' },
   }
+  const uiT = useT()
   const s = map[status]
   return (
-    <span className="inline-flex shrink-0 items-center gap-1.5" title={s.text}>
+    <span className="inline-flex shrink-0 items-center gap-1.5" title={uiT(s.text)}>
       <span
         className={cn('h-[7px] w-[7px] shrink-0 rounded-full', s.cls)}
         style={pulse ? { animation: 'pulse-dot 2.4s ease-in-out infinite' } : undefined}
       />
       {label === undefined ? null : (
         <span className={cn('text-[12px] font-medium whitespace-nowrap', s.txt)}>
-          {label || s.text}
+          {label || uiT(s.text)}
         </span>
       )}
     </span>

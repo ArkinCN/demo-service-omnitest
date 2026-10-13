@@ -848,3 +848,10 @@
 .config-quick-card .config-field-meta { margin-inline: 0; }
 .config-stepper { border: 1px solid var(--tp-line); border-radius: 9px; padding: 4px; background: white; }
 
+html[lang='en'] .redline-confirm dt { width: 110px; flex-shrink: 0; }
+html[lang='en'] .ac-composer { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
+
+html[lang='en'] .knowledge-axis-panel { width: clamp(280px, 20vw, 344px) !important; }
+@media (max-width: 1799px) {
+  html[lang='en'] .product-cascader-trigger { max-width: 200px; }
+}

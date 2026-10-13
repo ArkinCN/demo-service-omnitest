@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import {
   Activity,
@@ -121,6 +122,8 @@ const iconOf = (name: string, size = 14) => {
 }
 
 function ParamRow({ p }: { p: RawControlParam }) {
+  const uiT = useT()
+
   // G-11：取值走**回落链**——本流程改过用自己的，没改过就继承初始化页确认过的值。
   // 详见 useAppStore.resolveParamKey 的说明（为什么不动 key 结构）。
   //
@@ -141,19 +144,19 @@ function ParamRow({ p }: { p: RawControlParam }) {
 
   const detail = (
     <span className="block space-y-1">
-      <span className="block font-medium">{p.name}</span>
+      <span className="block font-medium">{uiT(p.name)}</span>
       <span className="num block opacity-75">
         {p.key.toUpperCase()}
         {p.min !== null && p.max !== null ? ` · ${p.min}~${p.max}` : ''}
-        {p.value_shell ? ` · 外壳 ${p.value_shell}` : ''}
+        {p.value_shell ? uiT(" · 外壳 {v1}", { v1: p.value_shell }) : ''}
       </span>
       <span className="block opacity-75">{sourceLine(p._source)}</span>
       {/* 继承来的值必须说清来历：人看到「值变了」要知道是谁定的 */}
       {inherited ? (
-        <span className="block opacity-75">当前值继承自「初始化配置」确认过的基线</span>
+        <span className="block opacity-75">{uiT("当前值继承自「初始化配置」确认过的基线")}</span>
       ) : null}
-      {statusOf(p) ? <span className="block opacity-75">待核实 · {statusOf(p)}</span> : null}
-      {p.value_below_min ? <span className="block">实配值低于源注释自己写的下限</span> : null}
+      {statusOf(p) ? <span className="block opacity-75">{uiT("待核实 · ")}{statusOf(p)}</span> : null}
+      {p.value_below_min ? <span className="block">{uiT("实配值低于源注释自己写的下限")}</span> : null}
     </span>
   )
 
@@ -164,27 +167,27 @@ function ParamRow({ p }: { p: RawControlParam }) {
           {/* 继承来的值既非本流程人工改、也非纯文档值，标「建议」以区分——
               三态（文档/人工/建议）是既有枚举，不新增第四态。 */}
           <SourceTag source={inherited ? '建议' : touched ? '人工' : '文档'} />
-          <span className="cursor-help truncate text-[13px] font-medium text-t1">{short(p.name)}</span>
+          <span className="cursor-help truncate text-[13px] font-medium text-t1">{uiT(p.name) === p.name ? short(p.name) : uiT(p.name)}</span>
           {p.value_below_min ? <AlertTriangle size={12} className="shrink-0 text-warn" /> : null}
         </span>
       </Tooltip>
 
       <span className="ml-auto shrink-0">
         {p.not_applicable ? (
-          <span className="text-[12px] text-t3">不适用</span>
+          <span className="text-[12px] text-t3">{uiT("不适用")}</span>
         ) : p.options?.length ? (
           <Select
             size="sm"
             className="w-[150px]"
-            label={p.name}
-            options={p.options.map((o) => ({ value: String(o.value), label: o.label }))}
+            label={uiT(p.name)}
+            options={p.options.map((o) => ({ value: String(o.value), label: uiT(o.label) }))}
             value={String(value)}
             onChange={(v) => setParam(key, v)}
           />
         ) : editable ? (
           <Stepper
             size="sm"
-            label={p.name}
+            label={uiT(p.name)}
             value={Number(value)}
             unit={p.unit ?? undefined}
             step={p.step ?? 1}
@@ -253,6 +256,7 @@ function GateRow({
   on: boolean
   onToggle: () => void
 }) {
+  const uiT = useT()
   return (
     <Tooltip className="w-full" content={`${i.id} ${i.name} · ${i.action}`}>
       <button
@@ -270,7 +274,7 @@ function GateRow({
         >
           <CheckCircle2 size={12} strokeWidth={2.5} />
         </span>
-        <span className="truncate text-[13px] text-t1">{short(i.name, 10)}</span>
+        <span className="truncate text-[13px] text-t1">{uiT(i.name) === i.name ? short(i.name, 10) : uiT(i.name)}</span>
         <span className="num ml-auto shrink-0 text-[12px] text-t3">{i.id}</span>
       </button>
     </Tooltip>
@@ -278,6 +282,8 @@ function GateRow({
 }
 
 export function RunLeftPanel() {
+  const uiT = useT()
+
   const pack = getPack()
   const [filter, setFilter] = useState('F4')
   const g = useGate()
@@ -305,7 +311,7 @@ export function RunLeftPanel() {
   // 闸门总条数由本场景包登记，写进 store 供顶栏动作条与盾形徽章共用
   useEffect(() => setGateTotal(gateItems.length), [gateItems.length, setGateTotal])
 
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
 
   // 演示模式只暴露 demo_profile 点名的那 12 项控制参数；全量模式下按流程过滤照旧。
   const params = demoFilter(
@@ -327,7 +333,7 @@ export function RunLeftPanel() {
   const green = gateItems.length > 0 && g.acked.size === gateItems.length
   const groups = gateGroups(pack, gateItems)
 
-  const attr = (re: RegExp) => pack.attributes.attributes.find((a) => re.test(`${a.key}${a.name}`))
+  const attr = (re: RegExp) => pack.attributes.attributes.find((a) => re.test(`${a.key}${uiT(a.name)}`))
   const vMin = attr(/voltage_min|工作电压下限|运行电压下限/)
   const vMax = attr(/voltage_max|工作电压上限|运行电压上限/)
   const vNom = attr(/rated_bus_voltage|rated_voltage|额定.*电压/)
@@ -357,15 +363,15 @@ export function RunLeftPanel() {
       {/* 栏头 */}
       <header className="flex h-[44px] shrink-0 items-center gap-2.5 border-b border-line-soft px-4">
         <Sliders size={17} strokeWidth={1.9} className="shrink-0 text-p700" />
-        <h2 className="text-[16px] leading-none font-semibold tracking-tight text-t1">参数</h2>
+        <h2 className="text-[16px] leading-none font-semibold tracking-tight text-t1">{uiT("参数")}</h2>
         <span className="num text-[12px] text-t3">{params.length}</span>
         <div className="ml-auto flex items-center gap-1.5">
           <ListFilter size={13} strokeWidth={1.9} className="text-t3" />
           <Select
             size="sm"
             className="w-[118px]"
-            label="按流程过滤"
-            options={flowFiltersOf(pack.controls.parameters.length)}
+            label={uiT("按流程过滤")}
+            options={flowFiltersOf(pack.controls.parameters.length).map((option) => ({ ...option, label: uiT(option.label) }))}
             value={filter}
             onChange={setFilter}
           />
@@ -407,25 +413,25 @@ export function RunLeftPanel() {
         <Collapsible
           level={1}
           icon={<Cpu size={15} strokeWidth={1.9} />}
-          title="运行设置"
+          title={uiT("运行设置")}
           storeKey={collapseKey('run', 'run-setting')}
           defaultOpen={false}
           stat={{ total: 2 }}
           right={<InfoTip content={runNote} />}
         >
           <div className="flex min-h-[40px] items-center gap-2 px-4 py-1.5">
-            <span className="text-[13px] font-medium text-t1">启停次数</span>
+            <span className="text-[13px] font-medium text-t1">{uiT("启停次数")}</span>
             <span className="ml-auto">
-              <Stepper size="sm" label="启停次数" value={runs} step={10} min={1} max={1000} onChange={setRuns} />
+              <Stepper size="sm" label={uiT("启停次数")} value={runs} step={10} min={1} max={1000} onChange={setRuns} />
             </span>
           </div>
           <div className="flex min-h-[40px] items-center gap-2 px-4 py-1.5">
-            <span className="text-[13px] font-medium text-t1">电压档</span>
+            <span className="text-[13px] font-medium text-t1">{uiT("电压档")}</span>
             <span className="ml-auto">
               <Select
                 size="sm"
                 className="w-[150px]"
-                label="电压档"
+                label={uiT("电压档")}
                 options={voltOptions}
                 value={voltValue}
                 onChange={setVolt}
@@ -456,8 +462,7 @@ export function RunLeftPanel() {
                 className={cn('shrink-0', green ? 'text-p700' : 'text-t3')}
               />
               <span className="shrink-0 whitespace-nowrap text-[13px] font-semibold tracking-tight text-t1">
-                安全闸门
-              </span>
+                {uiT("安全闸门")}</span>
               <span className="num ml-auto shrink-0 text-[13px] font-semibold text-t1">
                 {g.acked.size}
                 <span className="text-t3">/{gateItems.length}</span>
@@ -465,13 +470,13 @@ export function RunLeftPanel() {
             </button>
             {/* 一键确认：把全部人员/流程类闸门一次勾上，快速进入可启动状态。
                 ⚠️ 只填勾选态，**不绕过红线**——「启动测试」仍要走确认卡。 */}
-            <Tooltip content={`一键确认全部 ${gateItems.length} 条安全闸门（只填勾选态，启动仍需在确认卡上确认）`}>
+            <Tooltip content={uiT("一键确认全部 {v1} 条安全闸门（只填勾选态，启动仍需在确认卡上确认）", { v1: gateItems.length })}>
               <button
                 type="button"
                 disabled={green}
                 onClick={() => {
                   ackAllGates(gateItems.map((x) => x.id))
-                  setNotice(`已一键确认全部 ${gateItems.length} 条安全闸门；启动测试仍需在确认卡上确认`)
+                  setNotice(uiT("已一键确认全部 {v1} 条安全闸门；启动测试仍需在确认卡上确认", { v1: gateItems.length }))
                 }}
                 className={cn(
                   'shrink-0 cursor-pointer whitespace-nowrap rounded-tpx border px-2 py-[3px] text-[12px] transition-colors',
@@ -480,11 +485,11 @@ export function RunLeftPanel() {
                     : 'border-p300 bg-white text-p700 hover:bg-p50',
                 )}
               >
-                {green ? '已全绿' : '一键确认'}
+                {green ? uiT('已全绿') : uiT('一键确认')}
               </button>
             </Tooltip>
             <Badge tone={green ? 'soft' : 'neutral'} dot className="shrink-0">
-              {green ? '全绿' : '未放行'}
+              {green ? uiT('全绿') : uiT('未放行')}
             </Badge>
           </div>
           {gateOpen ? (
@@ -494,7 +499,7 @@ export function RunLeftPanel() {
                   key={grp.id}
                   level={2}
                   icon={iconOf(grp.title)}
-                  title={grp.title}
+                  title={uiT(grp.title)}
                   storeKey={collapseKey('run', grp.id)}
                   // 演示模式下逐条清单一律折叠，组头自带「勾了几条 / 共几条」，
                   // 镜 3 要勾时再点开（06d 第 3.1 节）
@@ -509,7 +514,7 @@ export function RunLeftPanel() {
                       <Collapsible
                         key={sub.id}
                         level={3}
-                        title={sub.title}
+                        title={uiT(sub.title)}
                         storeKey={collapseKey('run', sub.id)}
                         defaultOpen={!demo && k === 0}
                         stat={{
@@ -556,12 +561,12 @@ export function RunLeftPanel() {
           secondary + unlock 形态）；解除只取消标记，不影响启动测试本身。 */}
       {locked ? (
         <ConfirmFooter
-          label="解除确认"
+          label={uiT("解除确认")}
           count={params.length}
           unit="项"
           variant="secondary"
           icon="unlock"
-          hint="本流程已确认（本轮正常跑完且判定结果落库后由系统自动置为已确认）。点此解除后顶栏「启动测试」的打勾消失，可继续调整参数；下轮跑完测试时仍会再次自动确认。"
+          hint={uiT("本流程已确认（本轮正常跑完且判定结果落库后由系统自动置为已确认）。点此解除后顶栏「启动测试」的打勾消失，可继续调整参数；下轮跑完测试时仍会再次自动确认。")}
           onClick={() => {
             unconfirmFlow('run')
             setNotice('已解除确认：顶栏「启动测试」打勾已取消；下轮跑完测试后会再次自动确认')
@@ -569,14 +574,14 @@ export function RunLeftPanel() {
         />
       ) : (
         <ConfirmFooter
-          label="确认参数"
+          label={uiT("确认参数")}
           count={params.length}
           unit="项并启动测试"
           onClick={bind('start').disabled ? undefined : bind('start').onClick}
           hint={
             green
-              ? `本流程可调 ${params.length} 项，安全闸门 ${gateItems.length} 条已全部确认，点此启动本轮（仍需在确认卡上再点一次）。`
-              : `本流程可调 ${params.length} 项；安全闸门还差 ${gateItems.length - g.acked.size} 条未确认，确认前不可启动。`
+              ? uiT("本流程可调 {v1} 项，安全闸门 {v2} 条已全部确认，点此启动本轮（仍需在确认卡上再点一次）。", { v1: params.length, v2: gateItems.length })
+              : uiT("本流程可调 {v1} 项；安全闸门还差 {v2} 条未确认，确认前不可启动。", { v1: params.length, v2: gateItems.length - g.acked.size })
           }
         />
       )}
@@ -635,12 +640,14 @@ function useBoxHeight() {
  * 因为回退路径需要它。
  */
 export function WaveformPanel({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const pack = getPack()
   const waves = useWaves()
   const [box, boxH] = useBoxHeight()
   const [on, setOn] = useState<Record<string, boolean>>({})
   if (!waves.length)
-    return <EmptyState icon={<WavesIcon size={24} strokeWidth={1.5} />} title="读取时序" />
+    return <EmptyState icon={<WavesIcon size={24} strokeWidth={1.5} />} title={uiT("读取时序")} />
   const show = waves.filter((w) => on[w.id] ?? true)
   const peak = Math.max(...waves.map((w) => w.metrics.peak))
   const th = currentThresholds(full, peak)
@@ -679,8 +686,7 @@ export function WaveformPanel({ full }: { full?: boolean }) {
         })}
         {pack?.caps.syntheticData ? (
           <Badge tone="warn" title={pack.caps.syntheticBanner}>
-            合成
-          </Badge>
+            {uiT("合成")}</Badge>
         ) : null}
         {pack?.caps.probeUnconfirmed ? <InfoTip content={pack.caps.probeNote} /> : null}
         {/* 采样率读数不进演示分镜（06d 第 3.1 节），放大态仍给 */}
@@ -699,7 +705,7 @@ export function WaveformPanel({ full }: { full?: boolean }) {
           legend={!!full}
           cursor={!!full}
           height={full ? 400 : Math.max(120, boxH - 20)}
-          xLabel={`时间 s · 纵轴 ${unit || '原始量'}`}
+          xLabel={uiT("时间 s · 纵轴 {v1}", { v1: unit || '原始量' })}
         />
       </div>
     </div>
@@ -709,9 +715,11 @@ export function WaveformPanel({ full }: { full?: boolean }) {
 /* ---------------------------------------------------------- 卡片 · 原理图封面 */
 
 function SchematicCover({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const pack = getPack()
   const [i, setI] = useState(-1)
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
   // 变体登记的是 PDF 原始路径；包内渲出来的分页图挂在 scene.images 上，
   // 按 _source.file 与变体对上号，对不上的如实显示「未渲染分页图」，不拿别的图冒充。
   const imgOf = (file: string) =>
@@ -725,7 +733,7 @@ function SchematicCover({ full }: { full?: boolean }) {
   const renderable = vs.findIndex((v) => srcOf(v))
   const pick = i >= 0 ? i : Math.max(0, renderable)
   if (!vs.length)
-    return <EmptyState icon={<CircuitBoard size={24} strokeWidth={1.5} />} title="未登记图纸" />
+    return <EmptyState icon={<CircuitBoard size={24} strokeWidth={1.5} />} title={uiT("未登记图纸")} />
   const cur = vs[Math.min(pick, vs.length - 1)]
   const src = srcOf(cur)
 
@@ -742,7 +750,7 @@ function SchematicCover({ full }: { full?: boolean }) {
             )}
           />
         ) : (
-          <EmptyState icon={<CircuitBoard size={24} strokeWidth={1.5} />} title="未渲染分页图" />
+          <EmptyState icon={<CircuitBoard size={24} strokeWidth={1.5} />} title={uiT("未渲染分页图")} />
         )}
       </div>
       <div className="flex shrink-0 items-center gap-1.5">
@@ -819,6 +827,8 @@ function useRequirementBaseline(): string[] | null {
 let persistedRunRound: number | null = null
 
 function VerdictCard({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const pack = getPack()
   const waves = useWaves()
   const demo = useAppStore((s) => s.demoMode)
@@ -937,7 +947,7 @@ function VerdictCard({ full }: { full?: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runPhase, sceneId, pack])
 
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
   // 流程 2 确认的需求基线：**只判「本轮纳入的那几条」**（修 2→3 断点）。
   //
   // ⚠️ `null` 与 `[]` 语义不同（见 baselineStore.ts）：
@@ -1018,7 +1028,7 @@ function VerdictCard({ full }: { full?: boolean }) {
       <div className="flex h-full min-h-0 w-full flex-col justify-center gap-2.5 px-1">
         <div className="flex items-baseline gap-2">
           <span className="num text-[26px] leading-none font-semibold text-t1">{runProgress}%</span>
-          <span className="text-[12px] text-t3">运行中 · 判定待出</span>
+          <span className="text-[12px] text-t3">{uiT("运行中 · 判定待出")}</span>
         </div>
         <div className="h-[6px] overflow-hidden rounded-full bg-p100">
           <div
@@ -1026,7 +1036,7 @@ function VerdictCard({ full }: { full?: boolean }) {
             style={{ width: `${runProgress}%` }}
           />
         </div>
-        <p className="text-[12px] leading-5 text-t3">本轮回放已登记时序，跑完即按判据求值。</p>
+        <p className="text-[12px] leading-5 text-t3">{uiT("本轮回放已登记时序，跑完即按判据求值。")}</p>
       </div>
     )
 
@@ -1063,13 +1073,13 @@ function VerdictCard({ full }: { full?: boolean }) {
               <span className={cn('num text-[26px] leading-none font-semibold tracking-tight', pFail > 0 ? 'text-alert' : 'text-t1')}>
                 {pFail}
               </span>
-              <span className="text-[12px] text-t3">条不通过 · 已判 {judgedCount}</span>
+              <span className="text-[12px] text-t3">{uiT("条不通过 · 已判 ")}{judgedCount}</span>
             </span>
           </Tooltip>
         ) : (
           <>
-            <Stat n={pPass} label="通过" tone="ok" />
-            <Stat n={pFail} label="不通过" tone="bad" />
+            <Stat n={pPass} label={uiT("通过")} tone="ok" />
+            <Stat n={pFail} label={uiT("不通过")} tone="bad" />
             {/*
               第三格优先展示「本台架不适用」：本台架只有风扇+示波器，大量判据
               在结构上测不了（缺 MCU 故障寄存器 / FG 信号 / 母线电流探头）。
@@ -1077,9 +1087,9 @@ function VerdictCard({ full }: { full?: boolean }) {
               只有确实不存在不适用项时才退回展示「未采集」。
             */}
             {pNa > 0 ? (
-              <Stat n={pNa} label="本台架不适用" tone="mute" />
+              <Stat n={pNa} label={uiT("本台架不适用")} tone="mute" />
             ) : (
-              <Stat n={pMissing} label="未采集" tone="mute" />
+              <Stat n={pMissing} label={uiT("未采集")} tone="mute" />
             )}
           </>
         )}
@@ -1104,8 +1114,8 @@ function VerdictCard({ full }: { full?: boolean }) {
               )}
             >
               <StatusDot status={r.state === 'pass' ? 'done' : r.state === 'fail' ? 'alert' : 'na'} />
-              <span className="truncate text-[12.5px] text-t1">{short(r.req.name, 12)}</span>
-              <span className="num ml-auto shrink-0 text-[12px] text-t3">{STATE_LABEL[r.state]}</span>
+              <span className="truncate text-[12.5px] text-t1">{uiT(r.req.name) === r.req.name ? short(r.req.name, 12) : uiT(r.req.name)}</span>
+              <span className="num ml-auto shrink-0 text-[12px] text-t3">{uiT(STATE_LABEL[r.state])}</span>
               {jump ? <ChevronRight size={13} strokeWidth={2} className="shrink-0 text-alert" /> : null}
             </div>
           )
@@ -1113,10 +1123,7 @@ function VerdictCard({ full }: { full?: boolean }) {
             <Tooltip
               key={r.req.id}
               className="w-full"
-              content={`${r.req.criterion_text}${
-                /* 台架判据要显示「用了哪个量、值多少」——演示时一眼能看出结论基于本轮实测。
-                   仅在有实测值（used 非空）时展示，阈值/常量不进这一行（见 evaluate.ts）。 */
-                r.used.length
+              content={uiT("{v1}{v2}{v3}{v4}{v5}", { v1: r.req.criterion_text, v2: r.used.length
                   ? ` · 本轮实测：${r.used
                       .map(
                         (u) =>
@@ -1125,19 +1132,15 @@ function VerdictCard({ full }: { full?: boolean }) {
                           }${u.unit ?? ''}`,
                       )
                       .join('、')}`
-                  : ''
-              }${
-                // 不适用项如实写明缺什么测量手段，让「测不了」有据可查（2026-10-08）
-                r.state === 'not_applicable' && r.notApplicableReason
+                  : '', v3: r.state === 'not_applicable' && r.notApplicableReason
                   ? ` · 本台架不适用：${r.notApplicableReason}`
-                  : ''
-              }${r.note ? ` · ${r.note}` : r.missing.length ? ` · 缺 ${r.missing.join('、')}` : ''}${jump ? ' · 点此进流程 4 看推荐' : ''}`}
+                  : '', v4: r.note ? ` · ${r.note}` : r.missing.length ? ` · 缺 ${r.missing.join('、')}` : '', v5: jump ? uiT(' · 点此进流程 4 看推荐') : '' })}
             >
               {jump ? (
                 <button
                   type="button"
                   data-testid="verdict-fail-row"
-                  aria-label={`${r.req.name} 未达标，进流程 4`}
+                  aria-label={uiT("{v1} 未达标，进流程 4", { v1: uiT(r.req.name) })}
                   className="w-full text-left"
                   onClick={() => {
                     setFocusReq(r.req.id)
@@ -1160,9 +1163,11 @@ function VerdictCard({ full }: { full?: boolean }) {
 /* ---------------------------------------------------------- 卡片 · 安全闸门环 */
 
 function GateRing({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const pack = getPack()
   const g = useGate()
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
   const human = pack.interlocks.interlocks.filter((i) => i.type === '人员' || i.type === '流程')
   const hw = pack.interlocks.interlocks.filter((i) => i.type === '硬件')
   const done = g.acked.size
@@ -1197,20 +1202,18 @@ function GateRing({ full }: { full?: boolean }) {
       <div className="min-w-0 flex-1 space-y-1.5">
         <div className="flex items-center gap-1.5">
           <ShieldCheck size={14} strokeWidth={1.9} className="shrink-0 text-p700" />
-          <span className="text-[13px] font-medium text-t1">人工闸门</span>
+          <span className="text-[13px] font-medium text-t1">{uiT("人工闸门")}</span>
           <Badge tone={ratio === 1 ? 'soft' : 'warn'} dot className="ml-auto">
-            {ratio === 1 ? '全绿' : '待确认'}
+            {ratio === 1 ? uiT('全绿') : uiT('待确认')}
           </Badge>
         </div>
         <div className="flex items-center gap-1.5 text-[12px] text-t3">
           <Lock size={13} strokeWidth={1.9} className="shrink-0 text-p400" />
-          硬件联锁
-          <span className="num ml-auto text-t1">{hw.length}</span>
+          {uiT("硬件联锁")}<span className="num ml-auto text-t1">{hw.length}</span>
         </div>
-        <Tooltip content="硬件联锁由固件阈值保证，不需要人工逐条确认；人工闸门未全绿前「启动测试」保持置灰。">
+        <Tooltip content={uiT("硬件联锁由固件阈值保证，不需要人工逐条确认；人工闸门未全绿前「启动测试」保持置灰。")}>
           <span className="num cursor-help text-[12px] text-t3">
-            共 {pack.interlocks.interlocks.length} 条
-          </span>
+            {uiT("共 ")}{pack.interlocks.interlocks.length} {uiT(" 条")}</span>
         </Tooltip>
         {full ? (
           <ul className="max-h-[300px] overflow-y-auto pt-1">
@@ -1241,6 +1244,8 @@ function GateRing({ full }: { full?: boolean }) {
 /* ---------------------------------------------------------- 卡片 · 执行进度（备） */
 
 function Progress({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const pack = getPack()
   const waves = useWaves()
   const demo = useAppStore((s) => s.demoMode)
@@ -1248,7 +1253,7 @@ function Progress({ full }: { full?: boolean }) {
   const runProgress = useAppStore((s) => s.runProgress)
   const runRound = useAppStore((s) => s.runRound)
   const baselineIds = useRequirementBaseline()
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
   const s2 = pack.datasets.package_stats as Record<string, number>
   const hasBatch = typeof s2.attempts_total === 'number'
   const done = hasBatch ? (s2.labeled ?? 0) : waves.length
@@ -1277,9 +1282,9 @@ function Progress({ full }: { full?: boolean }) {
       <div className="flex shrink-0 items-baseline gap-2">
         <span className="num text-[26px] leading-none font-semibold text-t1">{done}</span>
         {demo && !full ? null : <span className="num text-[13px] text-t3">/ {total}</span>}
-        <Tooltip content={`${hasBatch ? '已标注' : '已回放'} ${done} / ${total}。${log.join('　')}`}>
+        <Tooltip content={uiT("{v1} {v2} / {v3}。{v4}", { v1: hasBatch ? uiT('已标注') : uiT('已回放'), v2: done, v3: total, v4: log.join('　') })}>
           <span className="ml-auto cursor-help text-[12px] text-t3">
-            {hasBatch ? `已标注 / ${total}` : `已回放 / ${total}`}
+            {hasBatch ? uiT("已标注 / {v1}", { v1: total }) : uiT("已回放 / {v1}", { v1: total })}
           </span>
         </Tooltip>
       </div>
@@ -1287,10 +1292,10 @@ function Progress({ full }: { full?: boolean }) {
           「启动测试」经红线确认卡驱动，不是自己跑起来的 */}
       <div className="flex shrink-0 items-center gap-1.5">
         <Badge tone={runPhase === 'estopped' ? 'warn' : runPhase === 'running' ? 'soft' : 'neutral'} dot>
-          {RUN_PHASE_LABEL[runPhase]}
+          {uiT(RUN_PHASE_LABEL[runPhase])}
         </Badge>
         <span className="num text-[12px] text-t3" data-testid="run-phase">
-          {runPhase === 'running' ? `${runProgress}%` : runRound > 0 ? `本会话第 ${runRound} 轮` : '本会话未启动'}
+          {runPhase === 'running' ? `${runProgress}%` : runRound > 0 ? uiT("本会话第 {v1} 轮", { v1: runRound }) : uiT('本会话未启动')}
         </span>
       </div>
       <div className="h-[6px] shrink-0 overflow-hidden rounded-full bg-p100">

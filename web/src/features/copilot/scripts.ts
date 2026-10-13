@@ -1,3 +1,4 @@
+import { uiMessage } from '../../i18n/messages'
 import type { FlowId } from '../../data/types'
 import type { EvidenceItem } from '../agent-chat'
 import { sourceLine, type RawPack } from '../scene/pack'
@@ -54,6 +55,7 @@ export function scriptFor(flow: FlowId, p: RawPack): Step[] {
         {
           kind: 'say',
           text: `本体属性 ${p.attributes.attributes.length} 项已从客户工程读出，其中 ${holes.length} 项是占位、${na.length} 项不适用。源材料没写的一律留空不编。`,
+          uiText: uiMessage("本体属性 {v1} 项已从客户工程读出，其中 {v2} 项是占位、{v3} 项不适用。源材料没写的一律留空不编。", { v1: p.attributes.attributes.length, v2: holes.length, v3: na.length }),
         },
         {
           kind: 'tool',
@@ -73,6 +75,7 @@ export function scriptFor(flow: FlowId, p: RawPack): Step[] {
         {
           kind: 'say',
           text: `${holes.length ? `占位的 ${holes.length} 项（${holes.slice(0, 3).map((a) => a.name).join('、')}${holes.length > 3 ? ' 等' : ''}）源材料确实没给，已标「待确认」，需要向客户索取，不要拿占位值当真值用。` : '没有占位项。'}${na.length ? ` ${na.map((a) => a.name).join('、')} 在本产品上不适用——${na[0].note?.slice(0, 48) ?? '控制器不需要这个量'}，所以标「不适用」而不是留空。` : ''}`,
+          uiText: uiMessage("{v1}{v2}", { v1: holes.length ? `占位的 ${holes.length} 项（${holes.slice(0, 3).map((a) => a.name).join('、')}${holes.length > 3 ? ' 等' : ''}）源材料确实没给，已标「待确认」，需要向客户索取，不要拿占位值当真值用。` : '没有占位项。', v2: na.length ? ` ${na.map((a) => a.name).join('、')} 在本产品上不适用——${na[0].note?.slice(0, 48) ?? '控制器不需要这个量'}，所以标「不适用」而不是留空。` : '' }, ["v1","v2"]),
         },
       ]
 
@@ -81,6 +84,7 @@ export function scriptFor(flow: FlowId, p: RawPack): Step[] {
         {
           kind: 'say',
           text: `判据 ${p.requirements.requirements.length} 条按 ${p.requirements.categories.length} 类列出，可自动求值 ${p.requirements.evaluable_count} 条。我先对一遍判据与工作流步骤。`,
+          uiText: uiMessage("判据 {v1} 条按 {v2} 类列出，可自动求值 {v3} 条。我先对一遍判据与工作流步骤。", { v1: p.requirements.requirements.length, v2: p.requirements.categories.length, v3: p.requirements.evaluable_count }),
         },
         {
           kind: 'tool',
@@ -110,6 +114,7 @@ export function scriptFor(flow: FlowId, p: RawPack): Step[] {
         {
           kind: 'say',
           text: `${p.requirements.not_evaluable_count} 条判据写不出布尔表达式——排程规则与目视检查那一类，标准本身就没给可测量的量，不硬凑。${p.workflows.all_placeholder ? '工作流这边一条真实文件都没有，4 条示例是本包自建的骨架，跑之前要按现场台架重做。' : ''}`,
+          uiText: uiMessage("{v1} 条判据写不出布尔表达式——排程规则与目视检查那一类，标准本身就没给可测量的量，不硬凑。{v2}", { v1: p.requirements.not_evaluable_count, v2: p.workflows.all_placeholder ? '工作流这边一条真实文件都没有，4 条示例是本包自建的骨架，跑之前要按现场台架重做。' : '' }, ["v2"]),
         },
       ]
 
@@ -118,6 +123,7 @@ export function scriptFor(flow: FlowId, p: RawPack): Step[] {
         {
           kind: 'say',
           text: `控制参数 ${p.controls.parameters.length} 项已载入，安全确认闸门 ${gate.length} 条未全绿前「启动测试」保持置灰。我先跑预检再回放时序，启动属改动类动作，我不点。`,
+          uiText: uiMessage("控制参数 {v1} 项已载入，安全确认闸门 {v2} 条未全绿前「启动测试」保持置灰。我先跑预检再回放时序，启动属改动类动作，我不点。", { v1: p.controls.parameters.length, v2: gate.length }),
         },
         {
           kind: 'tool',
@@ -190,6 +196,7 @@ export function scriptFor(flow: FlowId, p: RawPack): Step[] {
         {
           kind: 'say',
           text: `经验库 ${exps.length} 条里有 ${tuneExps.length} 条属调优流程。我按判定结果归因，只推能在本包控制参数里按宏名对上的候选。`,
+          uiText: uiMessage("经验库 {v1} 条里有 {v2} 条属调优流程。我按判定结果归因，只推能在本包控制参数里按宏名对上的候选。", { v1: exps.length, v2: tuneExps.length }),
         },
         {
           kind: 'tool',
@@ -206,6 +213,7 @@ export function scriptFor(flow: FlowId, p: RawPack): Step[] {
           ? {
               kind: 'say',
               text: `${topExp.id}（${topExp.evidence_level}）给的动作是：${topExp.action}`,
+          uiText: uiMessage("{v1}（{v2}）给的动作是：{v3}", { v1: topExp.id, v2: topExp.evidence_level, v3: topExp.action }, ["v2"]),
             }
           : { kind: 'say', text: '经验库里没有能对上本场景参数名的 F5 条目，这一轮我不给推荐。' },
         ...(demo || !topExp
@@ -238,6 +246,7 @@ export function scriptFor(flow: FlowId, p: RawPack): Step[] {
         {
           kind: 'say',
           text: `报告模板表头 ${p.report.header_fields.length} 字段，我按模板填一遍。填不上的字段单独列出来，不编。`,
+          uiText: uiMessage("报告模板表头 {v1} 字段，我按模板填一遍。填不上的字段单独列出来，不编。", { v1: p.report.header_fields.length }),
         },
         {
           kind: 'tool',
@@ -261,6 +270,7 @@ export function scriptFor(flow: FlowId, p: RawPack): Step[] {
         {
           kind: 'say',
           text: `字段定位统一成「一个标题位 + 一个取值位」，Excel 模板与 PDF 样张共用同一套填充逻辑。图片位共 ${p.report.artifact_groups.reduce((a, b) => a + b.count, 0)} 张。${p.caps.syntheticData ? '注意：本场景时序全部是合成数据，按场景包的流程联锁，不得进入任何合规报告。' : ''}导出与归档要你点，我不做。`,
+          uiText: uiMessage("字段定位统一成「一个标题位 + 一个取值位」，Excel 模板与 PDF 样张共用同一套填充逻辑。图片位共 {v1} 张。{v2}导出与归档要你点，我不做。", { v1: p.report.artifact_groups.reduce((a, b) => a + b.count, 0), v2: p.caps.syntheticData ? '注意：本场景时序全部是合成数据，按场景包的流程联锁，不得进入任何合规报告。' : '' }, ["v2"]),
         },
       ]
   }

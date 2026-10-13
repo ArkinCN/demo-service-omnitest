@@ -327,6 +327,8 @@
 .ac-send:disabled { background: var(--ac-secondary); cursor: not-allowed; }
 
 .ac-controls { display: flex; align-items: center; gap: 14px; margin-top: 8px; flex-wrap: wrap; }
+.ac-seg { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ac-seg > button { padding: 3px 6px; border-radius: 4px; }
 .ac-field { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ac-text-weak); }
 .ac-select {
   font: inherit;

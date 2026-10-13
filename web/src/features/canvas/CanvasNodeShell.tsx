@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 /* ===========================================================================
    画板节点的统一外壳。
 
@@ -16,12 +17,13 @@ import { CANVAS_NODE_META, LINK_STATE_TEXT, type CanvasLinkState } from './model
 export type NodeFact = [string, string]
 
 export function NodeFacts({ facts }: { facts: NodeFact[] }) {
+  const uiT = useT()
   return (
     <div className="flex h-full flex-col justify-center gap-1.5 px-1">
       {facts.slice(0, 3).map(([k, v]) => (
         <div key={k} className="flex items-baseline gap-2 text-[12px] leading-none">
-          <span className="w-[42px] shrink-0 text-t3">{k}</span>
-          <span className="num truncate text-t2">{v}</span>
+          <span className="w-[42px] shrink-0 text-t3">{uiT(k)}</span>
+          <span className="num truncate text-t2">{['类型', '输出', '归属'].includes(k) ? uiT(v) : v}</span>
         </div>
       ))}
     </div>
@@ -46,16 +48,18 @@ export function CanvasNodeShell({
   onExpand?: () => void
   children?: ReactNode
 }) {
+  const uiT = useT()
+
   const meta = CANVAS_NODE_META[node.type]
   return (
     <PanelCard
       className="h-full w-full"
       icon={createElement(CANVAS_NODE_ICON[node.type], { size: 13, strokeWidth: 1.9 })}
-      title={node.label}
+      title={uiT(node.label)}
       onExpand={onExpand}
       headerRight={
         meta.tag ? (
-          <Tooltip content={`${meta.sub} · 经 MCP 服务接入`}>
+          <Tooltip content={uiT("{v1} · 经 MCP 服务接入", { v1: meta.sub })}>
             <span className="rounded-tpx bg-p50 px-1.5 py-0.5 text-[12px] leading-none text-p700">
               {meta.tag}
             </span>
@@ -80,10 +84,10 @@ export function CanvasNodeShell({
                     state === 'online' ? 'bg-p400' : state === 'fault' ? 'bg-alert' : 'bg-t3/40',
                   )}
                 />
-                <span>{LINK_STATE_TEXT[state]}</span>
+                <span>{uiT(LINK_STATE_TEXT[state])}</span>
               </>
             ) : null}
-            {foot ? <span className="ml-auto truncate">{foot}</span> : null}
+            {foot ? <span className="ml-auto truncate">{uiT(foot)}</span> : null}
           </div>
         ) : null}
       </div>

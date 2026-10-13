@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Activity,
@@ -224,6 +225,8 @@ export function AutomationConsole({
   /** 终态且弹窗已收起时注入：重开完成弹窗（**只开弹窗，不触发任何执行**） */
   onShowResult?: () => void
 }) {
+  const uiT = useT()
+
   const pack = getPack()
   const overrides = useAppStore((s) => s.overrides)
   const snapshotValues = useAppStore((s) => s.snapshotValues)
@@ -407,7 +410,7 @@ export function AutomationConsole({
         <Panel>
           <PanelHeader
             icon={<SlidersHorizontal size={17} strokeWidth={1.9} />}
-            title="自动选定的测试参数"
+            title={uiT("自动选定的测试参数")}
             right={<span className="num text-[12px] text-t3">{params.length}</span>}
           />
           <div className="min-h-0 flex-1 overflow-y-auto py-1">
@@ -416,9 +419,7 @@ export function AutomationConsole({
                 <Tooltip
                   key={p.key}
                   className="w-full"
-                  content={`${p.fullName} · 来源：${p.source}${
-                    p.adopted ? '（本轮调优自动采纳）' : ''
-                  }`}
+                  content={uiT("{v1} · 来源：{v2}{v3}", { v1: p.fullName, v2: p.source, v3: p.adopted ? uiT('（本轮调优自动采纳）') : '' })}
                 >
                   <div
                     className={cn(
@@ -446,8 +447,7 @@ export function AutomationConsole({
               ))
             ) : (
               <p className="px-3 py-3 text-center text-[12px] text-t3">
-                场景包未加载，暂无参数可显示
-              </p>
+                {uiT("场景包未加载，暂无参数可显示")}</p>
             )}
           </div>
 
@@ -472,16 +472,14 @@ export function AutomationConsole({
           <Panel>
             <PanelHeader
               icon={<Activity size={17} strokeWidth={1.9} />}
-              title="实时趋势"
+              title={uiT("实时趋势")}
               left={<TrendPill cur={cur} live={live} terminalStatus={terminalStatus} />}
               right={
                 <span className="num text-[12px] text-t3">
                   {live.plan
-                    ? `计划 ${live.plan.planned_duration_s}s${
-                        live.plan.actual_duration_s != null
+                    ? uiT("计划 {v1}s{v2}{v3}", { v1: live.plan.planned_duration_s, v2: live.plan.actual_duration_s != null
                           ? ` · 实际 ${live.plan.actual_duration_s}s`
-                          : ''
-                      }${live.plan.overrun ? '（已延期）' : ''}`
+                          : '', v3: live.plan.overrun ? '（已延期）' : '' })
                     : ''}
                 </span>
               }
@@ -524,11 +522,11 @@ export function AutomationConsole({
             role="separator"
             data-testid="auto-console-splitter"
             aria-orientation="horizontal"
-            aria-label="调整实时趋势与执行日志的高度"
+            aria-label={uiT("调整实时趋势与执行日志的高度")}
             aria-valuenow={Math.round(rowPx)}
             aria-valuemin={Math.round(bounds.lo)}
             aria-valuemax={Math.round(bounds.hi)}
-            aria-valuetext={`执行日志区 ${Math.round(rowPx)} 像素`}
+            aria-valuetext={uiT("执行日志区 {v1} 像素", { v1: Math.round(rowPx) })}
             tabIndex={0}
             onPointerDown={startDrag}
             onDoubleClick={() => persistLogHeight(LOG_DEFAULT_H, rowPx)}
@@ -545,7 +543,7 @@ export function AutomationConsole({
               }
             }}
             className="group flex cursor-row-resize items-center justify-center focus-visible:outline-none"
-            title="拖动调整执行日志区高度（默认 190px，双击复位）"
+            title={uiT("拖动调整执行日志区高度（默认 190px，双击复位）")}
           >
             <span className="flex items-center gap-1 rounded-full bg-p50/70 px-2.5 py-[3px] transition-colors group-hover:bg-p50 group-focus-visible:bg-p50">
               <span className="h-[2px] w-5 rounded-full bg-t3/60 transition-colors group-hover:bg-ink group-focus-visible:bg-ink" />
@@ -593,24 +591,21 @@ export function AutomationConsole({
                       <PlayCircle size={14} strokeWidth={1.9} className="shrink-0" />
                   <span className="min-w-0 flex-1 truncate text-[12.5px]">
                         {terminalStatus
-                          ? `本轮已结束（${TERMINAL_LABEL[terminalStatus]}）${
-                              cur?.message ? ` · 末阶段：${cur.message}` : ''
-                            }`
+                          ? uiT("本轮已结束（{v1}）{v2}", { v1: uiT(TERMINAL_LABEL[terminalStatus]), v2: cur?.message ? ` · 末阶段：${cur.message}` : '' })
                           : cur
-                            ? `${cur.name} · ${cur.message || '进行中'}`
-                            : '准备中…'}
+                            ? uiT("{v1} · {v2}", { v1: cur.name, v2: cur.message || '进行中' })
+                            : uiT('准备中…')}
                </span>
                       {/* 已采样本条数：让「跑到哪了」有个硬指标（0 条就是还没采到，不粉饰） */}
                         <span className="num shrink-0 text-[11.5px] opacity-80">
-                          已采 {live.samples.length} 条
-                       </span>
+                          {uiT("已采 ")}{live.samples.length} {uiT(" 条")}</span>
               {/*
                 终态不再报「本阶段已用时」：此刻没有「当前阶段」了，
                 那个数字会停在最后一刻、看着像还在跑（与状态条同一口径）。
               */}
               {!terminalStatus ? (
                 <span className="num shrink-0 text-[11.5px] opacity-80">
-                    本阶段 {elapsedLive === null ? '—' : fmtElapsed(elapsedLive)}
+                    {uiT("本阶段 ")}{elapsedLive === null ? '—' : fmtElapsed(elapsedLive)}
                       </span>
               ) : null}
             {/*
@@ -628,8 +623,7 @@ export function AutomationConsole({
                   data-testid="auto-console-show-result"
                   className="border-white/40 bg-white/10 text-white hover:bg-white/20"
                 >
-                  查看执行结果
-                </Button>
+                  {uiT("查看执行结果")}</Button>
               ) : null
             ) : (
               <Button
@@ -639,8 +633,7 @@ export function AutomationConsole({
                 onClick={onStop}
                 data-testid="auto-console-stop"
               >
-                终止
-              </Button>
+                {uiT("终止")}</Button>
             )}
           </div>
         </div>
@@ -701,6 +694,8 @@ function TrendPill({
   live: AutomationLiveState
   terminalStatus?: 'completed' | 'failed' | 'stopped'
 }) {
+  const uiT = useT()
+
   const last = live.samples.length ? live.samples[live.samples.length - 1] : null
   const rpm = last && typeof last.rpm === 'number' ? `${Math.round(last.rpm)} rpm` : null
   const why = [...live.samples].reverse().find((s) => s.quality?.rpm)?.quality?.rpm
@@ -714,22 +709,21 @@ function TrendPill({
         )}
       />
       <span className="shrink-0">
-        {terminalStatus ? `本轮已结束（${TERMINAL_LABEL[terminalStatus]}）` : cur ? cur.name : '待命'}
+        {terminalStatus ? uiT("本轮已结束（{v1}）", { v1: uiT(TERMINAL_LABEL[terminalStatus]) }) : cur ? uiT(cur.name) : uiT('待命')}
       </span>
       {last ? (
         <>
           <span className="text-t3">·</span>
           <span className="num shrink-0">
-            {last.commanded_pwm_pct}% 档
-          </span>
+            {last.commanded_pwm_pct}{uiT("% 档")}</span>
         </>
       ) : null}
       <span className="text-t3">·</span>
       <span className="num shrink-0 text-p700">
-        {rpm ?? `转速未采集${why ? `（${why}）` : ''}`}
+        {rpm ?? uiT("转速未采集{v1}", { v1: why ? `（${why}）` : '' })}
       </span>
       {live.plan?.simulation ? (
-        <span className="shrink-0 text-alert">· 模拟数据</span>
+        <span className="shrink-0 text-alert">{uiT("· 模拟数据")}</span>
       ) : null}
     </span>
   )
@@ -739,11 +733,13 @@ function TrendPill({
  *  2026-10-10 样式统一：并入左栏同一张 Panel（不再单独成卡），段头用共享 PanelHeader、
  *  行元素用人测页面左栏的行口径；三态语义与文案一字未改。 */
 function ToolBlock({ tools }: { tools: AutomationToolState[] }) {
+  const uiT = useT()
+
   return (
     <>
       <PanelHeader
         icon={<Zap size={17} strokeWidth={1.9} />}
-        title="执行动作"
+        title={uiT("执行动作")}
         right={<span className="num text-[12px] text-t3">{tools.length}</span>}
       />
       <div className="min-h-[160px] flex-1 overflow-y-auto py-1">
@@ -769,24 +765,23 @@ function ToolBlock({ tools }: { tools: AutomationToolState[] }) {
                     t.status === 'done' || t.status === 'skipped' ? 'text-t3' : 'text-t1',
                   )}
                 >
-                  {t.label}
+                  {uiT(t.label)}
                 </span>
                 <span className="num shrink-0 text-[11.5px] text-t3">
                   {t.status === 'running'
-                    ? '进行中'
+                    ? uiT('进行中')
                     : t.status === 'done'
-                      ? '已完成'
+                      ? uiT('已完成')
                       : t.status === 'failed'
-                        ? '失败'
-                        : '已跳过'}
+                        ? uiT('失败')
+                        : uiT('已跳过')}
                 </span>
               </div>
             </Tooltip>
           ))
         ) : (
           <p className="px-3 py-3 text-center text-[12px] text-t3">
-            尚未开始执行，第一个动作出现后这里会逐条列出
-          </p>
+            {uiT("尚未开始执行，第一个动作出现后这里会逐条列出")}</p>
         )}
       </div>
     </>
@@ -802,6 +797,8 @@ const LOG_CLS: Record<AutomationLogEntry['level'], string> = {
 }
 
 function LogStream({ logs }: { logs: AutomationLogEntry[] }) {
+  const uiT = useT()
+
   const boxRef = useRef<HTMLDivElement>(null)
   // 新的日志在末尾，滚到底部才能看到最新一条（倒序不装，用原生滚动更符合阅读习惯）
   useEffect(() => {
@@ -819,9 +816,8 @@ function LogStream({ logs }: { logs: AutomationLogEntry[] }) {
       <header className="flex h-[44px] shrink-0 items-center gap-2.5 border-b border-white/10 pr-[52px] pl-4">
         <Terminal size={17} strokeWidth={1.9} className="shrink-0 text-white/70" />
         <h2 className="shrink-0 text-[16px] leading-none font-semibold tracking-tight whitespace-nowrap text-white">
-          执行日志
-        </h2>
-        <span className="num ml-auto text-[12px] text-white/60">{logs.length} 条</span>
+          {uiT("执行日志")}</h2>
+        <span className="num ml-auto text-[12px] text-white/60">{logs.length} {uiT(" 条")}</span>
       </header>
       {/* log-scroll：深色区专属浅色滚动条 + 固定水槽，让右侧竖条常显、可直接拖动
           （全局浅绿滚动条在 #1A2320 深底上看不见，见 index.css 的 .log-scroll 说明）。 */}
@@ -835,8 +831,7 @@ function LogStream({ logs }: { logs: AutomationLogEntry[] }) {
           ))
         ) : (
           <p className="py-2 text-[11px] text-white/35">
-            等待第一条执行记录…（参数落库、闸门代确认、指令下发、各档采集、判定结果都会出现在这里）
-          </p>
+            {uiT("等待第一条执行记录…（参数落库、闸门代确认、指令下发、各档采集、判定结果都会出现在这里）")}</p>
         )}
       </div>
     </section>
@@ -852,13 +847,15 @@ function LogStream({ logs }: { logs: AutomationLogEntry[] }) {
  * active 下压、focus-visible 显式描边环；助手态加一圈激活光环以示「已展开」。
  */
 function ConsoleAiButton({ active, onClick }: { active: boolean; onClick: () => void }) {
+  const uiT = useT()
+
   return (
     <button
       type="button"
       data-testid="auto-log-ai-toggle"
       aria-pressed={active}
-      aria-label={active ? '返回执行日志' : '切换到 AI 助手'}
-      title={active ? '返回执行日志' : '切换到 AI 助手'}
+      aria-label={active ? uiT('返回执行日志') : uiT('切换到 AI 助手')}
+      title={active ? uiT('返回执行日志') : uiT('切换到 AI 助手')}
       onClick={onClick}
       className={cn(
         'grad-ink absolute top-1.5 right-2 z-10 flex h-9 w-9 items-center justify-center rounded-full',
@@ -875,6 +872,8 @@ function ConsoleAiButton({ active, onClick }: { active: boolean; onClick: () => 
 
 /** 右栏执行进度卡：阶段完成数 / 总数 + 进度条（取真实阶段状态，不按时间假推） */
 function ProgressCard({ stageStats }: { stageStats: StageStats }) {
+  const uiT = useT()
+
   const done = stageStats.done + stageStats.skipped
   const total = stageStats.total
   const failed = stageStats.failed > 0
@@ -882,11 +881,11 @@ function ProgressCard({ stageStats }: { stageStats: StageStats }) {
     <Panel className="shrink-0">
       {/* 标题条右侧刻意留空：阶段数已在卡内以大号数字 + 进度条呈现，
           再放一份就是同一信息说两遍（用户对冗余元素敏感）。 */}
-      <PanelHeader icon={<Gauge size={17} strokeWidth={1.9} />} title="执行进度" />
+      <PanelHeader icon={<Gauge size={17} strokeWidth={1.9} />} title={uiT("执行进度")} />
       <div className="px-4 py-3">
         <div className="flex items-baseline gap-1.5">
           <span className="num text-[24px] leading-none font-bold text-p700">{done}</span>
-          <span className="num text-[12px] text-t3">/ {total} 个阶段</span>
+          <span className="num text-[12px] text-t3">/ {total} {uiT(" 个阶段")}</span>
         </div>
         <div className="mt-2 h-[6px] w-full overflow-hidden rounded-full bg-p100">
           <div
@@ -901,6 +900,8 @@ function ProgressCard({ stageStats }: { stageStats: StageStats }) {
 
 /** 右栏判据面板：四类计数分列 + 判据逐条（不适用单列，逐条写明缺什么） */
 function VerdictPanel({ stats, rows }: { stats: VerdictStats; rows: VerdictView[] }) {
+  const uiT = useT()
+
   const cells: { label: string; n: number; cls: string }[] = [
     { label: '通过', n: stats.pass, cls: 'text-p700' },
     { label: '不通过', n: stats.fail, cls: stats.fail > 0 ? 'text-alert' : 'text-t3' },
@@ -911,10 +912,10 @@ function VerdictPanel({ stats, rows }: { stats: VerdictStats; rows: VerdictView[
     <Panel className="flex-1">
       <PanelHeader
         icon={<AlertTriangle size={17} strokeWidth={1.9} />}
-        title="判定结果"
+        title={uiT("判定结果")}
         right={
           <span className="num text-[12px] text-t3">
-            {stats.total === null ? '待判定' : `${stats.total} 条`}
+            {stats.total === null ? uiT('待判定') : uiT("{v1} 条", { v1: stats.total })}
           </span>
         }
       />
@@ -924,7 +925,7 @@ function VerdictPanel({ stats, rows }: { stats: VerdictStats; rows: VerdictView[
             <span className={cn('num text-[17px] leading-none font-bold', c.cls)}>
               {stats.total === null ? '—' : c.n}
             </span>
-            <span className="text-center text-[10px] leading-tight text-t3">{c.label}</span>
+            <span className="text-center text-[10px] leading-tight text-t3">{uiT(c.label)}</span>
           </div>
         ))}
       </div>
@@ -964,9 +965,7 @@ function VerdictPanel({ stats, rows }: { stats: VerdictStats; rows: VerdictView[
           ))
         ) : (
           <p className="px-3 py-3 text-center text-[12px] leading-5 text-t3">
-            本轮判定还没出来。判定由后端出权威结论，跑完一轮后逐条列出——
-            缺测的项会写「未采集」，本台架测不了的会写明缺哪台设备。
-          </p>
+            {uiT("本轮判定还没出来。判定由后端出权威结论，跑完一轮后逐条列出—— 缺测的项会写「未采集」，本台架测不了的会写明缺哪台设备。")}</p>
         )}
       </div>
     </Panel>

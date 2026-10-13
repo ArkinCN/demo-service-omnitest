@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
@@ -48,6 +49,10 @@ export function TimeSeriesChart({
   xLabel = '时间 (s)',
   className,
 }: TimeSeriesChartProps) {
+  const uiT = useT()
+
+  const translateRef = useRef(uiT);
+  useLayoutEffect(() => { translateRef.current = uiT }, [uiT]);
   const rootRef = useRef<HTMLDivElement>(null);
   const plotRef = useRef<HTMLDivElement>(null);
   const uRef = useRef<uPlot | null>(null);
@@ -100,7 +105,7 @@ export function TimeSeriesChart({
       scales: { x: { time: false } },
       axes: [
         {
-          label: xLabel,
+          label: translateRef.current(xLabel),
           labelSize: 26,
           labelFont: '12px system-ui, -apple-system, sans-serif',
           font: '11px system-ui, -apple-system, sans-serif',
@@ -109,7 +114,7 @@ export function TimeSeriesChart({
           ticks: { stroke: gridColor, width: 1 },
         },
         {
-          label: series.length === 1 ? `${series[0].name} (${series[0].unit})` : '幅值',
+          label: series.length === 1 ? `${translateRef.current(series[0].name)} (${series[0].unit})` : translateRef.current('幅值'),
           labelSize: 26,
           labelFont: '12px system-ui, -apple-system, sans-serif',
           font: '11px system-ui, -apple-system, sans-serif',
@@ -120,9 +125,9 @@ export function TimeSeriesChart({
         },
       ],
       series: [
-        { label: xLabel },
+        { label: translateRef.current(xLabel) },
         ...series.map((s, i) => ({
-          label: s.name,
+          label: translateRef.current(s.name),
           stroke: colors[i],
           width: 1.4,
           spanGaps: !aligned.uniform,
@@ -133,10 +138,12 @@ export function TimeSeriesChart({
         overlayPlugin(() => ({
           annotations: overlayRef.current.annotations.map((a) => ({
             ...a,
+            label: a.label ? translateRef.current(a.label) : a.label,
             color: resolveColor(root, a.color, readVar(root, '--color-primary', '#2E5E45')),
           })),
           thresholds: overlayRef.current.thresholds.map((t) => ({
             ...t,
+            label: t.label ? translateRef.current(t.label) : t.label,
             color: resolveColor(root, t.color, readVar(root, '--color-accent', '#A6353A')),
           })),
           showLabels: overlayRef.current.showOverlayLabels,
@@ -153,22 +160,29 @@ export function TimeSeriesChart({
             const out = readoutRef.current;
             if (!out) return;
             const idx = u.cursor.idx;
-            const parts: string[] = [];
+            const parts: HTMLElement[] = [];
+            const span = (text: string, className?: string) => {
+              const el = document.createElement('span');
+              el.textContent = text;
+              if (className) el.className = className;
+              return el;
+            };
             if (idx == null) {
-              parts.push('<span class="ts-readout-t">游标：移入图区读数</span>');
+              parts.push(span(translateRef.current('游标：移入图区读数'), 'ts-readout-t'));
             } else {
-              const t = (u.data[0] as ArrayLike<number>)[idx];
-              parts.push(`<span class="ts-readout-t">t = ${formatTime(t)}</span>`);
-              series.forEach((s, i) => {
+              const time = (u.data[0] as ArrayLike<number>)[idx];
+              parts.push(span('t = ' + formatTime(time), 'ts-readout-t'));
+              series.forEach((channel, i) => {
                 if (u.series[i + 1].show === false) return;
-                const v = (u.data[i + 1] as ArrayLike<number | null>)[idx];
-                parts.push(
-                  `<span><span style="color:${colors[i]}">${s.name}</span> ` +
-                    `<span class="ts-readout-v">${formatValue(v as number, s.unit)}</span></span>`,
-                );
+                const value = (u.data[i + 1] as ArrayLike<number | null>)[idx];
+                const entry = span('');
+                const name = span(translateRef.current(channel.name));
+                name.style.color = colors[i];
+                entry.append(name, document.createTextNode(' '), span(formatValue(value as number, channel.unit), 'ts-readout-v'));
+                parts.push(entry);
               });
             }
-            out.innerHTML = parts.join('');
+            out.replaceChildren(...parts);
           },
         ],
       },
@@ -204,6 +218,17 @@ export function TimeSeriesChart({
     uRef.current?.redraw(false, false);
   }, [annotations, thresholds, showOverlayLabels]);
 
+  // Redraw translated labels on the same chart, preserving cursor, zoom and visibility.
+  useEffect(() => {
+    const chart = uRef.current;
+    if (!chart) return;
+    chart.axes[0].label = uiT(xLabel);
+    chart.axes[1].label = series.length === 1 ? `${uiT(series[0].name)} (${series[0].unit})` : uiT('幅值');
+    series.forEach((channel, i) => { chart.series[i + 1].label = uiT(channel.name) });
+    chart.redraw();
+    chart.setCursor({ left: chart.cursor.left ?? -10, top: chart.cursor.top ?? -10 });
+  }, [uiT, series, xLabel]);
+
   // --- legend visibility toggles ---------------------------------------
   useEffect(() => {
     const u = uRef.current;
@@ -231,10 +256,10 @@ export function TimeSeriesChart({
                 className="ts-legend-item"
                 aria-pressed={!hidden.has(i)}
                 onClick={() => toggle(i)}
-                title="点击显示或隐藏该通道"
+                title={uiT("点击显示或隐藏该通道")}
               >
                 <span className="ts-legend-swatch" style={{ borderTopColor: colors[i] }} />
-                {s.name}
+                {uiT(s.name)}
                 {s.unit ? ` (${s.unit})` : ''}
               </button>
             ))}
@@ -243,7 +268,7 @@ export function TimeSeriesChart({
       )}
       <div ref={plotRef} className="ts-plot" />
       {cursor && <div ref={readoutRef} className="ts-readout" />}
-      {zoom && <div className="ts-hint">横向拖拽框选放大，双击复位</div>}
+      {zoom && <div className="ts-hint">{uiT("横向拖拽框选放大，双击复位")}</div>}
     </div>
   );
 }

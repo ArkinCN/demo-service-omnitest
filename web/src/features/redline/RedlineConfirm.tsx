@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 /* ===========================================================================
    红线动作确认卡。
 
@@ -21,6 +22,8 @@ import { Badge, Button, Modal } from '../../components/ui'
 import { useAppStore } from '../../state/useAppStore'
 
 export function RedlineConfirm() {
+  const uiT = useT()
+
   const req = useAppStore((s) => s.redline)
   const busy = useAppStore((s) => s.redlineBusy)
   const error = useAppStore((s) => s.redlineError)
@@ -51,58 +54,54 @@ export function RedlineConfirm() {
     <Modal
       open
       onClose={busy ? () => undefined : reject}
-      title={`确认执行 · ${req.title}`}
-      meta={`红线动作 · 确认人 ${operator}`}
+      title={uiT("确认执行 · {v1}", { v1: uiT(req.title) })}
+      meta={uiT("红线动作 · 确认人 {v1}", { v1: operator })}
       width={520}
       footer={
         <>
           <Button size="md" variant="default" disabled={busy} onClick={reject} data-testid="redline-cancel">
-            取消
-          </Button>
+            {uiT("取消")}</Button>
           <Button
             size="md"
             variant={req.danger ? 'danger' : 'primary'}
             disabled={!canApprove}
-            title={needPin && !pin.trim() ? '先输入批准 PIN' : undefined}
+            title={needPin && !pin.trim() ? uiT('先输入批准 PIN') : undefined}
             onClick={submit}
             data-testid="redline-approve"
           >
-            {busy ? '批准中…' : '确认执行'}
+            {busy ? uiT('批准中…') : uiT('确认执行')}
           </Button>
         </>
       }
     >
-      <div className="space-y-3">
+      <div className="redline-confirm space-y-3">
         <div className="flex items-start gap-2.5">
           <Icon
             size={18}
             strokeWidth={1.9}
             className={req.danger ? 'mt-0.5 shrink-0 text-alert' : 'mt-0.5 shrink-0 text-p700'}
           />
-          <p className="text-[13px] leading-6 text-t1">{req.prompt}</p>
+          <p className="text-[13px] leading-6 text-t1">{uiT(req.prompt)}</p>
         </div>
 
         <dl className="surface-2 space-y-1.5 p-3 text-[12px] leading-5">
           <div className="flex gap-2">
-            <dt className="w-[52px] shrink-0 text-t3">参数</dt>
-            <dd className="num min-w-0 flex-1 text-t2">{req.argsSummary || '无参数'}</dd>
+            <dt className="w-[52px] shrink-0 text-t3">{uiT("参数")}</dt>
+            <dd className="num min-w-0 flex-1 text-t2">{uiT(req.argsSummary) || uiT('无参数')}</dd>
           </div>
           <div className="flex gap-2">
-            <dt className="w-[52px] shrink-0 text-t3">凭据</dt>
+            <dt className="w-[52px] shrink-0 text-t3">{uiT("凭据")}</dt>
             <dd className="num min-w-0 flex-1 break-all text-t2">
               {req.confirmToken ? (
                 <>
                   {req.confirmToken}
                   <Badge tone="soft" className="ml-1.5">
-                    设备桥已签发
-                  </Badge>
+                    {uiT("设备桥已签发")}</Badge>
                 </>
               ) : (
                 <>
-                  本轮无设备凭据
-                  <Badge tone="neutral" className="ml-1.5">
-                    回放
-                  </Badge>
+                  {uiT("本轮无设备凭据")}<Badge tone="neutral" className="ml-1.5">
+                    {uiT("回放")}</Badge>
                 </>
               )}
             </dd>
@@ -115,8 +114,7 @@ export function RedlineConfirm() {
               htmlFor="redline-pin"
               className="block text-[12px] font-medium leading-5 text-t1"
             >
-              批准 PIN
-            </label>
+              {uiT("批准 PIN")}</label>
             <input
               id="redline-pin"
               type="password"
@@ -131,27 +129,25 @@ export function RedlineConfirm() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') submit()
               }}
-              placeholder="输入设备桥的批准 PIN"
+              placeholder={uiT("输入设备桥的批准 PIN")}
               className="num w-full rounded-tps border border-line bg-bg px-2.5 py-1.5 text-[13px] leading-5 text-t1 outline-none focus:border-p700"
             />
             <p className="text-[12px] leading-5 text-t3">
-              PIN 取自设备桥 .env 的 BRIDGE_APPROVER_PIN，只在桥的服务端，不在本页面、也不在构建产物里。
-              页面里那份 token 只是调用票，批不动任何红线动作。输错 5 次桥会锁 60 秒。
-            </p>
+              {uiT("PIN 取自设备桥 .env 的 BRIDGE_APPROVER_PIN，只在桥的服务端，不在本页面、也不在构建产物里。 页面里那份 token 只是调用票，批不动任何红线动作。输错 5 次桥会锁 60 秒。")}</p>
           </div>
         ) : null}
 
         <p className="text-[12px] leading-5 text-t3">
           {req.emergency
-            ? '急停为安全动作，**免现场 PIN**（来不及敲）：点「确认执行」即走安全放行通道切断驱动输出，台账记 emergency_auto。现场仍须保留物理急停回路。'
+            ? uiT('急停为安全动作，**免现场 PIN**（来不及敲）：点「确认执行」即走安全放行通道切断驱动输出，台账记 emergency_auto。现场仍须保留物理急停回路。')
             : req.confirmToken
-              ? '点「确认执行」等于在设备桥上人工批准这张凭据：凭据单次使用、180 秒过期、绑定工具名与参数指纹，批准后才允许带票执行；台账会把这次放行记成 human_pin。'
-              : '设备桥未接入，本次只驱动页面回放，不向台架下发任何控制命令。'}
+              ? uiT('点「确认执行」等于在设备桥上人工批准这张凭据：凭据单次使用、180 秒过期、绑定工具名与参数指纹，批准后才允许带票执行；台账会把这次放行记成 human_pin。')
+              : uiT('设备桥未接入，本次只驱动页面回放，不向台架下发任何控制命令。')}
         </p>
 
         {error ? (
           <p className="rounded-tps border border-alert/40 bg-alert-wash px-2.5 py-2 text-[12px] leading-5 text-alert">
-            执行失败：{error}
+            {uiT("执行失败：")}{uiT(error)}
           </p>
         ) : null}
       </div>

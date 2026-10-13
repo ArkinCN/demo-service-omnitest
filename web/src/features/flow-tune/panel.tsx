@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowRight,
@@ -263,15 +264,17 @@ function DeltaTag({ c }: { c: Candidate }) {
 }
 
 function RecRow({ c }: { c: Candidate }) {
+  const uiT = useT()
+
   const on = useAdopted().has(c.param.key)
   const toggleAdopt = useToggleAdopt()
   const tip = (
     <span className="block space-y-1">
-      <span className="block font-medium">{c.param.name}</span>
+      <span className="block font-medium">{uiT(c.param.name)}</span>
       <span className="num block opacity-75">
         {c.param.key.toUpperCase()}
         {c.param.min !== null ? ` · ${c.param.min}~${c.param.max}` : ''}
-        {c.param.value_shell ? ` · 外壳 ${c.param.value_shell}` : ''}
+        {c.param.value_shell ? uiT(" · 外壳 {v1}", { v1: c.param.value_shell }) : ''}
       </span>
       <span className="block opacity-75">
         {c.exp.id} · {c.rationale}
@@ -291,7 +294,7 @@ function RecRow({ c }: { c: Candidate }) {
           <span className="flex min-w-0 items-center gap-1.5">
             <SourceTag source={rankOf(c.exp) >= 3 ? '文档' : '建议'} title={c.exp.evidence_level} />
             <span className="cursor-help truncate text-[13px] font-medium text-t1">
-              {paramShort(c.param)}
+              {uiT(c.param.name) === c.param.name ? paramShort(c.param) : uiT(c.param.name)}
             </span>
           </span>
           <span className="num flex items-center gap-1.5 text-[15px] leading-none font-semibold text-t1">
@@ -305,12 +308,12 @@ function RecRow({ c }: { c: Candidate }) {
         </span>
       </Tooltip>
       <DeltaTag c={c} />
-      <Tooltip content={on ? '取消采纳' : '采纳这一项，写回仍要人点底部按钮'}>
+      <Tooltip content={on ? uiT('取消采纳') : uiT('采纳这一项，写回仍要人点底部按钮')}>
         <button
           type="button"
           role="checkbox"
           aria-checked={on}
-          aria-label={`采纳 ${c.param.name}`}
+          aria-label={uiT("采纳 {v1}", { v1: uiT(c.param.name) })}
           onClick={() => toggleAdopt(c)}
           className={cn(
             'flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border transition-colors [&>svg]:block',
@@ -378,11 +381,11 @@ function missingTiers(missing: Evaluated[]): BuiltTier<Evaluated>[] {
     }
     return {
       id: `miss-${i}`,
-      title: short(k, 10),
+      title: k,
       items,
       subs:
         items.length > 5 && cats.length > 1
-          ? cats.map((c, j) => ({ id: `miss-${i}-${j}`, title: short(c, 7), items: byCat.get(c)! }))
+          ? cats.map((c, j) => ({ id: `miss-${i}-${j}`, title: c, items: byCat.get(c)! }))
           : [],
     }
   })
@@ -435,6 +438,8 @@ function useRestoreAdoption(sceneId: string) {
 }
 
 export function TuneLeftPanel() {
+  const uiT = useT()
+
   const pack = getPack()
   const { failed, missing, passed, rows, notApplicable } = useShortfalls()
   // 候选按「本轮未达标」优先：命中项排前并标注，使推荐针对本轮问题（2026-10-08）。
@@ -454,7 +459,7 @@ export function TuneLeftPanel() {
   const setNotice = useAppStore((s) => s.setNotice)
   useRestoreAdoption(sceneId)
 
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
 
   const takenList = cands.filter((c) => picked.has(c.param.key))
   // 一键采纳：把全部推荐参数并入已采纳集（与 RecRow 勾选同一 meta 口径）。
@@ -483,13 +488,11 @@ export function TuneLeftPanel() {
     <div className="flex h-full min-h-0 w-full flex-col">
       <header className="flex h-[44px] shrink-0 items-center gap-2.5 border-b border-line-soft px-4">
         <Target size={17} strokeWidth={1.9} className="shrink-0 text-p700" />
-        <h2 className="text-[16px] leading-none font-semibold tracking-tight text-t1">未达标与推荐</h2>
+        <h2 className="text-[16px] leading-none font-semibold tracking-tight text-t1">{uiT("未达标与推荐")}</h2>
         {/* 三个大数字退成栏头一行：精简后未达标只有一条，用不着三个 26px 的数（06d 第 3.2 节） */}
         <Tooltip
           className="ml-auto"
-          content={`未达标 ${failed.length} · 已通过 ${passed.length} · 未采集 ${missing.length}${
-            notApplicable.length ? ` · 本台架不适用 ${notApplicable.length}` : ''
-          }；判据表本轮统计 ${rows.length} 条。criterion 真判成 false 的才算未达标；缺现场实测量而求不出值的单列「未采集」；需要本台架未配置的测量手段的（如 MCU 故障寄存器、FG 转速、母线电流探头）单列「本台架不适用」并写明缺什么——三者都不进调优推荐。`}
+          content={uiT("未达标 {v1} · 已通过 {v2} · 未采集 {v3}{v4}；判据表本轮统计 {v5} 条。criterion 真判成 false 的才算未达标；缺现场实测量而求不出值的单列「未采集」；需要本台架未配置的测量手段的（如 MCU 故障寄存器、FG 转速、母线电流探头）单列「本台架不适用」并写明缺什么——三者都不进调优推荐。", { v1: failed.length, v2: passed.length, v3: missing.length, v4: notApplicable.length ? ` · 本台架不适用 ${notApplicable.length}` : '', v5: rows.length })}
         >
           {/* 演示模式只留「未达标几条」这一个数：已通过与未采集两个计数进 tooltip
               与下面的折叠组，不在栏头再摆一遍（06d 第 3.2 节） */}
@@ -498,7 +501,7 @@ export function TuneLeftPanel() {
               {failed.length}
             </span>
             {demo ? (
-              <span className="text-t3">条未达标</span>
+              <span className="text-t3">{uiT("条未达标")}</span>
             ) : (
               <>
                 <span className="text-t3">/</span>
@@ -512,14 +515,14 @@ export function TuneLeftPanel() {
         <InfoTip
           content={
             focusReq
-              ? `计数口径与流程 3 判定卡同一套求值：未达标 / 已通过 / 未采集，「本台架不适用」单列不计入前三项。本次从流程 3 判定卡的判据 ${focusReq} 点进来。`
-              : '计数口径与流程 3 判定卡同一套求值：未达标 / 已通过 / 未采集，「本台架不适用」单列不计入前三项。'
+              ? uiT("计数口径与流程 3 判定卡同一套求值：未达标 / 已通过 / 未采集，「本台架不适用」单列不计入前三项。本次从流程 3 判定卡的判据 {v1} 点进来。", { v1: focusReq })
+              : uiT('计数口径与流程 3 判定卡同一套求值：未达标 / 已通过 / 未采集，「本台架不适用」单列不计入前三项。')
           }
         />
       </header>
       {focusReq ? (
         <div className="shrink-0 border-b border-line-soft bg-p50 px-4 py-1.5 text-[12px] text-p700">
-          来自流程 3 判定卡的未达标项 <span className="num font-semibold">{focusReq}</span>
+          {uiT("来自流程 3 判定卡的未达标项 ")}<span className="num font-semibold">{focusReq}</span>
         </div>
       ) : null}
 
@@ -530,15 +533,14 @@ export function TuneLeftPanel() {
           quick={
             <>
               <div className="config-quick-card px-4 py-3">
-                <span className="font-semibold">{failed.length ? '未达标依据' : '判定状态'}</span>
+                <span className="font-semibold">{failed.length ? uiT('未达标依据') : uiT('判定状态')}</span>
                 <p className="mt-2 text-[12px] text-t2">
-                  未达标 {failed.length} · 未采集 {missing.length}
-                  {notApplicable.length ? ` · 本台架不适用 ${notApplicable.length}` : ''}
-                  。缺少测量不作通过判定。
-                </p>
+                  {uiT("未达标")}{failed.length} {uiT("· 未采集")}{missing.length}
+                  {notApplicable.length ? uiT(" · 本台架不适用 {v1}", { v1: notApplicable.length }) : ''}
+                  {uiT("。缺少测量不作通过判定。")}</p>
                 {failed.slice(0, 1).map((r) => (
                   <details key={r.req.id} className="mt-3 text-[12px]">
-                    <summary className="cursor-pointer font-medium text-alert">{r.req.name} · 查看判据</summary>
+                    <summary className="cursor-pointer font-medium text-alert">{uiT(r.req.name)} {uiT("· 查看判据")}</summary>
                     <p className="mt-2 leading-relaxed">{r.req.criterion_text}</p>
                     <span className="num text-t3">{r.req.id}</span>
                   </details>
@@ -550,7 +552,7 @@ export function TuneLeftPanel() {
                 </div>
               ))}
               {!cands.length && (
-                <div className="config-quick-card px-4 py-3 text-[13px] text-t2">暂无匹配的调优建议</div>
+                <div className="config-quick-card px-4 py-3 text-[13px] text-t2">{uiT("暂无匹配的调优建议")}</div>
               )}
             </>
           }
@@ -569,12 +571,12 @@ export function TuneLeftPanel() {
               render={(r) => (
                 <Tooltip
                   className="w-full"
-                  content={`${r.req.id} ${r.req.name} · 要求 ${r.req.criterion_text}`}
+                  content={uiT("{v1} {v2} · 要求 {v3}", { v1: r.req.id, v2: r.req.name, v3: r.req.criterion_text })}
                 >
                   <div className="flex min-h-[40px] w-full items-center gap-2 px-4 py-1.5">
                     <StatusDot status="alert" />
                     <span className="cursor-help truncate text-[13px] font-medium text-t1">
-                      {short(r.req.name, 10)}
+                      {uiT(r.req.name) === r.req.name ? short(r.req.name, 10) : uiT(r.req.name)}
                     </span>
                     <span className="num ml-auto shrink-0 text-[12px] text-t3">{r.req.id}</span>
                   </div>
@@ -585,7 +587,7 @@ export function TuneLeftPanel() {
             <Collapsible
               level={1}
               icon={<ListChecks size={15} strokeWidth={1.9} />}
-              title="未达标项"
+              title={uiT("未达标项")}
               storeKey={collapseKey('tune', 'fail')}
               defaultOpen
               stat={{ total: 0 }}
@@ -596,8 +598,8 @@ export function TuneLeftPanel() {
                     不能让观众把空态读成通过。回放与候选队列照常保留。 */}
                 <EmptyState
                   icon={<Check size={24} strokeWidth={1.6} />}
-                  title="本轮无现场实测，判据未求值"
-                  hint={`未采集 ${missing.length} 条：判据要的现场实测量（母线电流、转速、力、位移、声压级）本轮没有采，因此既判不出通过也判不出不通过。屏幕上的时序与候选是既有数据的回放，不是本轮实测。`}
+                  title={uiT("本轮无现场实测，判据未求值")}
+                  hint={uiT("未采集 {v1} 条：判据要的现场实测量（母线电流、转速、力、位移、声压级）本轮没有采，因此既判不出通过也判不出不通过。屏幕上的时序与候选是既有数据的回放，不是本轮实测。", { v1: missing.length })}
                 />
               </div>
             </Collapsible>
@@ -621,8 +623,8 @@ export function TuneLeftPanel() {
                   <Tooltip
                     content={
                       takenList.length === cands.length
-                        ? `推荐参数 ${cands.length} 项已全部勾选`
-                        : `勾选全部 ${cands.length} 项推荐参数（已选 ${takenList.length} 项）`
+                        ? uiT("推荐参数 {v1} 项已全部勾选", { v1: cands.length })
+                        : uiT("勾选全部 {v1} 项推荐参数（已选 {v2} 项）", { v1: cands.length, v2: takenList.length })
                     }
                   >
                     <Button
@@ -633,8 +635,7 @@ export function TuneLeftPanel() {
                       disabled={takenList.length === cands.length}
                       data-action="adopt-all"
                     >
-                      一键采纳
-                    </Button>
+                      {uiT("一键采纳")}</Button>
                   </Tooltip>
                 ) : null
               }
@@ -644,13 +645,13 @@ export function TuneLeftPanel() {
             <Collapsible
               level={1}
               icon={<Sparkles size={15} strokeWidth={1.9} />}
-              title="推荐参数"
+              title={uiT("推荐参数")}
               storeKey={collapseKey('tune', 'rec')}
               defaultOpen={false}
               stat={{ total: 0 }}
             >
               <div className="px-4 py-3">
-                <EmptyState icon={<Sparkles size={24} strokeWidth={1.6} />} title="经验库无可对上的项" />
+                <EmptyState icon={<Sparkles size={24} strokeWidth={1.6} />} title={uiT("经验库无可对上的项")} />
               </div>
             </Collapsible>
           )}
@@ -667,12 +668,12 @@ export function TuneLeftPanel() {
               render={(r) => (
                 <Tooltip
                   className="w-full"
-                  content={`${r.req.id} ${r.req.name} · 缺 ${r.missing.join('、')}`}
+                  content={uiT("{v1} {v2} · 缺 {v3}", { v1: r.req.id, v2: r.req.name, v3: r.missing.join('、') })}
                 >
                   <div className="flex min-h-[36px] w-full items-center gap-2 px-4 py-1">
                     <StatusDot status="na" />
-                    <span className="cursor-help truncate text-[13px] text-t2">{short(r.req.name, 10)}</span>
-                    <span className="num ml-auto shrink-0 text-[12px] text-t3">缺 {r.missing.length}</span>
+                    <span className="cursor-help truncate text-[13px] text-t2">{uiT(r.req.name) === r.req.name ? short(r.req.name, 10) : uiT(r.req.name)}</span>
+                    <span className="num ml-auto shrink-0 text-[12px] text-t3">{uiT("缺")}{r.missing.length}</span>
                   </div>
                 </Tooltip>
               )}
@@ -696,7 +697,7 @@ export function TuneLeftPanel() {
               </li>
             ))}
             {takenList.length > 3 ? (
-              <li className="num text-right text-[12px] text-t3">另 {takenList.length - 3} 项</li>
+              <li className="num text-right text-[12px] text-t3">{uiT("另 ")}{takenList.length - 3} {uiT(" 项")}</li>
             ) : null}
           </ul>
         ) : null}
@@ -710,12 +711,12 @@ export function TuneLeftPanel() {
           （同一 ConfirmFooter 的 secondary + unlock 形态，不新写样式）。 */}
       {locked ? (
         <ConfirmFooter
-          label="解除确认"
+          label={uiT("解除确认")}
           count={takenList.length}
           unit="项"
           variant="secondary"
           icon="unlock"
-          hint="本流程已确认（采纳参数写回时由系统自动置为已确认）。点此解除后顶栏「调优运行」的打勾消失，可继续调整；下次采纳参数时仍会再次自动确认。"
+          hint={uiT("本流程已确认（采纳参数写回时由系统自动置为已确认）。点此解除后顶栏「调优运行」的打勾消失，可继续调整；下次采纳参数时仍会再次自动确认。")}
           onClick={() => {
             unconfirmFlow('tune')
             setNotice('已解除确认：顶栏「调优运行」打勾已取消；下次采纳参数后会再次自动确认')
@@ -723,14 +724,14 @@ export function TuneLeftPanel() {
         />
       ) : (
         <ConfirmFooter
-          label="确认采纳"
+          label={uiT("确认采纳")}
           count={takenList.length}
           unit="项"
           onClick={adopt.disabled ? undefined : adopt.onClick}
           hint={
             takenList.length
-              ? '写回只改数值外壳括号内的数字，不换外壳、不动行尾注释；确认卡上再点一次才真写回。'
-              : '先在推荐参数里勾选要采纳的项。'
+              ? uiT('写回只改数值外壳括号内的数字，不换外壳、不动行尾注释；确认卡上再点一次才真写回。')
+              : uiT('先在推荐参数里勾选要采纳的项。')
           }
         />
       )}
@@ -741,11 +742,13 @@ export function TuneLeftPanel() {
 /* -------------------------------------------------- 卡片 · 波形对照（hero） */
 
 function WaveOverlay({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const pack = getPack()
   const waves = useWaves()
   const [box, boxH] = useBoxHeight()
   if (!waves.length)
-    return <EmptyState icon={<WavesIcon size={24} strokeWidth={1.5} />} title="读取时序" />
+    return <EmptyState icon={<WavesIcon size={24} strokeWidth={1.5} />} title={uiT("读取时序")} />
   const peak = Math.max(...waves.map((w) => w.metrics.peak))
   const unit = waves[0].unit
 
@@ -755,7 +758,7 @@ function WaveOverlay({ full }: { full?: boolean }) {
         {waves.map((w) => (
           <Tooltip
             key={w.id}
-            content={`${w.title} · ${w.verdictText} · 峰值 ${w.metrics.peak.toFixed(2)} ${w.unit} @ ${w.metrics.peakAt.toFixed(2)} s`}
+            content={uiT("{v1} · {v2} · 峰值 {v3} {v4} @ {v5} s", { v1: w.title, v2: w.verdictText, v3: w.metrics.peak.toFixed(2), v4: w.unit, v5: w.metrics.peakAt.toFixed(2) })}
           >
             <span
               className={cn(
@@ -778,13 +781,12 @@ function WaveOverlay({ full }: { full?: boolean }) {
         ))}
         {pack?.caps.syntheticData ? (
           <Badge tone="warn" title={pack.caps.syntheticBanner}>
-            合成
-          </Badge>
+            {uiT("合成")}</Badge>
         ) : null}
         {/* Δ峰值不进演示分镜：精简后前后对照靠曲线形状讲（06d 第 3.2 节），放大态仍给 */}
         {full ? (
           <span className="num ml-auto text-[12px] text-t3">
-            Δ峰值 {(peak - Math.min(...waves.map((w) => w.metrics.peak))).toFixed(2)} {unit}
+            {uiT("Δ峰值 ")}{(peak - Math.min(...waves.map((w) => w.metrics.peak))).toFixed(2)} {unit}
           </span>
         ) : null}
       </div>
@@ -797,7 +799,7 @@ function WaveOverlay({ full }: { full?: boolean }) {
           legend={!!full}
           cursor={!!full}
           height={full ? 400 : Math.max(120, boxH - 20)}
-          xLabel={`时间 s · 纵轴 ${unit || '原始量'}`}
+          xLabel={uiT("时间 s · 纵轴 {v1}", { v1: unit || '原始量' })}
         />
       </div>
     </div>
@@ -810,12 +812,14 @@ function WaveOverlay({ full }: { full?: boolean }) {
 const QUEUE_CAP = 10
 
 function CandidateQueue({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const { failed } = useShortfalls()
   const cands = useCandidates(failedHintsOf(failed))
   const picked = useAdopted()
   const demo = useAppStore((s) => s.demoMode)
   const hitCount = cands.filter((c) => c.hitsFailed).length
-  if (!cands.length) return <EmptyState icon={<Layers size={24} strokeWidth={1.5} />} title="无候选" />
+  if (!cands.length) return <EmptyState icon={<Layers size={24} strokeWidth={1.5} />} title={uiT("无候选")} />
   const cur = cands.findIndex((c) => !picked.has(c.param.key))
   // 放大态逐个铺满 10 个槽位；卡内空间有限，只铺命中的候选，空槽压成一行，
   // 免得把半行硬切在卡底。
@@ -861,11 +865,9 @@ function CandidateQueue({ full }: { full?: boolean }) {
                 {c ? (
                   <Tooltip
                     className="min-w-0 flex-1"
-                    content={`${c.param.name}（${c.param.key.toUpperCase()}） · ${c.exp.id} ${c.rationale}${
-                      c.hitsFailed
+                    content={uiT("{v1}（{v2}） · {v3} {v4}{v5}", { v1: c.param.name, v2: c.param.key.toUpperCase(), v3: c.exp.id, v4: c.rationale, v5: c.hitsFailed
                         ? ` · 命中本轮未达标：${(c.hitReqIds ?? []).join('、')}`
-                        : ' · 来自规程固定候选表（本轮未命中）'
-                    }`}
+                        : uiT(' · 来自规程固定候选表（本轮未命中）') })}
                   >
                     <span className="flex min-w-0 items-center gap-2">
                       <span
@@ -874,19 +876,18 @@ function CandidateQueue({ full }: { full?: boolean }) {
                           on ? 'font-medium text-t1' : isCur ? 'font-medium text-p700' : 'text-t2',
                         )}
                       >
-                        {paramShort(c.param)}
+                        {uiT(c.param.name) === c.param.name ? paramShort(c.param) : uiT(c.param.name)}
                       </span>
                       {/* 命中本轮未达标：如实标出来，让「为什么推荐它」有据可查 */}
                       {c.hitsFailed ? (
                         <Badge tone="soft" className="shrink-0">
-                          命中
-                        </Badge>
+                          {uiT("命中")}</Badge>
                       ) : null}
                       <span className="num ml-auto shrink-0 text-[12px] text-t3">{c.delta}</span>
                     </span>
                   </Tooltip>
                 ) : (
-                  <span className="text-[13px] text-t3">空位</span>
+                  <span className="text-[13px] text-t3">{uiT("空位")}</span>
                 )}
               </li>
             )
@@ -894,7 +895,7 @@ function CandidateQueue({ full }: { full?: boolean }) {
           {!full && (free || lite) ? (
             <li className="relative flex items-center gap-2.5 py-[2px]">
               <span className="relative z-10 h-[13px] w-[13px] shrink-0 rounded-full border-2 border-dashed border-line bg-surface" />
-              <span className="text-[13px] text-t3">{lite ? '另有候选' : '空位'}</span>
+              <span className="text-[13px] text-t3">{lite ? uiT('另有候选') : uiT('空位')}</span>
               <span className="num ml-auto shrink-0 text-[12px] text-t3">
                 {lite ? cands.length - 1 : free}
               </span>
@@ -908,15 +909,13 @@ function CandidateQueue({ full }: { full?: boolean }) {
           <span className="text-t3">/{QUEUE_CAP}</span>
         </span>
         {hitCount ? (
-          <span className="num text-[12px] text-p700">命中本轮 {hitCount}</span>
+          <span className="num text-[12px] text-p700">{uiT("命中本轮 ")}{hitCount}</span>
         ) : null}
-        {lite ? null : <span className="text-[12px] text-t3">上限 10 · 耗尽转人工</span>}
+        {lite ? null : <span className="text-[12px] text-t3">{uiT("上限 10 · 耗尽转人工")}</span>}
         <InfoTip
-          content={`候选来自经验库中流程为「F5 调优确认及运行」的条目，按证据级排序（台架实测数据 > 台架经验/判定工具输出 > 规程条款）。${
-            hitCount
+          content={uiT("候选来自经验库中流程为「F5 调优确认及运行」的条目，按证据级排序（台架实测数据 > 台架经验/判定工具输出 > 规程条款）。{v1}固定候选表口径出自客户端规程 auto-startup-tune（盲试最多 10 个候选，每个只偏离基线一个轴；耗尽仍不行判 need_human 转人工，不得创建第 11 个候选）。", { v1: hitCount
               ? `本轮已按未达标项优先排序：${hitCount} 条命中（标「命中」），命中的候选建议直接针对本轮判出的问题。`
-              : '本轮无未达标项命中，以下为可用候选清单。'
-          }固定候选表口径出自客户端规程 auto-startup-tune（盲试最多 10 个候选，每个只偏离基线一个轴；耗尽仍不行判 need_human 转人工，不得创建第 11 个候选）。`}
+              : uiT('本轮无未达标项命中，以下为可用候选清单。') })}
         />
       </div>
     </div>
@@ -934,10 +933,12 @@ function symptomKey(sym: string) {
 }
 
 function EvidencePanel({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const cands = useCandidates()
   const picked = useAdopted()
   const demo = useAppStore((s) => s.demoMode)
-  if (!cands.length) return <EmptyState icon={<BookOpen size={24} strokeWidth={1.5} />} title="无命中条目" />
+  if (!cands.length) return <EmptyState icon={<BookOpen size={24} strokeWidth={1.5} />} title={uiT("无命中条目")} />
 
   // 一条经验可能带出多个参数，这里按经验去重。演示模式首屏只留排在最前的那一条
   // （证据级「台架实测数据」的 EXP-009），另外两条折到卡内滚动区之外，
@@ -967,9 +968,9 @@ function EvidencePanel({ full }: { full?: boolean }) {
                 <span className="block font-medium">
                   {c.exp.id} · {c.exp.symptom}
                 </span>
-                <span className="block opacity-80">原因 · {c.exp.cause}</span>
-                <span className="block opacity-80">动作 · {c.rationale}</span>
-                <span className="block opacity-80">结果 · {c.exp.result}</span>
+                <span className="block opacity-80">{uiT("原因 · ")}{c.exp.cause}</span>
+                <span className="block opacity-80">{uiT("动作 · ")}{c.rationale}</span>
+                <span className="block opacity-80">{uiT("结果 · ")}{c.exp.result}</span>
                 <span className="block opacity-70">{sourceLine(c.exp._source)}</span>
               </span>
             }
@@ -988,7 +989,7 @@ function EvidencePanel({ full }: { full?: boolean }) {
               </span>
               {/* 证据级直接写字：三格条一格一格数不清是什么意思（06d 第 3.2 节） */}
               <Badge tone={rank >= 3 ? 'soft' : 'neutral'} className="shrink-0">
-                {c.exp.evidence_level}
+                {uiT(c.exp.evidence_level)}
               </Badge>
               <Badge tone="neutral" mono className="shrink-0">
                 {c.exp.id}
@@ -1000,11 +1001,10 @@ function EvidencePanel({ full }: { full?: boolean }) {
       {rest > 0 ? (
         <Tooltip
           className="w-full"
-          content={`另外 ${rest} 条命中经验证据级更低，演示主线不讲；切「全量」或放大这张卡可逐条看。`}
+          content={uiT("另外 {v1} 条命中经验证据级更低，演示主线不讲；切「全量」或放大这张卡可逐条看。", { v1: rest })}
         >
           <span className="num block shrink-0 cursor-help px-2.5 py-1 text-[12px] text-t3">
-            另 {rest} 条
-          </span>
+            {uiT("另 ")}{rest} {uiT(" 条")}</span>
         </Tooltip>
       ) : null}
     </div>
@@ -1014,9 +1014,11 @@ function EvidencePanel({ full }: { full?: boolean }) {
 /* ------------------------------------------------------------ 卡片 · 判定卡 */
 
 function VerdictCard({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const pack = getPack()
   const { rows, failed, missing, passed, notApplicable } = useShortfalls()
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
   const judged = passed.length + failed.length
   // 不适用项排在未采集之前：它是「有明确结论」的项（已说明缺什么设备），
   // 混在未采集后面会让人以为还有悬而未决的判据（2026-10-08）。
@@ -1069,26 +1071,22 @@ function VerdictCard({ full }: { full?: boolean }) {
           </span>
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-1">
-          <Legend n={passed.length} label="通过" tone="ok" />
-          <Legend n={failed.length} label="不通过" tone="bad" />
+          <Legend n={passed.length} label={uiT("通过")} tone="ok" />
+          <Legend n={failed.length} label={uiT("不通过")} tone="bad" />
           {/* 优先展示「本台架不适用」：本台架只有风扇+示波器，多数判据结构上测不了。
               这类项已写明缺什么设备，比笼统的「未采集」更利于决策（2026-10-08）。 */}
           {notApplicable.length ? (
-            <Legend n={notApplicable.length} label="本台架不适用" tone="mute" />
+            <Legend n={notApplicable.length} label={uiT("本台架不适用")} tone="mute" />
           ) : (
-            <Legend n={missing.length} label="未采集" tone="mute" />
+            <Legend n={missing.length} label={uiT("未采集")} tone="mute" />
           )}
         </span>
         <InfoTip
-          content={`已求值 ${judged} / ${pack.requirements.evaluable_count} 条可求值判据，全表 ${rows.length} 条。${
-            notApplicable.length
+          content={uiT("已求值 {v1} / {v2} 条可求值判据，全表 {v3} 条。{v4}{v5}", { v1: judged, v2: pack.requirements.evaluable_count, v3: rows.length, v4: notApplicable.length
               ? `「本台架不适用」${notApplicable.length} 条：缺 MCU 故障寄存器 / FG 转速信号 / 母线电流探头 / 程控电源等测量手段，逐条 tooltip 写明缺什么，不参与通过统计。`
-              : ''
-          }${
-            judged === 0
-              ? '本轮一条都判不了：判据要的现场实测量（母线电流、转速、力、位移、声压级）得由台架传感器现场采，本轮只回放了登记进包的曲线，不拿别的数顶替。'
-              : ''
-          }`}
+              : '', v5: judged === 0
+              ? uiT('本轮一条都判不了：判据要的现场实测量（母线电流、转速、力、位移、声压级）得由台架传感器现场采，本轮只回放了登记进包的曲线，不拿别的数顶替。')
+              : '' })}
         />
       </div>
       <div
@@ -1102,18 +1100,16 @@ function VerdictCard({ full }: { full?: boolean }) {
           <Tooltip
             key={r.req.id}
             className="w-full"
-            content={`${r.req.id} ${r.req.name} · ${r.req.criterion_text}${
-              r.state === 'not_applicable' && r.notApplicableReason
+            content={uiT("{v1} {v2} · {v3}{v4}", { v1: r.req.id, v2: r.req.name, v3: r.req.criterion_text, v4: r.state === 'not_applicable' && r.notApplicableReason
                 ? ` · 本台架不适用：${r.notApplicableReason}`
                 : r.missing.length
                   ? ` · 缺 ${r.missing.join('、')}`
-                  : ''
-            }`}
+                  : '' })}
           >
             <div className="flex w-full items-center gap-2 border-b border-line-soft py-[5px] last:border-b-0">
               <StatusDot status={r.state === 'pass' ? 'done' : r.state === 'fail' ? 'alert' : 'na'} />
-              <span className="cursor-help truncate text-[12.5px] text-t1">{short(r.req.name, 12)}</span>
-              <span className="num ml-auto shrink-0 text-[12px] text-t3">{STATE_TEXT[r.state]}</span>
+              <span className="cursor-help truncate text-[12.5px] text-t1">{uiT(r.req.name) === r.req.name ? short(r.req.name, 12) : uiT(r.req.name)}</span>
+              <span className="num ml-auto shrink-0 text-[12px] text-t3">{uiT(STATE_TEXT[r.state])}</span>
             </div>
           </Tooltip>
         ))}
@@ -1124,6 +1120,7 @@ function VerdictCard({ full }: { full?: boolean }) {
 
 /** 缩略包络：小卡里不画坐标轴，只留曲线本身的形状与 t=0 的位置 */
 function Spark({ w }: { w: Wave }) {
+  const uiT = useT()
   const { x, y } = w.series
   const d = useMemo(() => {
     const N = 160
@@ -1152,7 +1149,7 @@ function Spark({ w }: { w: Wave }) {
   }, [x, y])
 
   return (
-    <svg viewBox="0 0 160 40" preserveAspectRatio="none" className="h-full w-full" aria-label={`${w.id} 波形缩略`}>
+    <svg viewBox="0 0 160 40" preserveAspectRatio="none" className="h-full w-full" aria-label={uiT("{v1} 波形缩略", { v1: w.id })}>
       <line x1="0" y1="20" x2="160" y2="20" stroke="var(--tp-line)" strokeWidth="0.5" />
       <line
         x1={d.zero}
@@ -1178,10 +1175,12 @@ function Spark({ w }: { w: Wave }) {
  * 给峰值、稳态 RMS、首次响应三个读数 + 一条不带坐标轴的缩略曲线。
  */
 function RoundWave({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const waves = useWaves()
   const [box, boxH] = useBoxHeight()
   if (!waves.length)
-    return <EmptyState icon={<WavesIcon size={24} strokeWidth={1.5} />} title="读取时序" />
+    return <EmptyState icon={<WavesIcon size={24} strokeWidth={1.5} />} title={uiT("读取时序")} />
   const w = waves.find((x) => x.verdict !== 'pass') ?? waves[0]
 
   return (
@@ -1190,20 +1189,20 @@ function RoundWave({ full }: { full?: boolean }) {
         <span className="num text-[26px] leading-none font-semibold tracking-tight text-t1">
           {w.metrics.peak.toFixed(2)}
         </span>
-        <span className="text-[12px] text-t3">{w.unit || '原始量'} 峰值</span>
-        <Tooltip content={`${w.id} ${w.title} · ${w.verdictText} · 峰值出现在 ${w.metrics.peakAt.toFixed(2)} s`}>
+        <span className="text-[12px] text-t3">{w.unit || uiT('原始量')} {uiT(" 峰值")}</span>
+        <Tooltip content={uiT("{v1} {v2} · {v3} · 峰值出现在 {v4} s", { v1: w.id, v2: w.title, v3: w.verdictText, v4: w.metrics.peakAt.toFixed(2) })}>
           <span className="num ml-auto cursor-help text-[12px] text-t3">{w.id}</span>
         </Tooltip>
       </div>
       <div className="flex shrink-0 items-center gap-3 pb-1.5">
-        <Tooltip content="末段 0.5 s 的均方根，代表稳态">
+        <Tooltip content={uiT("末段 0.5 s 的均方根，代表稳态")}>
           <span className="num cursor-help text-[12px] text-t3">
-            稳态 <span className="text-[13px] font-semibold text-t1">{w.metrics.steadyRms.toFixed(2)}</span>
+            {uiT("稳态 ")}<span className="text-[13px] font-semibold text-t1">{w.metrics.steadyRms.toFixed(2)}</span>
           </span>
         </Tooltip>
-        <Tooltip content="首次越过本条曲线量程 5% 的时刻">
+        <Tooltip content={uiT("首次越过本条曲线量程 5% 的时刻")}>
           <span className="num cursor-help text-[12px] text-t3">
-            首响{' '}
+            {uiT("首响")}{' '}
             <span className="text-[13px] font-semibold text-t1">
               {Number.isNaN(w.metrics.firstResponseMs) ? '—' : `${Math.round(w.metrics.firstResponseMs)} ms`}
             </span>
@@ -1217,7 +1216,7 @@ function RoundWave({ full }: { full?: boolean }) {
             annotations={[POWERUP_ANNOTATION]}
             thresholds={currentThresholds(true, w.metrics.peak)}
             height={Math.max(220, boxH - 6)}
-            xLabel={`时间 s · 纵轴 ${w.unit || '原始量'}`}
+            xLabel={uiT("时间 s · 纵轴 {v1}", { v1: w.unit || '原始量' })}
           />
         ) : (
           <Spark w={w} />
@@ -1235,6 +1234,8 @@ function RoundWave({ full }: { full?: boolean }) {
  * 写回口径：只改数值外壳里的那个数，量纲与括号写法照抄原值——这张卡显示的就是要改的那一行。
  */
 function ParamChanges({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const all = useCandidates()
   const picked = useAdopted()
   const demo = useAppStore((s) => s.demoMode)
@@ -1245,28 +1246,28 @@ function ParamChanges({ full }: { full?: boolean }) {
   const pending = chosen.length === 0
 
   if (!rows.length)
-    return <EmptyState icon={<GitCompareArrows size={24} strokeWidth={1.5} />} title="无可写回的宏" />
+    return <EmptyState icon={<GitCompareArrows size={24} strokeWidth={1.5} />} title={uiT("无可写回的宏")} />
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
       <div className="flex shrink-0 items-center gap-2 pb-1.5">
         <Tooltip
           className="min-w-0 flex-1"
-          content={`已采纳 ${chosen.length} 项 / 候选 ${numeric.length} 项。写回沿用原数值外壳与量纲，只改括号里的那个数；落盘与重编重烧一律由人点，助手不写回。`}
+          content={uiT("已采纳 {v1} 项 / 候选 {v2} 项。写回沿用原数值外壳与量纲，只改括号里的那个数；落盘与重编重烧一律由人点，助手不写回。", { v1: chosen.length, v2: numeric.length })}
         >
           <span className="flex cursor-help items-baseline gap-1.5">
             <span className="num text-[26px] leading-none font-semibold tracking-tight text-t1">
               {chosen.length}
             </span>
             <span className="text-[12px] text-t3">
-              {demo && !full ? (pending ? '项已采纳 · 待采纳' : '项已采纳 · 待写回') : `项已采纳 / 候选 ${numeric.length}`}
+              {demo && !full ? (pending ? uiT('项已采纳 · 待采纳') : uiT('项已采纳 · 待写回')) : uiT("项已采纳 / 候选 {v1}", { v1: numeric.length })}
             </span>
           </span>
         </Tooltip>
         {demo && !full ? null : (
-          <Tooltip content="写回沿用原数值外壳与量纲，只改括号里的那个数；落盘与重编重烧一律由人点，助手不写回。">
+          <Tooltip content={uiT("写回沿用原数值外壳与量纲，只改括号里的那个数；落盘与重编重烧一律由人点，助手不写回。")}>
             <span className="num ml-auto cursor-help text-[12px] text-t3">
-              {pending ? '待采纳' : '待写回'}
+              {pending ? uiT('待采纳') : uiT('待写回')}
             </span>
           </Tooltip>
         )}
@@ -1276,7 +1277,7 @@ function ParamChanges({ full }: { full?: boolean }) {
           <Tooltip
             key={c.param.key}
             className="w-full"
-            content={`${c.param.name}（${c.param.key.toUpperCase()}）· 依据 ${c.exp.id} · ${c.rationale}`}
+            content={uiT("{v1}（{v2}）· 依据 {v3} · {v4}", { v1: c.param.name, v2: c.param.key.toUpperCase(), v3: c.exp.id, v4: c.rationale })}
           >
             <div className="flex w-full cursor-help items-center gap-2 border-b border-line-soft py-[7px] last:border-b-0">
               <span

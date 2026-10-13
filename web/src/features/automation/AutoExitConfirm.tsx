@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import { useEffect, useRef } from 'react'
 import { AlertTriangle, LogOut } from 'lucide-react'
 import { Button } from '../../components/ui'
@@ -33,6 +34,8 @@ export function AutoExitConfirm({
   /** 确认退出：由调用方执行软退出（只隐藏浮层，不中断后台） */
   onConfirm: () => void
 }) {
+  const uiT = useT()
+
   const cardRef = useRef<HTMLDivElement>(null)
 
   /* Esc = 取消（安全方向）。capture 阶段监听并 stopPropagation，
@@ -74,7 +77,7 @@ export function AutoExitConfirm({
         ref={cardRef}
         role="alertdialog"
         aria-modal="true"
-        aria-label="测试正在运行，确定退出吗？"
+        aria-label={uiT("测试正在运行，确定退出吗？")}
         data-testid="auto-exit-confirm"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={onKeyDown}
@@ -86,11 +89,9 @@ export function AutoExitConfirm({
           </span>
           <div className="min-w-0 flex-1">
             <h2 className="text-[15px] leading-snug font-bold text-t1">
-              测试正在运行，确定退出吗？
-            </h2>
+              {uiT("测试正在运行，确定退出吗？")}</h2>
             <p className="mt-1.5 text-[12.5px] leading-5 text-t3">
-              退出仅关闭当前界面，后台测试将继续跑完。
-            </p>
+              {uiT("退出仅关闭当前界面，后台测试将继续跑完。")}</p>
           </div>
         </div>
 
@@ -103,8 +104,7 @@ export function AutoExitConfirm({
             onClick={onCancel}
             data-testid="auto-exit-cancel"
           >
-            取消
-          </Button>
+            {uiT("取消")}</Button>
           <Button
             variant="primary"
             size="md"
@@ -112,8 +112,7 @@ export function AutoExitConfirm({
             onClick={onConfirm}
             data-testid="auto-exit-ok"
           >
-            确定退出
-          </Button>
+            {uiT("确定退出")}</Button>
         </div>
       </div>
     </div>

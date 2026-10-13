@@ -1,3 +1,4 @@
+import { useT } from '../../../i18n'
 import { useState } from 'react';
 import type { ExperienceDraft } from '../types';
 
@@ -16,19 +17,21 @@ const FIELDS: { key: keyof Omit<ExperienceDraft, 'tags'>; label: string; area?: 
 ];
 
 export function ExperienceModal({ draft, onCancel, onSubmit }: Props) {
+  const uiT = useT()
+
   const [form, setForm] = useState<ExperienceDraft>(draft);
   const [tagInput, setTagInput] = useState(draft.tags.join('、'));
 
   return (
-    <div className="ac-modal-mask" role="dialog" aria-modal="true" aria-label="沉淀为经验">
+    <div className="ac-modal-mask" role="dialog" aria-modal="true" aria-label={uiT("沉淀为经验")}>
       <div className="ac-modal">
         <div className="ac-modal__head">
-          <span className="ac-modal__title">沉淀为经验</span>
+          <span className="ac-modal__title">{uiT("沉淀为经验")}</span>
         </div>
         <div className="ac-modal__body">
           {FIELDS.map((f) => (
             <div className="ac-form-row" key={f.key}>
-              <label htmlFor={`ac-exp-${f.key}`}>{f.label}</label>
+              <label htmlFor={`ac-exp-${f.key}`}>{uiT(f.label)}</label>
               {f.area ? (
                 <textarea
                   id={`ac-exp-${f.key}`}
@@ -47,13 +50,13 @@ export function ExperienceModal({ draft, onCancel, onSubmit }: Props) {
             </div>
           ))}
           <div className="ac-form-row">
-            <label htmlFor="ac-exp-tags">标签</label>
+            <label htmlFor="ac-exp-tags">{uiT("标签")}</label>
             <div>
               <input
                 id="ac-exp-tags"
                 className="ac-input"
                 value={tagInput}
-                placeholder="以顿号或逗号分隔"
+                placeholder={uiT("以顿号或逗号分隔")}
                 onChange={(e) => setTagInput(e.target.value)}
               />
               <div className="ac-tags">
@@ -71,8 +74,7 @@ export function ExperienceModal({ draft, onCancel, onSubmit }: Props) {
         </div>
         <div className="ac-modal__foot">
           <button type="button" className="ac-btn ac-btn--ghost" onClick={onCancel}>
-            取消
-          </button>
+            {uiT("取消")}</button>
           <button
             type="button"
             className="ac-btn ac-btn--solid"
@@ -80,8 +82,7 @@ export function ExperienceModal({ draft, onCancel, onSubmit }: Props) {
               onSubmit({ ...form, tags: tagInput.split(/[、,，\s]+/).filter(Boolean) })
             }
           >
-            存入经验库
-          </button>
+            {uiT("存入经验库")}</button>
         </div>
       </div>
     </div>

@@ -102,6 +102,7 @@ function parseToolCall(raw: unknown): ToolCall | null {
     id,
     name,
     title: str(raw.title),
+    uiAuthored: raw.uiAuthored === true,
     args: isRecord(raw.args) ? raw.args : {},
     argsSummary,
     mutating: raw.mutating === true,
@@ -145,7 +146,11 @@ function parseChatItem(raw: unknown): ChatItem | null {
     if (role !== 'user' && role !== 'assistant') return null;
     if (typeof text !== 'string') return null;
     // streaming 一律收尾：否则重开后气泡会永久挂一个闪烁光标（streaming===true）
-    return { kind: 'message', id, role, text, streaming: false };
+    const uiText = isRecord(raw.uiText) && typeof raw.uiText.key === 'string'
+      && (!raw.uiText.params || isRecord(raw.uiText.params) && Object.values(raw.uiText.params).every((value) => typeof value === 'string' || typeof value === 'number'))
+      ? { key: raw.uiText.key, params: raw.uiText.params as Record<string, string | number> | undefined,
+          uiParams: Array.isArray(raw.uiText.uiParams) && raw.uiText.uiParams.every((key) => typeof key === 'string') ? raw.uiText.uiParams as string[] : undefined } : undefined;
+    return { kind: 'message', id, role, text, streaming: false, uiText };
   }
   if (kind === 'tool') {
     const call = parseToolCall(raw.call);

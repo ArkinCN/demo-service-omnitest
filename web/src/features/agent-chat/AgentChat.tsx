@@ -1,3 +1,6 @@
+import { knownScriptMessage, uiMessage, type UiMessageText } from '../../i18n/messages'
+import { translate } from '../../i18n/runtime'
+import { useT } from '../../i18n'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import './agent-chat.css';
 import { mockAdapter, type AgentAdapter, type AgentEvent } from './api';
@@ -28,6 +31,7 @@ export interface AgentChatProps {
   initialEvidence?: EvidenceItem[];
   /** 挂载后自动以该文本发起一轮 */
   autoStartPrompt?: string;
+  autoStartUiText?: UiMessageText;
   /**
    * 「上下文包已就绪」门闩（默认 true = 不等）。
    *
@@ -101,7 +105,7 @@ export interface AgentChatProps {
 /** 交给宿主的命令式接口 */
 export interface AgentChatApi {
   /** 代发一条消息；忙态中调用会被忽略，与人点发送按钮同一套闸门 */
-  send: (text: string) => void;
+  send: (text: string, uiText?: UiMessageText) => void;
 }
 
 let seq = 0;
@@ -125,12 +129,15 @@ function draftFromConversation(items: ChatItem[], verdict?: Verdict): Experience
 }
 
 export function AgentChat(props: AgentChatProps) {
+  const uiT = useT()
+
   const {
     adapter = mockAdapter,
-    assistantName = '助手',
+    assistantName,
     initialItems = [],
     initialEvidence = [],
     autoStartPrompt,
+    autoStartUiText,
     autoStartReady = true,
     evidenceOpenOnMount = false,
     operator = '当前操作员',
@@ -255,12 +262,12 @@ export function AgentChat(props: AgentChatProps) {
           if (idx === -1) {
             return [
               ...prev,
-              { kind: 'message', id: ev.messageId, role: 'assistant', text: ev.delta, streaming: true },
+              { kind: 'message', id: ev.messageId, role: 'assistant', text: ev.delta, streaming: true, uiText: ev.uiText },
             ];
           }
           const next = [...prev];
           const cur = next[idx];
-          if (cur.kind === 'message') next[idx] = { ...cur, text: cur.text + ev.delta, streaming: true };
+          if (cur.kind === 'message') next[idx] = { ...cur, text: cur.text + ev.delta, streaming: true, uiText: ev.uiText ?? cur.uiText };
           return next;
         }
         case 'tool_call':
@@ -273,6 +280,7 @@ export function AgentChat(props: AgentChatProps) {
                 id: ev.callId,
                 name: ev.name,
                 title: ev.title,
+                uiAuthored: ev.uiAuthored,
                 args: ev.args,
                 argsSummary: ev.argsSummary,
                 mutating: ev.mutating,
@@ -299,6 +307,7 @@ export function AgentChat(props: AgentChatProps) {
               ...cur,
               call: {
                 ...cur.call,
+                uiAuthored: ev.uiAuthored ?? cur.call.uiAuthored,
                 status: ev.status,
                 confirmedBy:
                   cur.call.confirmedBy ??
@@ -328,6 +337,7 @@ export function AgentChat(props: AgentChatProps) {
                 id: uid('err'),
                 role: 'assistant',
                 text: `本轮未能完成：${ev.message ?? '后端返回错误，未附原因'}`,
+                uiText: uiMessage('本轮未能完成：{v1}', { v1: ev.message ?? '后端返回错误，未附原因' }),
                 streaming: false,
               },
             ];
@@ -384,12 +394,12 @@ export function AgentChat(props: AgentChatProps) {
   );
 
   const run = useCallback(
-    async (text: string) => {
+    async (text: string, authoredUiText?: UiMessageText) => {
       if (busy) return;
       // 意图识别分支：命中「启动自动化测试流程」直接交给自动化编排器，
       // 不当作普通对话丢给模型（这是用户明说的第二种入口，两种入口同一套流程）。
       if (/启动自动化测试|开始自动化测试|一键自动化/.test(text.trim())) {
-        setItems((prev) => [...prev, { kind: 'message', id: uid('u'), role: 'user', text }])
+        setItems((prev) => [...prev, { kind: 'message', id: uid('u'), role: 'user', text, uiText: authoredUiText }])
         setItems((prev) => [
           ...prev,
           {
@@ -397,6 +407,7 @@ export function AgentChat(props: AgentChatProps) {
             id: uid('auto'),
             role: 'assistant',
             text: '已启动自动化测试流程：自动确认参数 → 按阶段推进 → 生成并下载报告。进度会在全屏运行浮层与顶部阶段条实时展示。',
+            uiText: uiMessage('已启动自动化测试流程：自动确认参数 → 按阶段推进 → 生成并下载报告。进度会在全屏运行浮层与顶部阶段条实时展示。'),
             streaming: false,
           },
         ])
@@ -415,6 +426,7 @@ export function AgentChat(props: AgentChatProps) {
                   id: uid('ann'),
                   role: 'assistant',
                   text: s.automationAnnouncement,
+                  uiText: uiMessage(s.automationAnnouncement),
                   streaming: false,
                 },
               ]
@@ -427,7 +439,7 @@ export function AgentChat(props: AgentChatProps) {
         })
         return
       }
-      setItems((prev) => [...prev, { kind: 'message', id: uid('u'), role: 'user', text }]);
+      setItems((prev) => [...prev, { kind: 'message', id: uid('u'), role: 'user', text, uiText: authoredUiText }]);
       setBusy(true);
       const ac = new AbortController();
       abortRef.current = ac;
@@ -457,6 +469,7 @@ export function AgentChat(props: AgentChatProps) {
               id: uid('err'),
               role: 'assistant',
               text: `本轮未能完成：${e instanceof Error ? e.message : String(e)}`,
+              uiText: uiMessage('本轮未能完成：{v1}', { v1: e instanceof Error ? e.message : String(e) }),
               streaming: false,
             },
           ]);
@@ -474,7 +487,7 @@ export function AgentChat(props: AgentChatProps) {
   const runRef = useRef(run);
   runRef.current = run;
   useEffect(() => {
-    onReady?.({ send: (text: string) => void runRef.current(text) });
+    onReady?.({ send: (text: string, uiText?: UiMessageText) => void runRef.current(text, uiText) });
   }, [onReady]);
 
   useEffect(() => {
@@ -505,10 +518,10 @@ export function AgentChat(props: AgentChatProps) {
   useEffect(() => {
     if (!autoStartPrompt || !autoStartReady || started.current) return;
     started.current = true;
-    void run(autoStartPrompt);
+    void run(autoStartPrompt, autoStartUiText);
     // run 的依赖会随状态变化，这里只在「ready 且未发过」时触发一次
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoStartPrompt, autoStartReady]);
+  }, [autoStartPrompt, autoStartReady, autoStartUiText]);
 
   const shownEvidence =
     shownEvidenceIds === null
@@ -519,19 +532,19 @@ export function AgentChat(props: AgentChatProps) {
     <div className="ac-root" data-drawer={String(shownEvidenceIds !== null)}>
       <header className="ac-header">
         <span className="ac-header__avatar">AI</span>
-        <span className="ac-header__title">{assistantName}</span>
-        <span className="ac-header__sub">电机调试</span>
+        <span className="ac-header__title">{assistantName ?? uiT('助手')}</span>
+        <span className="ac-header__sub">{uiT("电机调试")}</span>
         {/*
           后端标识：一眼看出这一轮走的是 dsh（真后端）还是 mock（脚本回放）。
           起因是「发了消息毫无反应」这类现象，光看界面分不清前端挂的是哪个适配器，
           排查时要反复猜。把它显式写出来，以后一眼可辨。
         */}
-        <span className="ac-header__sub" title={`后端适配器：${adapter.id}`}>
+        <span className="ac-header__sub" title={uiT("后端适配器：{v1}", { v1: adapter.id })}>
           {adapter.id}
         </span>
         <span className="ac-header__spacer" />
         <span className="ac-header__state" data-busy={String(busy)}>
-          {busy ? '执行中' : '待命'}
+          {busy ? uiT('执行中') : uiT('待命')}
         </span>
         <button
           type="button"
@@ -539,8 +552,7 @@ export function AgentChat(props: AgentChatProps) {
           onClick={() => setExpDraft(draftFromConversation(items))}
           disabled={items.length === 0}
         >
-          沉淀为经验
-        </button>
+          {uiT("沉淀为经验")}</button>
         <button
           type="button"
           className="ac-iconbtn"
@@ -549,7 +561,7 @@ export function AgentChat(props: AgentChatProps) {
           }
           disabled={evidence.length === 0}
         >
-          依据 {evidence.length}
+          {uiT("依据 ")}{evidence.length}
         </button>
         {/* 宿主要求折叠时给一枚收起键；与上面两枚同排，所以不会重叠 */}
         {onCollapse ? (
@@ -557,23 +569,35 @@ export function AgentChat(props: AgentChatProps) {
             type="button"
             className="ac-iconbtn"
             onClick={onCollapse}
-            title="收起助手"
+            title={uiT("收起助手")}
           >
-            收起
-          </button>
+            {uiT("收起")}</button>
         ) : null}
       </header>
 
       <div className="ac-stream" ref={streamRef}>
         {items.map((it) => {
           if (it.kind === 'message') {
+            let displayText = it.text
+            if (it.uiText) {
+              const displayParams = it.uiText.params && Object.fromEntries(Object.entries(it.uiText.params).map(([key, value]) =>
+                [key, it.uiText?.uiParams?.includes(key) && typeof value === 'string' ? uiT(value) : value]))
+              const complete = uiT(it.uiText.key, displayParams)
+              const original = translate(it.uiText.key, 'zh-CN', it.uiText.params)
+              const partial = it.text.length < original.length && original.startsWith(it.text)
+              displayText = partial
+                ? complete.slice(0, Math.ceil(complete.length * Math.min(1, it.text.length / Math.max(1, original.length))))
+                : complete
+            } else if (it.role === 'assistant' && !it.streaming && knownScriptMessage(it.text)) {
+              displayText = uiT(it.text)
+            }
             return (
               <div className={`ac-row ac-row--${it.role}`} key={it.id}>
                 <div className={`ac-bubble ac-bubble--${it.role}`}>
                   {/* 助手回答按 Markdown 渲染：后端给的是 ### / ** / - 这类语法，
                       直接当纯文本显示会让人看到一堆符号（用户反馈过）。
                       用户自己打的字不渲染——人写的就是想原样看到的。 */}
-                  {it.role === 'assistant' ? <Markdown text={it.text} /> : it.text}
+                  {it.role === 'assistant' ? <Markdown text={displayText} /> : displayText}
                   {it.streaming ? <span className="ac-caret" /> : null}
                 </div>
               </div>

@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import { useEffect } from 'react'
 import { AlertOctagon, Check, CircleSlash, Download, FileBarChart, RotateCcw, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -47,6 +48,8 @@ export function AutomationResult({
   onViewReport: () => void
   onRedownload: () => void
 }) {
+  const uiT = useT()
+
   const elapsed =
     summary.startedAt !== null && summary.finishedAt !== null
       ? Math.max(0, summary.finishedAt - summary.startedAt)
@@ -117,7 +120,7 @@ export function AutomationResult({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={head.title}
+        aria-label={uiT(head.title)}
         data-testid="auto-result-dialog"
         onClick={(e) => e.stopPropagation()}
         className="animate-pop flex max-h-[88%] w-full max-w-[760px] flex-col overflow-hidden rounded-tp border border-line bg-surface shadow-tp2"
@@ -146,12 +149,12 @@ export function AutomationResult({
                 ) : (
                   <>
                     {stats.pass}/{stats.total}
-                    <span className="text-[10px] font-medium">通过</span>
+                    <span className="text-[10px] font-medium">{uiT("通过")}</span>
                   </>
                 )}
               </span>
               <h1 className="mt-4 text-[19px] leading-tight font-bold tracking-tight text-t1">
-                {head.title}
+                {uiT(head.title)}
               </h1>
               <p className="mt-1.5 text-[12.5px] text-t3">{head.sub}</p>
             </div>
@@ -171,7 +174,7 @@ export function AutomationResult({
                   className="flex flex-col items-center gap-0.5 rounded-tps border border-line-soft bg-surface px-2 py-2.5"
                 >
                   <span className="num text-[17px] leading-none font-semibold text-t1">{c.value}</span>
-                  <span className="text-[11px] text-t3">{c.label}</span>
+                  <span className="text-[11px] text-t3">{uiT(c.label)}</span>
                 </div>
               ))}
             </div>
@@ -179,8 +182,7 @@ export function AutomationResult({
             {/* 五阶段回执：逐条含状态、消息与该段耗时 */}
             <div className="mt-3.5 rounded-tps border border-line-soft bg-surface">
               <div className="border-b border-line-soft px-3 py-2 text-[12px] font-semibold text-t1">
-                阶段回执
-              </div>
+                {uiT("阶段回执")}</div>
               <div className="px-3 py-1">
                 {stages.map((s) => (
                   <div
@@ -232,29 +234,28 @@ export function AutomationResult({
                   <>
                     <p className="text-t1">
                       {summary.reportStatus === 'ok'
-                        ? '报告已生成'
+                        ? uiT('报告已生成')
                         // 2026-10-10 前落的历史轮次才是占位版式；新生成一律走 ok
-                        : '报告已生成（历史占位版式）'}
-                      {summary.reportDownloaded ? '，并已触发下载。' : '，但下载可能被浏览器拦截。'}
+                        : uiT('报告已生成（历史占位版式）')}
+                      {summary.reportDownloaded ? uiT('，并已触发下载。') : uiT('，但下载可能被浏览器拦截。')}
                     </p>
                     <p className="mt-0.5 text-[11.5px] text-t3">
-                      {summary.reportFile ? `文件 ${summary.reportFile}` : ''}
+                      {summary.reportFile ? uiT("文件 {v1}", { v1: summary.reportFile }) : ''}
                       {status !== 'completed'
-                        ? ' · 本轮测试未全部通过，报告为失败快照（缺的项如实标注「未提供」）'
+                        ? uiT(' · 本轮测试未全部通过，报告为失败快照（缺的项如实标注「未提供」）')
                         : ''}
                     </p>
                   </>
                 ) : summary.reportStatus === 'blocked' ? (
                   <>
                     <p className="text-alert">
-                      <b>报告未生成</b>：{summary.reportReason || '后端未产出报告文件'}
+                      <b>{uiT("报告未生成")}</b>：{summary.reportReason || uiT('后端未产出报告文件')}
                     </p>
                     <p className="mt-0.5 text-[11.5px] text-t3">
-                      没有可下载的文件，因此本轮不会触发下载（不假装下载成功）。修好上述原因后点「重新运行」。
-                    </p>
+                      {uiT("没有可下载的文件，因此本轮不会触发下载（不假装下载成功）。修好上述原因后点「重新运行」。")}</p>
                   </>
                 ) : (
-                  <p className="text-t3">本轮没有走到报告阶段（提前终止），因此没有报告可下载。</p>
+                  <p className="text-t3">{uiT("本轮没有走到报告阶段（提前终止），因此没有报告可下载。")}</p>
                 )}
               </div>
               {summary.reportStatus === 'ok' || summary.reportStatus === 'placeholder' ? (
@@ -265,8 +266,7 @@ export function AutomationResult({
                   icon={<Download size={13} strokeWidth={1.9} />}
                   onClick={onRedownload}
                 >
-                  重新下载
-                </Button>
+                  {uiT("重新下载")}</Button>
               ) : null}
             </div>
 
@@ -279,8 +279,7 @@ export function AutomationResult({
                   icon={<FileBarChart size={15} strokeWidth={1.9} />}
                   onClick={onViewReport}
                 >
-                  查看报告
-                </Button>
+                  {uiT("查看报告")}</Button>
               ) : null}
               <Button
                 variant={status === 'completed' ? 'secondary' : 'primary'}
@@ -289,8 +288,7 @@ export function AutomationResult({
                 onClick={onRetry}
                 data-testid="auto-result-retry"
               >
-                重新运行
-              </Button>
+                {uiT("重新运行")}</Button>
               <Button
                 variant="ghost"
                 size="lg"
@@ -298,12 +296,9 @@ export function AutomationResult({
                 onClick={onDismiss}
                 data-testid="auto-result-close"
               >
-                关闭
-              </Button>
+                {uiT("关闭")}</Button>
               <span className="num ml-auto text-[11.5px] text-t3">
-                轮次 {summary.runId ? summary.runId.slice(0, 8) : '—'} · 判定表 {judged || '—'} 条 ·
-                代确认闸门 {summary.gateAckCount} 条
-              </span>
+                {uiT("轮次 ")}{summary.runId ? summary.runId.slice(0, 8) : '—'} {uiT(" · 判定表 ")}{judged || '—'} {uiT(" 条 · 代确认闸门 ")}{summary.gateAckCount} {uiT(" 条")}</span>
             </div>
           </div>
         </div>

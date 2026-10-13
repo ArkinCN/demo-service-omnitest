@@ -1,3 +1,4 @@
+import { useT } from '../../../i18n'
 /** 面板用紧凑卡片：名称、节点数、电压档，加一条按分组配色的缩略条。 */
 import { useMemo } from 'react'
 import { NODE_GROUPS } from '../lib/nodeCatalog'
@@ -12,6 +13,8 @@ export interface WorkflowCardProps {
 }
 
 export function WorkflowCard({ entry, model, active = false, onOpen }: WorkflowCardProps) {
+  const uiT = useT()
+
   // 缩略图：按分组统计节点占比，画成一条分段色带，成本远低于渲染真图。
   const segments = useMemo(() => {
     if (!model) return []
@@ -44,10 +47,10 @@ export function WorkflowCard({ entry, model, active = false, onOpen }: WorkflowC
         </span>
       </div>
       <div className="wf-card-meta">
-        <span>{entry.nodeCount} 节点</span>
+        <span>{entry.nodeCount} {uiT(" 节点")}</span>
         <span className="wf-card-dot">·</span>
-        <span>{entry.edgeCount} 连线</span>
-        {entry.isSubflow && <span className="wf-card-tag">子流程</span>}
+        <span>{entry.edgeCount} {uiT(" 连线")}</span>
+        {entry.isSubflow && <span className="wf-card-tag">{uiT("子流程")}</span>}
       </div>
       <div className="wf-card-thumb" aria-hidden={segments.length === 0}>
         {segments.length === 0 ? (

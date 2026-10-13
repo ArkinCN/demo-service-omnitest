@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useNavigate } from 'react-router'
 import {
@@ -66,7 +67,7 @@ function short(s: string, n = 6) {
 
 /* ==================================================== 选中集 / 焦点（跨卡共享） */
 
-const sel = {
+let sel = {
   scene: '',
   ids: new Set<string>(),
   focus: null as string | null,
@@ -86,6 +87,10 @@ const selListeners = new Set<() => void>()
 const bumpSel = () => {
   selVersion += 1
   selListeners.forEach((l) => l())
+}
+function replaceSelectedIds(ids: Set<string>) {
+  sel = { ...sel, ids }
+  bumpSel()
 }
 const subSel = (l: () => void) => {
   selListeners.add(l)
@@ -314,6 +319,8 @@ const voltShort = (v: string) => VOLT_SHORT[v] ?? (v.length > 4 ? '三档' : v)
 /* ------------------------------------------------------------------ 左栏 */
 
 function ReqRow({ r }: { r: RawRequirement }) {
+  const uiT = useT()
+
   const s = useSel()
   const confirmed = !!useAppStore((st) => st.confirmed.req)
   const on = s.ids.has(r.id)
@@ -323,16 +330,16 @@ function ReqRow({ r }: { r: RawRequirement }) {
 
   const detail = (
     <span className="block space-y-1">
-      <span className="block font-medium">{r.name}</span>
+      <span className="block font-medium">{uiT(r.name)}</span>
       <span className="num block opacity-75">{r.id}</span>
       <span className="block opacity-75">{r.criterion_text}</span>
-      {manual ? <span className="block opacity-75">人工判 · {r.not_evaluable_reason}</span> : null}
+      {manual ? <span className="block opacity-75">{uiT("人工判 · ")}{r.not_evaluable_reason}</span> : null}
       {r._placeholder ? (
         <span className="block opacity-75">
-          {confirmed ? '已确认知悉 · 源材料未给出阈值，本次未补值' : '待确认 · 源材料未给出阈值'}
+          {confirmed ? uiT('已确认知悉 · 源材料未给出阈值，本次未补值') : uiT('待确认 · 源材料未给出阈值')}
         </span>
       ) : null}
-      {statusOf(r) ? <span className="block opacity-75">待核实 · {statusOf(r)}</span> : null}
+      {statusOf(r) ? <span className="block opacity-75">{uiT("待核实 · ")}{statusOf(r)}</span> : null}
     </span>
   )
 
@@ -347,7 +354,7 @@ function ReqRow({ r }: { r: RawRequirement }) {
         type="button"
         role="checkbox"
         aria-checked={on}
-        aria-label={r.name}
+        aria-label={uiT(r.name)}
         onClick={() => toggleReq(r.id)}
         className={cn(
           'flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-[5px] border transition-colors [&>svg]:block',
@@ -369,7 +376,7 @@ function ReqRow({ r }: { r: RawRequirement }) {
               on ? 'text-t1' : 'text-t2',
             )}
           >
-            {short(r.name, 8)}
+            {uiT(r.name) === r.name ? short(r.name, 8) : uiT(r.name)}
           </span>
         </button>
       </Tooltip>
@@ -383,12 +390,12 @@ function ReqRow({ r }: { r: RawRequirement }) {
               : 'border-p200 bg-p50 text-p700',
           )}
         >
-          {th}
+          {uiT(th)}
         </span>
       ) : null}
 
       <span
-        title={manual ? '只能人工判' : '可自动求值'}
+        title={manual ? uiT('只能人工判') : uiT('可自动求值')}
         className={cn(
           'h-[7px] w-[7px] shrink-0 rounded-full',
           manual ? 'bg-white ring-1 ring-inset ring-line' : 'bg-p600',
@@ -507,6 +514,8 @@ function useConfirmBaseline(opts: {
 }
 
 export function ReqLeftPanel() {
+  const uiT = useT()
+
   const pack = getPack()
   const s = useSel()
   const nav = useNavigate()
@@ -540,7 +549,7 @@ export function ReqLeftPanel() {
   }
 
   // hook 全部就位后再做空值分支
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
   const all = s.ids.size === total
 
   // 一级类收敛到三类（性能 / 工况 / 安全与自检），骨架取自场景包
@@ -556,19 +565,18 @@ export function ReqLeftPanel() {
     <div className="flex h-full min-h-0 w-full flex-col">
       <header className="flex h-[44px] shrink-0 items-center gap-2.5 border-b border-line-soft px-4">
         <ListChecks size={17} strokeWidth={1.9} className="shrink-0 text-p700" />
-        <h2 className="text-[16px] leading-none font-semibold tracking-tight text-t1">测试要求</h2>
+        <h2 className="text-[16px] leading-none font-semibold tracking-tight text-t1">{uiT("测试要求")}</h2>
         <span className="num text-[12px] text-t3">{reqs.length}</span>
         <div className="ml-auto flex items-center gap-1.5">
           <Badge tone="soft" mono>
-            已选 {s.ids.size}
+            {uiT("已选 ")}{s.ids.size}
           </Badge>
-          <Tooltip content={all ? '全部移出本轮' : '全部纳入本轮'}>
+          <Tooltip content={all ? uiT('全部移出本轮') : uiT('全部纳入本轮')}>
             <button
               type="button"
-              aria-label={all ? '全部移出本轮' : '全部纳入本轮'}
+              aria-label={all ? uiT('全部移出本轮') : uiT('全部纳入本轮')}
               onClick={() => {
-                sel.ids = all ? new Set<string>() : new Set(reqs.map((r) => r.id))
-                bumpSel()
+                replaceSelectedIds(all ? new Set<string>() : new Set(reqs.map((r) => r.id)))
               }}
               className="flex h-[26px] w-[26px] items-center justify-center rounded-tps border border-line bg-white text-t3 transition-colors hover:border-p300 hover:text-p700 [&>svg]:block"
             >
@@ -622,13 +630,13 @@ export function ReqLeftPanel() {
 
       <div className="shrink-0 px-4 pt-2">
         <Tooltip
-          content={`可自动求值 ${pack.requirements.evaluable_count} 条，只能人工判 ${pack.requirements.not_evaluable_count} 条（排程规则与目视检查一类，不硬凑成布尔表达式）。组头的暗红计数即「只能人工判」的条数。`}
+          content={uiT("可自动求值 {v1} 条，只能人工判 {v2} 条（排程规则与目视检查一类，不硬凑成布尔表达式）。组头的暗红计数即「只能人工判」的条数。", { v1: pack.requirements.evaluable_count, v2: pack.requirements.not_evaluable_count })}
         >
           <span className="flex w-full items-center gap-2 text-[12px] text-t3">
             <span className="num">
               {pack.requirements.evaluable_count}/{reqs.length}
             </span>
-            <span className="truncate">可自动求值</span>
+            <span className="truncate">{uiT("可自动求值")}</span>
           </span>
         </Tooltip>
       </div>
@@ -639,20 +647,20 @@ export function ReqLeftPanel() {
           确认后按钮变「解除确认」，与流程 1 的形态完全一致（反悔出口保留）。 */}
       {confirmed ? (
         <ConfirmFooter
-          label="解除确认"
+          label={uiT("解除确认")}
           count={s.ids.size}
           unit="条"
           variant="secondary"
           icon="unlock"
-          hint={`基线已确认并写入轮次产物（纳入 ${s.ids.size} / ${reqs.length} 条）。点此解除后可继续调整纳入范围；阈值待补的项不受影响，仍会如实标注。`}
+          hint={uiT("基线已确认并写入轮次产物（纳入 {v1} / {v2} 条）。点此解除后可继续调整纳入范围；阈值待补的项不受影响，仍会如实标注。", { v1: s.ids.size, v2: reqs.length })}
           onClick={release}
         />
       ) : (
         <ConfirmFooter
-          label={saving ? '确认中…' : '确认基线'}
+          label={saving ? uiT('确认中…') : uiT('确认基线')}
           count={s.ids.size}
           unit="条"
-          hint={`本轮基线纳入 ${s.ids.size} 条判据（共 ${reqs.length} 条），勾选框改的就是这份基线。点击后写入 requirement-baseline 产物并进入流程 3；其中阈值待补的项确认后仍按「阈值待补」跟踪，不会被当成已填。`}
+          hint={uiT("本轮基线纳入 {v1} 条判据（共 {v2} 条），勾选框改的就是这份基线。点击后写入 requirement-baseline 产物并进入流程 3；其中阈值待补的项确认后仍按「阈值待补」跟踪，不会被当成已填。", { v1: s.ids.size, v2: reqs.length })}
           onClick={() => void confirmBaseline()}
         />
       )}
@@ -663,14 +671,16 @@ export function ReqLeftPanel() {
 /* -------------------------------------------------- 卡片 · 工作流画布（hero） */
 
 function WorkflowStage({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const pack = getPack()
   const { entries, model, active } = useWf()
   const [node, setNode] = useState<string | null>(null)
   const [edit, setEdit] = useState(false)
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
   const cur = entries.find((e) => e.id === active)
   if (!model)
-    return <EmptyState icon={<WorkflowIcon size={24} strokeWidth={1.5} />} title="读取工作流" />
+    return <EmptyState icon={<WorkflowIcon size={24} strokeWidth={1.5} />} title={uiT("读取工作流")} />
 
   const subs = model.nodes.filter((n) => n.type === 'subworkflow').length
 
@@ -701,21 +711,21 @@ function WorkflowStage({ full }: { full?: boolean }) {
           </span>
         </Tooltip>
         <Badge tone="soft" mono>
-          节点 {model.nodes.length}
+          {uiT("节点 ")}{model.nodes.length}
         </Badge>
         <Badge tone="neutral" mono>
-          连线 {model.edges.length}
+          {uiT("连线 ")}{model.edges.length}
         </Badge>
-        <Badge tone="neutral" mono title="电压档">
-          {cur ? voltShort(cur.voltage) : '—'}
+        <Badge tone="neutral" mono title={uiT("电压档")}>
+          {cur ? uiT(voltShort(cur.voltage)) : '—'}
         </Badge>
-        <Badge tone="neutral" mono title="调用子流程的节点数">
-          子流程 {subs}
+        <Badge tone="neutral" mono title={uiT("调用子流程的节点数")}>
+          {uiT("子流程 ")}{subs}
         </Badge>
-        <Tooltip content={edit ? '退出编辑，回到只读缩略' : '进入编辑：可拖动节点与改连线'}>
+        <Tooltip content={edit ? uiT('退出编辑，回到只读缩略') : uiT('进入编辑：可拖动节点与改连线')}>
           <button
             type="button"
-            aria-label="编辑工作流"
+            aria-label={uiT("编辑工作流")}
             aria-pressed={edit}
             onClick={() => setEdit((v) => !v)}
             className={cn(
@@ -736,6 +746,8 @@ function WorkflowStage({ full }: { full?: boolean }) {
 /* ------------------------------------------------------------ 卡片 · 工作流库 */
 
 function WorkflowLibrary({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const pack = getPack()
   const { entries, active } = useWf()
 
@@ -749,9 +761,9 @@ function WorkflowLibrary({ full }: { full?: boolean }) {
     )
   }, [entries, active])
 
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
   if (!entries.length)
-    return <EmptyState icon={<Layers size={24} strokeWidth={1.5} />} title="读取工作流索引" />
+    return <EmptyState icon={<Layers size={24} strokeWidth={1.5} />} title={uiT("读取工作流索引")} />
 
   const fromPack = pack.caps.workflowSource === 'pack-assets'
   const note = fromPack
@@ -762,11 +774,9 @@ function WorkflowLibrary({ full }: { full?: boolean }) {
     <div className="flex h-full min-h-0 w-full flex-col">
       <div className="flex shrink-0 items-center gap-1.5 pb-1.5">
         <Badge tone="soft" mono>
-          {entries.length} 条
-        </Badge>
+          {entries.length} {uiT(" 条")}</Badge>
         <Badge tone="neutral" mono>
-          {groups.length} 组
-        </Badge>
+          {groups.length} {uiT(" 组")}</Badge>
         <span className="ml-auto">
           <InfoTip content={note} />
         </span>
@@ -837,12 +847,14 @@ function WorkflowLibrary({ full }: { full?: boolean }) {
 /* -------------------------------------------------------------- 卡片 · 判定表 */
 
 function CriteriaTable({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const pack = getPack()
   const s = useSel()
   // 「待确认 → 已确认 · 阈值待补」这个措辞切换要读确认态。
   // hook 必须无条件调用，所以订阅放在提前 return 之前。
   const confirmed = !!useAppStore((st) => st.confirmed.req)
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
   const reqs = pack.requirements.requirements
   const picked = reqs.filter((r) => s.ids.has(r.id))
   const auto = picked.filter((r) => r.evaluable !== false).length
@@ -863,16 +875,16 @@ function CriteriaTable({ full }: { full?: boolean }) {
           {picked.length}
           <span className="text-[13px] font-normal text-t3">/{reqs.length}</span>
         </span>
-        <span className="shrink-0 whitespace-nowrap text-[12px] text-t3">本轮纳入</span>
+        <span className="shrink-0 whitespace-nowrap text-[12px] text-t3">{uiT("本轮纳入")}</span>
         <span className="ml-auto flex shrink-0 flex-wrap items-center gap-x-2.5 gap-y-1">
           <span className="flex items-center gap-1.5">
             <span className="h-[7px] w-[7px] shrink-0 rounded-full bg-p600" />
-            <span className="text-[12px] text-t3">可求值</span>
+            <span className="text-[12px] text-t3">{uiT("可求值")}</span>
             <span className="num text-[13px] font-semibold text-t1">{auto}</span>
           </span>
           <span className="flex items-center gap-1.5">
             <span className="h-[7px] w-[7px] shrink-0 rounded-full bg-white ring-1 ring-inset ring-line" />
-            <span className="text-[12px] text-t3">人工判</span>
+            <span className="text-[12px] text-t3">{uiT("人工判")}</span>
             <span className="num text-[13px] font-semibold text-t1">{manual}</span>
           </span>
           {/* 阈值位在源材料里空着 —— 这是**事实标记**，不是「你确认了没」的状态。
@@ -887,17 +899,17 @@ function CriteriaTable({ full }: { full?: boolean }) {
               <Badge
                 tone="neutral"
                 dot
-                title={`已确认知悉：${holes} 条判据的阈值位在源材料里空着，本次确认未补值，后续判定仍需人工复核`}
+                title={uiT("已确认知悉：{v1} 条判据的阈值位在源材料里空着，本次确认未补值，后续判定仍需人工复核", { v1: holes })}
               >
-                已确认{holes}
+                {uiT("已确认")}{holes}
               </Badge>
             ) : (
-              <Badge tone="warn" dot title="阈值位在源材料里空着，需人工确认">
-                待确认 {holes}
+              <Badge tone="warn" dot title={uiT("阈值位在源材料里空着，需人工确认")}>
+                {uiT("待确认 ")}{holes}
               </Badge>
             )
           ) : null}
-          <InfoTip content="此时只列不判：判定要的现场实测量由流程 4 台架采集后才求值，这里只冻结本轮要判哪些条。" />
+          <InfoTip content={uiT("此时只列不判：判定要的现场实测量由流程 4 台架采集后才求值，这里只冻结本轮要判哪些条。")} />
         </span>
       </div>
 
@@ -910,9 +922,9 @@ function CriteriaTable({ full }: { full?: boolean }) {
       >
         <div className="grid grid-cols-2 gap-x-4 gap-y-px">
           {rows.map((r) => (
-            <Tooltip key={r.c} className="w-full" content={`${r.c} · 纳入 ${r.n} / ${r.total} 条`}>
+            <Tooltip key={r.c} className="w-full" content={uiT("{v1} · 纳入 {v2} / {v3} 条", { v1: r.c, v2: r.n, v3: r.total })}>
               <div className="flex w-full items-center gap-1.5 py-[2px] leading-[14px]">
-                <span className="w-[52px] shrink-0 truncate text-[12px] leading-[14px] text-t2">{short(r.c, 4)}</span>
+                <span className="w-[52px] shrink-0 truncate text-[12px] leading-[14px] text-t2" title={uiT(r.c)}>{uiT(r.c) === r.c ? short(r.c, 4) : uiT(r.c)}</span>
                 <span className="h-[5px] min-w-0 flex-1 overflow-hidden rounded-full bg-p100">
                   <span
                     className="block h-full rounded-full bg-p600 transition-[width] duration-500"
@@ -965,12 +977,14 @@ function locatorTag(locator: string): string | null {
 }
 
 function CriteriaEvidence({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const pack = getPack()
   const s = useSel()
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
   const reqs = pack.requirements.requirements
   const r = reqs.find((x) => x.id === s.focus) ?? reqs[0]
-  if (!r) return <Empty text="判据表为空" />
+  if (!r) return <Empty text={uiT("判据表为空")} />
   const srcs = Array.isArray(r._source) ? r._source : r._source ? [r._source] : []
   const list = full ? srcs : srcs.slice(0, 3)
 
@@ -982,10 +996,10 @@ function CriteriaEvidence({ full }: { full?: boolean }) {
         </Badge>
         <Tooltip className="min-w-0" content={r.criterion_text}>
           <span className="cursor-help truncate text-[13px] font-medium text-t1">
-            {short(r.name, 10)}
+            {uiT(r.name) === r.name ? short(r.name, 10) : uiT(r.name)}
           </span>
         </Tooltip>
-        <span className="num ml-auto shrink-0 text-[12px] text-t3">{srcs.length} 处</span>
+        <span className="num ml-auto shrink-0 text-[12px] text-t3">{srcs.length} {uiT(" 处")}</span>
       </div>
 
       <div
@@ -1079,11 +1093,13 @@ function batchesOf(pack: RawPack): Batch[] {
 }
 
 function HistoryCard({ full }: { full?: boolean }) {
+  const uiT = useT()
+
   const pack = getPack()
-  if (!pack) return <Empty text="场景包未加载" />
+  if (!pack) return <Empty text={uiT("场景包未加载")} />
   const batches = batchesOf(pack)
   if (!batches.length)
-    return <EmptyState icon={<Activity size={24} strokeWidth={1.5} />} title="未登记历史批次" />
+    return <EmptyState icon={<Activity size={24} strokeWidth={1.5} />} title={uiT("未登记历史批次")} />
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col justify-center gap-3">
@@ -1129,8 +1145,7 @@ function HistoryCard({ full }: { full?: boolean }) {
             </div>
           ))}
           <p className="pt-2 text-[12px] leading-5 text-t3">
-            历史成绩库尚未建立，这里只列场景包登记过的批次与数据集。
-          </p>
+            {uiT("历史成绩库尚未建立，这里只列场景包登记过的批次与数据集。")}</p>
         </div>
       ) : null}
     </div>

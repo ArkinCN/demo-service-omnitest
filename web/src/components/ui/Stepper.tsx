@@ -1,3 +1,4 @@
+import { useT } from '../../i18n'
 import { useEffect, useRef, useState } from 'react'
 import { Minus, Plus } from 'lucide-react'
 import { cn } from './cn'
@@ -49,6 +50,8 @@ export function Stepper({
   /** value 为 null 时输入框里的灰字提示 */
   emptyHint?: string
 }) {
+  const uiT = useT()
+
   const clamp = (n: number) => {
     let v = n
     if (min !== undefined) v = Math.max(min, v)
@@ -67,7 +70,7 @@ export function Stepper({
           : ''
   const outOfRange = (n: number) =>
     (min !== undefined && n < min) || (max !== undefined && n > max)
-  const valueText = (n: number) => `${n.toFixed(precision)}${unit ? ` ${unit}` : ''}`
+  const valueText = (n: number) => `${n.toFixed(precision)}${unit ? ` ${uiT(unit)}` : ''}`
 
   const [hint, setHint] = useState<string | null>(null)
   const timer = useRef<number | null>(null)
@@ -113,7 +116,7 @@ export function Stepper({
         type="button"
         disabled={disabled}
         onClick={() => bump(-1)}
-        aria-label={`${label ?? '数值'} 减小`}
+        aria-label={uiT('{v1} 减小', { v1: label ?? uiT('数值') })}
         style={{ width: d, height: d }}
         className={round}
       >
@@ -124,7 +127,7 @@ export function Stepper({
           aria-label={label}
           // null → 空串（受控输入不能给 null，React 会当非受控）
           value={value === null ? '' : value.toFixed(precision)}
-          placeholder={value === null ? emptyHint : undefined}
+          placeholder={value === null ? uiT(emptyHint) : undefined}
           disabled={disabled}
           onChange={(e) => {
             const raw = e.target.value.trim()
@@ -155,13 +158,13 @@ export function Stepper({
             hint && 'text-alert ring-1 ring-alert/50',
           )}
         />
-        {unit ? <span className="w-[26px] shrink-0 text-[12px] text-t3">{unit}</span> : null}
+        {unit ? <span className="min-w-[26px] shrink-0 text-[12px] text-t3">{uiT(unit)}</span> : null}
       </span>
       <button
         type="button"
         disabled={disabled}
         onClick={() => bump(1)}
-        aria-label={`${label ?? '数值'} 增大`}
+        aria-label={uiT('{v1} 增大', { v1: label ?? uiT('数值') })}
         style={{ width: d, height: d }}
         className={round}
       >
@@ -181,7 +184,7 @@ export function Stepper({
             : 'opacity-0',
         )}
       >
-        {hint ?? ''}
+        {uiT(hint ?? '')}
       </span>
     </div>
   )

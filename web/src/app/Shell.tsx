@@ -1,3 +1,4 @@
+import { useT } from '../i18n'
 import { useEffect } from 'react'
 import { Outlet } from 'react-router'
 import { TopBar } from './TopBar'
@@ -140,6 +141,8 @@ function useGlobalAutomation() {
 
 /** 一句话即时反馈。只报刚刚真发生的事，四秒后自散，不做可点的通知中心。 */
 function Notice() {
+  const uiT = useT()
+
   const notice = useAppStore((s) => s.notice)
   const setNotice = useAppStore((s) => s.setNotice)
   useEffect(() => {
@@ -154,7 +157,7 @@ function Notice() {
       data-testid="notice"
       className="animate-rise fixed bottom-5 left-1/2 z-40 -translate-x-1/2 rounded-tps border border-line bg-surface px-3.5 py-2 text-[12.5px] text-t1 shadow-tp2"
     >
-      {notice}
+      {uiT(notice)}
     </div>
   )
 }
