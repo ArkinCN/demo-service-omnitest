@@ -43,12 +43,18 @@ from sqlmodel import Session, select
 from app.api.deps import get_current_user, get_db
 from app.core.exceptions import BadRequestException, NotFoundException
 from app.core.logger import logger
-from app.core.paths import C_DIR, PROJECT_ROOT, report_templates_dir, reports_dir
+from app.core.paths import (
+    C_DIR,
+    PROJECT_ROOT,
+    builtin_report_template,
+    report_templates_dir,
+    reports_dir,
+)
 from app.models.run import Artifact, Run
 from app.models.user import User
 from app.schemas.common import success_response
 from app.services import report_charts
-from app.services.report_workbook import build_report_workbook
+from app.services.report_template_fill import ReportFillData, fill_report_template
 
 #: 报告表头里**由上游（流程 2 初始化配置）提供**的字段。
 #: 与前端 `c/web/src/features/flow-report/assemble.ts` 的 `UPSTREAM_HEADER_KEYS`
@@ -124,7 +130,71 @@ def _read_template_path(session: Session, run_id: str) -> str:
     return ""
 
 
-def _collect_report_data(session: Session, run_id: str) -> dict:
+def _latest_confirmed_report_instance(
+    session: Session,
+    scene_id: str,
+    *,
+    exclude_run_id: str | None = None,
+    limit_runs: int = 20,
+) -> tuple[dict, str] | None:
+    """本场景**最近一份「已确认」的报告实例**（表头）→ `(content, run_id)`；找不到返回 None。
+
+    为什么需要它（2026-10-13 实测的真实缺口）：
+    「确认表头」与「生成报告」很容易落在**两个不同的轮次**上 —— 报告页确认时
+    写的是「当前轮」，而生成报告取的是「最近一轮」。实测就撞上了：用户在第 5a938d39
+    轮确认了 10 项表头（FU6832N / 散热风扇启动测试 / v1.2.3 …），随后又跑了一轮
+    e85f3cf4，生成报告取新轮 → 新轮的报告实例还是 `draft` → 报告封面 6 个表头位
+    全写「由上游带入（未提供）」。表头取数逻辑没错，错在**只在本轮产物里找**。
+
+    与前端同口径：`web/src/features/flow-report/reportApi.ts` 的
+    `loadLatestReportInstance()` 本就是「跨轮找最近一份 confirmed」；后端在这里补齐
+    同一口径（不发明新机制）。命中值全部来自**人确认过**的那份产物，不是编的。
+
+    ⚠️ 只按 `Run.created_at` 倒序、最多看 `limit_runs` 轮：确认记录通常都在最近几轮，
+    20 轮足够；再多就是给生成路径平白加查询。**查不到就返回 None**（调用方照旧写
+    「由上游带入（未提供）」），绝不猜。
+
+    ⚠️ 仓内所有产物查询都是「单 run_id」写法（无 `run_id IN (...)` 批量查询先例），
+    故这里按轮逐查；单轮查询很轻，且命中即返回。
+    """
+    if not scene_id:
+        return None
+    try:
+        runs = session.exec(
+            select(Run)
+            .where(Run.scene_id == scene_id)
+            .order_by(Run.created_at.desc())
+            .limit(limit_runs)
+        ).all()
+    except Exception as exc:  # noqa: BLE001 —— 回退是加分项，查不到不许拖垮生成
+        logger.warning(f"report: 查询本场景轮次失败（表头回退跳过）：{exc}")
+        return None
+    for r in runs:
+        if exclude_run_id and r.run_id == exclude_run_id:
+            continue
+        try:
+            arts = session.exec(
+                select(Artifact).where(
+                    Artifact.run_id == r.run_id,
+                    Artifact.artifact_kind == "report-instance",
+                )
+            ).all()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(f"report: 读取轮次 {r.run_id[:8]} 的报告实例失败，跳过：{exc}")
+            continue
+        for a in arts:
+            c = a.content
+            if (
+                isinstance(c, dict)
+                and c.get("status") == "confirmed"
+                and isinstance(c.get("header"), dict)
+                and c["header"]
+            ):
+                return c, r.run_id
+    return None
+
+
+def _collect_report_data(session: Session, run_id: str, scene_id: str | None = None) -> dict:
     """从轮次产物里取「报告要用的真题数据」。
 
     ⚠️ **只取真数据，缺的如实空着**——这是本模块最容易写坏的地方：
@@ -155,14 +225,16 @@ def _collect_report_data(session: Session, run_id: str) -> dict:
     header: dict[str, str] = {}
     missing: list[str] = list(UPSTREAM_HEADER_KEYS)
     counts: dict[str, int] | None = None
+    header_source_run_id: str | None = None
 
-    # ① 已确认的 report-instance（报告页「确认表头」落库）——**优先**
-    #
-    # 只认 status == 'confirmed' 且 header 是 dict 的那份：每轮 persistRun 还落了一份
-    # status:'draft' 的草稿（只有 note），拿它当表头会把报告表头清空。
-    # 确认值可含**全部**表头字段（不只上游 6 项），故不受 UPSTREAM_HEADER_KEYS 限制。
-    conf = by_kind.get("report-instance")
-    if isinstance(conf, dict) and conf.get("status") == "confirmed":
+    def _apply_confirmed(conf: Any, source_run_id: str) -> None:
+        """把一份「已确认」的报告实例套到 header/missing 上（就地修改闭包变量）。
+
+        只认 status == 'confirmed' 且 header 是非空 dict 的那份：每轮 persistRun 还落了
+        一份 status:'draft' 的草稿（只有 note），拿它当表头会把报告表头**清空**。
+        确认值可含**全部**表头字段（不只上游 6 项），故不受 UPSTREAM_HEADER_KEYS 限制。
+        """
+        nonlocal header_source_run_id
         # 确认产物里带了模板表头的完整定义（fields），据此把「本流程该填但没填」
         # 的项也纳入 missing，报告里如实显示「未提供」，不让人误以为漏了整段。
         conf_fields = conf.get("fields")
@@ -178,6 +250,43 @@ def _collect_report_data(session: Session, run_id: str) -> dict:
                 header[str(k)] = str(v)
                 if k in missing:
                     missing.remove(k)
+        header_source_run_id = source_run_id
+
+    # ① 已确认的 report-instance（报告页「确认表头」落库）——**优先**，先看本轮
+    conf = by_kind.get("report-instance")
+    if (
+        isinstance(conf, dict)
+        and conf.get("status") == "confirmed"
+        and isinstance(conf.get("header"), dict)
+        and conf["header"]
+    ):
+        _apply_confirmed(conf, run_id)
+
+    # ①b 本轮没有已确认表头 → **回退到本场景最近一份已确认实例**（2026-10-13 新增）
+    #
+    # 为什么必须回退：「确认」与「生成」常常不在同一轮（人确认完又跑了一轮，
+    # 生成取的是最近轮）→ 本轮实例还是 draft → 报告表头全空。用户口径（2026-10-13）：
+    # 「回退到最近已确认，并在报告里标注来源轮次」。命中失败就照旧写「未提供」。
+    if header_source_run_id is None:
+        sid = scene_id
+        if not sid:
+            # 未显式传 scene_id（脚本/旧调用）：按 run_id 反查本轮场景，保证口径一致
+            try:
+                cur_run = session.exec(select(Run).where(Run.run_id == run_id)).first()
+                sid = cur_run.scene_id if cur_run else ""
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(f"report: 反查轮次场景失败（表头回退跳过）：{exc}")
+                sid = ""
+        hit = _latest_confirmed_report_instance(session, sid or "", exclude_run_id=run_id)
+        if hit is not None:
+            fb_conf, fb_run_id = hit
+            _apply_confirmed(fb_conf, fb_run_id)
+            logger.info(
+                f"report: 本轮（{run_id[:8]}）无已确认表头，沿用本场景最近已确认实例"
+                f"（轮次 {fb_run_id[:8]}）的 {len(header)} 项表头"
+            )
+        else:
+            logger.info(f"report: 本场景没有已确认的报告实例（表头将如实写「未提供」）")
 
     snap = by_kind.get("config-snapshot")
     if isinstance(snap, dict) and isinstance(snap.get("product_attributes"), list):
@@ -259,6 +368,9 @@ def _collect_report_data(session: Session, run_id: str) -> dict:
         "verdict_items": verdict_items,
         "artifact_kinds": [a.artifact_kind for a in artifacts],
         "snapshot_counts": counts,
+        # 表头来源轮次：本轮命中=本轮 run_id；回退命中=来源轮 run_id；未命中=None。
+        # 消费方（填充器）据此在报告「报告来源」行标注出处，便于人工核对。
+        "header_source_run_id": header_source_run_id,
     }
 
 
@@ -354,20 +466,27 @@ def _find_bench_run_dir(run_id: str, flow_finished_at: Any) -> Path | None:
 
 
 def _self_built_report(run_id: str, data: dict, flow_finished_at: Any = None) -> Path:
-    """用**系统内置模板**生成报告：真文件、可下载、能在 Excel 里打开。
+    """用**系统内置模板**生成正式报告：真文件、可下载、能在 Excel 里打开。
 
-    2026-10-10 口径变更（用户拍板）——**这就是正式报告**：
-      · 文件名不再带 `placeholder`（改用正式名 `report-<id>.xlsm`）；
-      · 首行琥珀「可替换」横幅**已按用户要求删除**；
-      · 接口返回 `status: "ok"`。
+    2026-10-13 口径变更（用户拍板「报告使用这个模板出」「只填写报告上有的参数或问题」）：
+    报告基底改为**用户提供的模板文件本身**（`builtin_report_template()`），由
+    `report_template_fill.fill_report_template` 把本轮数据写进模板已有的「待填写」位，
+    再把趋势图 / 波形图插进模板预留的图位。要点：
 
-    数据取自 `_collect_report_data`（只取真数据，缺的如实留「未提供」）。
+      · **只填模板上有的位**——不新增区块、不造字段（模板封面只有 6 个表头位，
+        系统表头里多出来的 4 项不填）；
+      · 五张可见工作表（报告封面 / 判定明细 / 趋势图 / 波形与截图 / 报告概要）原样保留；
+        「报告概要」与 `_图表数据` 是模板带来的上一轮实例，**一字不改**，
+        本批图表数据另落隐藏页 `_图表数据-本次`；
+      · 文件名仍是 `report-<id>.xlsm`、接口仍回 `status="ok"`、下载端点不变。
 
-    2026-10-12 新增**报告自带图表**（趋势图 + 波形图）：
-      从硬件运行目录（`hardware/v0.6/runs/<…>/`，见 `_find_bench_run_dir`
-      的两级查找）读取真实采集数据，由 `report_charts` 转成 Excel 原生图表
-      嵌入报告。目录不存在/数据缺失时如实降级为「（无）」+ 原因，
-      **绝不编造图表数据**。
+    数据取自 `_collect_report_data`（只取真数据，缺的如实写「未提供 / （无）/ —」）。
+    图表数据取自硬件运行目录（`hardware/v0.6/runs/<…>/`，见 `_find_bench_run_dir`
+    的两级查找），缺失时如实写「（无）」+ 原因，**绝不编造图表数据**。
+
+    ⚠️ 模板缺失 / 模板结构不符 / 落盘后仍有「待填写」残留时**如实抛错**
+    （由调用方转 `blocked`），**不降级**成自建版式——降级会让人以为拿到的是模板版式，
+    那是最危险的一种「看起来成功」。旧的自建实现 `report_workbook` 保留在仓里备查。
 
     ⚠️ 下载端点的兜底顺序**仍保留** `*.placeholder.xlsm` / `*.placeholder.json`：
     那是改版前生成的历史文件，不因这次改口径把旧报告变成 404。
@@ -384,18 +503,32 @@ def _self_built_report(run_id: str, data: dict, flow_finished_at: Any = None) ->
             chart_data = {"trend": [], "waves": {}, "warnings": [f"图表数据读取失败：{type(exc).__name__}: {exc}"]}
     else:
         logger.info(f"report: no bench run dir for {run_id}（图表将如实写「无」）")
-    build_report_workbook(
-        run_id=run_id,
-        header=data.get("header") or {},
-        missing_header_keys=data.get("missing_header_keys") or [],
-        verdict=data.get("verdict"),
-        verdict_items=data.get("verdict_items") or [],
-        artifact_kinds=data.get("artifact_kinds") or [],
-        snapshot_counts=data.get("snapshot_counts"),
-        source_note="系统内置模板",
-        output=dest,
-        chart_data=chart_data,
+
+    filled = fill_report_template(
+        builtin_report_template(),
+        dest,
+        ReportFillData(
+            run_id=run_id,
+            header=data.get("header") or {},
+            missing_header_keys=data.get("missing_header_keys") or [],
+            verdict=data.get("verdict"),
+            verdict_items=data.get("verdict_items") or [],
+            artifact_kinds=data.get("artifact_kinds") or [],
+            snapshot_counts=data.get("snapshot_counts"),
+            # 「报告来源」纸面文案（用户口径 2026-10-13：写「系统内置模板：标准版」）
+            source_note="系统内置模板：标准版",
+            chart_data=chart_data,
+            # 表头来自哪一轮（不等于本轮时，报告「报告来源」行会标注来源轮次）
+            header_source_run_id=data.get("header_source_run_id"),
+        ),
     )
+    logger.info(
+        f"report: template filled for {run_id} —— 图表 {filled['charts']} 张、"
+        f"行高增加 {filled['row_growth_pt']} pt、内容类型补丁 {filled['content_type_patched']}"
+    )
+    # 填充过程的如实说明（缺数 / 模板无位 / 判据对不上等）逐条进日志，便于事后核对
+    for w in filled["warnings"]:
+        logger.warning(f"report: fill warning（{run_id}）：{w}")
     return dest
 
 
@@ -477,10 +610,13 @@ async def generate_report(
     # ── 路径 2：没有客户模板 → 系统内置模板，**这就是正式报告**
     #
     # 2026-10-10 用户拍板：系统内置模板即客户认可的正式报告模板。
-    # 因此这里返回 status="ok"、文件名不带 placeholder、首行不再有「可替换」横幅。
+    # 2026-10-13 起该「内置模板」= 用户提供的模板文件（`builtin_report_template()`），
+    # 报告以它为基底填充（见 `_self_built_report`）。
+    # 这里因此仍返回 status="ok"、文件名不带 placeholder。
     # 数据取自 `_collect_report_data`（只取真数据，缺的如实留「未提供」）。
-    # 抓不到的异常类别（磁盘满/权限）一律如实报 blocked，禁裸 catch。
-    data = _collect_report_data(session, run_id)
+    # 抓不到的异常类别（磁盘满/权限/模板缺失/仍有占位残留）一律如实报 blocked，禁裸 catch。
+    # scene_id 一并传入：本轮没有已确认表头时，按场景回退到最近一份已确认实例
+    data = _collect_report_data(session, run_id, run.scene_id)
     try:
         dest = _self_built_report(run_id, data, run.finished_at)
     except Exception as exc:  # noqa: BLE001 —— 生成失败必须如实报，不能假装成功
@@ -495,8 +631,9 @@ async def generate_report(
         "bytes": dest.stat().st_size, "artifacts": kinds,
         "download_url": f"/api/reports/{run_id}/download",
         "note": (
-            "报告已生成（xlsm）：含本轮真题数据（表头 / 判定汇总 / 判定明细 / 产物清单）"
-            "与自动生成的图表（趋势图 / 波形图）。"
+            "报告已生成（xlsm，基于报告模板）：五个工作表（报告封面 / 判定明细 / 趋势图 / "
+            "波形与截图 / 报告概要）齐全，模板上的「待填写」位已按本轮真实数据填好，"
+            "趋势图与波形图为 Excel 原生图表（可悬停读点）。"
             "判定结论按后端权威结果如实呈现；「未采集」与「本台架不适用」均不计入通过率分母。"
         ),
     }, message="报告已生成")
@@ -572,6 +709,11 @@ def _looks_like_generated_report(content: bytes) -> str:
       · 工作表名「报告概要」与「_图表数据」（后者专用于存图表数据）；
       · 正文含「判定汇总」等报告小节标题。
     客户模板（如 Fortior_Motor_Checklist）不含这些，故可用于区分。
+
+    ⚠️ 2026-10-13 起报告改为「以用户模板为基底填充」，故**本系统内置模板文件本身
+    也带这两个工作表名**、同样会被本判据命中。这不影响功能：该判据只用于
+    `upload_report_template`——拦的是「把（下载的）报告误当客户模板上传」，
+    而内置模板本就不需要上传（生成时默认就是它）。
 
     返回 '' = 不是报告；否则返回命中的特征（拼成一句给人看）。
     """

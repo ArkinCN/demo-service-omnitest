@@ -24,6 +24,7 @@ Linux 绝对路径或写死盘符——那是不可交付的（Windows 盘符在
     kb_vector_dir()    向量索引落盘根（运行期数据，可重建）
     kb_pipeline_dir()  kb-pipeline 目录（隔离 venv 所在）
     kb_pipeline_python()  kb-pipeline 的 venv 解释器
+    builtin_report_template()  系统内置报告模板（随代码交付的 .xlsm 资产）
 """
 from __future__ import annotations
 
@@ -39,6 +40,8 @@ C_DIR = CORE_DIR.parents[2]                # c
 PROJECT_ROOT = CORE_DIR.parents[3]         # 仓库根
 WEB_DIR = C_DIR / "web"
 PUBLIC_DIR = WEB_DIR / "public"
+APP_DIR = CORE_DIR.parent                 # c/backend/app
+APP_DATA_DIR = APP_DIR / "data"           # 随代码交付的数据资产（如 safety_keywords.json）
 
 
 def env_path(key: str, default: Path) -> Path:
@@ -116,6 +119,27 @@ def report_templates_dir() -> Path:
     return env_path("REPORT_TEMPLATES_DIR", BACKEND_DIR / "uploads" / "report_templates")
 
 
+def builtin_report_template() -> Path:
+    """系统内置报告模板（.xlsm）。.env 的 BUILTIN_REPORT_TEMPLATE 可覆盖。
+
+    与 report_templates_dir() **严格分开**：两者语义与生命周期都不同。
+      · report_templates_dir() —— **用户上传**的客户模板，属运行期数据（uploads/，不进交付包）；
+      · 本函数 —— **随代码交付**的正式报告模板资产（app/data/，跟着版本控制走）。
+
+    ⚠️ 为什么必须分开（2026-10-13 引入内置模板后尤其要紧）：上传目录里只要出现
+    任何 .xlsm，`_uploaded_template()` 就会命中，把生成切到「客户模板 +
+    write-file-rust」通路（本部署没有该 exe 时会如实 blocked）。若把内置模板塞进
+    上传目录，等于每次生成都被判成「用户上传了模板」——那条通路永远走不通。
+
+    默认 `backend/app/data/report_templates/测试报告模板-v1.xlsm`。
+    调用方**必须自行校验存在性**并如实报错（「模板未就绪」），本函数不抛目录错误。
+    """
+    return env_path(
+        "BUILTIN_REPORT_TEMPLATE",
+        APP_DATA_DIR / "report_templates" / "测试报告模板-v1.xlsm",
+    )
+
+
 def kb_extract_dir() -> Path:
     """知识库**抽取稿**根目录（`<doc_id>/content.md` 所在处）。
 
@@ -190,4 +214,5 @@ def resolved() -> dict[str, str]:
         "前端数据": rel(data_dir()),
         "上传原件": rel(kb_uploads_dir()),
         "报告产物": rel(reports_dir()),
+        "内置报告模板": rel(builtin_report_template()),
     }

@@ -282,8 +282,23 @@ def write_trend_block(ws, row0: int, points: list[dict[str, Any]]) -> dict[str, 
     }
 
 
-def build_trend_chart(ws, ref: dict[str, Any]) -> list[LineChart]:
+def build_trend_chart(
+    ws,
+    ref: dict[str, Any],
+    *,
+    width_cm: float = CHART_WIDTH_CM,
+    height_cm: float = 8.5,
+) -> list[LineChart]:
     """建趋势图（最多两张：占空比+转速；电压+电流）。返回图表列表（供锚定）。
+
+    `width_cm` / `height_cm` 为**可选**尺寸（默认 = 本模块既有口径 16.5 × 8.5 cm）：
+    模板填充器（`report_template_fill`）按模板预留位传更小的值；
+    不传时行为与历史完全一致，既有调用方零影响。
+
+    返回列表与「版位」的对应关系（模板填充器依赖这一确定关系，故在此写明）：
+      · 第 1 张 = 图一（占空比 / 转速）；第 2 张 = 图二（供电电压 / 电流探头）；
+      · 某张图出不来时它**不占位**（列表里没有该元素），调用方须按 `has_data`
+        判定版位、不可按下标硬套。
 
     2026-10-12 增（P1-1）：「**整列无数据**」的系列**不建系列、也不为它建副轴**。
     此前只看「有没有采集点」就无条件画 5 条线，于是出现
@@ -340,8 +355,8 @@ def build_trend_chart(ws, ref: dict[str, Any]) -> list[LineChart]:
             _style_line(c1b, colors=["1F6F8B"])
             c1.y_axis.crosses = "max"
             c1 += c1b
-        c1.height = 8.5
-        c1.width = CHART_WIDTH_CM
+        c1.height = height_cm
+        c1.width = width_cm
         charts.append(c1)
 
     # ── 图 2：电压（主轴 V）+ 电流探头（副轴 V；两量程差千倍，双轴才都看得见）
@@ -372,8 +387,8 @@ def build_trend_chart(ws, ref: dict[str, Any]) -> list[LineChart]:
             _style_line(c2b, colors=["A6353A"])
             c2.y_axis.crosses = "max"
             c2 += c2b
-        c2.height = 8.5
-        c2.width = CHART_WIDTH_CM
+        c2.height = height_cm
+        c2.width = width_cm
         charts.append(c2)
 
     return charts
@@ -516,8 +531,19 @@ def write_wave_block(ws, row0: int, waves: dict[str, Any]) -> dict[str, Any]:
     return info
 
 
-def _make_wave_chart(ws, block: dict[str, Any], title: str, ch: int) -> LineChart:
-    """按数据块建一张波形折线图（全程/放大共用同一套样式口径）。"""
+def _make_wave_chart(
+    ws,
+    block: dict[str, Any],
+    title: str,
+    ch: int,
+    *,
+    width_cm: float = CHART_WIDTH_CM,
+    height_cm: float = 7,
+) -> LineChart:
+    """按数据块建一张波形折线图（全程/放大共用同一套样式口径）。
+
+    `width_cm` / `height_cm` 可选（默认 = 既有口径 16.5 × 7 cm）；不传时行为不变。
+    """
     c = LineChart()
     c.title = title
     c.style = 2
@@ -538,22 +564,65 @@ def _make_wave_chart(ws, block: dict[str, Any], title: str, ch: int) -> LineChar
     # 波形是高频细节：网格只保留主轴横线
     c.x_axis.majorGridlines = None
     c.y_axis.majorGridlines = ChartLines()
-    c.height = 7
-    c.width = CHART_WIDTH_CM
+    c.height = height_cm
+    c.width = width_cm
     return c
 
 
-def build_wave_charts(ws, info: dict[str, Any]) -> list[LineChart]:
+def build_wave_chart(
+    ws,
+    info: dict[str, Any],
+    ch: int,
+    *,
+    kind: str = "full",
+    width_cm: float = CHART_WIDTH_CM,
+    height_cm: float = 7,
+) -> LineChart | None:
+    """**按位**建一张波形图：`ch` = 通道号，`kind` = 'full'（全程）/ 'zoom'（放大）。
+
+    为什么单独开这个入口（2026-10-13）：模板填充器要按**固定版位**插图
+    （CH1 全程 / CH1 放大 / CH2 全程 …各占模板上预定的一块），不能像旧实现那样
+    「按列表顺序依次往下排」。放在这里是为了**样式与标题口径只有一份**——
+    填充器不自己拼标题、不自己描线。
+
+    该位没有数据时返回 None（放大块缺失是最常见情况），由调用方在该位如实写「（无）」。
+    """
+    meta = (info or {}).get(str(ch))
+    if not meta:
+        return None
+    block = meta if kind == "full" else meta.get("zoom")
+    if not block:
+        return None
+    label = CH_LABEL.get(ch, f"CH{ch}")
+    title = (
+        f"波形图 {label}（{block['unit']} / V）"
+        if kind == "full"
+        else f"波形图 {label} · 放大（{block['desc']}）"
+    )
+    return _make_wave_chart(
+        ws, block, title, ch, width_cm=width_cm, height_cm=height_cm
+    )
+
+
+def build_wave_charts(
+    ws,
+    info: dict[str, Any],
+    *,
+    width_cm: float = CHART_WIDTH_CM,
+    height_cm: float = 7,
+) -> list[LineChart]:
     """每通道**两张**图：① 全程（整采集窗）② 放大（更小时间范围，人眼可读）。
 
     返回图表列表（顺序即锚定顺序：CH1 全程 → CH1 放大 → CH2 全程 → CH2 放大 …）。
+    实现委托给 `build_wave_chart()`，**顺序与标题口径与历史完全一致**。
     """
     charts: list[LineChart] = []
-    for ch_s, meta in info.items():
+    for ch_s in info:
         ch = int(ch_s)
-        label = CH_LABEL.get(ch, f"CH{ch}")
-        charts.append(_make_wave_chart(ws, meta, f"波形图 {label}（{meta['unit']} / V）", ch))
-        z = meta.get("zoom")
-        if z:
-            charts.append(_make_wave_chart(ws, z, f"波形图 {label} · 放大（{z['desc']}）", ch))
+        for kind in ("full", "zoom"):
+            c = build_wave_chart(
+                ws, info, ch, kind=kind, width_cm=width_cm, height_cm=height_cm
+            )
+            if c is not None:
+                charts.append(c)
     return charts
