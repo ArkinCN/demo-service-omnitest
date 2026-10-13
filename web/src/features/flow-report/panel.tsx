@@ -30,7 +30,6 @@ import { assembleReport, computePassRate, fmtPassRate } from './assemble'
 import {
   downloadUrl,
   persistReportInstance,
-  removeTemplate,
   reportExists,
   resolveReportRunId,
   templateStatus,
@@ -88,32 +87,9 @@ function TemplateUploadRow() {
     try {
       const r = await uploadTemplate(f)
       setTpl({ ready: true, filename: r.filename, bytes: r.bytes })
-      // 提示语优先用后端返回的 note（按其**实际就绪状态**如实给：填充程序缺失时
-      // 会明说「现在生成会 blocked」，不再无条件写「重新生成即正式报告」）。
-      st.setNotice(r.note ?? `客户模板已上传（${r.filename}，${r.bytes} 字节）`)
+      st.setNotice(`客户模板已上传（${r.filename}，${r.bytes} 字节），重新生成报告将改用客户模板`)
     } catch (err) {
       st.setNotice(`模板上传失败：${err instanceof Error ? err.message : String(err)}`)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  /**
-   * 移除已上传的客户模板（2026-10-12 新增）。
-   *
-   * 为什么要有：生成报告被 blocked 时后端提示「删除已上传的客户模板以改用系统
-   * 内置模板」，但此前界面无此入口——补救不可达（实测：误传一份报告后，所有
-   * 报告生成全被 blocked 且无路可退）。移除后生成即回到系统内置模板路径。
-   */
-  const onRemove = async () => {
-    setBusy(true)
-    const st = useAppStore.getState()
-    try {
-      const r = await removeTemplate()
-      setTpl({ ready: false })
-      st.setNotice(r.note ?? (r.count > 0 ? '客户模板已移除，报告将改用系统内置模板' : '当前没有已上传的客户模板'))
-    } catch (err) {
-      st.setNotice(`移除模板失败：${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setBusy(false)
     }
@@ -129,7 +105,7 @@ function TemplateUploadRow() {
           ? `${tpl.filename}（${sizeText(tpl.bytes ?? 0)}）`
           : '系统内置（正式报告）'}
       </span>
-      <span className="ml-auto flex shrink-0 items-center gap-1.5">
+      <span className="ml-auto shrink-0">
         <input
           ref={inputRef}
           type="file"
@@ -137,19 +113,6 @@ function TemplateUploadRow() {
           className="hidden"
           onChange={onPick}
         />
-        {/* 移除按钮（2026-10-12 新增）：仅在「已上传」时出现。
-            补上 blocked 提示里「或删除已上传的客户模板」这条补救的界面入口。 */}
-        {tpl?.ready && (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={onRemove}
-            title="移除已上传的客户模板，报告将改用系统内置模板"
-            className="num cursor-pointer rounded-tpx border border-line px-2 py-1 text-[12px] text-t3 transition-colors hover:bg-p50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            移除
-          </button>
-        )}
         <button
           type="button"
           disabled={busy}
@@ -283,10 +246,15 @@ function useAssembleUpstream() {
   }, [runId, sceneId])
 }
 
-/** 模板全名可能是一条绝对路径（Excel 模板）或一句长标题（PDF 样张） */
-function templateTitle(raw: string) {
-  return (raw.startsWith('/') ? fileName(raw) : raw.split(/[，,。]/)[0]).slice(0, 64)
-}
+/**
+ * 报告文档统一显示名（2026-10-13 用户口径）。
+ *
+ * 左栏「模板选择」卡标题、报告预览卡标题、整篇预览（FullReport）页头
+ * 一律显示「测试报告」四字；**真实模板文件名不进标题**，改由各处
+ * Tooltip（`title={raw}` / `<Tooltip content={raw}>`）承载，信息不丢。
+ * 三处共用本常量，避免以后各写各的再漂移。
+ */
+const REPORT_DOC_TITLE = '测试报告'
 
 /* ------------------------------------------------------------------ 左栏 */
 
@@ -528,7 +496,7 @@ export function ReportLeftPanel() {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[13px] font-semibold text-t1">
-                  {templateTitle(raw)}
+                  {REPORT_DOC_TITLE}
                 </span>
                 <span className="num block truncate text-[12px] text-t3">
                   {pack.report.sheets.length
@@ -842,7 +810,8 @@ function ReportPreview({ full }: { full?: boolean }) {
   const compact = boxH > 0 && boxH < 180
 
   const raw = pack.report.template_file
-  const title = templateTitle(raw)
+  // 标题统一显示「测试报告」；真实模板名由外层 Tooltip（content={raw}）承载
+  const title = REPORT_DOC_TITLE
   const fields = pack.report.header_fields.slice(0, 6)
   const verdicts = rows.slice(0, 5)
   const shots = Object.values(pack.report.waveform_image_slots?.counted_images ?? {}).reduce(
@@ -1057,7 +1026,7 @@ export function FullReport() {
     <div className="h-full w-full min-h-0 overflow-y-auto">
       <div className="mx-auto max-w-[760px] bg-white px-5 py-4">
         <h1 title={raw} className="border-b border-p700 pb-1.5 text-center text-[16px] font-semibold text-t1">
-          测试报告
+          {REPORT_DOC_TITLE}
         </h1>
         <table className="mt-2.5 w-full border-collapse text-[12px]">
           <tbody>
