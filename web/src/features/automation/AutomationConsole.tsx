@@ -810,7 +810,7 @@ function LogStream({ logs }: { logs: AutomationLogEntry[] }) {
   }, [logs.length])
 
   return (
-    <section className="flex min-h-0 flex-col overflow-hidden rounded-tp bg-[#1A2320]">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-tp bg-[#1A2320]">
       {/* ⚠️ 头部右侧留 52px：右上角悬浮着圆形 AI 按钮（不随卷动位移），
           不给「N 条」计数让位的话会被按钮压住。
           2026-10-10 样式统一：标题条改用与其它卡相同的 h-[44px] / 16px 标题 / 17px 图标
@@ -823,7 +823,9 @@ function LogStream({ logs }: { logs: AutomationLogEntry[] }) {
         </h2>
         <span className="num ml-auto text-[12px] text-white/60">{logs.length} 条</span>
       </header>
-      <div ref={boxRef} className="min-h-0 flex-1 overflow-y-auto px-3 pb-2">
+      {/* log-scroll：深色区专属浅色滚动条 + 固定水槽，让右侧竖条常显、可直接拖动
+          （全局浅绿滚动条在 #1A2320 深底上看不见，见 index.css 的 .log-scroll 说明）。 */}
+      <div ref={boxRef} className="log-scroll min-h-0 flex-1 overflow-y-auto px-3 pb-2">
         {logs.length ? (
           logs.map((l) => (
             <div key={l.seq} className="automation-log-line mono flex gap-2 text-[11px] leading-[18px]">
