@@ -191,24 +191,19 @@ const upstream = (f: RawHeaderField) => !f.from_flow.startsWith('F6')
  *   三、**跑一次就够**（用 ref 防重复），避免每次重渲染都打后端。
  */
 type UpstreamState = 'idle' | 'loading' | 'ok' | 'none'
-/** 装配状态：模块级 + 自建订阅（与 store 里的 header 不同，这个**不需要持久化**——
- *  它是「本次进页面读到了什么」的瞬时状态，刷新后本来就该重算） */
+/**
+ * 装配状态：模块级 + 自建订阅（与 store 里的 header 不同，这个**不需要持久化**——
+ *  它是「本次进页面读到了什么」的瞬时状态，刷新后本来就该重算）。
+ *
+ * ⚠️ 2026-10-13 用户口径：**不再把这条状态渲染到界面**——原先「正在从上游产物带入… /
+ * ✔ 已从配置快照带入 N 项 / 上游产物未取到：…」那条窄条已删除，故订阅钩子
+ * `useUpstreamState` 一并移除（保留会有 noUnusedLocals 报错）。装配逻辑
+ * （`useAssembleUpstream` → `mergeReportHeader`）保持不变，只是不再有界面订阅者。
+ */
 const upstreamState: { state: UpstreamState; note: string } = { state: 'idle', note: '' }
 const upListeners = new Set<() => void>()
 const emitUp = () => upListeners.forEach((l) => l())
 let triedRunId: string | null = null
-
-function useUpstreamState(): { state: UpstreamState; note: string } {
-  const [, force] = useState(0)
-  useEffect(() => {
-    const l = () => force((v) => v + 1)
-    upListeners.add(l)
-    return () => {
-      upListeners.delete(l)
-    }
-  }, [])
-  return upstreamState
-}
 
 /** 供挂载点调用：按「本轮 or 最近一轮」装配一次 */
 function useAssembleUpstream() {
@@ -375,9 +370,9 @@ function useConfirmReportHeader(opts: {
 export function ReportLeftPanel() {
   const pack = getPack()
   seed()
-  // G-04：进报告页时按 runId 把 config-snapshot 读回来填表头（取不到会落状态）
+  // G-04：进报告页时按 runId 把 config-snapshot 读回来填表头（仍保留装配，
+  // 只是不再就「取到/没取到」给可见提示，见上游状态提示条的删除说明）
   useAssembleUpstream()
-  const up = useUpstreamState()
   const h = useShared()
   const sceneId = useAppStore((s) => s.sceneId)
   const confirmed = !!useAppStore((s) => s.confirmed.report)
@@ -449,27 +444,11 @@ export function ReportLeftPanel() {
         )}
       </header>
 
-      {/* G-04：上游装配状态**必须显示出来**。
-          取不到时若继续显示「由上游带入」，人会以为「报告本来就该空」，
-          而实际是没读到产物——两种情况的处置完全不同（一个要跑一轮，一个要查后端）。 */}
-      {up.state !== 'idle' ? (
-        <div
-          className={
-            'shrink-0 border-b px-4 py-[6px] text-[11.5px] ' +
-            (up.state === 'ok'
-              ? 'border-line-soft bg-p50/60 text-p700'
-              : up.state === 'loading'
-                ? 'border-line-soft bg-p50/40 text-t3'
-                : 'border-warn/30 bg-warn-wash text-t2')
-          }
-        >
-          {up.state === 'loading'
-            ? '正在从上游产物带入表头…'
-            : up.state === 'ok'
-              ? `✔ ${up.note}`
-              : `上游产物未取到：${up.note}`}
-        </div>
-      ) : null}
+      {/* G-04 上游装配提示条（「正在从上游产物带入… / ✔ 已带入 N 项 / 上游产物未取到：…」）
+          已按用户口径（2026-10-13）从界面移除：它会跨轮次常驻，测试结束后仍挂着，打扰阅读。
+          装配逻辑仍在（上面 useAssembleUpstream 调 mergeReportHeader），只是不再可见提示。
+          ⚠️ 取舍：失败时不再有可见告警，表头字段仍照旧显示「由上游带入」（由 FieldRow 的
+          upstream(f) 决定，与本条无关）。 */}
 
       <div className="fade-b min-h-0 flex-1 overflow-y-auto pb-2">
         {/* 模板选择 */}
