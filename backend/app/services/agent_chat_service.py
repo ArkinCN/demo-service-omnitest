@@ -59,6 +59,16 @@ _TOOL_INTROS = {
         "- DocLibrarySearch：本公司产品资料库，用于「获取资料文件」——数据手册、产品手册、" "应用笔记、用户指南、推广资料、开发工具、demo 等的下载/预览链接。\n"
     ),
     "WebSearch": "- WebSearch：联网搜索，兜底。\n",
+    "ReadField": (
+        "- ReadField：查询**当前页面**字段的当前值、取值范围、是否可编辑与出处路径。"
+        "读操作**无需人工确认**，立即返回。\n"
+    ),
+    "WriteField": (
+        "- WriteField：增/改/清空**当前页面**的可编辑字段值"
+        "（本体属性、控制参数、报告表头三类）。"
+        "按现场上下文给的完整层级路径定位，支持一次改多项。"
+        "这是写操作，调用后会先弹人工确认卡。\n"
+    ),
     "WriteReportHeader": (
         "- WriteReportHeader：填写/修改测试报告的**报告表头字段**（客户名称、工程师、Email 等）。"
         "这是写操作，调用后会先弹人工确认卡。\n"
@@ -73,9 +83,26 @@ _TOOL_RULES = {
     ),
     "KnowledgeSearch": "回答技术内容问题，优先 KnowledgeSearch；首次结果不充分就换关键词再检索（可多次）。\n",
     "WebSearch": "只有内部资料不足时才用 WebSearch。\n",
+    "ReadField": (
+        "用户问「这一页有哪些字段 / 哪些还没填 / 某项当前是多少 / 某项能不能改 / 某项在哪」时，"
+        "优先调用 ReadField：问单项传 field（用现场上下文给的完整层级路径），"
+        "问全量传 all=true。**读操作不需要确认，直接调用即可**，不要因为「不确定能不能查」而改用猜测作答。\n"
+    ),
+    "WriteField": (
+        "用户要求「把某项改成某值 / 帮我填上某项 / 清空某项」（**不限报告表头**，"
+        "本体属性与控制参数同样适用，例如「把风扇外形尺寸改为 20mm，风扇厚度改为 3mm」）时，"
+        "调用 WriteField：每个字段一项放进 changes，field 用现场上下文给的**完整层级路径**"
+        "（如「被测对象 → 机械外形 → 风扇外形尺寸」），value **只填数值或文本本身、不要带单位后缀**"
+        "（写 20 而不是「20mm」）。**用户一句话要改多项时必须合并成一次调用**，"
+        "让人只确认一次，不要拆成多次调用。"
+        "调用后**等待人工确认与执行结果**：只有工具返回「已写入」才算成功；"
+        "若返回被取消、部分失败或全部失败，必须**如实分条转述**"
+        "（哪一项成功、哪一项失败、失败原因），绝不可谎称已写好。\n"
+    ),
     "WriteReportHeader": (
         "用户要求「填写/修改报告表头字段」（如「帮我填写客户名称为李123」「把工程师改成张三」）时，"
         "调用 WriteReportHeader，field 传字段中文名或英文键、value 传值。"
+        "（WriteField 也能覆盖表头字段；两个都可用时优先用 WriteField，口径更统一。）"
         "调用后**等待人工确认与执行结果**：只有工具返回「已写入」才算成功；"
         "若返回未执行/被取消/失败，必须如实转述，绝不可谎称已写好。\n"
     ),
@@ -101,18 +128,25 @@ _TOOL_RULES = {
 #     → 前端已支持表格渲染（Markdown.tsx），这里明确「表格用 Markdown 表格
 #     语法、每行以 | 开头以 | 结尾」；不用表格时用短句分点，不塞代码块。
 #   · 「已确认的流程：[init [已勾选]]」——流程/参数写英文名 → 重申只用
-#     上下文里给的中文名（与 _CITE_RULE ③ 呼应）。
+#     上下文里给的名字（与 _CITE_RULE ③ 呼应）。
+#   · 2026-10-13（用户反馈）：英文提问仍答中文 → 原本这里的「全文一律用简体中文」
+#     与 _LANG_RULE 直接冲突，模型被前面那句压住，产出半中半英。
+#     → 现改为「全篇使用与用户提问相同的语言」，并把 _LANG_RULE 提到最前、声明最高优先级。
 _FORMAT_RULE = (
     "【输出格式与用语纪律】\n"
-    "① 你是电机测试系统的测试助手，读者是台架操作员。**全文一律用简体中文**，"
+    "① 你是电机测试系统的测试助手，读者是台架操作员。"
+    "**全篇使用与用户提问相同的语言**：用户用中文提问就通篇简体中文，"
+    "用户用英文提问就通篇英文——正文、表格表头、表格单元格、脚注、出处路径**必须同一语言**，"
+    "不要半中半英。"
     "不要自称「模型」「AI」「系统检测到」这类术语腔；直接说结论与建议。\n"
     "② **排版清晰、结构分明**：先结论后依据；并列内容用「- 」短句分点，"
     "一项一行；需要对照多条数据时用 Markdown 表格——**表格每一行都要以 | 开头、"
     "以 | 结尾，第二行写成 |---|---| 分隔行**（界面会把表格渲染成表格）。\n"
     "**禁止**把普通文字塞进代码块（``` ```）里输出，除非用户明确要代码。\n"
-    "③ **所有流程、参数、字段一律用中文名**：流程说「初始化配置」「启动测试及结果分析」，"
-    "不要输出 init / req / run / tune / report 这类代号；"
-    "参数用现场上下文给的中文名（如「斜坡时间」），括号里的英文键不要写进正文。\n"
+    "③ **所有流程、参数、字段一律用与回答语言一致的名字**，且**优先沿用现场上下文里"
+    "给的那一份名字**（它已经按界面语言备好，直接照用即可，不要自己重译）。"
+    "不要输出 init / req / run / tune / report 这类裸代号。"
+    "两种语言下括号里的英文键都不要写进正文。\n"
     "④ 回答只围绕**当前页面**：现场上下文里没有的信息不要主动展开，"
     "更不要把其它测试阶段的参数情况混进当前阶段的回答。\n"
     "④' **不得复述其它流程的清单**：每个页面的「缺什么 / 有哪些字段 / 什么状态」都不一样，"
@@ -138,34 +172,56 @@ _CITE_RULE = (
     "并交代你这一段依据实际来自哪里（如产品手册、本页现场上下文、你自身的通用知识）。"
     "**禁止**使用「知识库未检索到」「知识库没有相关内容」这类字眼——它们会被读成"
     "「知识库为空或故障」，与实际不符（检索本身是成功的，只是没有该主题的资料）。\n"
-    "③ **面向人写中文名**：页面上的参数字段一律用它的中文名（如「额定转速」「额定电压」），"
-    "与界面左栏的菜单一致，**不要**把 rated_speed / fan_outer_size 这类英文键名直接写进正文。"
-    "确有必要点出编码时，写成「额定转速（rated_speed）」，中文在前、编码在括号里。"
-    "**现场上下文里给出的是「中文名(英文键)」形式，正文只取中文名，括号里的编码删掉。**\n"
+    "③ **字段名优先照用现场上下文给的那一份**（它已按当前界面语言备好，"
+    "英文界面下给的就是英文名，直接原样沿用，**不要再译回中文**、也不要加中文括注）。"
+    "上下文没给对应名字时才按回答语言自己表达。"
+    "两种语言下都**不要**把 rated_speed / fan_outer_size 这类裸英文键名单独写进正文；"
+    "确有必要点出编码时写成「名称（rated_speed）」——"
+    "即把名称按回答语言写出，编码用括号原样附上。\n"
     "④ **按条目列字段时，必须带出处**（用户明确要求的格式）。"
     "这里是**出处的定义**，照做别改："
     "**出处 = 该字段在左侧菜单里的完整层级路径**（一级类 → 二级组 → 字段名）。\n"
     "   正确写法：「**<一级类> → <二级组> → <字段名>**：<该项在本页的状态>」——"
-    "路径与状态**都照抄现场上下文给的那一份**，不要自己拼、不要拿别处的示例套。\n"
+    "路径与状态**都以现场上下文给的那一份为准**，不要自己拼、不要拿别处的示例套；"
+    "层级分隔符固定用 →。**上下文给的路径已是英文时直接原样沿用**（不要译回中文）；"
+    "仅在上下文给的是中文、而回答语言是英文时，才把它译成英文。"
+    "两种语言下都**不许省略出处**。\n"
     "   ⚠️ **出处只写本页字段**：本页上下文里给了哪几个字段，就只写那几个字段的出处。"
     "**不得**把其它流程的字段（例如初始化配置的本体属性、控制参数）连同它的层级路径"
     "一起列进本页回答——那不是本页的数据，属于跨界复述（用户明确否掉过）。\n"
     "   **禁止**把 `.md` / `.h` / `.wfw` 这类**文件名、行号、代码定位**当出处写出来"
     "（如 `Customer.h:244`、`XXX操作手册.md 第六节`）——"
     "使用者不打开源码文件，这些对他没有意义（用户已明确否掉）。\n"
-    "   上下文里给你的字段会带「出处：…」这一段，**原样照抄那串路径**"
-    "（那就是左栏菜单的完整层级）；上下文没给就写「出处：未登记」，"
+    "   上下文里给你的字段会带「出处：…」这一段，"
+    "**路径内容以上下文给的那一份为准**（那就是左栏菜单的完整层级），不要自己拼；"
+    "**但表达随回答语言**：英文作答时译成英文，中文作答时保留中文。"
+    "上下文没给就写「出处：未登记」（英文作答写「Source: not registered」），"
     "**不许省略出处**，也不许自己编一个文件名顶上。"
+
 )
 
 # 语言约束（两个分支共用，改这里即可同步）
 _LANG_RULE = (
-    "必须使用与用户提问相同的语言回答：用户用英文提问就用英文答、"
-    "用中文提问就用中文答；即使检索到的资料是中文，也要翻译成用户的语言后再作答。"
+    "【语言规则·优先级最高】必须使用与用户提问相同的语言回答："
+    "用户用中文提问就通篇简体中文作答，用户用英文提问就通篇英文作答；"
+    "即使检索到的资料、现场上下文、字段出处路径是中文，"
+    "也要翻译成用户的语言后再作答。"
+    "**本条优先级高于上文所有格式与引用规则**：上文凡出现「一律用简体中文」"
+    "「中文名」「原样照抄」「照抄那串路径」等表述，一律理解为"
+    "「按本条确定的语言表达」——中文提问时用中文，英文提问时用英文。"
+    "**判定依据**：以用户本条提问使用的语言为准；"
+    "提问是英文时（含界面为英文、用户只打了几个英文单词的情况）必须全英文作答。"
+    "⚠️ **禁止把上下文里已是英文的内容译回中文**："
+    "若现场上下文给的字段名/出处路径本身已是英文，直接原样沿用，不要翻译、不要加中文括注。"
 )
 
 
-def _build_system_prompt(tools: list[dict], context_summary: str = "", permission: str = "readonly") -> str:
+def _build_system_prompt(
+    tools: list[dict],
+    context_summary: str = "",
+    permission: str = "readonly",
+    locale: str = "",
+) -> str:
     """按本次请求实际启用的工具 + 权限档位动态生成 system prompt。
 
     只描述、只允许模型使用当前 tools 里声明的工具，避免用户关闭知识库等开关后，
@@ -175,6 +231,11 @@ def _build_system_prompt(tools: list[dict], context_summary: str = "", permissio
     声明**——这是模型判断「我能不能写」的第一依据（2026-10-10 权限修复）。
     与 agent_context 的档位行同源同口径（都用中文能力描述），避免两处口径打架。
 
+    locale（2026-10-13 新增）：界面当前语言（`en` / `zh-CN`）。前端的现场上下文
+    （字段出处路径等）始终是中文，若只让模型「按提问语言猜」，短问句（如单个英文
+    单词）容易判错语言 → 实测英文界面下 AI 回复仍夹中文。这里把界面语言作为
+    **权威声明**写进 prompt，模型不必猜。缺省空串时行为与老版完全一致。
+
     context_summary：前端上送的上下文包压成的现场摘要（见 agent_context.py）。
     为空表示前端没上送上下文，此时不加这一段——模型退回通用回答即可。
     """
@@ -182,13 +243,44 @@ def _build_system_prompt(tools: list[dict], context_summary: str = "", permissio
     header = "你是 MotorDebug 的测试助手，面向电机测试台架的操作员作答。\n\n"
     # 权限声明放在最前：它是「能做什么」的硬边界，先于工具清单被模型读到。
     perm_line = _build_permission_rule(permission)
+    # 界面语言声明（2026-10-13）：前端的现场上下文恒为中文，光靠「按提问语言猜」
+    # 在短问句上会判错（实测英文界面下 AI 仍夹中文）。这里给一句权威声明，
+    # 与 _LANG_RULE 同向、优先级也最高。locale 缺省（空串）时不加，行为不变。
+    # ⚠️ 2026-10-14 重写（用户实测「英文界面 + 英文提问仍答中文」）。
+    #
+    # 旧版在英文分支写的是「**但答复语言以用户提问语言为准**……不要因为界面是英文
+    # 就一律用英文作答」——本意是「界面语言不等于答话语言」，但连起来读，模型抓到
+    # 的强信号是**「不要用英文作答」**。实测：英文界面 + 英文提问，模型通篇中文，
+    # 且**主动把上下文里的英文出处（Device under test → ...）译回中文**
+    # （「被测设备 → 机械外形 → 风扇厚度」），说明它确实读到了英文数据却选择中文输出。
+    # 现在把「界面语言」与「作答语言」的关系写成**单向、无歧义**的一句话：
+    #   英文界面 → 默认英文作答；仅当用户明显用中文提问时才切中文。
+    # 这样既保住「界面是英文但用户用中文问 → 答中文」的既有能力，又消除了反向诱导。
+    locale_line = ""
+    if locale == "en":
+        locale_line = (
+            "【界面语言：英文】用户当前使用英文界面。"
+            "**默认用英文作答**；只有当用户本条提问本身明显是中文时，才改用中文作答。"
+            "提问是英文（哪怕只有一两个单词）时，一律用英文作答，"
+            "包括表格表头、单元格与出处路径——**不要译回中文**。\n"
+        )
+    elif locale in ("zh-CN", "zh"):
+        locale_line = (
+            "【界面语言：简体中文】用户当前使用中文界面。"
+            "**默认用中文作答**；只有当用户本条提问本身明显是英文时，才改用英文作答。\n"
+        )
+    # ⚠️ 2026-10-14 语言规则**提到正文最前**（先于权限声明与工具清单）。
+    # 起因：英文界面 + 英文提问时，模型仍通篇中文，并把上下文里的英文出处译回中文。
+    # 系统提示词是「位置越靠前权重越高」，而 _LANG_RULE 原先排在第 3~4 位、前面还压着
+    # 一整段中文权限声明与工具介绍，被稀释掉了。现在 locale_line + _LANG_RULE 前置。
+    lang_head = f"{locale_line}{_LANG_RULE}\n"
     if not names:
         body = (
-            f"{perm_line}\n"
+            lang_head
+            + f"{perm_line}\n"
             "当前没有可用的检索工具，直接基于你自己的知识作答；资料不足就如实说明，不要编造。\n"
             + _FORMAT_RULE
             + _CITE_RULE
-            + _LANG_RULE
         )
     else:
         intros = "".join(_TOOL_INTROS[n] for n in names)
@@ -197,9 +289,8 @@ def _build_system_prompt(tools: list[dict], context_summary: str = "", permissio
             f"{len(names) + 1}. 基于检索到的资料作答并引用来源；资料确实没有就如实说明。\n"
             f"{len(names) + 2}. {_FORMAT_RULE}"
             f"{len(names) + 3}. {_CITE_RULE}"
-            f"{len(names) + 4}. {_LANG_RULE}"
         )
-        body = f"{perm_line}\n你有以下工具：\n{intros}\n工作方式：\n{rules}{tail}"
+        body = f"{lang_head}{perm_line}\n你有以下工具：\n{intros}\n工作方式：\n{rules}{tail}"
 
     # ⚠️ 上下文摘要必须在**所有分支之后**统一追加。
     # 首版只在「有工具」那条路上追加，而「无工具」分支提前 return 了——
@@ -345,16 +436,17 @@ def _compress_stale_tool_results(messages: list[dict]) -> None:
 
 def _call_model_payload(
     model: str, messages: list[dict], tools: list[dict], context_summary: str = "",
-    permission: str = "readonly",
+    permission: str = "readonly", locale: str = "",
 ) -> dict:
     """构造一次模型调用的 payload（Anthropic Messages，带 system + tools）。
 
     tools 为空时不写入 `tools` 键——部分上游对空 tools 列表报错。
+    locale：界面语言（`en`/`zh-CN`），透传给 system prompt 的语言声明。
     """
     payload = {
         "model": model,
         "max_tokens": _MAX_OUTPUT_TOKENS,
-        "system": _build_system_prompt(tools, context_summary, permission),
+        "system": _build_system_prompt(tools, context_summary, permission, locale),
         "messages": messages,
     }
     if tools:
@@ -466,7 +558,7 @@ def _anthropic_messages_to_openai(system_prompt: str, messages: list[dict]) -> l
 async def _stream_model(
     client: httpx.AsyncClient, session: Session, model: str,
     messages: list[dict], tools: list[dict], user_id: int, ip: Optional[str],
-    context_summary: str = "", permission: str = "readonly",
+    context_summary: str = "", permission: str = "readonly", locale: str = "",
 ) -> AsyncGenerator[dict, None]:
     """流式调一次上游模型，按模型绑定渠道的协议选择 anthropic / openai_chat 格式。
 
@@ -482,11 +574,11 @@ async def _stream_model(
 
     if protocol == "openai_chat":
         gen = _stream_openai_chat(
-            client, url, headers, model, trimmed, tools, user_id, ip, context_summary, permission
+            client, url, headers, model, trimmed, tools, user_id, ip, context_summary, permission, locale
         )
     else:
         gen = _stream_anthropic(
-            client, url, headers, model, trimmed, tools, user_id, ip, context_summary, permission
+            client, url, headers, model, trimmed, tools, user_id, ip, context_summary, permission, locale
         )
     async for ev in gen:
         yield ev
@@ -495,10 +587,10 @@ async def _stream_model(
 async def _stream_anthropic(
     client: httpx.AsyncClient, url: str, headers: dict, model: str,
     trimmed: list[dict], tools: list[dict], user_id: int, ip: Optional[str],
-    context_summary: str = "", permission: str = "readonly",
+    context_summary: str = "", permission: str = "readonly", locale: str = "",
 ) -> AsyncGenerator[dict, None]:
     """Anthropic Messages SSE 分支（带 tools）。归一化输出 anthropic content_blocks。"""
-    payload = _call_model_payload(model, trimmed, tools, context_summary, permission)
+    payload = _call_model_payload(model, trimmed, tools, context_summary, permission, locale)
     payload["stream"] = True
 
     # 按 index 累积各 content block（text 累积 text，tool_use 累积 input json）
@@ -603,7 +695,7 @@ async def _stream_anthropic(
 async def _stream_openai_chat(
     client: httpx.AsyncClient, url: str, headers: dict, model: str,
     trimmed: list[dict], tools: list[dict], user_id: int, ip: Optional[str],
-    context_summary: str = "", permission: str = "readonly",
+    context_summary: str = "", permission: str = "readonly", locale: str = "",
 ) -> AsyncGenerator[dict, None]:
     """OpenAI Chat Completions SSE 分支。请求/工具/SSE 用 OpenAI 格式，
     结果归一化回 anthropic content_blocks + stop_reason（tool_calls→tool_use）。"""
@@ -611,7 +703,7 @@ async def _stream_openai_chat(
         "model": model,
         "max_tokens": _MAX_OUTPUT_TOKENS,
         "messages": _anthropic_messages_to_openai(
-            _build_system_prompt(tools, context_summary, permission), trimmed
+            _build_system_prompt(tools, context_summary, permission, locale), trimmed
         ),
         "stream": True,
         # OpenAI chat 流式默认末块不带 usage，须显式要求，否则 0 计费（同网关）。
@@ -707,6 +799,7 @@ async def run_agent_chat(
     enabled_tools: Optional[list[str]] = None,
     context: Optional[dict] = None,
     permission: Optional[str] = None,
+    locale: Optional[str] = None,
 ) -> AsyncGenerator[dict, None]:
     """运行一轮对话的 agent loop，逐步 yield 过程事件。
 
@@ -718,6 +811,10 @@ async def run_agent_chat(
     **服务端硬边界**：select_tools 按档过滤（只读档模型看不到写工具），未知档按
     只读处理。缺省 None 时等价只读——向后兼容旧调用方。
 
+    locale：界面当前语言（`en` / `zh-CN`，2026-10-13 新增）。前端现场上下文恒为
+    中文，仅靠「按提问语言猜」在短问句上会判错 → 把界面语言作为权威声明写进
+    system prompt。缺省 None 时不加该声明，行为与老版一致。
+
     user_message 可为：
     - str：纯文本问题；
     - list：Anthropic content 块数组，如
@@ -725,11 +822,13 @@ async def run_agent_chat(
          {"type":"image","source":{"type":"base64","media_type":"image/png","data":"..."}}]
       用于图文混合输入（视觉模型）。
     """
-    model = model or settings.AGENT_CHAT_DEFAULT_MODEL
+    model = model or settings.agent_default_model
     # 按「前端开关 ∩ 权限档位」过滤工具（未显式启用一律视为关闭，见 select_tools）
     tools = agent_tools.select_tools(enabled_tools, permission)
     # 上下文包 → 现场摘要（为空表示前端没上送，模型退回通用回答）
-    context_summary = build_context_summary(context)
+    # locale 一并传入（2026-10-14）：英文界面下摘要里的固定标签（权限描述等）用英文，
+    # 避免中文按钮名「可改参数」被模型原样搬进英文回答。
+    context_summary = build_context_summary(context, locale or "")
 
     # 内容安全过滤·层 1 关键词（GB/T 45654）：命中即以正常助手回复形式拒答
     # （content_delta+done 经 AgentStreamManager 缓存下发，前端渲染并存为一条
@@ -797,7 +896,7 @@ async def run_agent_chat(
         try:
             with Session(engine) as s:
                 async for ev in _stream_model(
-                    client, s, model, messages, iter_tools, user_id, ip, context_summary, permission
+                    client, s, model, messages, iter_tools, user_id, ip, context_summary, permission, locale
                 ):
                     if ev.get("type") in ("content_delta", "reasoning_delta"):
                         yield ev  # 透传文本/推理增量给前端打字机
@@ -844,19 +943,25 @@ async def run_agent_chat(
                 })
                 continue
 
-            # ── 前端执行类工具：挂起等人工确认，结果由前端回执带回（2026-10-10）──
+            # ── 前端执行类工具：挂起等前端回执，结果由前端带回（2026-10-10）──
             #
-            # 写类工具（如 WriteReportHeader）不在这里本地执行：下发 tool_call
-            # (mutating=true) 给前端弹确认卡 → 挂起等待 /api/agent/confirm 回执 →
-            # 用前端真实执行结果作为 tool_result 回填，再继续下一轮模型调用。
-            # 超时 / 取消 / 断开一律如实回填「未执行」，绝不谎报完成。
+            # 这些工具不在这里本地执行（数据在前端 store 里）：下发 tool_call →
+            # 挂起等待 /api/agent/confirm 回执 → 用前端真实执行结果作为 tool_result
+            # 回填，再继续下一轮模型调用。超时/取消/断开一律如实回填「未执行」。
+            #
+            # ⚠️ 2026-10-14 分两类（通用字段工具引入）：
+            #   · 变更类（WriteField / WriteReportHeader）：mutating=true，前端弹确认卡，
+            #     人点确认后才执行（红线纪律：写操作必经确认）；
+            #   · 读取类（ReadField）：mutating=false，**无副作用、无需确认**，
+            #     前端看到「已注册执行器且非 mutating」会立即执行并直接回执。
+            # 两条路径共用同一套挂起-回填机制，协议零新增。
             if name in agent_tools.FRONTEND_EXECUTED_TOOLS:
                 from app.services import agent_confirm_bus
 
-                # mutating=true：前端据此渲染人工确认卡（红线纪律：写操作必经确认）
+                is_mutating = name in agent_tools.MUTATING_FRONTEND_TOOLS
                 yield {
                     "type": "tool_call", "id": tu_id, "name": name,
-                    "input": tinput, "mutating": True,
+                    "input": tinput, "mutating": is_mutating,
                 }
                 fut = agent_confirm_bus.register(tu_id, user_id)
                 try:

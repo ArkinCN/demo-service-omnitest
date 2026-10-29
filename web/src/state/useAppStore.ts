@@ -27,7 +27,8 @@ import {
 
 export type PanelView = 'canvas' | 'grid'
 
-type ParamValue = number | string
+/** 参数值：数值型字段**必须**保持 number（左栏 Stepper 只认 number，见 fieldRegistry.validate） */
+export type ParamValue = number | string
 
 /**
  * 自动化结果卡的**真实数据**（全部来自编排器事件 payload）。
@@ -270,6 +271,8 @@ interface AppState {
 
   /** 参数覆盖值：`${flowId}.${groupId}.${subId}.${itemId}` → 值 */
   overrides: Record<string, ParamValue>
+  /** Explicit synthetic draft provenance; follows overrides across stage navigation. */
+  configSuggestionDemoDrafts: Record<string, boolean>
   /** 参数被人改过后来源标记转「人工」 */
   touched: Record<string, true>
   /** 已确认并锁定的流程 */
@@ -904,6 +907,7 @@ export const useAppStore = create<AppState>((set) => ({
   catalog: [],
 
   overrides: {},
+  configSuggestionDemoDrafts: {},
   touched: {},
   /**
    * 确认态从 localStorage 起（见 LS_CONFIRMED 的说明）。
@@ -919,7 +923,7 @@ export const useAppStore = create<AppState>((set) => ({
   interlockPending: 0,
   quota: '额度 82%',
 
-  model: 'deepseek-v4-pro',
+  model: 'deepseek-v4.1-flash',
 
   canvasView: readCanvasView(),
   demoMode: readDemoMode(),
@@ -1543,6 +1547,7 @@ export const useAppStore = create<AppState>((set) => ({
       path,
       loading: true,
       overrides: {},
+      configSuggestionDemoDrafts: {},
       touched: {},
       confirmed: {},
       gateAcked: [],

@@ -1,3 +1,5 @@
+import { ConfigSuggestionButton } from '../config-suggestions/ConfigSuggestionButton'
+import { StageOperation, StageFooter } from '../../app/StageOperation'
 import { useT } from '../../i18n'
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import {
@@ -51,7 +53,7 @@ import {
 import { ConfigOverview } from '../../app/LeftPanel'
 import { fmtMeasure } from '../shared/format'
 import { UnifiedConfigPanel } from '../../app/UnifiedConfigPanel'
-import { ConfirmFooter, Empty } from '../shared/bits'
+import { Empty } from '../shared/bits'
 import { buildTiers, demoFilter, readTiers } from '../shared/tiers'
 import { getBaselineIds, subscribeBaseline } from '../flow-req/baselineStore'
 import { TimeSeriesChart } from '../timeseries'
@@ -178,7 +180,9 @@ function ParamRow({ p }: { p: RawControlParam }) {
         ) : p.options?.length ? (
           <Select
             size="sm"
-            className="w-[150px]"
+            // 窄屏自适应（2026-10-15）：flow-param-select 与 LeftPanel 的参数下拉同款 ——
+            // 左栏在 ≤1024px 只有 216~264px，写死的 150px 会把参数名挤没。
+            className="flow-param-select w-[150px]"
             label={uiT(p.name)}
             options={p.options.map((o) => ({ value: String(o.value), label: uiT(o.label) }))}
             value={String(value)}
@@ -258,7 +262,7 @@ function GateRow({
 }) {
   const uiT = useT()
   return (
-    <Tooltip className="w-full" content={`${i.id} ${i.name} · ${i.action}`}>
+    <Tooltip className="w-full" content={`${i.id} ${uiT(i.name)} · ${uiT(i.action)}`}>
       <button
         type="button"
         onClick={onToggle}
@@ -282,6 +286,8 @@ function GateRow({
 }
 
 export function RunLeftPanel() {
+  const nav = useNavigate()
+  const phase = useAppStore((state) => state.runPhase)
   const uiT = useT()
 
   const pack = getPack()
@@ -289,7 +295,7 @@ export function RunLeftPanel() {
   const g = useGate()
   const [runs, setRuns] = useState(100)
   const [volt, setVolt] = useState<string>('')
-  const [gateOpen, setGateOpen] = useState(true)
+  const [gateOpen, setGateOpen] = useState(false)
   const demo = useAppStore((s) => s.demoMode)
   const toggle = useAppStore((s) => s.toggleGate)
   const ackAllGates = useAppStore((s) => s.ackAllGates)
@@ -379,119 +385,19 @@ export function RunLeftPanel() {
       </header>
 
       <div className="fade-b min-h-0 flex-1 overflow-y-auto pb-2">
-        <ConfigOverview
+        <ConfigOverview flow="run" assist={<ConfigSuggestionButton stage="run" />}
           key={pack.scene.id}
           count={tiers.reduce((n, t) => n + t.count, 0)}
-          quick={
-            <>
-              {params.slice(0, 3).map((p) => (
-                <div className="config-quick-card" key={p.key}>
-                  <ParamRow p={p} />
-                </div>
-              ))}
-            </>
-          }
-        >
-          <UnifiedConfigPanel
-            flow="run"
-            tiers={tiers}
-            // 一级类只展开第一个「启动与预定位」，其余折叠
-            defaultOpen={0}
-            itemKey={(p) => p.key}
-            render={(p) => <ParamRow p={p} />}
-            flags={(p) => ({
-              filled: p.value !== null,
-              pending: !!statusOf(p),
-              alert: !!p.value_below_min,
-            })}
-            tierIcon={(t) => iconOf(t, 15)}
-            groupIcon={(t) => iconOf(t)}
-          />
-        </ConfigOverview>
 
-        {/* 本轮运行设置 */}
-        <Collapsible
-          level={1}
-          icon={<Cpu size={15} strokeWidth={1.9} />}
-          title={uiT("运行设置")}
-          storeKey={collapseKey('run', 'run-setting')}
-          defaultOpen={false}
-          stat={{ total: 2 }}
-          right={<InfoTip content={runNote} />}
-        >
-          <div className="flex min-h-[40px] items-center gap-2 px-4 py-1.5">
-            <span className="text-[13px] font-medium text-t1">{uiT("启停次数")}</span>
-            <span className="ml-auto">
-              <Stepper size="sm" label={uiT("启停次数")} value={runs} step={10} min={1} max={1000} onChange={setRuns} />
-            </span>
-          </div>
-          <div className="flex min-h-[40px] items-center gap-2 px-4 py-1.5">
-            <span className="text-[13px] font-medium text-t1">{uiT("电压档")}</span>
-            <span className="ml-auto">
-              <Select
-                size="sm"
-                className="w-[150px]"
-                label={uiT("电压档")}
-                options={voltOptions}
-                value={voltValue}
-                onChange={setVolt}
-              />
-            </span>
-          </div>
-        </Collapsible>
-
-        {/* 安全确认闸门：组头带放行状态，组内按编号自带的类别分两组 */}
-        <div className="border-b border-line">
-          {/* 外层用 div 而非 button：标题行里要再放一个「一键确认」按钮，
-              HTML 不允许 button 嵌套 button。折叠点击区单独用一个 button。 */}
-          <div
-            className={cn(
-              'flex h-[44px] w-full items-center gap-2.5 px-4 transition-colors',
-              green ? 'bg-p50' : 'bg-sunk',
-            )}
-          >
-            <button
-              type="button"
-              onClick={() => setGateOpen((v) => !v)}
-              aria-expanded={gateOpen}
-              className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
-            >
-              <ShieldCheck
-                size={16}
-                strokeWidth={1.9}
-                className={cn('shrink-0', green ? 'text-p700' : 'text-t3')}
-              />
-              <span className="shrink-0 whitespace-nowrap text-[13px] font-semibold tracking-tight text-t1">
-                {uiT("安全闸门")}</span>
-              <span className="num ml-auto shrink-0 text-[13px] font-semibold text-t1">
-                {g.acked.size}
-                <span className="text-t3">/{gateItems.length}</span>
-              </span>
-            </button>
-            {/* 一键确认：把全部人员/流程类闸门一次勾上，快速进入可启动状态。
-                ⚠️ 只填勾选态，**不绕过红线**——「启动测试」仍要走确认卡。 */}
-            <Tooltip content={uiT("一键确认全部 {v1} 条安全闸门（只填勾选态，启动仍需在确认卡上确认）", { v1: gateItems.length })}>
-              <button
-                type="button"
-                disabled={green}
-                onClick={() => {
-                  ackAllGates(gateItems.map((x) => x.id))
-                  setNotice(uiT("已一键确认全部 {v1} 条安全闸门；启动测试仍需在确认卡上确认", { v1: gateItems.length }))
-                }}
-                className={cn(
-                  'shrink-0 cursor-pointer whitespace-nowrap rounded-tpx border px-2 py-[3px] text-[12px] transition-colors',
-                  green
-                    ? 'cursor-not-allowed border-line text-t3 opacity-60'
-                    : 'border-p300 bg-white text-p700 hover:bg-p50',
-                )}
-              >
-                {green ? uiT('已全绿') : uiT('一键确认')}
-              </button>
-            </Tooltip>
-            <Badge tone={green ? 'soft' : 'neutral'} dot className="shrink-0">
-              {green ? uiT('全绿') : uiT('未放行')}
-            </Badge>
-          </div>
+          actions={<StageOperation title={uiT('本步操作 · 安全确认')}
+            status={uiT(`已确认 {v1}/{v2}`, { v1: gateItems.filter((item) => g.acked.has(item.id)).length, v2: gateItems.length })}>
+            <p className="stage-operation-status">{green ? uiT('人工安全项已确认') : uiT('人工安全项待确认')}</p>
+            <button type="button" className="stage-operation-link" aria-expanded={gateOpen} onClick={() => setGateOpen((v) => !v)}>{uiT('查看逐项清单')}</button>
+            <button type="button" className="stage-operation-confirm" disabled={green || gateItems.length === 0 || phase === 'running'} onClick={() => {
+              ackAllGates(gateItems.map((item) => item.id))
+              setNotice(uiT('人工安全项已批量确认；启动仍需单独确认。'))
+            }}>{green ? uiT('人工安全项已确认') : uiT('一键确认安全项')}</button>
+            <p className="stage-operation-note">{uiT('请先逐项人工核对；此操作不会启动检测，也不代表自动测得安全。')}</p>
           {gateOpen ? (
             <div className="animate-fade">
               {groups.map((grp, i) => (
@@ -548,43 +454,73 @@ export function RunLeftPanel() {
               ))}
             </div>
           ) : null}
-        </div>
+          </StageOperation>}
+        >
+          <details className="stage-details"><summary>{uiT('运行参数')}</summary>
+          <UnifiedConfigPanel
+            flow="run"
+            tiers={tiers}
+            // 一级类只展开第一个「启动与预定位」，其余折叠
+            defaultOpen={0}
+            itemKey={(p) => p.key}
+            render={(p) => <ParamRow p={p} />}
+            flags={(p) => ({
+              filled: p.value !== null,
+              pending: !!statusOf(p),
+              alert: !!p.value_below_min,
+            })}
+            tierIcon={(t) => iconOf(t, 15)}
+            groupIcon={(t) => iconOf(t)}
+          />
+          </details>
+        </ConfigOverview>
+
+        {/* 本轮运行设置 */}
+        <Collapsible
+          level={1}
+          icon={<Cpu size={15} strokeWidth={1.9} />}
+          title={uiT("运行设置")}
+          storeKey={collapseKey('run', 'run-setting')}
+          defaultOpen={false}
+          stat={{ total: 2 }}
+          right={<InfoTip content={runNote} />}
+        >
+          <div className="flex min-h-[40px] items-center gap-2 px-4 py-1.5">
+            <span className="text-[13px] font-medium text-t1">{uiT("启停次数")}</span>
+            <span className="ml-auto">
+              <Stepper size="sm" label={uiT("启停次数")} value={runs} step={10} min={1} max={1000} onChange={setRuns} />
+            </span>
+          </div>
+          <div className="flex min-h-[40px] items-center gap-2 px-4 py-1.5">
+            <span className="text-[13px] font-medium text-t1">{uiT("电压档")}</span>
+            <span className="ml-auto">
+              <Select
+                size="sm"
+                // 窄屏自适应（2026-10-15）：同上，见 index.css 的 .flow-param-select
+                className="flow-param-select w-[150px]"
+                label={uiT("电压档")}
+                options={voltOptions}
+                value={voltValue}
+                onChange={setVolt}
+              />
+            </span>
+          </div>
+        </Collapsible>
+
+
       </div>
 
-      {/* 底部悬浮确认 */}
-      {/* 底部确认按钮与顶栏「启动测试」同一条动作、同一份行为表，
-          点下去照样先弹红线确认卡，不另开一条放行路径。
-
-          ⚠️ 2026-10-10：本流程的「已确认」由系统自动写入（本轮正常跑完 + 判定表落库），
-          此前左栏没有任何反向出口，顶栏那一格打勾便关不掉（用户反馈）。
-          现在已确认时按钮换成流程 1/2/5 同款的「解除确认」（同一 ConfirmFooter 的
-          secondary + unlock 形态）；解除只取消标记，不影响启动测试本身。 */}
-      {locked ? (
-        <ConfirmFooter
-          label={uiT("解除确认")}
-          count={params.length}
-          unit="项"
-          variant="secondary"
-          icon="unlock"
-          hint={uiT("本流程已确认（本轮正常跑完且判定结果落库后由系统自动置为已确认）。点此解除后顶栏「启动测试」的打勾消失，可继续调整参数；下轮跑完测试时仍会再次自动确认。")}
-          onClick={() => {
-            unconfirmFlow('run')
-            setNotice('已解除确认：顶栏「启动测试」打勾已取消；下轮跑完测试后会再次自动确认')
-          }}
-        />
-      ) : (
-        <ConfirmFooter
-          label={uiT("确认参数")}
-          count={params.length}
-          unit="项并启动测试"
-          onClick={bind('start').disabled ? undefined : bind('start').onClick}
-          hint={
-            green
-              ? uiT("本流程可调 {v1} 项，安全闸门 {v2} 条已全部确认，点此启动本轮（仍需在确认卡上再点一次）。", { v1: params.length, v2: gateItems.length })
-              : uiT("本流程可调 {v1} 项；安全闸门还差 {v2} 条未确认，确认前不可启动。", { v1: params.length, v2: gateItems.length - g.acked.size })
-          }
-        />
-      )}
+      <StageFooter
+        label={phase === 'done' ? uiT('整理报告') : phase === 'running' ? uiT('检测运行中') : uiT('启动检测')}
+        disabled={phase === 'done' ? false : bind('start').disabled}
+        onClick={phase === 'done' ? () => nav('/report') : bind('start').onClick}
+        reason={phase === 'done' ? uiT('本轮检测已完成；请查看判定结果。') : bind('start').disabled ? uiT(bind('start').reason ?? '') : uiT('人工确认已完成；点击后仍需启动确认。')}
+        secondary={<>
+          {phase === 'done' ? <button type="button" onClick={() => nav('/tune')}>{uiT('按需查看调参建议')}</button> : null}
+          {phase === 'done' ? <button type="button" disabled={bind('start').disabled} onClick={bind('start').onClick}>{uiT('再次检测')}</button> : null}
+          {locked ? <button type="button" onClick={() => unconfirmFlow('run')}>{uiT('解除本轮确认')}</button> : null}
+        </>}
+      />
     </div>
   )
 }
@@ -659,7 +595,7 @@ export function WaveformPanel({ full }: { full?: boolean }) {
         {waves.map((w) => {
           const active = on[w.id] ?? true
           return (
-            <Tooltip key={w.id} content={`${w.title} · ${w.verdictText}`}>
+            <Tooltip key={w.id} content={`${uiT(w.title)} · ${uiT(w.verdictText)}`}>
               <button
                 type="button"
                 onClick={() => setOn((o) => ({ ...o, [w.id]: !(o[w.id] ?? true) }))}
@@ -685,10 +621,10 @@ export function WaveformPanel({ full }: { full?: boolean }) {
           )
         })}
         {pack?.caps.syntheticData ? (
-          <Badge tone="warn" title={pack.caps.syntheticBanner}>
+          <Badge tone="warn" title={uiT(pack.caps.syntheticBanner)}>
             {uiT("合成")}</Badge>
         ) : null}
-        {pack?.caps.probeUnconfirmed ? <InfoTip content={pack.caps.probeNote} /> : null}
+        {pack?.caps.probeUnconfirmed ? <InfoTip content={uiT(pack.caps.probeNote)} /> : null}
         {/* 采样率读数不进演示分镜（06d 第 3.1 节），放大态仍给 */}
         {full ? (
           <span className="num ml-auto text-[12px] text-t3">
@@ -743,7 +679,7 @@ function SchematicCover({ full }: { full?: boolean }) {
         {src ? (
           <img
             src={pack.base + src}
-            alt={cur.name}
+            alt={uiT(cur.name)}
             className={cn(
               'h-full w-full',
               full ? 'object-contain' : src.endsWith('.svg') ? 'object-cover object-center' : 'object-cover object-top',
@@ -755,7 +691,7 @@ function SchematicCover({ full }: { full?: boolean }) {
       </div>
       <div className="flex shrink-0 items-center gap-1.5">
         {vs.slice(0, 4).map((v, k) => (
-          <Tooltip key={v.name} content={v.name}>
+          <Tooltip key={v.name} content={uiT(v.name)}>
             <button
               type="button"
               onClick={() => setI(k)}
@@ -763,7 +699,7 @@ function SchematicCover({ full }: { full?: boolean }) {
                 'h-[6px] w-[18px] rounded-full transition-colors',
                 pick === k ? 'bg-p600' : 'bg-p200 hover:bg-p300',
               )}
-              aria-label={v.name}
+              aria-label={uiT(v.name)}
             />
           </Tooltip>
         ))}
@@ -1220,9 +1156,9 @@ function GateRing({ full }: { full?: boolean }) {
             {pack.interlocks.interlocks.map((i) => (
               <li key={i.id} className="flex items-center gap-2 border-b border-line-soft py-1 last:border-b-0">
                 <span className="num shrink-0 text-[12px] text-t3">{i.id}</span>
-                <span className="truncate text-[12.5px] text-t1">{i.name}</span>
+                <span className="truncate text-[12.5px] text-t1">{uiT(i.name)}</span>
                 <Badge tone="neutral" className="ml-auto">
-                  {i.type}
+                  {uiT(i.type)}
                 </Badge>
               </li>
             ))}
@@ -1262,18 +1198,35 @@ function Progress({ full }: { full?: boolean }) {
   // ⚠️ 这行日志此前是**假的**：写「载入需求基线：判据 N 条」，而 N 取的是
   // 场景包全量条数，与「人确认了哪几条」无关（打了这行反而让人以为读了基线）。
   // 现在如实分三种说法，并且**只用基线镜像里的真值**。
+  // 日志行全部走 uiT 模板词条（英文界面下整行译出；模板捕获值里若是数据文本需单独再包 uiT）
   const baselineLine =
     baselineIds === null
-      ? `[00:00.0] 未读到需求基线（流程 2 未确认）：按场景包全表 ${pack.requirements.requirements.length} 条判`
-      : `[00:00.0] 载入需求基线：本轮纳入 ${baselineIds.length}/${pack.requirements.requirements.length} 条判据`
+      ? uiT("[00:00.0] 未读到需求基线（流程 2 未确认）：按场景包全表 {v1} 条判", {
+          v1: pack.requirements.requirements.length,
+        })
+      : uiT("[00:00.0] 载入需求基线：本轮纳入 {v1}/{v2} 条判据", {
+          v1: baselineIds.length,
+          v2: pack.requirements.requirements.length,
+        })
 
   const log = [
     baselineLine,
-    `[00:00.3] 联锁自检：硬件 ${pack.interlocks.interlocks.filter((i) => i.type === '硬件').length} 条由固件阈值保证`,
-    `[00:02.0] 采集口径：${Math.round(pack.datasets.datasets[0]?.sample_rate_sa_per_s ?? 0)} Sa/s`,
-    ...waves.map(
-      (w) =>
-        `[回放] ${w.id} ${w.verdictText} · 峰值 ${w.metrics.peak.toFixed(2)} ${w.unit} @ ${w.metrics.peakAt.toFixed(2)} s`,
+    uiT("[00:00.3] 联锁自检：硬件 {v1} 条由固件阈值保证", {
+      // ⚠️ '硬件' 是**数据比较值**（下面 filter 用），必须保持原文，不能包 uiT，否则筛不出条目
+      v1: pack.interlocks.interlocks.filter((i) => i.type === '硬件').length,
+    }),
+    uiT("[00:02.0] 采集口径：{v1} Sa/s", {
+      v1: Math.round(pack.datasets.datasets[0]?.sample_rate_sa_per_s ?? 0),
+    }),
+    ...waves.map((w) =>
+      uiT("[回放] {v1} {v2} · 峰值 {v3} {v4} @ {v5} s", {
+        v1: w.id,
+        // verdictText 是场景包数据文本，需单独再包一次（uiT 的参数只做替换、不翻译参数值）
+        v2: uiT(w.verdictText),
+        v3: w.metrics.peak.toFixed(2),
+        v4: w.unit,
+        v5: w.metrics.peakAt.toFixed(2),
+      }),
     ),
   ]
 

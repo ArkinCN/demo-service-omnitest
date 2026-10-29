@@ -2,6 +2,7 @@ import {
   loadPack,
   setPack,
   byGroup,
+  headerFieldName,
   sourceLine,
   statusOf,
   type RawAttribute,
@@ -414,7 +415,7 @@ function reportFlow(pack: RawPack): FlowContent {
   const checklist: ChecklistItem[] = h.map((f, i) => ({
     id: f.key,
     index: String(i + 1),
-    name: `${f.name}（${f.value_slot || '—'}）`,
+    name: `${headerFieldName(f)}（${f.value_slot || '—'}）`,
     status: f.from_flow.startsWith('F6') ? 'alert' : 'done',
     groupId: 'rp-0',
   }))

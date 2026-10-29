@@ -1,3 +1,4 @@
+import { StageOperation, StageFooter } from '../../app/StageOperation'
 import { useT, useLocale } from '../../i18n'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -36,10 +37,18 @@ import {
   templateStatus,
   uploadTemplate,
 } from './reportApi'
-import { getPack, fileName, sizeText, type RawHeaderField } from '../scene/pack'
+import {
+  getPack,
+  fileName,
+  sizeText,
+  headerFieldName,
+  sectionTitle,
+  sectionFields,
+  type RawHeaderField,
+} from '../scene/pack'
 import { ConfigOverview } from '../../app/LeftPanel'
 import { UnifiedConfigPanel } from '../../app/UnifiedConfigPanel'
-import { ConfirmFooter, Empty } from '../shared/bits'
+import { Empty } from '../shared/bits'
 import { buildTiers, demoFilter, readTiers } from '../shared/tiers'
 import { simp } from '../shared/zh'
 import { TimeSeriesChart } from '../timeseries'
@@ -138,9 +147,23 @@ const FIELD_SHORT: Record<string, string> = {
   customer_engineer: '工程师',
 }
 /** 左栏与卡面用：模板字段名是繁体（客戶名稱 / 韌體版本…），界面一律归一成简体 */
-const fieldShort = (f: RawHeaderField) => simp(FIELD_SHORT[f.key] ?? short(f.name))
-/** 报告预览纸面用：照抄模板原文，不做简繁归一，纸面上另标「模板原文」 */
-const rawFieldLabel = (f: RawHeaderField) => short(f.name, 6)
+const fieldShort = (f: RawHeaderField) => simp(FIELD_SHORT[f.key] ?? short(headerFieldName(f)))
+
+/**
+ * 表头字段的显示名（2026-10-15）。
+ *
+ * 优先序：① 场景包平行英文名（仅英文界面，最权威）→ ② 词典全名译文（英文界面下
+ * 中文原文有词条时）→ ③ 原中文短标签链（`fieldShort`，中文界面的既有行为）。
+ * 中文界面下 ①② 都不成立（`headerFieldName` 恒等于 `f.name`、词典在中文下返回原文），
+ * 逐字等价于改动前的 `uiT(f.name) === f.name ? uiT(fieldShort(f)) : uiT(f.name)`。
+ */
+function fieldLabel(f: RawHeaderField, t: (s: string) => string): string {
+  const en = headerFieldName(f)
+  if (en !== f.name) return en
+  const full = t(f.name)
+  if (full !== f.name) return full
+  return t(fieldShort(f))
+}
 
 /* ------------------------------------------------- 跨卡片共享：表头 / 导出格式
  *
@@ -276,15 +299,16 @@ const iconOf = (name: string, size = 14) => {
   return <Ic size={size} strokeWidth={1.9} />
 }
 
-function FieldRow({ f }: { f: RawHeaderField }) {
+function FieldRow({ f, disabled = false }: { f: RawHeaderField; disabled?: boolean }) {
   const uiT = useT()
 
   const h = useShared()
+  const confirmed = useAppStore((state) => state.confirmed.report)
   const up = upstream(f)
   const filled = !!h[f.key]
   const detail = (
     <span className="block space-y-1">
-      <span className="block font-medium">{uiT(f.name)}</span>
+      <span className="block font-medium">{uiT(headerFieldName(f))}</span>
       <span className="num block opacity-75">
         {uiT("标题位 ")}{f.label_slot || '—'} {uiT(" → 取值位 ")}{f.value_slot || '—'}
         {f.label_section ? ` · ${f.label_section}` : ''}
@@ -298,7 +322,9 @@ function FieldRow({ f }: { f: RawHeaderField }) {
       <Tooltip className="min-w-0" content={detail}>
         <span className="flex min-w-0 items-center gap-1.5">
           <SourceTag source={up ? '文档' : filled ? '人工' : '建议'} />
-          <span className="cursor-help truncate text-[13px] font-medium text-t1">{uiT(f.name) === f.name ? fieldShort(f) : uiT(f.name)}</span>
+          {/* 显示名走 fieldLabel（2026-10-15）：平行英文名 > 词典全名译文 > 中文短标签。
+              优先序的完整说明见 fieldLabel 的定义，中文界面下与改动前逐字等价。 */}
+          <span className="cursor-help truncate text-[13px] font-medium text-t1">{fieldLabel(f, uiT)}</span>
         </span>
       </Tooltip>
       <span className="ml-auto shrink-0">
@@ -308,9 +334,10 @@ function FieldRow({ f }: { f: RawHeaderField }) {
           </span>
         ) : (
           <Input
+            disabled={disabled || !!confirmed}
             value={h[f.key] ?? ''}
             onChange={(e) => setHeader(f.key, e.target.value)}
-            aria-label={uiT(f.name)}
+            aria-label={uiT(headerFieldName(f))}
             placeholder={uiT("待填")}
             className="h-[28px] w-[152px] text-[13px]"
           />
@@ -373,6 +400,7 @@ function useConfirmReportHeader(opts: {
 }
 
 export function ReportLeftPanel() {
+  const bind = useFlowActions()
   const uiT = useT()
 
   const pack = getPack()
@@ -383,7 +411,6 @@ export function ReportLeftPanel() {
   const h = useShared()
   const sceneId = useAppStore((s) => s.sceneId)
   const confirmed = !!useAppStore((s) => s.confirmed.report)
-  const setNotice = useAppStore((s) => s.setNotice)
   const unconfirmFlow = useAppStore((s) => s.unconfirmFlow)
 
   // ⚠️ 所有 hook 必须无条件调用（铁律）：确认 hook 放在空值分支之前，
@@ -391,6 +418,8 @@ export function ReportLeftPanel() {
   const rawFields = pack?.report.header_fields ?? []
   const fieldDefs = rawFields.map((f) => ({
     key: f.key,
+    // 落库 payload 固定用中文规范名（f.name 恒为中文原文，2026-10-15）：这份 fields 会写进
+    // 轮次报告实例，**不随界面语言漂移**，保证同一轮产物在中/英文下内容一致。
     name: f.name,
     from_flow: f.from_flow,
     value_slot: f.value_slot,
@@ -457,6 +486,31 @@ export function ReportLeftPanel() {
           upstream(f) 决定，与本条无关）。 */}
 
       <div className="fade-b min-h-0 flex-1 overflow-y-auto pb-2">
+        {/* 表头三层（06b 第 2.2 节）：被测件身份 / 固件位址基线 / 交付对象。
+            分组维度是「这一格填错了，谁会先发现、会出什么事」，只展开第一层。 */}
+        <ConfigOverview flow="report"
+          key={pack.scene.id}
+          count={fields.length}
+          actions={<StageOperation title={uiT('本步操作 · 核对报告信息')} status={confirmed ? uiT('报告信息已确认') : uiT(`本页待补 {v1} 项`, { v1: left })}>
+            <p className="stage-operation-status">{confirmed ? uiT('信息已保存。需要修改时，请先解除确认。') : uiT('核对本页信息；未知字段可留空，不编造。')}</p>
+            <div className="stage-operation-fields">{mine.map((field) => <FieldRow key={field.key} f={field} disabled={saving} />)}</div>
+            <ol className="stage-operation-sequence"><li>{uiT('确认报告信息：保存表头')}</li><li>{uiT('生成报告：独立动作')}</li></ol>
+          </StageOperation>}
+        >
+          <details className="stage-details"><summary>{uiT('上游信息与完整字段')}</summary>
+          <UnifiedConfigPanel
+            flow="report"
+            tiers={tiers}
+            // 一级类只展开第一个「被测件身份」，位址基线与交付对象默认折叠
+            defaultOpen={0}
+            itemKey={(f) => f.key}
+            render={(f) => <FieldRow f={f} disabled={saving} />}
+            flags={(f) => ({ filled: !!h[f.key], pending: upstream(f) && !h[f.key] })}
+            tierIcon={(t) => iconOf(t, 15)}
+            groupIcon={(t) => iconOf(t)}
+          />
+          </details>
+        </ConfigOverview>
         {/* 模板选择 */}
         <div className="px-4 pt-3 pb-2">
           <Tooltip
@@ -496,33 +550,7 @@ export function ReportLeftPanel() {
           </Tooltip>
         </div>
 
-        {/* 表头三层（06b 第 2.2 节）：被测件身份 / 固件位址基线 / 交付对象。
-            分组维度是「这一格填错了，谁会先发现、会出什么事」，只展开第一层。 */}
-        <ConfigOverview
-          key={pack.scene.id}
-          count={fields.length}
-          quick={
-            <>
-              {(mine.length ? mine : fields).slice(0, 3).map((f) => (
-                <div className="config-quick-card" key={f.key}>
-                  <FieldRow f={f} />
-                </div>
-              ))}
-            </>
-          }
-        >
-          <UnifiedConfigPanel
-            flow="report"
-            tiers={tiers}
-            // 一级类只展开第一个「被测件身份」，位址基线与交付对象默认折叠
-            defaultOpen={0}
-            itemKey={(f) => f.key}
-            render={(f) => <FieldRow f={f} />}
-            flags={(f) => ({ filled: !!h[f.key], pending: upstream(f) && !h[f.key] })}
-            tierIcon={(t) => iconOf(t, 15)}
-            groupIcon={(t) => iconOf(t)}
-          />
-        </ConfigOverview>
+
 
         {/* 模板分节：表头之外的正文由这几节构成 */}
         <Collapsible
@@ -550,17 +578,19 @@ export function ReportLeftPanel() {
               className="block w-full"
               content={
                 <span className="block space-y-1">
-                  <span className="block font-medium">{sectionDisplay(sec.section, uiT)}</span>
+                  <span className="block font-medium">{sectionDisplay(sectionTitle(sec), uiT)}</span>
                   <span className="num block opacity-75">
                     {sec.rows} {uiT(" · 由 ")}{sec.from_flow} {uiT(" 写入")}</span>
-                  <span className="block opacity-75">{sec.fields.map((field) => uiT(simp(field))).join(' · ')}</span>
+                  <span className="block opacity-75">{sectionFields(sec).map((field) => uiT(simp(field))).join(' · ')}</span>
                 </span>
               }
             >
               <span className="flex min-h-[40px] w-full cursor-help items-center gap-2 px-4 py-1.5 transition-colors hover:bg-p50/60">
                 <SourceTag source={sec.from_flow.startsWith('F6') ? '建议' : '文档'} />
-                <span className="truncate text-[13px] font-medium text-t1">
-                  {sectionDisplay(sec.section, uiT)}
+                {/* min-w-0 必须给：英文节名（如 `5. Speed Control (choose PWM or VSP)`）比中文长得多，
+                    缺它 flex 子项不收缩、truncate 不生效，会把右侧字段数挤出视野 */}
+                <span className="min-w-0 truncate text-[13px] font-medium text-t1">
+                  {sectionDisplay(sectionTitle(sec), uiT)}
                 </span>
                 <span className="num ml-auto shrink-0 text-[13px] font-semibold text-t1">
                   {sec.fields.length}
@@ -574,39 +604,16 @@ export function ReportLeftPanel() {
         </Collapsible>
       </div>
 
-      {/* ──────── 唯一的「确认表头」入口（2026-09-30）───────
-          此前这颗按钮的 onClick 直接绑 `bind('gen-report').onClick`——点确认表头
-          等于点生成报告（生成+下载），而且表头只存 localStorage、从不落库、
-          也不进生成的报告。现改为：**落 report-instance(confirmed) 产物 + 置确认态**，
-          不触发生成、不下载。生成报告仍由顶栏「生成报告」承担（一步到位自动下载）。
-          确认后变「解除确认」，与流程 1/2 的形态一致（反悔出口保留）。 */}
-      {confirmed ? (
-        <ConfirmFooter
-          label={uiT("解除确认")}
-          count={fields.length}
-          unit="项"
-          variant="secondary"
-          icon="unlock"
-          hint={uiT("表头已确认并写入轮次产物（{v1}/{v2} 项有值）。点此解除后可继续修改；生成报告时按确认值填写表头。", { v1: filled, v2: fields.length })}
-          onClick={() => {
-            unconfirmFlow('report')
-            setNotice('已解除确认：可继续修改表头，改完再点「确认表头」')
-          }}
-        />
-      ) : (
-        <ConfirmFooter
-          label={saving ? uiT('确认中…') : uiT('确认表头')}
-          count={fields.length}
-          unit="项"
-          onClick={() => void confirmHeader()}
-          hint={
-            (left === 0
-              ? uiT("表头 {v1} 项已补全。", { v1: fields.length })
-              : uiT("表头 {v1} 项，本流程还差 {v2} 项未填；未填字段一律留空，不编。", { v1: fields.length, v2: left })) +
-            uiT('点击后写入轮次产物（生成报告时按此填写表头），不会触发生成。')
-          }
-        />
-      )}
+      <StageFooter
+        label={saving ? uiT('保存中…') : confirmed ? uiT('生成报告') : uiT('确认报告信息')}
+        disabled={saving || (confirmed && bind('gen-report').disabled)}
+        onClick={confirmed ? bind('gen-report').onClick : () => void confirmHeader()}
+        reason={confirmed ? uiT('信息已确认；生成结果由现有报告服务返回。') : uiT('仅保存报告信息，不会生成或下载报告。')}
+        secondary={<>
+          {confirmed ? <button type="button" disabled={saving} onClick={() => unconfirmFlow('report')}>{uiT('修改报告信息')}</button> : null}
+          <button type="button" disabled={saving} onClick={() => setPreviewOpen(true)}>{uiT('预览')}</button>
+        </>}
+      />
 
       {/* 整篇报告预览弹层（顶栏「预览」打开）。复用 FullReport（按模板节结构渲染，
           读 store 里已确认/已装配的表头与真判定行），与卡片放大态同一份实现，
@@ -845,7 +852,7 @@ function ReportPreview({ full }: { full?: boolean }) {
           </Tooltip>
           <span className="num shrink-0 text-[12px] text-t3">{pack.scene.generated_at}</span>
           {pack.caps.syntheticData ? (
-            <Badge tone="warn" className="ml-auto" title={pack.caps.syntheticBanner}>
+            <Badge tone="warn" className="ml-auto" title={uiT(pack.caps.syntheticBanner)}>
               {uiT("合成")}</Badge>
           ) : null}
         </div>
@@ -863,22 +870,27 @@ function ReportPreview({ full }: { full?: boolean }) {
                 {locale === 'en' ? uiT('报告字段') : uiT("模板原文")}</span>
             </span>
             <ul className="no-scrollbar min-h-0 flex-1 overflow-hidden" style={mask}>
-              {fields.map((f) => (
-                <li
-                  key={f.key}
-                  className="flex items-baseline gap-2 border-b border-line-soft py-[3px] last:border-b-0"
-                >
-                  <span className="shrink-0 text-[12px] text-t3" title={uiT(f.name)}>{uiT(f.name) === f.name ? uiT(rawFieldLabel(f)) : uiT(f.name)}</span>
-                  <span
-                    className={cn(
-                      'num ml-auto truncate text-[12px]',
-                      h[f.key] ? 'text-t1' : 'text-t3',
-                    )}
+              {fields.map((f) => {
+                const nm = headerFieldName(f)
+                const shown = uiT(nm)
+                // 纸面口径：照抄模板原文（不做简繁归一）；词典有全名译文就用全名，否则截 6 字
+                return (
+                  <li
+                    key={f.key}
+                    className="flex items-baseline gap-2 border-b border-line-soft py-[3px] last:border-b-0"
                   >
-                    {h[f.key] || (upstream(f) ? uiT('上游带入') : uiT('待填'))}
-                  </span>
-                </li>
-              ))}
+                    <span className="shrink-0 text-[12px] text-t3" title={shown}>{shown === nm ? uiT(short(nm, 6)) : shown}</span>
+                    <span
+                      className={cn(
+                        'num ml-auto truncate text-[12px]',
+                        h[f.key] ? 'text-t1' : 'text-t3',
+                      )}
+                    >
+                      {h[f.key] || (upstream(f) ? uiT('上游带入') : uiT('待填'))}
+                    </span>
+                  </li>
+                )
+              })}
             </ul>
           </div>
 
@@ -1021,7 +1033,7 @@ export function FullReport() {
             {pack.report.header_fields.map((f) => (
               <tr key={f.key} className="border-b border-line-soft">
                 <td className="w-[34%] py-1 text-t3">
-                  {uiT(simp(f.name))} <span className="num text-t3">{f.value_slot || '—'}</span>
+                  {uiT(simp(headerFieldName(f)))} <span className="num text-t3">{f.value_slot || '—'}</span>
                 </td>
                 <td className={cn('num py-1', h[f.key] ? 'text-t1' : 'text-t3')}>
                   {h[f.key] || (upstream(f) ? uiT('由上游流程带入') : uiT('待补全'))}
@@ -1036,10 +1048,10 @@ export function FullReport() {
         {pack.report.spec_sections.map((s) => (
           <div key={s.section} className="border-b border-line-soft py-1.5">
             <div className="flex items-baseline gap-2">
-              <span className="text-[12.5px] text-t1">{sectionDisplay(s.section, uiT)}</span>
-              <span className="num ml-auto text-[12px] text-t3">{s.rows}</span>
+              <span className="min-w-0 text-[12.5px] text-t1">{sectionDisplay(sectionTitle(s), uiT)}</span>
+              <span className="num ml-auto shrink-0 text-[12px] text-t3">{s.rows}</span>
             </div>
-            <p className="pt-0.5 text-[12px] leading-5 text-t2">{s.fields.map((field) => uiT(simp(field))).join(' · ')}</p>
+            <p className="pt-0.5 text-[12px] leading-5 text-t2">{sectionFields(s).map((field) => uiT(simp(field))).join(' · ')}</p>
           </div>
         ))}
 
@@ -1257,7 +1269,7 @@ function Artifacts({ full }: { full?: boolean }) {
                   <span className="min-w-0 truncate text-[13px] font-medium text-t1">{uiT(it.name)}</span>
                   <span className="num shrink-0 text-[12px] text-t3">{uiT(it.meta)}</span>
                   {it.tag ? (
-                    <Badge tone="warn" className="ml-auto" title={pack.caps.syntheticBanner}>
+                    <Badge tone="warn" className="ml-auto" title={uiT(pack.caps.syntheticBanner)}>
                       {uiT(it.tag)}
                     </Badge>
                   ) : null}
@@ -1503,7 +1515,7 @@ function ReportHistory({ full }: { full?: boolean }) {
                 k: s.name,
                 v: uiT("{v1} 行 × {v2} 列{v3}", { v1: s.max_row ?? '—', v2: s.max_column ?? '—', v3: s.image_count ? ` · 图 ${s.image_count}` : '' }),
               }))
-            : pack.report.spec_sections.map((s) => ({ k: s.section, v: s.rows }))
+            : pack.report.spec_sections.map((s) => ({ k: sectionTitle(s), v: s.rows }))
           ).map((r) => (
             <div key={r.k} className="flex items-center gap-2 border-b border-line-soft py-1.5">
               <span className="truncate text-[12.5px] text-t1">{r.k}</span>
@@ -1526,6 +1538,11 @@ function sectionShort(s: string) {
 function sectionDisplay(s: string, t: (source: string) => string): string {
   const exact = t(s)
   if (exact !== s) return exact
+  // 2026-10-15（A 方案）：不含汉字的串（英文节名，如 `1. Motor Parameters`）**原样返回**。
+  // 下面的清洗链是中文专用（按「、」切主体、去尾部英文副名、截前 6 字），套在英文上会把
+  // `1. Motor Parameters` 削成 `1.`、把 `5. Speed Control (…)` 削成 `5. Spe…`（用户实测反馈）。
+  // 英文名过长由调用处的 CSS truncate + Tooltip 承载，不在这里二次加工。
+  if (!/[\u3400-\u9fff]/.test(s)) return s
   const body = (s.includes('、') ? s.split('、')[1] : s)
   const heading = simp(body).replace(/順/g, '顺').replace(/須/g, '须').match(/^[\u3400-\u9fff]+/)?.[0] ?? body
   const topic = heading === '其他必须测试功能' ? '其他必须测试' : heading
@@ -1535,6 +1552,7 @@ function sectionDisplay(s: string, t: (source: string) => string): string {
 
 function TemplateFields({ full }: { full?: boolean }) {
   const uiT = useT()
+  const { locale } = useLocale()
 
   const pack = getPack()
   const h = useShared()
@@ -1571,22 +1589,24 @@ function TemplateFields({ full }: { full?: boolean }) {
             className="block w-full"
             content={
               <span className="block space-y-1">
-                <span className="block font-medium">{sectionDisplay(s.section, uiT)}</span>
+                <span className="block font-medium">{sectionDisplay(sectionTitle(s), uiT)}</span>
                 <span className="num block opacity-75">
                   {s.rows} · {s.from_flow}
                 </span>
-                <span className="block opacity-75">{s.fields.map((field) => uiT(field)).join(' · ')}</span>
+                <span className="block opacity-75">{sectionFields(s).map((field) => uiT(field)).join(' · ')}</span>
               </span>
             }
           >
             <span className="flex w-full cursor-help items-center gap-2 py-[5px]">
+              {/* 英文名比中文长得多，76px 只够显示开头几个词；英文界面下放宽，
+                  仍靠 truncate + Tooltip 兜底 */}
               <span
                 className={cn(
                   'shrink-0 truncate text-[12.5px] text-t1',
-                  full ? 'w-[210px]' : 'w-[76px]',
+                  full ? 'w-[210px]' : locale === 'en' ? 'w-[132px]' : 'w-[76px]',
                 )}
               >
-                {sectionDisplay(s.section, uiT)}
+                {sectionDisplay(sectionTitle(s), uiT)}
               </span>
               <span className="min-w-0 flex-1">
                 <StackBar

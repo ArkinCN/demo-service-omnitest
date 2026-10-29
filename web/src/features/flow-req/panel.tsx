@@ -1,3 +1,5 @@
+import { ConfigSuggestionButton } from '../config-suggestions/ConfigSuggestionButton'
+import { requirementIdOf } from '../config-suggestions/protocol'
 import { useT } from '../../i18n'
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useNavigate } from 'react-router'
@@ -247,6 +249,11 @@ const TH_RULES: [RegExp, (v: number) => string][] = [
 function thresholdBadge(r: RawRequirement): string | null {
   const th = r.threshold
   if (!th) return null
+  // Trial count is the acceptance target; do not replace it with a speed threshold.
+  for (const key of ['required_full_pass', 'required_pass', 'required_count', 'runs', 'trig_count']) {
+    const value = th[key]
+    if (typeof value === 'number') return `${numText(value)} 次`
+  }
   for (const [re, fmt] of TH_RULES) {
     for (const [k, v] of Object.entries(th)) {
       if (!re.test(k)) continue
@@ -332,8 +339,8 @@ function ReqRow({ r }: { r: RawRequirement }) {
     <span className="block space-y-1">
       <span className="block font-medium">{uiT(r.name)}</span>
       <span className="num block opacity-75">{r.id}</span>
-      <span className="block opacity-75">{r.criterion_text}</span>
-      {manual ? <span className="block opacity-75">{uiT("人工判 · ")}{r.not_evaluable_reason}</span> : null}
+      <span className="block opacity-75">{uiT(r.criterion_text)}</span>
+      {manual ? <span className="block opacity-75">{uiT("人工判 · ")}{uiT(r.not_evaluable_reason)}</span> : null}
       {r._placeholder ? (
         <span className="block opacity-75">
           {confirmed ? uiT('已确认知悉 · 源材料未给出阈值，本次未补值') : uiT('待确认 · 源材料未给出阈值')}
@@ -595,18 +602,16 @@ export function ReqLeftPanel() {
       </header>
 
       <div className="fade-b min-h-0 flex-1 overflow-y-auto pb-2">
-        <ConfigOverview
+        <ConfigOverview flow="req" assist={<ConfigSuggestionButton stage="req" pending={saving} getSelection={() => sel.ids} updateSelection={(changes) => {
+            const next = new Set(sel.ids)
+            // 字段 id 是 `req.<判据id>`，用 protocol 里的唯一映射还原判据 id；
+            // 此前写死 slice(4)，前缀一变就静默切错（交接坑 #3）。
+            for (const change of changes) { const id = requirementIdOf(change.field_id); if (change.after) next.add(id); else next.delete(id) }
+            replaceSelectedIds(next)
+            setBaselineIds(null)
+          }} />}
           key={pack.scene.id}
           count={total}
-          quick={
-            <>
-              {reqs.slice(0, 3).map((r) => (
-                <div className="config-quick-card" key={r.id}>
-                  <ReqRow r={r} />
-                </div>
-              ))}
-            </>
-          }
         >
           <UnifiedConfigPanel
             flow="req"
@@ -705,9 +710,9 @@ function WorkflowStage({ full }: { full?: boolean }) {
       </div>
 
       <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-        <Tooltip content={cur?.purpose ?? cur?.name ?? ''}>
+        <Tooltip content={uiT(cur?.purpose ?? cur?.name ?? '')}>
           <span className="max-w-[210px] cursor-help truncate text-[13px] font-semibold tracking-tight text-t1">
-            {cur?.name ?? '—'}
+            {uiT(cur?.name ?? '—')}
           </span>
         </Tooltip>
         <Badge tone="soft" mono>
@@ -803,7 +808,7 @@ function WorkflowLibrary({ full }: { full?: boolean }) {
               {items.map((e) => {
                 const on = e.id === active
                 return (
-                  <Tooltip key={e.id} className="w-full" content={e.purpose ?? e.name}>
+                  <Tooltip key={e.id} className="w-full" content={uiT(e.purpose ?? e.name)}>
                     <button
                       type="button"
                       onClick={() => void openWf(pack, e)}
@@ -824,7 +829,7 @@ function WorkflowLibrary({ full }: { full?: boolean }) {
                           on ? 'font-medium text-p700' : 'text-t1',
                         )}
                       >
-                        {e.name}
+                        {uiT(e.name)}
                       </span>
                       <span className="num ml-auto shrink-0 rounded-full border border-line px-1.5 text-[12px] leading-[17px] text-t3">
                         {voltShort(e.voltage)}
@@ -946,7 +951,7 @@ function CriteriaTable({ full }: { full?: boolean }) {
                 className="flex items-center gap-2 border-b border-line-soft py-[5px] last:border-b-0"
               >
                 <span className="num w-[92px] shrink-0 text-[12px] text-t3">{r.id}</span>
-                <span className="truncate text-[12.5px] text-t1">{r.name}</span>
+                <span className="truncate text-[12.5px] text-t1">{uiT(r.name)}</span>
                 <span className="num ml-auto shrink-0 text-[12px] text-t3">
                   {thresholdBadge(r) ?? '—'}
                 </span>
@@ -994,7 +999,7 @@ function CriteriaEvidence({ full }: { full?: boolean }) {
         <Badge tone="ink" mono>
           {r.id}
         </Badge>
-        <Tooltip className="min-w-0" content={r.criterion_text}>
+        <Tooltip className="min-w-0" content={uiT(r.criterion_text)}>
           <span className="cursor-help truncate text-[13px] font-medium text-t1">
             {uiT(r.name) === r.name ? short(r.name, 10) : uiT(r.name)}
           </span>
@@ -1040,7 +1045,7 @@ function CriteriaEvidence({ full }: { full?: boolean }) {
           </div>
         ) : null}
         {full ? (
-          <p className="pt-3 text-[12.5px] leading-6 text-t2">{r.criterion_text}</p>
+          <p className="pt-3 text-[12.5px] leading-6 text-t2">{uiT(r.criterion_text)}</p>
         ) : null}
       </div>
     </div>
@@ -1106,10 +1111,10 @@ function HistoryCard({ full }: { full?: boolean }) {
       {batches.map((b) => {
         const total = b.pass + b.fail + b.other || 1
         return (
-          <Tooltip key={b.id} className="w-full" content={b.note}>
+          <Tooltip key={b.id} className="w-full" content={uiT(b.note)}>
             <div className="w-full cursor-help">
               <div className="flex items-baseline gap-2 pb-1.5">
-                <span className="truncate text-[13px] font-medium text-t1">{b.name}</span>
+                <span className="truncate text-[13px] font-medium text-t1">{uiT(b.name)}</span>
                 <span className="num text-[12px] text-t3">{total}</span>
                 <span className="num ml-auto text-[12px] text-p700">PASS {b.pass}</span>
                 <span className="num text-[12px] text-t2">FAIL {b.fail}</span>
@@ -1138,7 +1143,7 @@ function HistoryCard({ full }: { full?: boolean }) {
               className="flex items-center gap-2 border-b border-line-soft py-[5px] last:border-b-0"
             >
               <span className="num w-[130px] shrink-0 truncate text-[12px] text-t3">{d.id}</span>
-              <span className="truncate text-[12.5px] text-t1">{d.name}</span>
+              <span className="truncate text-[12.5px] text-t1">{uiT(d.name)}</span>
               <span className="num ml-auto shrink-0 text-[12px] text-t3">
                 {d.label?.operator_result ?? '—'}
               </span>

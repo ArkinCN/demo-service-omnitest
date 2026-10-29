@@ -1,8 +1,29 @@
 import type { FlowId } from '../../data/types'
-import type { RawPack } from '../scene/pack'
+import { headerFieldAltName, headerFieldName, type RawPack } from '../scene/pack'
 import type { LastRunData } from '../flow-run/api'
 import { buildTiers, readTiers } from '../shared/tiers'
+import { translate } from '../../i18n/runtime'
+import { initialLocale } from '../../i18n/locale'
 import type { ActionDef, ActionScope } from './actions'
+
+/**
+ * 把上送模型的中文原文按当前界面语言翻译（2026-10-14 用户反馈：英文界面下 AI
+ * 仍把「出处」列成中文）。
+ *
+ * 背景：左栏 UI 的字段名/层级名走 `uiT()` 正确英化，但**送给模型的上下文数据**
+ * 走的是另一条路径（本文件的 leafSource / fieldRef），此前是裸取场景包原文，
+ * 从未过 i18n → 模型拿到中文，自然只能答中文。
+ *
+ * 本模块是**纯函数模块**（不在 React 渲染里），拿不到 `useT()`，故直接用
+ * `initialLocale()` 读当前语言（与 agent-chat/api.ts 上送 locale 同一来源，
+ * 也保证「外发语言」与「请求声明的 locale」一致）。
+ *
+ * 词条缺失时 `translate()` 原样返回入参 —— 即退化成旧行为，安全。
+ * 中文界面下 `translate()` 直接返回原文，行为与改动前完全一致。
+ */
+function ctxT(text: string): string {
+  return translate(text, initialLocale())
+}
 
 /* ===========================================================================
    上下文包（context envelope v1）。
@@ -151,7 +172,7 @@ function sectionOf(
  * `group_tiers`，不另写一套遍历——两套遍历迟早会走偏。
  * 找不到归属就逐级降级（二级 → 一级 → 空串），**不编造一层**。
  */
-function tierPathOf(
+export function tierPathOf(
   pack: RawPack | null,
   key: string,
   section: TierSection = 'attributes',
@@ -236,19 +257,32 @@ function resolvedValue(
 }
 
 /** 三内类的叶子条目：本体属性 / 控制参数 / 报告表头（形状与左栏 Leaf 对齐） */
-interface AnyLeaf {
+export interface AnyLeaf {
   k: 'attr' | 'param' | 'field'
   id: string
   g: string
   name: string
+  /**
+   * 「另一种语言」的字段名（2026-10-15 新增，只有报告表头字段会带）。
+   *
+   * `name` 随界面语言（中文界面给中文名、英文界面给平行英文名，见 `headerFieldName`）；
+   * 本字段给另一种语言的写法，供 `fieldRegistry` 的解析做**双名匹配**：英文界面下用户
+   * 或模型给中文名、中文界面下给英文名，同样能落到同一条字段。
+   */
+  nameAlt?: string
   value: unknown
   /** 源材料缺口的写法（「未知」串 + 该标记），只有本体属性与控制参数会带 */
   placeholder?: boolean
   status?: string
 }
 
-/** 叶子的四段键——必须与 `flow-init/panel.tsx` 的 `leafKeyOf` 逐字一致 */
-function leafKey(flow: string, x: AnyLeaf): string {
+/**
+ * 叶子的四段键——必须与 `flow-init/panel.tsx` 的 `leafKeyOf` 逐字一致。
+ *
+ * ⚠️ 2026-10-14 改为 `export`：`fieldRegistry.ts`（AI 通用字段读写）必须复用它，
+ * 禁止在第三个地方再手写这套键，否则出现「AI 改了值但左栏不动」。
+ */
+export function leafKey(flow: string, x: AnyLeaf): string {
   if (x.k === 'attr') return `${flow}.pa.${x.g}.${x.id}`
   if (x.k === 'param') return `${flow}.cp.${x.g}.${x.id}`
   return `${flow}.rp.header.${x.id}`
@@ -284,14 +318,20 @@ function humanFilled(input: EnvelopeInput, x: AnyLeaf): boolean {
   return false
 }
 
-/** 叶子在左栏里的完整层级路径（出处），复用属性段的构造器，取不到逐级降级 */
-function leafSource(pack: RawPack | null, x: AnyLeaf): string {
+/**
+ * 叶子在左栏里的完整层级路径（出处），复用属性段的构造器，取不到逐级降级。
+ *
+ * 2026-10-14：层级名与字段名都过 `ctxT()` 按当前界面语言翻译——此前是裸取场景包
+ * 中文原文，导致英文界面下模型照抄中文出处（用户实测反馈）。
+ * 中文界面下 `ctxT()` 原样返回，行为不变。
+ */
+export function leafSource(pack: RawPack | null, x: AnyLeaf): string {
   if (x.k === 'field') {
     const chain = tierPathOf(pack, x.id, 'report')
-    return [...chain, x.name].filter(Boolean).join(' → ')
+    return [...chain, x.name].filter(Boolean).map(ctxT).join(' → ')
   }
   const chain = x.k === 'attr' ? tierPathOf(pack, x.id) : tierPathOf(pack, x.id, 'controls')
-  return [...chain, x.name].filter(Boolean).join(' → ')
+  return [...chain, x.name].filter(Boolean).map(ctxT).join(' → ')
 }
 
 /**
@@ -307,8 +347,9 @@ function leafSource(pack: RawPack | null, x: AnyLeaf): string {
 function fieldRef(input: EnvelopeInput, x: AnyLeaf): ZoneBFieldRef {
   const v = resolvedValue(input, leafKey('init', x), x.value)
   const ref: ZoneBFieldRef = {
+    // key 是稳定标识，**不翻译**；name 是给人看的，随界面语言（2026-10-14）。
     key: x.id,
-    name: x.name,
+    name: ctxT(x.name),
     source: leafSource(input.pack, x),
   }
   if (!isBlank(v)) ref.value = v
@@ -323,7 +364,13 @@ function fieldRef(input: EnvelopeInput, x: AnyLeaf): ZoneBFieldRef {
  * 报告表头），两个数字对不上，用户没法对账（2026-10-05 用户实测反馈）。
  * 现在统一走这一份表，口径与左栏一致。
  */
-function allLeaves(pack: RawPack | null): AnyLeaf[] {
+/**
+ * 汇总场景包三类字段为统一叶子表（本体属性 / 控制参数 / 报告表头）。
+ *
+ * ⚠️ 2026-10-14 改为 `export`：`fieldRegistry.ts` 的 `listEditableFields()`
+ * 与 `resolveField()` 以它为唯一字段清单来源，避免再抄一遍遍历逻辑。
+ */
+export function allLeaves(pack: RawPack | null): AnyLeaf[] {
   if (!pack) return []
   const out: AnyLeaf[] = []
   for (const a of pack.attributes.attributes) {
@@ -349,7 +396,16 @@ function allLeaves(pack: RawPack | null): AnyLeaf[] {
     })
   }
   for (const f of pack.report.header_fields) {
-    out.push({ k: 'field', id: f.key, g: 'header', name: f.name, value: f.sample_value })
+    out.push({
+      k: 'field',
+      id: f.key,
+      g: 'header',
+      // 2026-10-15：报告表头字段带平行英文名，`name` 随界面语言（中文界面与改动前逐字相同），
+      // `nameAlt` 带另一种语言名供双名匹配。attr / param 段没有平行英文名，维持原样。
+      name: headerFieldName(f),
+      nameAlt: headerFieldAltName(f),
+      value: f.sample_value,
+    })
   }
   return out
 }
@@ -414,14 +470,15 @@ export function buildEnvelope(input: EnvelopeInput): Envelope {
     },
     flow: {
       id: input.flow,
-      label: input.flowLabel,
+      // 流程名随界面语言（2026-10-14）；id 是稳定标识不译。
+      label: ctxT(input.flowLabel),
       step: null,
       confirmed: input.confirmed,
     },
     zoneB: {
       form_groups: (p?.attributes.groups ?? []).map((g) => ({
         id: g,
-        name: g,
+        name: ctxT(g),
         item_count: attrs.filter((a) => a.group === g).length,
       })),
       values: Object.fromEntries(paramDiff(input).map((d) => [d.key, d.value])),
@@ -520,7 +577,7 @@ export function buildEnvelope(input: EnvelopeInput): Envelope {
       })),
       requirements: reqs.map((r) => ({
         id: r.id,
-        name: r.name,
+        name: ctxT(r.name),
         category: r.category,
         evaluable: r.evaluable !== false,
       })),
@@ -539,7 +596,7 @@ export function buildEnvelope(input: EnvelopeInput): Envelope {
       control_params:
         input.flow === 'report'
           ? []
-          : params.map((c) => ({ key: c.key, name: c.name, unit: c.unit })),
+          : params.map((c) => ({ key: c.key, name: ctxT(c.name), unit: c.unit })),
       firmware_project: p ? { source: p.base, note: '场景包登记的控制参数来源工程' } : null,
       report_template: p ? { file: p.report.template_file, fields: p.report.header_fields.length } : null,
       /**
@@ -568,10 +625,12 @@ export function buildEnvelope(input: EnvelopeInput): Envelope {
                 const chain = tierPathOf(p, f.key, 'report')
                 return {
                   key: f.key,
-                  name: f.name,
+                  // 名字与出处随界面语言（2026-10-14；2026-10-15 起优先取场景包平行英文名，
+                  // 缺失再回退词典翻译）。key / value_slot 是稳定标识，不译。
+                  name: ctxT(headerFieldName(f)),
                   value_slot: f.value_slot,
                   // 一级类 → 二级组 → 字段名；骨架里只有两级时就是两级，不硬凑三级
-                  source: [...chain, f.name].filter(Boolean).join(' → '),
+                  source: [...chain, headerFieldName(f)].filter(Boolean).map(ctxT).join(' → '),
                 }
               })
           : undefined,

@@ -234,6 +234,8 @@ app.include_router(credits.router, prefix=settings.API_V1_PREFIX)
 app.include_router(tasks.router, prefix=settings.API_V1_PREFIX)
 # 助手会话兼容适配层：前端调 /api/agent/stream（无 /v1 前缀），故挂 /api
 app.include_router(agent_stream.router, prefix="/api")
+from app.api.v1.config_suggestions import router as config_suggestions_router
+app.include_router(config_suggestions_router, prefix="/api")
 # 知识库检索：前端建议形态 /api/kb/search（无 /v1 前缀），故挂 /api
 app.include_router(kb.router, prefix="/api")
 # 知识库三轴分类条目 CRUD：/api/kb/entries/*

@@ -217,6 +217,76 @@ WEB_SEARCH = {
 # 回传，再作为 tool_result 回填模型继续作答。见 agent_chat_service 的挂起分支。
 #
 # 名字登记在 FRONTEND_EXECUTED_TOOLS，loop 据此走「挂起-回填」而非本地执行。
+#
+# ── 通用字段工具（2026-10-14 新增：自然语言增删改查当前页面字段）──
+#
+# 与 WriteReportHeader 的差别：后者只覆盖「报告表头」一类字段，前者覆盖**当前页面上
+# 全部可编辑字段**（本体属性 pa / 控制参数 cp / 报告表头 rp.header），按四段键寻址。
+# 键口径的唯一真源是前端 `features/copilot/context.ts` 的 leafKey()：
+#   ${flow}.pa.${group}.${key} / ${flow}.cp.${group}.${key} / ${flow}.rp.header.${key}
+# 后端**不解析键**（不重复实现一套寻址逻辑），只负责下发 tool_call、前端解析并执行、
+# 如实回执。解析失败时前端会返回相似候选，模型据此自纠或如实告知。
+READ_FIELD = {
+    "name": "ReadField",
+    "description": (
+        "查询【当前页面】字段的当前值、取值范围、是否可编辑与出处路径。\n"
+        "· all=true：列出本页全部可编辑字段（含当前值、单位、可选值）。"
+        "用户问「这页有哪些字段/哪些还没填/某项等于多少」时用这个。\n"
+        "· all 省略或 false：按 field 查单个字段。\n"
+        "【重要】读操作无副作用，**无需人工确认**，会立即返回结果。"
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "field": {
+                "type": "string",
+                "description": "字段的完整层级路径（如「被测对象 → 机械外形 → 风扇外形尺寸」）、字段名或键。all=true 时可省略。",
+            },
+            "all": {"type": "boolean", "description": "true 时列出本页全部可编辑字段清单。"},
+        },
+    },
+}
+
+WRITE_FIELD = {
+    "name": "WriteField",
+    "description": (
+        "增/改/清空【当前页面】的可编辑字段值，覆盖三类：本体属性、控制参数、报告表头。\n"
+        "· 定位：优先用现场上下文给出的**完整层级路径**（如「被测对象 → 机械外形 → 风扇外形尺寸」），"
+        "也可用字段名或键。\n"
+        "· 批量：用户一句话要求改多项时，**合并成一次调用**，changes 里放多条，"
+        "操作员只确认一次。\n"
+        "· 取值：只填数值/文本本身，**不要带单位后缀**（写 20 而不是「20mm」）。\n"
+        "· 清空：把 value 传空串（仅占位项或人工填过的项允许清空）。\n"
+        "【重要】这是**写操作**：调用后会先弹人工确认卡，确认后才真正写入页面。"
+        "确认前不要声称已经写好；工具返回被取消或失败时，必须如实转述，"
+        "并把「哪一项失败、为什么」讲清楚，绝不谎称已完成。"
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "changes": {
+                "type": "array",
+                "description": "要写入的字段列表（批量修改时放多条）。",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "field": {
+                            "type": "string",
+                            "description": "字段的完整层级路径、字段名或键。",
+                        },
+                        "value": {
+                            "type": "string",
+                            "description": "新值（按字段自身单位，不带单位后缀）；清空该字段传空串。",
+                        },
+                    },
+                    "required": ["field", "value"],
+                },
+            },
+        },
+        "required": ["changes"],
+    },
+}
+
 WRITE_REPORT_HEADER = {
     "name": "WriteReportHeader",
     "description": (
@@ -240,18 +310,36 @@ WRITE_REPORT_HEADER = {
     },
 }
 
-ALL_TOOLS = [KNOWLEDGE_SEARCH, DOC_LIBRARY_SEARCH, WEB_SEARCH, WRITE_REPORT_HEADER]
+ALL_TOOLS = [
+    KNOWLEDGE_SEARCH,
+    DOC_LIBRARY_SEARCH,
+    WEB_SEARCH,
+    READ_FIELD,
+    WRITE_FIELD,
+    WRITE_REPORT_HEADER,
+]
 
-# 由**前端**执行（需人工确认）的工具名集合。loop 遇到这些工具时挂起等待回执。
-FRONTEND_EXECUTED_TOOLS = {"WriteReportHeader"}
+# 由**前端**执行的工具名集合。
+#
+# ⚠️ 分两类（2026-10-14 通用增删改查改造）：
+#   · 变更类（_MUTATING_FRONTEND_TOOLS）—— 有副作用，**必须**弹人工确认卡；
+#   · 读取类（ReadField）—— 无副作用，**不弹卡**，前端直接执行并回执。
+# loop 遇 FRONTEND_EXECUTED_TOOLS 里的名字走「挂起-回填」，不本地执行；
+# 是否 mutating 由 agent_chat_service 按 _MUTATING_FRONTEND_TOOLS 判定。
+FRONTEND_EXECUTED_TOOLS = {"ReadField", "WriteField", "WriteReportHeader"}
+
+# 变更类前端工具（需人工确认）。不在本集合内的前端工具按「只读、免确认」处理。
+MUTATING_FRONTEND_TOOLS = {"WriteField", "WriteReportHeader"}
 
 # ── 权限档位 → 允许的工具名（**服务端硬上限**，不信任前端）──
 #
 # 三重防线中的第 2 层（第 1 层是 select_tools 的按档过滤让模型根本看不到写工具，
 # 第 3 层是 loop 内的 allowed_names 拦截 + 前端确认卡）。未知档位一律按只读处理
 # （安全默认），绝不因为传了个没见过的值就放开写能力。
-_READONLY_TOOLS = {"KnowledgeSearch", "DocLibrarySearch", "WebSearch"}
-_WRITE_TOOLS = {"WriteReportHeader"}
+#
+# ReadField 放只读档（查无副作用）；WriteField 只进写档。
+_READONLY_TOOLS = {"KnowledgeSearch", "DocLibrarySearch", "WebSearch", "ReadField"}
+_WRITE_TOOLS = {"WriteField", "WriteReportHeader"}
 
 PERMISSION_TOOLS = {
     "readonly": _READONLY_TOOLS,

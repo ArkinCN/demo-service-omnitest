@@ -104,7 +104,7 @@ function FlowStepper() {
     query.addEventListener('change', update)
     return () => query.removeEventListener('change', update)
   }, [])
-  const compactEnglish = locale === 'en' && narrowViewport
+  const compactSteps = narrowViewport
 
   const { pathname } = useLocation()
   // 模块路由（/knowledge）不属于任何一步，此时 stepper 不点亮任何一步
@@ -131,8 +131,8 @@ function FlowStepper() {
   // 基准：节点高 78、圆标 39、字号 19.5、图标 21、段宽 48、顶栏高 120。
   // labelPx = 20（1.5× 后标签基准字号）；小于 10px 时隐藏文字、保留图标+序号+悬停全称
   const { slotRef, barRef, scale, compact } = useFlowBarScale<HTMLDivElement>({
-    contentKey: `${locale}:${compactEnglish}`,
-    fixedScale: compactEnglish ? 0.5 : undefined,
+    contentKey: `${locale}:${compactSteps}`,
+    fixedScale: compactSteps ? 0.5 : undefined,
     labelPx: 20,
     compactTextPx: 10,
   })
@@ -195,7 +195,11 @@ function FlowStepper() {
   }, [scale])
 
   return (
-    <div ref={slotRef} className={cn('flex flex-1 items-center justify-center', compactEnglish ? 'min-w-[240px]' : 'min-w-0')}>
+    // 窄屏自适应（2026-10-15）：加 topbar-stepper-slot 作为 CSS 断点钩子。
+    // ≤1024px 时它被设为 flex-basis:100% + order:2，让流程条独占一整行，
+    // 避免与品牌区 / 自动化按钮 / 右侧控件组在同一行互相挤压（它们都是
+    // shrink-0，谁也不肯让）。此处 min-width 语义保持原样不动。
+    <div ref={slotRef} className={cn('topbar-stepper-slot flex flex-1 items-center justify-center', compactSteps ? 'min-w-[240px]' : 'min-w-0')}>
     <nav
       ref={(el: HTMLDivElement | null) => {
         navRef.current = el
@@ -223,6 +227,10 @@ function FlowStepper() {
         />
       ) : null}
       {FLOWS.map((f, i) => {
+        // 2026-10-29：文案只留中文原文，英文由 catalog 提供（此处原先还判了 locale）。
+        const precondition = f.id === 'report'
+          ? uiT('核对检测结果后整理报告；调参复测按需进行。')
+          : uiT(f.precondition ?? '')
         const state = flowStateOf(f.id, current.id, scene, confirmed)
         const on = onFlow && f.id === current.id
         const done = state === 'confirmed'
@@ -279,7 +287,7 @@ function FlowStepper() {
               to={f.path}
               aria-label={uiT(f.label)}
               data-active={on ? 'true' : undefined}
-              title={`${f.index} ${uiT(f.label)}${f.precondition ? ` · ${uiT(f.precondition)}` : ''}`}
+              title={`${f.index} ${uiT(f.label)}${f.precondition ? ` · ${precondition}` : ''}`}
               className={cn(
                 // 2026-10-09：底色改由上面的滑动高亮块承担，这里只留 hover 的轻反馈。
                 // 2026-10-10：整体放大 1.5 倍（h-[52px]→78×s、px/gap 同步），尺寸全部乘 --fb-scale。
@@ -321,7 +329,7 @@ function FlowStepper() {
                 )}
               </span>
               {/* 标签：紧凑模式（文字过小）下隐藏，仅保留圆标+序号，悬停 title 显示全称 */}
-              {!compact && !compactEnglish ? (
+              {!compact && !compactSteps ? (
                 <span
                   className={cn(
                     'whitespace-nowrap transition-colors',
@@ -351,6 +359,8 @@ function FlowStepper() {
 const KnowledgeIcon = MODULE_ICON.knowledge
 
 export function TopBar() {
+  const reportConfirmed = useAppStore((state) => !!state.confirmed.report)
+  const selectedSuggestions = useAppStore((state) => state.adoptedKeys.length)
   const uiT = useT()
 
   const { locale, setLocale } = useLocale()
@@ -388,10 +398,14 @@ export function TopBar() {
   // 动作条右端那行字只在流程 3 报运行态：别的流程没有「启动」这回事，
   // 报「待启动」等于给一条不存在的进度。
   const gateBlocked = current.id === 'run' && !(gateTotal > 0 && gateAcked.length >= gateTotal)
+  // 这里只产出**中文原文**；渲染处统一 `uiT(statusText)` 翻译（见本文件下方动作条），
+  // 带数字的「已选 N 项建议」由 {v1} 模板词条处理，不再各自判 locale。
   const statusText =
-    current.id !== 'run' ? '就绪' : gateBlocked ? '闸门未放行' : RUN_PHASE_LABEL[runPhase]
+    current.id === 'report' ? (reportConfirmed ? '信息已确认' : '待确认报告信息')
+      : current.id === 'tune' ? `已选 ${selectedSuggestions} 项建议`
+      : current.id !== 'run' ? '就绪' : gateBlocked ? '闸门未放行' : RUN_PHASE_LABEL[runPhase]
   const statusTone: 'empty' | 'done' | 'alert' =
-    current.id !== 'run'
+    current.id === 'report' ? (reportConfirmed ? 'done' : 'empty') : current.id === 'tune' ? 'empty' : current.id !== 'run'
       ? 'done'
       : gateBlocked
         ? 'empty'
@@ -403,7 +417,12 @@ export function TopBar() {
     <header className="shrink-0">
       {/* 顶栏高度（2026-10-10）：随流程条放大到 1.5 倍（120px），窄屏回落但**保底 80px**
           （不低于上一轮已验收的高度）。用 CSS 变量 --topbar-h 由 FlowStepper 的缩放驱动。 */}
-      <div className="flex h-[var(--topbar-h,80px)] items-center gap-4 border-b border-line bg-surface"
+      {/* 窄屏自适应（2026-10-15）：高度与换行交给 .topbar-main（index.css）。
+          原来是 h-[var(--topbar-h,80px)] **固定高**，内容一旦换行就会被裁；
+          现在改为 height:auto + min-height:var(--topbar-h,80px) + flex-wrap:wrap，
+          换行时容器自动增高，多出的高度由 Shell 的 flex-col 转嫁给 .shell-main。
+          宽屏单行时渲染高度不变，观感与改动前一致。 */}
+      <div className="topbar-main flex items-center gap-4 border-b border-line bg-surface"
         style={{ paddingInline: 'clamp(18px, 1.7vw, 32px)' }}>
         {/* 品牌区（2026-10-10）：随 1.5× 流程条同步放大，与头部菜单栏文字/图标对齐。
             宽屏（≥1536）放大到 1.25×；窄屏回落到原尺寸，避免挤占中间流程条的可用宽度。 */}
@@ -456,7 +475,7 @@ export function TopBar() {
                   : () => setAutomationIntent(true)
             }
           >
-            {backToConsole ? uiT('回到运行台') : autoRunning ? uiT('终止') : uiT('AI自动化测试')}
+            <span className="stage-automation-label"><span>{backToConsole ? uiT('回到运行台') : autoRunning ? uiT('终止') : uiT('AI自动化测试')}</span><small>{uiT(autoRunning ? '五阶段自动运行中' : '自动推进 1–5 · 按需复测')}</small></span>
           </Button>
         </Tooltip>
 
@@ -513,10 +532,12 @@ export function TopBar() {
       </div>
 
       {/* 动作条 48 · 次表面浅绿，左动作右状态。模块页没有流程动作，整条不渲染 */}
+      {/* 窄屏自适应（2026-10-15）：h-[48px] → min-height + 允许换行（见 index.css
+          的 .topbar-actions）。动作按钮多时换行而不是互相挤压变形。 */}
       {onFlow ? (
-      <div className="flex h-[48px] items-center gap-2 border-b border-line bg-p50"
+      <div className="topbar-actions flex items-center gap-2 border-b border-line bg-p50"
         style={{ paddingInline: 'clamp(18px, 1.7vw, 32px)' }}>
-        {current.actions.slice(0, 4).map((a) => {
+        {current.actions.filter((a) => !(current.id === 'report' && a.id === 'gen-report' && !reportConfirmed)).slice(0, 4).map((a) => {
           const Icon = ACTION_ICON[a.id] ?? Sparkles
           const b = bind(a.id)
           // 置灰理由一律现算：闸门差几条、有没有勾采纳项，都从 store 取，
@@ -529,7 +550,7 @@ export function TopBar() {
               disabled={b.disabled}
               onClick={b.onClick}
               data-action={a.id}
-              variant={a.primary ? 'primary' : a.danger ? 'danger' : 'default'}
+              variant={current.id === 'report' && a.id === 'gen-report' ? 'default' : a.primary ? 'primary' : a.danger ? 'danger' : 'default'}
               icon={<Icon size={14} strokeWidth={1.75} />}
             >
               {uiT(a.label)}

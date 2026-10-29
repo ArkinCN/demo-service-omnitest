@@ -126,9 +126,19 @@ export function ResourcePanel({ flow, scene }: { flow: FlowId; scene: ScenePacka
             className="min-h-0 flex-1 overflow-hidden"
             style={{ padding: 'clamp(12px, 1.05vw, 20px)' }}
           >
+            {/* 窄屏自适应（2026-10-15）：加 panel-grid-scroll 钩子。
+                堆叠档（≤860px）右列只拿到容器高的 8/13，本容器可用高从约 500px
+                掉到约 150px，而网格行高下限就占了 220+140=360px，**实测越出 118px、
+                卡片下半截被裁**。B3 档由 index.css 给它 overflow-y:auto ——
+                溢出部分可滚动查看，符合「不裁切」的验收口径；宽屏保持原观感。
+                ⚠️ 挂在这一层（而不是外层 padding 容器）才有效：滚动容器必须是
+                   高度确定且**直接包住网格**的那一个，否则网格的溢出内容不参与
+                   外层 scrollHeight 的计算，加了也不会出现滚动条。
+                ⚠️ 网格行高下限本身**不能动**：其注释写明是「宁可溢出也不把图表
+                   压没」的有意取舍（2026-10-09），动它会让绘图区重新变成一条缝。 */}
             <div
               key={flow}
-              className="grid h-full"
+              className="panel-grid-scroll grid h-full"
               style={{
                 gap: 'clamp(12px, 0.9vw, 16px)',
                 gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',

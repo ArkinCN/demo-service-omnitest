@@ -53,16 +53,28 @@ const DEFAULT_ASSISTANT_RATIO = 1 / 2.75
 const HANDLE_H = 20
 
 /**
- * 助手行的像素下限（2026-10-10 由 216 下调到 160，用户确认口径）。
+ * 助手行的像素下限（2026-10-13 由 160 上调到 180，用户反馈"嵌字"）。
  *
- * 216px 原是为「卡片头 44 + 动作条约 34 + 输入框约 58 + 底部模型行约 40 + 内边距」
- * 定的死数（2026-09-23 出现过：被压到只剩一个「发送」按钮）。但它是**默认状态**
- * 的保底，不该顺手把用户主动下拖的空间也锁住：用户要的是「能自由调整、方便看图表」，
- * 故主动拖拽时允许缩到 ~160px（卡片头 + 动作条 + 输入框仍可用），
- * 底部「模型 / 权限」那一行在缩到底时被裁掉，拖回去立即恢复。
- * 默认状态下的 216px 口径由 defaultAssistantRatio() 复现，不拖时观感不变。
+ * 历史：216px 原是为「卡片头 44 + 动作条约 34 + 输入框约 58 + 底部模型行约 40 +
+ * 内边距」定的死数（2026-09-23 出现过：被压到只剩一个「发送」按钮）。
+ * 2026-10-10 下调到 160，允许用户主动拖到很矮方便看图表，代价是
+ * **底部「模型 / 权限」那一行在缩到底时被裁掉**（原注释即写明此取舍）。
+ *
+ * ⚠️ 2026-10-13 用户反馈：拖矮后底部那一行被"从中间横切"成半截字，观感像 bug
+ * （尤其英文模式下标签更长，切得更明显）。要求「底部行保底不被裁」。
+ *
+ * 实测（Playwright，1440×900，中英文一致）：.ac-root 内部各项高度合计
+ *   header 44 + stream 28 + slot 32 + composer 102（= box 45 + controls 26） = 206px
+ * 注意 .ac-stream 虽然 flex:1 1 auto + min-height:0，但它自带 padding 14px 上下，
+ * **实际最小占位 28px**（漏算它就会算成 178px、仍然差 26px 被裁）。
+ * 低于 206px 时超出部分被 .ac-root 的 overflow:hidden 从底部裁掉，
+ * 被裁的正是 .ac-controls（模型 / 权限）那一行 → 即用户看到的"嵌字"。
+ *
+ * 故下限取 208px（206 + 2px 余量）。仍保留「拖到很矮」的自由度（比原先只高 48px），
+ * 但保证任何可拖到的高度下底部行都完整可见。默认状态口径仍由
+ * defaultAssistantRatio() 复现，不拖时观感不变。
  */
-const ASSISTANT_MIN_H = 160
+const ASSISTANT_MIN_H = 208
 
 /**
  * 默认（无拖拽记录）时助手行「想要」的高度：让卡片头 + 动作条 + 输入框 +
@@ -333,13 +345,25 @@ export function FlowScreen({ flow }: { flow: FlowId }) {
        * items-stretch 保留：左右两列等高。
        */
       className={cn(
-        'grid min-h-0 w-full flex-1 items-stretch overflow-hidden',
-        autoRunning && 'automation-grid',
+        // 窄屏自适应（2026-10-15）：加 flow-split-grid 作为列定义的**唯一消费点**
+        // （见 index.css）；autoRunning 时额外挂 flow-split-auto，供断点用
+        // :not(.flow-split-auto) 排除——自动化接管时左栏不渲染，栅格只剩一个子元素，
+        // 若还套用堆叠档的两行模板，右列会被压进上面那一行。
+        'flow-split-grid grid min-h-0 w-full flex-1 items-stretch overflow-hidden',
+        autoRunning && 'automation-grid flow-split-auto',
       )}
       style={{
-        gridTemplateColumns: autoRunning ? '0px minmax(0, 1fr)' : 'minmax(300px, 380px) minmax(0, 1fr)',
-        gap: autoRunning ? '0px' : 'clamp(14px, 1.25vw, 24px)',
-      }}
+        // 窄屏自适应（2026-10-15）：原来这里直接写 gridTemplateColumns / gap，
+        // 但**内联样式优先级高于任何样式表规则**，index.css 里的窄屏断点覆盖不动
+        // （除非上 !important，那又会跟 Tailwind 的 utilities 打架）。
+        // 现改为「内联只给宽屏口径的变量，样式表负责消费」：
+        //   .flow-split-grid { grid-template-columns: var(--flow-cols, var(--flow-cols-wide, …)) }
+        // 各断点只覆盖 --flow-cols；宽屏口径与 autoRunning 让位分支仍由 JS 决定，逻辑零改动。
+        // ⚠️ 变量名必须是 --flow-cols-**wide**：若内联直接写 --flow-cols，
+        //    内联自定义属性的高优先级会让下方所有断点全部失效（别改回短名）。
+        '--flow-cols-wide': autoRunning ? '0px minmax(0, 1fr)' : 'minmax(300px, 380px) minmax(0, 1fr)',
+        '--flow-gap-wide': autoRunning ? '0px' : 'clamp(14px, 1.25vw, 24px)',
+      } as React.CSSProperties}
     >
       {autoRunning ? null : <LeftPanel flow={flow} scene={scene} />}
       <div

@@ -3,6 +3,7 @@ import type { EvidenceItem, PermissionLevel, Verdict } from './types';
 import { getToolExecutor, type ToolExecResult } from './toolExec';
 import { heldEnv } from '../copilot/held';
 import { rememberScriptMessages, uiMessage } from '../../i18n/messages';
+import { initialLocale } from '../../i18n/locale';
 import {
   REDLINE_ACTIONS,
   requestRedlineAsync,
@@ -419,13 +420,14 @@ function postConfirm(
  * （不信任前端）。这里同步按档生成，是为了让「只读档不发写工具」在请求层就诚实，
  * 与后端口径一致；即便这里多发一个写工具，后端也只读档照样不会下发给模型。
  *
- * - readonly : 仅检索工具。
- * - params   : 检索 + 写报告表头。
+ * - readonly : 检索工具 + ReadField（读无副作用，只读档也开放）。
+ * - params   : 上述 + WriteField / WriteReportHeader。
  * - hardware : 同 params（设备控制工具下一批再接）。
  */
 export function enabledToolsFor(permission: string): string[] {
-  const base = ['KnowledgeSearch', 'DocLibrarySearch'];
-  if (permission === 'params' || permission === 'hardware') return [...base, 'WriteReportHeader'];
+  const base = ['KnowledgeSearch', 'DocLibrarySearch', 'ReadField'];
+  if (permission === 'params' || permission === 'hardware')
+    return [...base, 'WriteField', 'WriteReportHeader'];
   return base;
 }
 
@@ -453,6 +455,10 @@ export const dshAdapter: AgentAdapter = {
           // 缺省/空列表时返回空工具集（模型纯回答、前端收不到 tool_call）。
           // 按档生成：只读档仅检索；可改参数/可控硬件档追加写报告表头工具。
           enabled_tools: enabledToolsFor(req.permission),
+          // 界面当前语言（2026-10-13）：现场上下文恒为中文，后端若只按提问语言猜，
+          // 短问句（如单个英文单词）会判错 → 实测英文界面下 AI 回复仍夹中文。
+          // 这里显式上送界面语言，后端写进 system prompt 作为权威声明。
+          locale: initialLocale(),
           ...(ctx ? { context: ctx } : {}),
         }),
         signal: req.signal,
@@ -532,6 +538,25 @@ export const dshAdapter: AgentAdapter = {
 
       await postConfirm(call.callId, ok, token);
     };
+
+    /**
+     * 读取类前端工具（如 ReadField）：**免确认直接执行并回执**。
+     *
+     * 后端对这类工具下发 mutating=false（见 agent_tools.MUTATING_FRONTEND_TOOLS），
+     * 前端据此跳过确认卡：读无副作用，弹卡只会白等一次点击。
+     * 未注册执行器时不回执（让后端按超时兜底），也不谎报成功。
+     */
+    const runReadonlyTool = async (call: ToolCallEvent) => {
+      const executor = getToolExecutor(call.name);
+      if (!executor) return;
+      let result: ToolExecResult;
+      try {
+        result = await executor((call.args ?? {}) as Record<string, unknown>);
+      } catch (e) {
+        result = { ok: false, summary: `执行异常：${e instanceof Error ? e.message : String(e)}` };
+      }
+      await postConfirm(call.callId, true, undefined, result);
+    };
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
     let buf = '';
@@ -556,7 +581,12 @@ export const dshAdapter: AgentAdapter = {
           if (ev.type === 'message_delta') delete ev.uiText;
           if (ev.type === 'tool_call' || ev.type === 'tool_result') delete ev.uiAuthored;
           if (ev.type === 'tool_call') seen.set(ev.callId, ev);
-          if (ev.type === 'tool_call' && ev.mutating) void confirmAt(seen.get(ev.callId) ?? ev);
+          if (ev.type === 'tool_call') {
+            // 变更类（mutating=true）→ 弹人工确认卡；
+            // 读取类（mutating=false 且已注册执行器）→ 免确认直接执行并回执。
+            if (ev.mutating) void confirmAt(seen.get(ev.callId) ?? ev);
+            else void runReadonlyTool(seen.get(ev.callId) ?? ev);
+          }
           yield ev;
         } catch {
           // 协议外的行直接丢弃，不中断流

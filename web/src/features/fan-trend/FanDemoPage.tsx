@@ -50,7 +50,7 @@ export function FanDemoPage() {
         <div style={{ fontSize: 13, color: '#888' }}>
           {uiT("计划时长 ")}{plan.planned_duration_s}s
           {plan.overrun ? uiT('（已延期）') : ''}
-          {plan.actual_duration_s != null ? uiT(" · 实际 {v1}s", { v1: plan.actual_duration_s }) : ''}
+          {plan.actual_duration_s != null ? ` ${uiT('· 实际 {v1}s', { v1: plan.actual_duration_s })}` : ''}
         </div>
       )}
 

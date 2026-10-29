@@ -77,7 +77,16 @@ export function buildParamViews(
     const docValue = p.value
     return {
       key: p.key,
-      name: p.name.replace(/[（(].*$/, '').trim(),
+      /**
+       * ⚠️ 2026-10-14 改：这里**不再截断括号**，保留全名交给 UI 层。
+       *
+       * 原因：词典的 key 是**全名**（如「进入闭环转速（FOC 切换转速）」），
+       * 先截成「进入闭环转速」就再也命中不了词典 → 英文界面下参数名漏翻成中文。
+       * 正确顺序是「先翻译、再截断」：渲染处 `uiT(p.name)` 翻译完全名后，
+       * 英文同理（`Closed-loop entry speed (FOC transition speed)` → 截成
+       * `Closed-loop entry speed`），中英文行为一致。
+       */
+      name: p.name,
       fullName: p.name,
       display:
         has ? String(raw) : docValue === null || docValue === undefined ? '—' : String(docValue),

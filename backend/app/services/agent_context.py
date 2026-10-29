@@ -32,6 +32,16 @@ FLOW_CN: dict[str, str] = {
     "report": "测试报告及产出",
 }
 
+# 英文版流程名（2026-10-14）。与前端 catalog.ts 的英文文案保持一致，
+# 否则英文界面下摘要里出现中文流程名，模型会原样搬进英文回答。
+FLOW_EN: dict[str, str] = {
+    "init": "Initial setup",
+    "req": "Confirm test requirements",
+    "run": "Run tests and analyze results",
+    "tune": "Confirm and run tuning",
+    "report": "Test report and artifacts",
+}
+
 
 def _get(d: Any, *path: str) -> Any:
     """按路径安全取值，取不到返回 None（不抛）。"""
@@ -66,17 +76,68 @@ PERMISSION_CN: dict[str, str] = {
     ),
 }
 
+# 英文版（2026-10-14）：英文界面下若仍输出中文权限描述，模型会把其中的中文按钮名
+# （「可改参数」）原样搬进英文回答（用户实测反馈）。此处给出等义英文描述，
+# 按钮名与前端 i18n 的英文文案保持一致（Parameter editing / Hardware control）。
+PERMISSION_EN: dict[str, str] = {
+    "readonly": (
+        "Read-only. You can search materials and answer questions, but you **cannot** "
+        "perform any write operation (filling report fields, changing parameters, "
+        "controlling hardware). When the user asks for a write, state plainly that the "
+        "current level is read-only and ask them to switch to \u201cParameter editing\u201d "
+        "at the permission selector below; do not pretend it was executed."
+    ),
+    "params": (
+        "Parameter editing. Besides searching, you **may** call write tools to modify "
+        "report header fields and similar data; write operations first raise a manual "
+        "confirmation card, and only count once the operator clicks \u201cConfirm\u201d. "
+        "Do not claim success before confirmation; report cancellations or failures "
+        "faithfully. Hardware control (issuing hardware commands) is still out of scope."
+    ),
+    "hardware": (
+        "Hardware control. Besides searching and writing data, you may collaborate with "
+        "the operator on hardware control commands; all write/control operations also go "
+        "through the manual confirmation card first."
+    ),
+}
 
-def _permission_line(permission: Any) -> str:
-    """把档位英文值翻成中文能力描述行。未知值按只读口径描述（安全默认）。"""
+
+def _permission_line(permission: Any, locale: str = "") -> str:
+    """把档位英文值翻成能力描述行。未知值按只读口径描述（安全默认）。
+
+    locale：界面语言。`en` 时用英文描述（避免中文按钮名渗进英文回答），
+    其余（含缺省空串）用中文 —— 与改动前行为完全一致。
+    """
     key = str(permission or "readonly").strip().lower()
+    if locale == "en":
+        desc = PERMISSION_EN.get(key) or PERMISSION_EN["readonly"]
+        return f"Current permission level: {desc}"
     desc = PERMISSION_CN.get(key)
     if desc is None:
         desc = PERMISSION_CN["readonly"]
     return f"当前权限档位：{desc}"
 
 
-def _fmt_list(v: Any, limit: int = 12) -> str:
+# ---------------------------------------------------------------------------
+# 摘要的「骨架标签」双语表（2026-10-14 补完）
+#
+# 为什么必须做：本文件此前只有权限描述做了英文，其余标签全是硬编码中文。
+# 英文界面下模型拿到的摘要长这样：
+#     【当前现场上下文…】被测产品：…  当前流程：…  源材料没给、**至今仍没填**的…
+# 后果有二（用户实测截图反馈）：
+#   ① 模型会把这些**中文标签**原样搬进英文回答（如 `Switch to "切换闭环转速"`）；
+#   ② 标签是中文、值是英文，半中半英，看着像翻译没做完。
+# 处置：所有固定标签一律走 `_T(zh, en, locale)`，中文口径逐字保持原样（零破坏）。
+# ---------------------------------------------------------------------------
+def _T(zh: str, en: str, locale: str = "") -> str:
+    """按界面语言取标签。`locale == "en"` 取英文，其余（含缺省空串）取中文。
+
+    缺省空串 = 改动前行为（全中文），保证旧调用方与既有测试零破坏。
+    """
+    return en if locale == "en" else zh
+
+
+def _fmt_list(v: Any, limit: int = 12, locale: str = "") -> str:
     """列表转「a、b、c」；超长截断并写明还有几条，不让摘要无限膨胀。"""
     if not isinstance(v, list):
         return ""
@@ -84,11 +145,15 @@ def _fmt_list(v: Any, limit: int = 12) -> str:
     if not items:
         return ""
     shown = items[:limit]
-    tail = f" 等 {len(items)} 项" if len(items) > limit else ""
-    return "、".join(shown) + tail
+    tail = (
+        _T(f" 等 {len(items)} 项", f" … and {len(items) - limit} more", locale)
+        if len(items) > limit
+        else ""
+    )
+    return ("、" if locale != "en" else ", ").join(shown) + tail
 
 
-def _fmt_fields(v: Any, limit: int = 12) -> str:
+def _fmt_fields(v: Any, limit: int = 12, locale: str = "") -> str:
     """字段列表转中文摘要：`{key, name, source}` → 「额定转速(rated_speed)｜出处：数据手册·第3节」。
 
     三层信息各有用处，缺一不可：
@@ -123,7 +188,10 @@ def _fmt_fields(v: Any, limit: int = 12) -> str:
             if label and val is not None and val != "":
                 label = f"{label}={val}"
             if label and src:
-                label = f"{label}｜出处：{src}"
+                # 2026-10-14：前端已按界面语言翻译 source（英文界面下是英文路径），
+                # 此处若仍写死中文「出处：」会与英文值混搭。改用语言无关的箭头形式，
+                # 模型据 system prompt 的语言规则自然输出对应语言。
+                label = f"{label}｜{src}"
             if label:
                 out.append(label)
         elif x is not None and x != "":
@@ -131,19 +199,29 @@ def _fmt_fields(v: Any, limit: int = 12) -> str:
     if not out:
         return ""
     shown = out[:limit]
-    tail = f" 等 {len(out)} 项" if len(out) > limit else ""
-    return "、".join(shown) + tail
+    tail = (
+        _T(f" 等 {len(out)} 项", f" … and {len(out) - limit} more", locale)
+        if len(out) > limit
+        else ""
+    )
+    return ("、" if locale != "en" else ", ").join(shown) + tail
 
 
-def build_context_summary(env: dict | None) -> str:
-    """上下文包 → 一段给模型的中文摘要。envelope 为空（前端未上送）时返回空串。
+def build_context_summary(env: dict | None, locale: str = "") -> str:
+    """上下文包 → 一段给模型的现场摘要。envelope 为空（前端未上送）时返回空串。
 
     返回空串是正常态不是错误：调用方据此「不加这段」，模型退回通用回答。
+
+    locale（2026-10-14 新增）：界面语言。`en` 时摘要里的**固定标签**（权限描述等）
+    用英文，避免中文按钮名（如「可改参数」）被模型原样搬进英文回答。
+    缺省空串时行为与改动前完全一致（全中文标签）。
     """
     if not isinstance(env, dict) or not env:
         return ""
 
-    lines: list[str] = ["【当前现场上下文（由页面实时给出，据此作答）】"]
+    lines: list[str] = [_T("【当前现场上下文（由页面实时给出，据此作答）】",
+                           "[Live site context (provided by the page in real time; answer based on it)]",
+                           locale)]
 
     # ① 测的是什么产品
     # 只写「产品名（一级 / 二级）」：taxonomy_path 的第三段通常就是产品名本身，
@@ -154,21 +232,32 @@ def build_context_summary(env: dict | None) -> str:
     if product_name:
         uppers = [str(x) for x in (taxonomy_path or [])[:2] if x]
         suffix = f"（{' / '.join(uppers)}）" if uppers else ""
-        lines.append(f"被测产品：{product_name}{suffix}")
+        lines.append(f"{_T('被测产品：', 'Product under test: ', locale)}{product_name}{suffix}")
 
     # ② 现在在哪一步
     flow_id = _get(env, "flow", "id")
     flow_label = _get(env, "flow", "label")
     if flow_id or flow_label:
-        cn = FLOW_CN.get(str(flow_id), "")
-        tail = f"（{flow_id}）" if flow_id and cn and cn != flow_id else ""
-        lines.append(f"当前流程：{flow_label or cn or flow_id}{tail}")
+        # ⚠️ 英文界面下**优先用 FLOW_EN**，不能先用 flow_label：
+        # flow.label 是前端上送的中文名（「初始化配置」），先取它就会把中文留在英文摘要里
+        # （实测踩到：`Current step: 初始化配置（init）`）。中文口径仍以 flow_label 优先。
+        table = FLOW_EN if locale == "en" else FLOW_CN
+        named = table.get(str(flow_id), "")
+        if locale == "en":
+            shown = named or flow_label or flow_id
+        else:
+            shown = flow_label or named or flow_id
+        tail = f"（{flow_id}）" if flow_id and named and named != flow_id else ""
+        lines.append(f"{_T('当前流程：', 'Current step: ', locale)}{shown}{tail}")
     confirmed = _get(env, "flow", "confirmed")
     if isinstance(confirmed, dict) and confirmed:
-        # 流程 id 一律翻成中文名（init/req 会被模型照抄进回答，用户看不懂）
-        done = [FLOW_CN.get(str(k), str(k)) for k, v in confirmed.items() if v]
+        # 流程 id 一律翻成界面语言的名字（init/req 会被模型照抄进回答，用户看不懂）
+        table = FLOW_EN if locale == "en" else FLOW_CN
+        done = [table.get(str(k), str(k)) for k, v in confirmed.items() if v]
         if done:
-            lines.append(f"已确认的流程：{_fmt_list(done)}")
+            lines.append(
+                f"{_T('已确认的流程：', 'Confirmed steps: ', locale)}{_fmt_list(done, locale=locale)}"
+            )
 
     # ③ 人改过哪些值（只送 diff，不送全量——这是前端那边的纪律，这里照单陈述）
     #
@@ -191,24 +280,28 @@ def build_context_summary(env: dict | None) -> str:
             cn = name_by_key.get(leaf, "")
             label = f"{cn}({leaf})" if cn and cn != leaf else leaf
             pairs.append(f"{label}={v}")
-        lines.append(f"人已改过的参数：{_fmt_list(pairs)}")
+        lines.append(
+            f"{_T('人已改过的参数：', 'Parameters edited by the operator: ', locale)}"
+            f"{_fmt_list(pairs, locale=locale)}"
+        )
 
     # ④ 选中项：这些是「人正在看什么」，决定模型该答哪一条
     sel_doc = _get(env, "zoneB", "selected_document")
     if sel_doc:
-        lines.append(f"知识库中选中的文档：{sel_doc}")
+        lines.append(f"{_T('知识库中选中的文档：', 'Document selected in the knowledge base: ', locale)}{sel_doc}")
     sel_fail = _get(env, "zoneB", "selected_fail_item")
     if sel_fail:
-        lines.append(f"选中的未达标判据：{sel_fail}")
+        lines.append(f"{_T('选中的未达标判据：', 'Selected failing criterion: ', locale)}{sel_fail}")
     sel_cand = _get(env, "zoneB", "selected_candidate")
     if isinstance(sel_cand, dict):
         # 候选改动用 items 的中文名（{key,name,from,to}），不用 keys——
         # keys 是英文参数键，模型会照抄（同 ③ 的教训）。
+        cand_label = _T("已勾选的候选改动：", "Selected candidate changes: ", locale)
         cand_items = sel_cand.get("items")
         if isinstance(cand_items, list) and cand_items:
-            lines.append(f"已勾选的候选改动：{_fmt_fields(cand_items)}")
+            lines.append(f"{cand_label}{_fmt_fields(cand_items, locale=locale)}")
         elif sel_cand.get("keys"):
-            lines.append(f"已勾选的候选改动：{_fmt_list(sel_cand.get('keys'))}")
+            lines.append(f"{cand_label}{_fmt_list(sel_cand.get('keys'), locale=locale)}")
 
     # ⑤ 空的/占位的/缺的量：让模型知道哪些问了也答不了，从而改问人。
     # 用 _fmt_fields 输出「中文名(英文键)」——**别直接输出 key**，
@@ -234,7 +327,12 @@ def build_context_summary(env: dict | None) -> str:
         missing = _get(env, "zoneB", "missing")
         if missing:
             lines.append(
-                f"当前取不到有效值的字段（源材料没给、人也没填）：{_fmt_fields(missing)}"
+                _T(
+                    "当前取不到有效值的字段（源材料没给、人也没填）：",
+                    "Fields with no valid value (not provided by source material and not filled by the operator): ",
+                    locale,
+                )
+                + _fmt_fields(missing, locale=locale)
             )
         pending = _get(env, "zoneB", "placeholders_pending")
         # 兼容老前端：没有 pending 键时退回 placeholders（旧包只有这一份、语义等同）
@@ -242,16 +340,24 @@ def build_context_summary(env: dict | None) -> str:
             pending = _get(env, "zoneB", "placeholders")
         if pending:
             lines.append(
-                f"源材料没给、**至今仍没填**的待现场确认项（{len(pending)} 项）："
-                f"{_fmt_fields(pending)}"
+                _T(
+                    f"源材料没给、**至今仍没填**的待现场确认项（{len(pending)} 项）：",
+                    f"Items pending on-site confirmation that source material did not provide and are **still unfilled** ({len(pending)} item(s)): ",
+                    locale,
+                )
+                + _fmt_fields(pending, locale=locale)
             )
         filled = _get(env, "zoneB", "placeholders_filled")
         if filled:
             # 这一段是「已经有着落」的项，措辞必须与上面两段明确区分：
             # 说成「待确认」会让模型把它列进缺失清单（用户实测反馈过）。
             lines.append(
-                f"源材料没给、但**人已经填好值**的项（{len(filled)} 项，不要列为缺失）："
-                f"{_fmt_fields(filled)}"
+                _T(
+                    f"源材料没给、但**人已经填好值**的项（{len(filled)} 项，不要列为缺失）：",
+                    f"Items source material did not provide but the **operator has filled in** ({len(filled)} item(s); do NOT list them as missing): ",
+                    locale,
+                )
+                + _fmt_fields(filled, locale=locale)
             )
 
     # ⑤' 报告表头未填项：**流程 5 的本页数据**（envelope 的
@@ -271,20 +377,38 @@ def build_context_summary(env: dict | None) -> str:
     # 「只围绕当前页面」这类泛约束是拦不住的（实测两次都栽在这）。
     if str(flow_id or "") == "report":
         lines.append(
-            "本页（测试报告及产出）只回答：报告模板与它的分节、报告表头的字段"
-            "（含取值位、由哪条流程写入、是否已填）、上游带入情况、判定汇总与产物留档、"
-            "结论草稿、以及导出前检查。"
+            _T(
+                "本页（测试报告及产出）只回答：报告模板与它的分节、报告表头的字段"
+                "（含取值位、由哪条流程写入、是否已填）、上游带入情况、判定汇总与产物留档、"
+                "结论草稿、以及导出前检查。",
+                "This page (Test report and artifacts) answers ONLY about: the report template and its sections, "
+                "report header fields (including value slots, which step writes them, whether filled), upstream carry-in, "
+                "verdict summary and artifact archiving, conclusion drafts, and pre-export checks.",
+                locale,
+            )
         )
         lines.append(
-            "本页**不得出现**：被测对象的本体属性（如额定转速、额定母线电压、整机额定相电流、"
-            "风扇外形尺寸、风扇厚度）与控制参数（如斜坡时间、整定使能），"
-            "以及它们在左栏菜单里的出处路径——那些属于「初始化配置」流程，与本页无关。"
-            "若用户问的正是这些，如实说明「这些属于初始化配置流程，本页只处理报告表头与产出」，"
-            "不要把它们列成表或清单。"
+            _T(
+                "本页**不得出现**：被测对象的本体属性（如额定转速、额定母线电压、整机额定相电流、"
+                "风扇外形尺寸、风扇厚度）与控制参数（如斜坡时间、整定使能），"
+                "以及它们在左栏菜单里的出处路径——那些属于「初始化配置」流程，与本页无关。"
+                "若用户问的正是这些，如实说明「这些属于初始化配置流程，本页只处理报告表头与产出」，"
+                "不要把它们列成表或清单。",
+                "This page **must NOT** mention: intrinsic properties of the device under test (e.g. rated rotational speed, "
+                "rated bus voltage, rated phase current, fan outer size, fan thickness) or control parameters "
+                "(e.g. ramp time, tuning enable), nor their source paths in the left menu — those belong to the "
+                "\u201cInitial setup\u201d step and are irrelevant here. If the user asks exactly about them, state plainly that "
+                "\u201cthey belong to the Initial setup step; this page only handles report header fields and artifacts\u201d, "
+                "and do not list them as a table or list.",
+                locale,
+            )
         )
         rhm = _get(env, "zoneB", "report_header_missing")
         if rhm:
-            lines.append(f"报告表头还没有填的项（本页数据）：{_fmt_fields(rhm)}")
+            lines.append(
+                _T("报告表头还没有填的项（本页数据）：", "Unfilled report header fields (this page's data): ", locale)
+                + _fmt_fields(rhm, locale=locale)
+            )
 
     # ⑥ 上一轮跑到哪、哪些量没采到
     #
@@ -297,10 +421,14 @@ def build_context_summary(env: dict | None) -> str:
     if isinstance(last, dict) and last:
         run_id = last.get("run_id")
         if run_id:
-            lines.append(f"最近一轮：{run_id}")
+            lines.append(f"{_T('最近一轮：', 'Latest run: ', locale)}{run_id}")
         miss = last.get("missing_measures")
         if miss:
-            lines.append(f"最近一轮未采集到的实测量：{_fmt_list(miss)}（未采集不等于不合格）")
+            lines.append(
+                _T("最近一轮未采集到的实测量：", "Measures not acquired in the latest run: ", locale)
+                + _fmt_list(miss, locale=locale)
+                + _T("（未采集不等于不合格）", " (not acquired does not mean failed)", locale)
+            )
         failed = last.get("failed_items")
         if isinstance(failed, list) and failed:
             names = [
@@ -308,10 +436,11 @@ def build_context_summary(env: dict | None) -> str:
                 for v in failed
                 if isinstance(v, dict)
             ]
+            flabel = _T("最近一轮判为不通过的项：", "Criteria judged as failing in the latest run: ", locale)
             if names:
-                lines.append(f"最近一轮判为不通过的项：{_fmt_list(names)}")
+                lines.append(flabel + _fmt_list(names, locale=locale))
             else:
-                lines.append(f"最近一轮判为不通过的项：{_fmt_list(failed)}")
+                lines.append(flabel + _fmt_list(failed, locale=locale))
 
     # ⑦ 权限档位：服务端另有拦截（工具集按档过滤），这里只让模型知道它能做到哪一步。
     #
@@ -322,9 +451,23 @@ def build_context_summary(env: dict | None) -> str:
     # （故此前实测教训：模型会把无关字段当解释素材）。
     permission = _get(env, "policy", "permission")
     if permission:
-        lines.append(_permission_line(permission))
+        lines.append(_permission_line(permission, locale))
 
     if len(lines) == 1:
         return ""  # 一个字段都没取到，不如不给
-    lines.append("回答时以这些为准；上下文里没写的，不要自己补。")
+    if locale == "en":
+        # 英文界面下摘要标签已是英文，但**字段名可能仍是中文**（来自场景包原文），
+        # 所以仍要要求模型按提问语言作答，而不是照抄字段名。
+        lines.append(
+            "Treat the above as authoritative; do not invent anything not written here. "
+            "\u26a0\ufe0f Some field names above may still be in Chinese (they come from the scenario package). "
+            "**Answer in the same language as the user's question**: translate Chinese field names and source paths "
+            "into English when the user asks in English, and keep them as-is when the user asks in Chinese."
+        )
+    else:
+        lines.append(
+            "回答时以这些为准；上下文里没写的，不要自己补。"
+            "⚠️ 上面的字段名与出处路径是中文原文，**表达语言服从用户的提问语言**："
+            "用户用英文提问就把这些中文译成英文，用中文提问就原样保留。"
+        )
     return "\n".join(lines)

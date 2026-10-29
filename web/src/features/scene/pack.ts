@@ -11,6 +11,24 @@
    =========================================================================== */
 
 import { fetchJson } from '../shared/fetchJson'
+import { initialLocale } from '../../i18n/locale'
+
+/**
+ * 当前界面是否为英文（2026-10-14）。
+ *
+ * 本模块是**纯函数模块**（不在 React 渲染里），拿不到 `useT()`，故直接读
+ * `initialLocale()`（同 context.ts 的 ctxT、agent-chat/api.ts 上送 locale 的口径）。
+ *
+ * ⚠️ 2026-10-15（B 方案）后，本函数**只给「读时选择器」用**（headerFieldName /
+ * sectionTitle / sectionFields）。归一化 `normalize()` 一律不看语言——它在
+ * `loadPack()` 里只跑一次并被模块级缓存固化，按语言定值等于把语言写进数据：
+ * 「英文下打开过 → 切回中文」就再也回不来（用户实测反馈），故必须切开。
+ */
+// ⚠️ 命名用 `isEnglish` 而非 `useEnglish`：它不是 React Hook，只是读 localStorage 的普通函数。
+// 叫 `use*` 会让 `react-hooks/rules-of-hooks` 误判为「在非组件里调用 Hook」而报 error。
+function isEnglish(): boolean {
+  return initialLocale() === 'en'
+}
 
 export interface SourceRef {
   file: string
@@ -211,7 +229,17 @@ export interface RawWorkflow {
  */
 export interface RawHeaderField {
   key: string
+  /**
+   * 显示名。**恒为中文（繁/简）原文，不随界面语言**（2026-10-15 B 方案）。
+   *
+   * 显示一律走 `headerFieldName(f)`：中文界面返回本字段，英文界面优先 `name_en`。
+   * ⚠️ 历史坑：旧实现在加载时按当时语言把本字段**就地覆写成英文**，又被
+   * `loadPack()` 的模块级缓存固化 —— 「英文下打开过、切回中文」后中文名回不来，
+   * 且英文名被显示层的中文短标签逻辑（去尾部英文、截 6 字）削成 `1.` / `5. Spe…`。
+   */
   name: string
+  /** 平行英文名（可选；缺失或空串时回退 `name`）。英文界面下由 `headerFieldName()` 取用 */
+  name_en?: string
   type: string
   /** 标题位：Excel 是单元格地址，PDF 是节内字段标题位 */
   label_slot: string
@@ -228,11 +256,16 @@ export interface RawHeaderField {
 }
 
 export interface RawSpecSection {
-  /** 节名 */
+  /** 节名（中文原文，不随界面语言；显示走 `sectionTitle()`） */
   section: string
+  /** 平行英文节名（可选；缺失或空串回退 `section`） */
+  section_en?: string
   /** 一句话规模说明（Excel 是行区间，PDF 是字段数） */
   rows: string
+  /** 字段名列表（中文原文；显示走 `sectionFields()`） */
   fields: string[]
+  /** 平行英文字段名列表（与 `fields` **同序同长**；缺失或长度不符时回退 `fields`） */
+  fields_en?: string[]
   from_flow: string
   maps_to: string | null
   note?: string
@@ -487,11 +520,15 @@ function normReport(pack: RawPack) {
   const r = pack.report as unknown as Record<string, unknown>
 
   // 表头字段
+  // 2026-10-15（B 方案）：归一化**不再看界面语言**——`name` 恒为中文原文，平行英文名
+  // 存进 `name_en`，渲染期由 `headerFieldName()` 按当前语言二选一。这样 `loadPack()`
+  // 的模块级缓存不会把语言「固化」进数据（旧实现在英文下加载后切回中文，名字回不来）。
   if (!Array.isArray(r.header_fields)) {
     const page = (r.technical_report_documentation_page ?? []) as RawTechPageField[]
     pack.report.header_fields = page.map((f) => ({
       key: f.key,
       name: f.name_zh ?? f.name ?? f.name_en ?? f.key,
+      name_en: f.name_en,
       type: f.type ?? 'text',
       label_slot: f.label_slot ?? '',
       value_slot: f.value_slot ?? '',
@@ -506,16 +543,28 @@ function normReport(pack: RawPack) {
       label_cell?: string
       value_cell?: string
     })[]) {
+      // 英文名（JSON 里本就有的 name_en）原样留在对象上，由 headerFieldName() 读时取用；
+      // 这里只把旧定位位字段名归一（label_cell → label_slot）。
       f.label_slot = f.label_slot ?? f.label_cell ?? ''
       f.value_slot = f.value_slot ?? f.value_cell ?? ''
     }
   }
 
   // 规格表分节
-  pack.report.spec_sections = ((r.spec_sections ?? []) as RawSpecSectionIn[]).map((s) => ({
+  // 2026-10-15（B 方案）：与表头字段同口径——中文原文进 `section` / `fields`，
+  // 平行英文进 `section_en` / `fields_en`（与 fields 同序同长），渲染期由
+  // `sectionTitle()` / `sectionFields()` 按当前语言选。
+  // 旧实现「加载时按语言二选一」并把中文原文丢掉（注释声称暂存 `_zh`，实际从未存在），
+  // 是「英文切回中文不恢复 + 英文名被削成 `1.` / `5. Spe…`」的源头。
+  pack.report.spec_sections = ((r.spec_sections ?? []) as (RawSpecSectionIn & {
+    section_en?: string
+    fields_en?: string[]
+  })[]).map((s) => ({
     section: s.section ?? s.name_zh ?? s.section_no ?? '',
+    section_en: s.section_en,
     rows: s.rows ?? `${s.fields?.length ?? 0} 字段`,
     fields: (s.fields ?? []).map((f) => (typeof f === 'string' ? f : f.name)),
+    fields_en: s.fields_en,
     from_flow: s.from_flow,
     maps_to: s.maps_to ?? null,
     note: s.note,
@@ -611,6 +660,44 @@ export const setPack = (p: RawPack | null) => {
   current = p
 }
 export const getPack = (): RawPack | null => current
+
+/* ------------------------------------------------------ 报告名称：读时双语选择
+ *
+ * 2026-10-15（B 方案）：报告段的名称类字段（表头字段名、分节名、分节字段名）
+ * **归一化时不再按语言定值**，中文原文与平行英文名同时留在数据里（见 normReport），
+ * 显示与上送 AI 时用下面这几个**读时选择器**二选一。
+ *
+ * 为什么必须是读时选择：`loadPack()` 的模块级缓存 + `normalize()` 只跑一次，
+ * 若在那里按语言定值，语言就成了「数据的一部分」——实测踩到两个后果：
+ *   ① 英文下打开过、切回中文后名字回不来（缓存固化）；
+ *   ② 英文名进中文短标签逻辑后被削成 `1.` / `5. Spe…`（用户截图反馈）。
+ * 现在组件用 `useT()` 订阅语言、切语言即重渲 → 重渲时调这里取到新语言，无需重载。
+ *
+ * 英文名缺失/空串/长度不符一律回退中文：老场景包（没有 *_en 字段）行为与改动前一致。
+ */
+
+/** 表头字段显示名：中文界面恒为中文原文；英文界面优先 `name_en`，缺失回退中文 */
+export function headerFieldName(f: RawHeaderField): string {
+  return isEnglish() && f.name_en ? f.name_en : f.name
+}
+
+/**
+ * 表头字段的「另一种语言名」，供 AI 工具做**双名匹配**（2026-10-15）：
+ * 中文界面给出英文名、英文界面给出中文名；该字段本来只有一种名字时返回 undefined。
+ */
+export function headerFieldAltName(f: RawHeaderField): string | undefined {
+  return isEnglish() ? (f.name_en ? f.name : undefined) : f.name_en
+}
+
+/** 分节显示名：中文界面恒为中文原文；英文界面优先 `section_en`，缺失回退中文 */
+export function sectionTitle(s: RawSpecSection): string {
+  return isEnglish() && s.section_en ? s.section_en : s.section
+}
+
+/** 分节字段名列表：英文界面优先 `fields_en`（**须与 fields 同序同长**，否则回退），中文界面恒为 `fields` */
+export function sectionFields(s: RawSpecSection): string[] {
+  return isEnglish() && s.fields_en?.length === s.fields.length ? s.fields_en : s.fields
+}
 
 /* ---------------------------------------------------------------- 取数助手 */
 

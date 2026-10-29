@@ -79,7 +79,9 @@ export function AutomationResult({
             sub: '已采数据与已落库产物保留',
           }
 
-  /* 四块统计：取不到就显示「—」，绝不填 0 充数 */
+  /* 四块统计：取不到就显示「—」，绝不填 0 充数
+     ⚠️ 所有文案都用「占位模板 + 参数」，不要在数组里拼好字符串：
+     catalog 的 key 是全中文模板（如 "{v1} 轮"），拼过的串命中不了词典。 */
   const cards: { label: string; value: string }[] = [
     { label: '总耗时', value: elapsed === null ? '—' : fmtElapsed(elapsed) },
     {
@@ -91,9 +93,9 @@ export function AutomationResult({
     },
     {
       label: '采样点数',
-      value: summary.sampleCount === null ? '—' : `${summary.sampleCount} 条`,
+      value: summary.sampleCount === null ? '—' : uiT('{v1} 条', { v1: summary.sampleCount }),
     },
-    { label: '调优轮次', value: `${summary.tuneRounds} 轮` },
+    { label: '调优轮次', value: uiT('{v1} 轮', { v1: summary.tuneRounds }) },
   ]
 
   /* Esc 收起弹窗：弹窗是模态层，键盘用户也要能退出来 */
@@ -156,7 +158,9 @@ export function AutomationResult({
               <h1 className="mt-4 text-[19px] leading-tight font-bold tracking-tight text-t1">
                 {uiT(head.title)}
               </h1>
-              <p className="mt-1.5 text-[12.5px] text-t3">{head.sub}</p>
+              {/* 2026-10-14：补 uiT() —— 此前只包了 head.title，这句副标题
+                  （「五个阶段全部走完，报告已产出」）在英文模式下漏翻。 */}
+              <p className="mt-1.5 text-[12.5px] text-t3">{uiT(head.sub)}</p>
             </div>
 
             {/* 失败/中断原因：有就原样写出来，不吞 */}
@@ -201,8 +205,8 @@ export function AutomationResult({
                               : 'bg-p200',
                       )}
                     />
-                    <span className="shrink-0 font-medium text-t1">{s.name}</span>
-                    <span className="min-w-0 flex-1 truncate text-t3">{s.message || '—'}</span>
+                    <span className="shrink-0 font-medium text-t1">{uiT(s.name)}</span>
+                    <span className="min-w-0 flex-1 truncate text-t3">{s.message ? uiT(s.message) : '—'}</span>
                     <span className="num shrink-0 text-[11.5px] text-t3">
                       {s.elapsed === null ? '—' : fmtElapsed(s.elapsed)}
                     </span>

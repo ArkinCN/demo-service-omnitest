@@ -1,3 +1,4 @@
+import { StageOperation, StageFooter } from '../../app/StageOperation'
 import { useT } from '../../i18n'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -5,7 +6,6 @@ import {
   BookOpen,
   Check,
   CircleDashed,
-  FileCode2,
   GitCompareArrows,
   Layers,
   ListChecks,
@@ -35,7 +35,7 @@ import { getPack, sourceLine, type RawControlParam } from '../scene/pack'
 import { evaluateAll, runtimeMeasures, type Evaluated } from '../flow-run/evaluate'
 import { ConfigOverview } from '../../app/LeftPanel'
 import { UnifiedConfigPanel } from '../../app/UnifiedConfigPanel'
-import { ConfirmFooter, Empty } from '../shared/bits'
+import { Empty } from '../shared/bits'
 import { demoFilter, type BuiltGroup, type BuiltTier } from '../shared/tiers'
 import { TimeSeriesChart } from '../timeseries'
 import { POWERUP_ANNOTATION, currentThresholds, loadWaves, type Wave } from '../waveforms'
@@ -277,7 +277,7 @@ function RecRow({ c }: { c: Candidate }) {
         {c.param.value_shell ? uiT(" · 外壳 {v1}", { v1: c.param.value_shell }) : ''}
       </span>
       <span className="block opacity-75">
-        {c.exp.id} · {c.rationale}
+        {c.exp.id} · {uiT(c.rationale)}
       </span>
       <span className="block opacity-75">{sourceLine(c.exp._source)}</span>
     </span>
@@ -456,7 +456,6 @@ export function TuneLeftPanel() {
      ⚠️ 解除只取消标记；下次采纳参数时仍会照原口径再次自动确认。 */
   const locked = !!useAppStore((s) => s.confirmed.tune)
   const unconfirmFlow = useAppStore((s) => s.unconfirmFlow)
-  const setNotice = useAppStore((s) => s.setNotice)
   useRestoreAdoption(sceneId)
 
   if (!pack) return <Empty text={uiT("场景包未加载")} />
@@ -527,36 +526,18 @@ export function TuneLeftPanel() {
       ) : null}
 
       <div className="fade-b min-h-0 flex-1 overflow-y-auto pb-2">
-        <ConfigOverview
+        <ConfigOverview flow="tune"
           key={pack.scene.id}
           count={cands.length + failed.length + missing.length}
-          quick={
-            <>
-              <div className="config-quick-card px-4 py-3">
-                <span className="font-semibold">{failed.length ? uiT('未达标依据') : uiT('判定状态')}</span>
-                <p className="mt-2 text-[12px] text-t2">
-                  {uiT("未达标")}{failed.length} {uiT("· 未采集")}{missing.length}
-                  {notApplicable.length ? uiT(" · 本台架不适用 {v1}", { v1: notApplicable.length }) : ''}
-                  {uiT("。缺少测量不作通过判定。")}</p>
-                {failed.slice(0, 1).map((r) => (
-                  <details key={r.req.id} className="mt-3 text-[12px]">
-                    <summary className="cursor-pointer font-medium text-alert">{uiT(r.req.name)} {uiT("· 查看判据")}</summary>
-                    <p className="mt-2 leading-relaxed">{r.req.criterion_text}</p>
-                    <span className="num text-t3">{r.req.id}</span>
-                  </details>
-                ))}
-              </div>
-              {cands.slice(0, 2).map((c) => (
-                <div className="config-quick-card" key={c.param.key}>
-                  <RecRow c={c} />
-                </div>
-              ))}
-              {!cands.length && (
-                <div className="config-quick-card px-4 py-3 text-[13px] text-t2">{uiT("暂无匹配的调优建议")}</div>
-              )}
-            </>
-          }
+          actions={<StageOperation title={uiT('本步操作 · 选择本轮建议')} status={uiT(`已选 {v1}/{v2} · 按需调参`, { v1: takenList.length, v2: cands.length })}>
+            <p className="stage-operation-status">{failed.length ? uiT(`{v1} 条未达标，先核对依据再选择建议。`, { v1: failed.length }) : missing.length ? uiT('尚有未采集项，不能据此认为已通过。') : uiT('当前无未达标项，按需查看建议。')}</p>
+            <button type="button" className="stage-operation-link" onClick={adoptAll} disabled={!cands.length || takenList.length === cands.length}>{uiT('全选建议')}</button>
+            <div className="stage-operation-fields">{cands.slice(0, 2).map((candidate) => <RecRow key={candidate.param.key} c={candidate} />)}</div>
+            {!cands.length ? <p>{uiT('当前没有可采纳建议。')}</p> : null}
+            <p className="stage-operation-note">{uiT('勾选只是选择，不是写入。确认采纳后返回检测复测。')}</p>
+          </StageOperation>}
         >
+          <details className="stage-details"><summary>{uiT('参数详情与全部建议')}</summary>
           {/* 一级类只展开第一个「未达标项」；有未达标时强制展开，不许折叠掉 */}
           {failed.length ? (
             <UnifiedConfigPanel
@@ -635,7 +616,7 @@ export function TuneLeftPanel() {
                       disabled={takenList.length === cands.length}
                       data-action="adopt-all"
                     >
-                      {uiT("一键采纳")}</Button>
+                      {uiT("全选建议")}</Button>
                   </Tooltip>
                 ) : null
               }
@@ -679,62 +660,17 @@ export function TuneLeftPanel() {
               )}
             />
           ) : null}
+          </details>
         </ConfigOverview>
       </div>
 
-      {/* 底部悬浮：本轮将写回的宏 + 主按钮 */}
-      <footer className="shrink-0 border-t border-line-soft bg-white/85 px-4 py-3 backdrop-blur">
-        {takenList.length ? (
-          <ul className="mb-2.5 space-y-1">
-            {takenList.slice(0, 3).map((c) => (
-              <li key={c.param.key} className="flex items-center gap-2">
-                <FileCode2 size={13} strokeWidth={1.9} className="shrink-0 text-p600" />
-                <span className="num truncate text-[12px] text-t2">{c.param.key.toUpperCase()}</span>
-                <span className="num ml-auto shrink-0 text-[12px] text-t1">
-                  {fmt(c.current)} <span className="text-t3">→</span>{' '}
-                  <span className="font-semibold text-p700">{fmt(c.suggested)}</span>
-                </span>
-              </li>
-            ))}
-            {takenList.length > 3 ? (
-              <li className="num text-right text-[12px] text-t3">{uiT("另 ")}{takenList.length - 3} {uiT(" 项")}</li>
-            ) : null}
-          </ul>
-        ) : null}
-      </footer>
-      {/* 与顶栏「采纳并回到启动测试」同一条动作：写回参数是六条红线之一，
-          点下去先弹确认卡，批准后才写回并跳回流程 3。
-
-          ⚠️ 2026-10-10：本流程的「已确认」在采纳写回时由系统自动写入，
-          此前左栏没有反向出口（顶栏那一格打勾关不掉，用户反馈）。
-          现在已确认时按钮换成流程 1/2/5 同款的「解除确认」
-          （同一 ConfirmFooter 的 secondary + unlock 形态，不新写样式）。 */}
-      {locked ? (
-        <ConfirmFooter
-          label={uiT("解除确认")}
-          count={takenList.length}
-          unit="项"
-          variant="secondary"
-          icon="unlock"
-          hint={uiT("本流程已确认（采纳参数写回时由系统自动置为已确认）。点此解除后顶栏「调优运行」的打勾消失，可继续调整；下次采纳参数时仍会再次自动确认。")}
-          onClick={() => {
-            unconfirmFlow('tune')
-            setNotice('已解除确认：顶栏「调优运行」打勾已取消；下次采纳参数后会再次自动确认')
-          }}
-        />
-      ) : (
-        <ConfirmFooter
-          label={uiT("确认采纳")}
-          count={takenList.length}
-          unit="项"
-          onClick={adopt.disabled ? undefined : adopt.onClick}
-          hint={
-            takenList.length
-              ? uiT('写回只改数值外壳括号内的数字，不换外壳、不动行尾注释；确认卡上再点一次才真写回。')
-              : uiT('先在推荐参数里勾选要采纳的项。')
-          }
-        />
-      )}
+      <StageFooter
+        label={uiT('确认采纳并返回检测')}
+        disabled={adopt.disabled || !takenList.length}
+        onClick={adopt.onClick}
+        reason={!takenList.length ? uiT('先选择要采纳的建议。') : uiT('仍需写参确认；返回后复测，不代表固件已生效。')}
+        secondary={locked ? <button type="button" onClick={() => unconfirmFlow('tune')}>{uiT('解除采纳确认')}</button> : null}
+      />
     </div>
   )
 }
@@ -780,7 +716,7 @@ function WaveOverlay({ full }: { full?: boolean }) {
           </Tooltip>
         ))}
         {pack?.caps.syntheticData ? (
-          <Badge tone="warn" title={pack.caps.syntheticBanner}>
+          <Badge tone="warn" title={uiT(pack.caps.syntheticBanner)}>
             {uiT("合成")}</Badge>
         ) : null}
         {/* Δ峰值不进演示分镜：精简后前后对照靠曲线形状讲（06d 第 3.2 节），放大态仍给 */}
@@ -929,7 +865,10 @@ function CandidateQueue({ full }: { full?: boolean }) {
  * 卡面只留第一个短句并压到 8 字，整句与原因、动作、结果一律在 tooltip 里。
  */
 function symptomKey(sym: string) {
-  return short(sym.split(/[，,。；;：:]/)[0], 8)
+  const first = sym.split(/[，,。；;：:]/)[0]
+  // ⚠️ 截断长度随语言：中文按 8 字，英文按 24 字符。
+  // 英文一个单词就 5~8 字符，沿用 8 会截出「98 bench…」这种看不懂的碎片（实测踩到）。
+  return short(first, /[\u4e00-\u9fff]/.test(first) ? 8 : 24)
 }
 
 function EvidencePanel({ full }: { full?: boolean }) {
@@ -966,11 +905,11 @@ function EvidencePanel({ full }: { full?: boolean }) {
             content={
               <span className="block space-y-1">
                 <span className="block font-medium">
-                  {c.exp.id} · {c.exp.symptom}
+                  {c.exp.id} · {uiT(c.exp.symptom)}
                 </span>
-                <span className="block opacity-80">{uiT("原因 · ")}{c.exp.cause}</span>
-                <span className="block opacity-80">{uiT("动作 · ")}{c.rationale}</span>
-                <span className="block opacity-80">{uiT("结果 · ")}{c.exp.result}</span>
+                <span className="block opacity-80">{uiT("原因 · ")}{uiT(c.exp.cause)}</span>
+                <span className="block opacity-80">{uiT("动作 · ")}{uiT(c.rationale)}</span>
+                <span className="block opacity-80">{uiT("结果 · ")}{uiT(c.exp.result)}</span>
                 <span className="block opacity-70">{sourceLine(c.exp._source)}</span>
               </span>
             }
@@ -985,7 +924,9 @@ function EvidencePanel({ full }: { full?: boolean }) {
                 <BookOpen size={13} strokeWidth={1.9} />
               </span>
               <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-t1">
-                {symptomKey(c.exp.symptom)}
+                {/* ⚠️ 必须「先翻译整句、再截断」：symptom 在词典里是**全句**，
+                    先截成首段会命中不了词条（此前写成 uiT(symptomKey(...)) 译不出） */}
+                {symptomKey(uiT(c.exp.symptom))}
               </span>
               {/* 证据级直接写字：三格条一格一格数不清是什么意思（06d 第 3.2 节） */}
               <Badge tone={rank >= 3 ? 'soft' : 'neutral'} className="shrink-0">

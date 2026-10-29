@@ -61,18 +61,6 @@ export interface AutomationStageDef {
    */
   minShowMs?: number
   /**
-   * 本阶段超时（毫秒），缺省用 `config.stageTimeoutMs`（2026-10-12 新增）。
-   *
-   * 为什么需要每阶段覆盖：`stageTimeoutMs` 原先是**一刀切 120s**，而 `run`
-   * 阶段的真实时长由硬件决定（默认计划 80s，实际常超期——2026-10-12 转速采集
-   * 改 50ms/div 后实测整轮 124s）。外层 120s 比内层 `runAndCollect` 的自有超时
-   * （planned×3+60s ≈ 300s）还短 → 外层先超时 → 重试 → 第二次启动撞上还在跑的
-   * 第一轮 → 409「已有风扇实验在进行」→ 整轮被误判失败（用户实测复现）。
-   * 给 run 阶段显式 360s（6 分钟）：大于内层超时，外层只当「卡死」兜底，
-   * 不再抢在内层之前误杀。
-   */
-  timeoutMs?: number
-  /**
    * 本阶段会真实调用的动作清单（2026-10-08 新增，**可选**）。
    *
    * 编排器按 promise 生命周期自动围栏：进阶段全部发 `running`、成功发 `done`、
@@ -335,9 +323,7 @@ export interface AutomationAdapters {
 export interface AutomationConfig {
   /** 阶段序列（对齐顶部五流程），按序推进 */
   stages: AutomationStageDef[]
-  /** 单个阶段超时（毫秒）**默认值**，超时视为失败。
-   *  各阶段可用 `AutomationStageDef.timeoutMs` 覆盖（run 阶段已显式放到 360s，
-   *  见该字段注释：120s 的旧默认值比硬件实际时长还短，会误杀真机流程）。 */
+  /** 单个阶段超时（毫秒），超时视为失败 */
   stageTimeoutMs: number
   /** 单个阶段失败重试次数 */
   maxRetries: number
@@ -432,11 +418,7 @@ const DEFAULT_CONFIG: AutomationConfig = {
     // run 阶段真机采集本身 20-30 秒，**不加最小展示时长**，否则白白拖慢。
     // ⚠️ 也**不声明 tools**：本阶段的真实动作全是动态的（逐档下发 + 轮询 + 判定），
     // 由 `runAndCollect` 用 `reportTool` 逐档上报，静态声明只会与之重复。
-    // ⚠️ 2026-10-12：显式 360s 超时。原用一刀切的 120s，比硬件实际时长
-    // （计划 80s、实测 124s）还短 → 外层先超时 → 重试启动 → 409 冲突 →
-    // 整轮误判失败（用户实测：「没有真机实验在运行却报 409」）。
-    // 360s > 内层 runAndCollect 自有超时（planned×3+60s≈300s），外层只兜卡死。
-    { id: 'run', name: '启动测试及结果分析', route: '/run', minShowMs: 0, timeoutMs: 360_000 },
+    { id: 'run', name: '启动测试及结果分析', route: '/run', minShowMs: 0 },
     {
       id: 'tune',
       name: '调优确认及运行',
@@ -639,10 +621,8 @@ export function createAutomationOrchestrator(
         emit('AUTOMATION_PROGRESS', { stageId: stage.id, stageName: stage.name, progress: clamped, currentTask: stages.find((s) => s.id === stage.id)?.message ?? '' })
       }
       try {
-        // 每阶段可覆盖超时（2026-10-12）：run 阶段显式 360s，其余走 config 默认。
-        const stageTimeout = stage.timeoutMs ?? cfg.stageTimeoutMs
         const timeout = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error(`阶段「${stage.name}」超时（${stageTimeout}ms）`)), stageTimeout)
+          setTimeout(() => reject(new Error(`阶段「${stage.name}」超时（${cfg.stageTimeoutMs}ms）`)), cfg.stageTimeoutMs)
         })
         await Promise.race([run(progressTick), timeout])
         // 补足最短展示时长：只补「实际耗时不足」的部分，不额外拖慢慢阶段。
@@ -664,15 +644,6 @@ export function createAutomationOrchestrator(
         if (stopRequested) {
           fenceStageTools(stage, 'skipped', '已终止')
           finishStage(stage.id, false, `${stage.name} 被终止`)
-          return false
-        }
-        // 台架占用冲突（409）**不重试**（2026-10-12 修）：重试一次启动只会再撞一次
-        // 同样占着的台架，把真正的失败原因稀释成「第 N 次尝试」的噪音。如实 fail-fast，
-        // 让人看到「台架正被另一轮占用」这个可行动原因（等它结束或先停止）。
-        if (/409|已有风扇实验|已被占用|请先停止/.test(msg)) {
-          fenceStageTools(stage, 'failed', msg)
-          finishStage(stage.id, false, `${stage.name} 失败：${msg}（台架被占用，未重试）`)
-          emit('AUTOMATION_ERROR', { stageId: stage.id, stageName: stage.name, status: 'failed', message: msg, level: 'error' })
           return false
         }
         if (attempt > cfg.maxRetries) {

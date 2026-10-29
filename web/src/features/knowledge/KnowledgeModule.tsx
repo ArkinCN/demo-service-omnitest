@@ -300,11 +300,13 @@ function EntryRow({
       ) : (
         <Exp size={14} strokeWidth={1.8} className="shrink-0 text-p500" />
       )}
+      {/* ⚠️ 显示处包 uiT（词条在 catalog.ts / autoCatalog.ts）；但**不要**改 entry.title 本身——
+          后端按 title 反查 doc_id（见 SourceFileField 注释），改了会让正文/下载 404。 */}
       <span
         className="min-w-0 flex-1 truncate text-[13px] text-t1"
-        title={entry.title}
+        title={uiT(entry.title)}
       >
-        {entry.title}
+        {uiT(entry.title)}
       </span>
       {/* 新增角标：看过就消失（见 markKbSeen）。绿色与「已接入」同色系，
           但形状用圆角胶囊，不会与三轴徽标混淆。 */}
@@ -313,7 +315,7 @@ function EntryRow({
           {uiT("新增")}</span>
       ) : null}
       <span className="shrink-0 truncate text-[12px] text-t3" style={{ maxWidth: 140 }}>
-        {entry.docType ?? entry.evidenceLevel ?? ''}
+        {uiT(entry.docType ?? entry.evidenceLevel ?? '')}
       </span>
       <span className="num shrink-0 text-[12px] text-t3">{entry.id}</span>
     </button>
@@ -464,7 +466,7 @@ function SourceFileField({ entry }: { entry: KnowledgeEntry }) {
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title={entry.title}
+        title={uiT(entry.title)}
         meta={combined ? uiT('系统合成图文稿') : uiT('系统抽取稿 · Markdown')}
         width={920}
       >
@@ -482,7 +484,7 @@ function SourceFileField({ entry }: { entry: KnowledgeEntry }) {
           // 合成图文稿：正文 + 按序插图。用 iframe srcDoc 隔离样式（合成稿自带 CSS），
           // 图片 src 指向后端 figure 端点（同源，srcDoc 下可解析）。
           <iframe
-            title={entry.title}
+            title={uiT(entry.title)}
             srcDoc={combined.html}
             sandbox="allow-same-origin"
             className="h-[72vh] w-full rounded-tpx border border-line-soft bg-white"
@@ -514,7 +516,10 @@ function DetailColumn({ entry }: { entry: KnowledgeEntry | null }) {
 
   const Usage = KNOWLEDGE_ICON.usage
   return (
-    <Panel style={{ width: 'clamp(300px, 21vw, 400px)' }} className="shrink-0">
+    /* 窄屏自适应（2026-10-15）：加 knowledge-detail-panel 钩子 ——
+       宽度是内联 clamp（下限 300），@media 覆盖不动，由 index.css 用
+       !important 在 ≤1024px 下调低（与上方 html[lang='en'] 同手法）。 */
+    <Panel style={{ width: 'clamp(300px, 21vw, 400px)' }} className="knowledge-detail-panel shrink-0">
       <PanelHeader
         icon={<Usage size={17} strokeWidth={1.9} />}
         title={uiT("条目详情")}
@@ -531,34 +536,37 @@ function DetailColumn({ entry }: { entry: KnowledgeEntry | null }) {
       ) : (
         <div className="fade-b min-h-0 flex-1 overflow-y-auto px-4 [&>div:last-child]:border-b-0 [&>div:last-child]:pb-7">
           <h3 className="pt-3 pb-2 text-[14px] leading-6 font-semibold text-t1">
-            {entry.title}
+            {uiT(entry.title)}
           </h3>
           <div className="flex flex-wrap gap-1.5 pb-2">
             <Badge tone={USAGE_TONE[entry.usage]}>{uiT(KNOWLEDGE_USAGE_LABEL[entry.usage])}</Badge>
             <Badge tone="neutral">{uiT(KNOWLEDGE_ORIGIN_LABEL[entry.origin])}</Badge>
-            <Badge tone="neutral">{entry.owner[2]}</Badge>
+            <Badge tone="neutral">{uiT(entry.owner[2])}</Badge>
             {entry.needsReview ? <Badge tone="warn">{uiT("待人工复核")}</Badge> : null}
           </div>
-          <Field label={uiT("归类依据")}>{entry.usageClass}</Field>
-          <Field label={uiT("材料类型")}>{entry.docType}</Field>
-          <Field label={uiT("证据级")}>{entry.evidenceLevel}</Field>
+          {/* 以下「值」全部包 uiT：它们来自库表，是中文数据文本（英文界面下需要机翻兜底）。
+              未收录的文本 uiT 会原样返回，等于保持现状，不会变差。 */}
+          <Field label={uiT("归类依据")}>{uiT(entry.usageClass)}</Field>
+          <Field label={uiT("材料类型")}>{uiT(entry.docType)}</Field>
+          <Field label={uiT("证据级")}>{uiT(entry.evidenceLevel)}</Field>
           {entry.case ? (
             <>
-              <Field label={uiT("现象")}>{entry.case.symptom}</Field>
-              <Field label={uiT("成因")}>{entry.case.cause}</Field>
-              <Field label={uiT("动作")}>{entry.case.action}</Field>
-              <Field label={uiT("结果")}>{entry.case.result}</Field>
+              <Field label={uiT("现象")}>{uiT(entry.case.symptom)}</Field>
+              <Field label={uiT("成因")}>{uiT(entry.case.cause)}</Field>
+              <Field label={uiT("动作")}>{uiT(entry.case.action)}</Field>
+              <Field label={uiT("结果")}>{uiT(entry.case.result)}</Field>
             </>
           ) : null}
           <Field label={uiT("转化状态")}>
             {entry.conversion
-              ? uiT("{v1}{v2}{v3}", { v1: entry.conversion, v2: entry.chunks ? ` · ${entry.chunks} 切片` : '', v3: entry.pages ? ` · ${entry.pages} 页` : '' })
+              // v1 是数据文本，需单独过一遍 uiT（uiT 的 {vN} 参数只做替换、不再翻译参数值）
+              ? uiT("{v1}{v2}{v3}", { v1: uiT(entry.conversion), v2: entry.chunks ? ` · ${entry.chunks} 切片` : '', v3: entry.pages ? ` · ${entry.pages} 页` : '' })
               : ''}
           </Field>
           <Field label={uiT("体量")}>{entry.sizeBytes ? sizeText(entry.sizeBytes) : ''}</Field>
           <SourceFileField entry={entry} />
-          <Field label={uiT("待核实")}>{entry.status}</Field>
-          <Field label={uiT("备注")}>{entry.note}</Field>
+          <Field label={uiT("待核实")}>{uiT(entry.status)}</Field>
+          <Field label={uiT("备注")}>{uiT(entry.note)}</Field>
         </div>
       )}
     </Panel>
@@ -854,7 +862,9 @@ export function KnowledgeModule() {
     markKbSeen(id)
   }
 
-  const axisText = (list: string[], all: string) => (list.length ? list.join(' / ') : all)
+  // 逐项过 uiT：list 里是归属/来源/用途的**数据取值**，all 是面包屑文本，
+  // 两者在英文界面下都需译出（整串拼接后命中不了词条，必须逐项译再拼）
+  const axisText = (list: string[], all: string) => (list.length ? list.map((x) => uiT(x)).join(' / ') : uiT(all))
 
   const Usage = KNOWLEDGE_ICON.usage
   const Upload = KNOWLEDGE_ICON.upload
@@ -862,8 +872,11 @@ export function KnowledgeModule() {
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col" style={{ gap: GAP }}>
       {/* 顶条：归属面包屑 + 三枚操作按钮。红线六动作一律人点，这里只是入口。 */}
+      {/* 窄屏自适应（2026-10-15）：加 kb-topbar 钩子 —— 原来是 h-[52px] **固定高**，
+          投屏/小窗口下顶条内容（面包屑 + 返回 + 新增 + 三枚按钮）换行就会被裁，
+          由 index.css 在窄屏改为 min-height + flex-wrap。 */}
       <Panel
-        className="h-[52px] shrink-0 items-center gap-3 px-4"
+        className="kb-topbar h-[52px] shrink-0 items-center gap-3 px-4"
         style={{ flexDirection: 'row' }}
       >
         <span className="flex h-[30px] w-[30px] items-center justify-center rounded-tpx bg-p50 text-p700">
@@ -872,7 +885,7 @@ export function KnowledgeModule() {
         <span className="text-[16px] font-semibold tracking-tight text-t1">{uiT("知识库")}</span>
         <span className="h-[22px] w-px bg-line" />
         <span className="truncate text-[13px] text-t2">
-          {owner.filter(Boolean).join(' › ')}
+          {owner.filter(Boolean).map((x) => uiT(x)).join(' › ')}
         </span>
         <span className="num text-[12px] text-t3">{entries.length} {uiT(" 条")}</span>
         {/* 「返回」= 回到知识库**首页**（不是跳别的页）：把三轴筛选、只看新增、页码
@@ -1016,8 +1029,13 @@ export function KnowledgeModule() {
           />
 
           {/* 三轴当前取值，一行讲清这一屏是怎么筛出来的 */}
-          <div className="flex h-[30px] shrink-0 items-center gap-2 border-b border-line-soft bg-p50/50 px-4 text-[12px] text-t2">
-            <span>{uiT("归属")}{' '}{axisText(kbFilter.owner, owner.filter(Boolean).join(' › '))}</span>
+          {/* 窄屏自适应（2026-10-15）：kb-filterbar —— 原 h-[30px] 固定高，
+              三轴面包屑在窄屏会折行，折行后会被 30px 卡住裁掉半行字。 */}
+          <div className="kb-filterbar flex h-[30px] shrink-0 items-center gap-2 border-b border-line-soft bg-p50/50 px-4 text-[12px] text-t2">
+            {/* ⚠️ 第二个参数（面包屑）必须**逐项译完再 join**：
+                axisText 里对 all 只做 uiT(整串)，而整串在词典里命中不了
+                （词典只有「电机」「散热风扇」这样的单项），会漏翻成中文。 */}
+            <span>{uiT("归属")}{' '}{axisText(kbFilter.owner, owner.filter(Boolean).map((x) => uiT(x)).join(' › '))}</span>
             <span className="text-t3">·</span>
             <span>
               {uiT("来源")}{' '}

@@ -30,7 +30,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel
 from sqlmodel import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_db
 from app.core.logger import logger
 from app.db.session import engine
 from app.models.user import User
@@ -60,6 +60,10 @@ class AgentStreamRequest(BaseModel):
     # 后端把它压成一段现场摘要写进 system prompt——**只影响模型看到什么**，
     # 不改工具、不改计费、不改事件协议。缺省 None 时行为与以前完全一致。
     context: Optional[dict] = None
+    # 界面当前语言（`en` / `zh-CN`，2026-10-13 新增）。现场上下文恒为中文，
+    # 仅靠「按提问语言猜」在短问句上会判错 → 作为权威声明写进 system prompt。
+    # 缺省 None 时不加该声明，行为与老版完全一致。
+    locale: Optional[str] = None
 
 
 class AgentConfirmRequest(BaseModel):
@@ -73,32 +77,92 @@ class AgentConfirmRequest(BaseModel):
     result: Optional[dict] = None
 
 
-# ── 工具中文名（前端 title 显示用）──
+# ── 工具标题（前端 title 显示用）──
+#
+# ⚠️ 这里给的是**后端来源**的 title，前端 `ToolCallCard` 对后端来源**不套 uiT()**
+# （见该文件 L37 的 `call.uiAuthored ? uiT(call.title) : call.title`，与私有注释
+# 「Translation provenance belongs to local UI producers」一致）——所以英文界面下
+# 若这里只给中文，卡片标题就会漏翻。故按 locale 直接给对应语言。
 _TOOL_TITLES = {
     "KnowledgeSearch": "知识库检索",
     "DocLibrarySearch": "资料库检索",
     "WebSearch": "联网搜索",
+    "ReadField": "查询字段",
+    "WriteField": "修改字段",
     "WriteReportHeader": "填写报告表头",
+}
+_TOOL_TITLES_EN = {
+    "KnowledgeSearch": "Knowledge search",
+    "DocLibrarySearch": "Document library search",
+    "WebSearch": "Web search",
+    "ReadField": "Read field",
+    "WriteField": "Write field",
+    "WriteReportHeader": "Fill report header",
 }
 
 
-def _summarize_args(name: str, input_: Any) -> str:
-    """生成 argsSummary（前端不渲染参数，摘要由后端给）。"""
+def _tool_title(name: str, locale: Optional[str]) -> str:
+    """按界面语言取工具标题；未知工具回落到工具名本身。"""
+    table = _TOOL_TITLES_EN if locale == "en" else _TOOL_TITLES
+    return table.get(name, name)
+
+
+def _summarize_args(name: str, input_: Any, locale: Optional[str] = None) -> str:
+    """生成 argsSummary（前端不渲染参数，摘要由后端给）。
+
+    ⚠️ `locale="en"` 时必须给英文摘要：前端 `ToolCallCard` 对**后端来源**的文案
+    **不套 uiT()**（它按 `uiAuthored` 区分来源），只给中文会在英文界面下漏翻
+    —— 实测：报告页工具卡片残留「列出本页全部可编辑字段」。
+    缺省 None 走中文口径，与改动前行为完全一致（向后兼容）。
+    """
+    en = locale == "en"
     if not input_:
-        return f"调用 {name}"
+        return f"Call {name}" if en else f"调用 {name}"
+    # 通用字段写（2026-10-14）：一次调用可带多项变更，逐项列出来，
+    # 让确认卡上「改哪几项、各改成什么」一眼看全（用户要求批量合并成一张卡）。
+    if name == "WriteField":
+        try:
+            changes = input_.get("changes") or []
+            pairs = [
+                f"{c.get('field')} → {c.get('value')}"
+                for c in changes
+                if isinstance(c, dict) and c.get("field")
+            ]
+            if pairs:
+                head = (
+                    f"Will change {len(pairs)} item(s): "
+                    if en
+                    else f"将改 {len(pairs)} 项："
+                )
+                return head + ("; " if en else "；").join(pairs)
+        except AttributeError:
+            pass
+    if name == "ReadField":
+        try:
+            if input_.get("all"):
+                return "List all editable fields on this page" if en else "列出本页全部可编辑字段"
+            fld = input_.get("field") or ""
+            if fld:
+                return f'Look up "{fld}"' if en else f"查询「{fld}」"
+        except AttributeError:
+            pass
     # 写类工具：把「字段=值」点出来，让人在半秒内看清这条确认卡要写什么
     if name == "WriteReportHeader":
         try:
             field = input_.get("field") or ""
             value = input_.get("value")
             if field:
-                return f"将「{field}」填写为「{value}」"
+                return (
+                    f'Fill "{field}" with "{value}"'
+                    if en
+                    else f"将「{field}」填写为「{value}」"
+                )
         except AttributeError:
             pass
     try:
         q = input_.get("query") or input_.get("q") or ""
         if q:
-            return f"检索「{q}」"
+            return f'Search "{q}"' if en else f"检索「{q}」"
     except AttributeError:
         # input_ 不是 dict（模型偶尔给成字符串或列表），没有 .get。
         # 这不是异常路径而是**已知的正常分支**，下面那行兜底就是它的处理，
@@ -185,7 +249,7 @@ def _sources_to_evidence(sources: list) -> list[dict]:
 
 # ── 适配流：客户后端事件 → 前端六事件 ──
 class _Compat:
-    def __init__(self, run_token: str = ""):
+    def __init__(self, run_token: str = "", locale: Optional[str] = None):
         # 每轮请求一个 token，拼进 messageId。
         #
         # 前端按 messageId 找气泡：id 首见即建气泡，再见即往同一气泡追加文本。
@@ -194,6 +258,8 @@ class _Compat:
         # 界面上表现为「上一条回复被重新发了一遍、还接在旧文字后面」。
         # 加上请求级前缀后，跨轮不再撞 id。
         self.run_token = run_token
+        # 界面语言：决定工具标题给中文还是英文（后端来源的 title 前端不套 uiT）。
+        self.locale = locale
         self.msg_seq = 0
         self.cur_msg_id = None
         self.in_text = False
@@ -234,9 +300,9 @@ class _Compat:
                 "type": "tool_call",
                 "callId": call_id,
                 "name": name,
-                "title": _TOOL_TITLES.get(name, name),
+                "title": _tool_title(name, self.locale),
                 "args": input_,
-                "argsSummary": _summarize_args(name, input_),
+                "argsSummary": _summarize_args(name, input_, self.locale),
                 # mutating 透传（2026-10-10）：写类工具由后端置 True，前端据此弹人工
                 # 确认卡；检索类工具仍为 False，行为不变。缺省 False 兼容旧事件。
                 "mutating": bool(ev.get("mutating")),
@@ -283,6 +349,64 @@ class _Compat:
         return out
 
 
+@router.get("/models")
+async def list_agent_models(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_db),
+):
+    """AI 助手面板的模型下拉候选。
+
+    与 `GET /v1/gateway/models`（对外 CLI 用、走 api_key 鉴权）**同一套过滤口径**：
+    仅 `chat_enabled=True` 且 `is_active=True` 的网关模型，按 `sort_order` 排序，
+    再按模型级 visibility 权限过滤。差别只在鉴权：本路由挂在 `/api/agent/*` 下，
+    与 `/api/agent/stream` 同源同门禁（`get_current_user`，AUTH_DISABLED 时回退
+    本地管理员），这样助手页在免 token 模式下也能拿到列表。
+
+    返回结构与前端 `types.ts` 的 `ModelOption` 对齐；`id` 即调用
+    `/api/agent/stream` 时应上送的 `model` 字面量。前端取第一条作默认
+    （local_admin_service._SEEDED_MODELS 的 sort_order 已保证主模型最小）。
+    """
+    from sqlmodel import select as _select
+    from app.models.gateway import ModelPricing
+    from app.models.user_group import UserGroupMember
+    from app.services.permission import check_entity_permission
+
+    user_id = current_user.id
+    user_email = current_user.email or ""
+    group_ids = [
+        gm.group_id
+        for gm in session.exec(
+            _select(UserGroupMember).where(UserGroupMember.user_id == user_id)
+        ).all()
+    ]
+
+    rows = session.exec(
+        _select(ModelPricing)
+        .where(ModelPricing.chat_enabled == True)  # noqa: E712
+        .where(ModelPricing.is_active == True)  # noqa: E712
+        .order_by(ModelPricing.sort_order, ModelPricing.id)
+    ).all()
+
+    data = []
+    for m in rows:
+        if not check_entity_permission(m, user_id, group_ids, user_email):
+            continue
+        data.append({
+            "id": m.model_id,
+            "name": m.display_name or m.model_id,
+            "vision": m.vision,
+            "reasoning": m.reasoning,
+            "context_window": m.context_window,
+            "provider_name": m.provider_name or "",
+            "provider_icon": m.provider_icon or "",
+            "provider_icon_size": m.provider_icon_size or "",
+            "sort_order": m.sort_order,
+            "is_tier": m.is_tier,
+            "description": m.description or "",
+        })
+    return {"success": True, "code": 200, "message": "Success", "data": data}
+
+
 @router.post("/stream")
 async def agent_stream(
     body: AgentStreamRequest,
@@ -296,7 +420,10 @@ async def agent_stream(
     """
     client = request.app.state.ai_http_client
     # 请求级唯一前缀：前端按 id 找气泡/找工具卡，跨轮撞 id 会把新内容拼进旧卡片。
-    compat = _Compat(run_token=f"r{int(time.time() * 1000) % 10_000_000}")
+    compat = _Compat(
+        run_token=f"r{int(time.time() * 1000) % 10_000_000}",
+        locale=body.locale,
+    )
     ip: Optional[str] = request.client.host if request.client else None
     user_id: int = current_user.id or 0
 
@@ -331,6 +458,8 @@ async def agent_stream(
                 # 权限档位透传（2026-10-10 修复断点 A）：此前这里漏传，导致
                 # 后端一直按只读过滤工具、模型也收不到档位。现在原样下传。
                 permission=body.permission,
+                # 界面语言透传（2026-10-13）：让 system prompt 明确声明该用哪种语言作答。
+                locale=body.locale,
             ):
                 if ev.get("type") == "content_delta":
                     final_text.append(ev.get("text") or "")

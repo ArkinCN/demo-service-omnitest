@@ -11,20 +11,44 @@ export const PERMISSION_OPTIONS: { value: PermissionLevel; label: string; hint: 
 ];
 
 /**
- * 可选模型。这三个都能在后端的 model_pricing 表里查到（已启用），
- * 且都通过 upstream_model_id 折到同一家上游：本机是单机版，只有一家上游
- * （见 local_admin_service.py 的 _SEEDED_MODELS 及其注释），别名行的存在
- * 只是为了让这些字面量不撞上准入校验。
+ * AI 助手可选模型（2026-10-14 改为**动态来自后端**）。
  *
- * 此前这里列的是 deepseek-v4 / claude-opus-5 / qwen3-max，**后端一个都没配**，
- * 选中就报「模型不可用或未配置」——选项必须与后端实际配置对齐，
- * 否则用户点得到、用了必错。
+ * 此前这里是**硬编码**的三项字面量，与后端 `model_pricing` 表脱钩：后台新增/
+ * 停用模型后，前端下拉不会跟着变，还会出现「点得到但一用就报模型不可用」。
+ *
+ * 现在改为：运行时拉 `GET /api/agent/models`（后端按 `chat_enabled=True &&
+ * is_active=True` + 模型级 permissions 过滤、`sort_order` 排序后返回），
+ * 后台增删模型前端自动同步。见 `features/agent-chat/models.ts` 的 `fetchModels()`。
  */
-export const MODEL_OPTIONS: { value: string; label: string }[] = [
-  { value: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
-  { value: 'deepseek-v4-flash', label: 'DeepSeek Flash' },
-  { value: 'deepseek-chat', label: 'DeepSeek Chat' },
+export interface ModelOption {
+  /** 上送 /api/agent/stream 的 `model` 字面量，即 model_pricing.model_id */
+  value: string;
+  /** 下拉显示名（model_pricing.display_name，空则回退用 id） */
+  label: string;
+  /** 是否支持视觉输入（发图时前端据此判断） */
+  vision?: boolean;
+  /** 是否标记为深度思考模型 */
+  reasoning?: boolean;
+  /** 厂商显示名，用于分组（缺省为空表示不分组） */
+  providerName?: string;
+  /** 选择面板 hover 卡片副标题 */
+  description?: string;
+}
+
+/**
+ * 拉取失败或后端暂无可用模型时的**兜底候选项**（单机版开箱即用的主模型）。
+ *
+ * 后端 `local_admin_service._SEEDED_MODELS[0]` 即 `deepseek-v4.1-flash`
+ * （2026-10-15 与 .env 的主模型同名对齐，此前叫 `deepseek-v4-pro`），
+ * `chat_enabled=True` 且 `sort_order` 最小，是后端定义的默认主模型。
+ * 保留它只为「后端 momentarily 不可达时下拉不空」，正常路径下会被真实列表覆盖。
+ */
+export const FALLBACK_MODEL_OPTIONS: ModelOption[] = [
+  { value: 'deepseek-v4.1-flash', label: 'DeepSeek V4.1 Flash' },
 ];
+
+/** 后端不可达时的默认选中模型（= 兜底列表首项）。 */
+export const DEFAULT_MODEL = FALLBACK_MODEL_OPTIONS[0].value;
 
 /** 一次工具调用的完整记录（调用 + 结果） */
 export interface ToolCall {

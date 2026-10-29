@@ -199,7 +199,10 @@ class Settings(BaseSettings):
     MOTORDEBUG_LLM_FAST_MODEL: str = ""
 
     # Agent loop 的默认模型与轮次上限
-    AGENT_CHAT_DEFAULT_MODEL: str = "deepseek-chat"
+    # 必须是网关 model_pricing 里存在的 model_id（前端每次都会显式上送，此处仅兜底）。
+    # 留空即由 MOTORDEBUG_LLM_MODEL 派生（见下方 agent_default_model 属性），
+    # 这样 .env 换模型时本兜底值自动跟随，不会指向一个已停用的旧 model_id 而 400。
+    AGENT_CHAT_DEFAULT_MODEL: str = ""
     # 单轮 agent loop 最大迭代数。降到 8：正常一问 1~3 次检索就够，
     # 20 会让模型在「同名同参重复检索」无拦截时最多空转 19 次（用户实测反馈）。
     AGENT_CHAT_MAX_ITERATIONS: int = 8
@@ -286,6 +289,27 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT == "production"
+
+    @property
+    def main_model_id(self) -> str:
+        """主模型的网关 model_id，由 MOTORDEBUG_LLM_MODEL 派生（'厂商/名' → '名'）。
+
+        与 local_admin_service._derive_main_model_id() 同口径。放在这里是为了让
+        非 seed 场景（agent loop / 内容安全分类的兜底模型）也能拿到同一个值，
+        避免 .env 换模型后这些兜底点仍指向已停用的旧 model_id 而 400。
+        """
+        upstream = (self.MOTORDEBUG_LLM_MODEL or "").strip()
+        if not upstream:
+            return "deepseek-v4.1-flash"
+        return upstream.rsplit("/", 1)[-1] or "deepseek-v4.1-flash"
+
+    @property
+    def agent_default_model(self) -> str:
+        """agent loop / 分类器实际使用的兜底 model_id。
+
+        AGENT_CHAT_DEFAULT_MODEL 显式配置了就用它，留空则回退到 main_model_id。
+        """
+        return (self.AGENT_CHAT_DEFAULT_MODEL or "").strip() or self.main_model_id
 
 
 # Global settings instance

@@ -1,7 +1,7 @@
 import { uiMessage } from '../../i18n/messages'
 import type { FlowId } from '../../data/types'
 import type { EvidenceItem } from '../agent-chat'
-import { sourceLine, type RawPack } from '../scene/pack'
+import { headerFieldName, sourceLine, type RawPack } from '../scene/pack'
 import { demoOn } from '../shared/tiers'
 import type { Step } from './adapter'
 
@@ -259,7 +259,8 @@ export function scriptFor(flow: FlowId, p: RawPack): Step[] {
           resultSummary: `可由上游流程带入 ${p.report.header_fields.filter((f) => !f.from_flow.startsWith('F6')).length} 项，需本流程补全 ${p.report.header_fields.filter((f) => f.from_flow.startsWith('F6')).length} 项`,
           result: {
             header: p.report.header_fields.map((f) => ({
-              name: f.name,
+              // 演示脚本的工具返回同样随界面语言（2026-10-15）：英文界面下给英文名，模型不会照抄中文
+              name: headerFieldName(f),
               labelSlot: f.label_slot,
               valueSlot: f.value_slot,
               section: f.label_section ?? null,

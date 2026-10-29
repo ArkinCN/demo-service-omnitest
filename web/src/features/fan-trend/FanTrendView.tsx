@@ -184,7 +184,7 @@ export function FanTrendView({
           <span className="num text-[12px] text-t3">
             {uiT("计划 ")}{plan.planned_duration_s}s
             {plan.overrun ? uiT('（已延期）') : ''}
-            {plan.actual_duration_s != null ? uiT(" · 实际 {v1}s", { v1: plan.actual_duration_s }) : ''}
+            {plan.actual_duration_s != null ? ` ${uiT('· 实际 {v1}s', { v1: plan.actual_duration_s })}` : ''}
           </span>
         )}
         {/* 已采样本点数：多采后一眼可见密度（每档 N 次 × 档数），便于核对链路是否生效 */}

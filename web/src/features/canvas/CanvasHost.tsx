@@ -1,4 +1,4 @@
-import { useT } from '../../i18n'
+import { useT, translate, initialLocale } from '../../i18n'
 /* ===========================================================================
    C 区统一画板（React Flow 本体）。
 
@@ -129,8 +129,12 @@ function toFlowEdges(layout: CanvasLayout): Edge[] {
     target: e.to,
     ...pickHandles(byId.get(e.from), byId.get(e.to)),
     type: e.kind === 'physical' ? 'smoothstep' : 'default',
-    // 物理连接边标通道名；那套通道映射尚未经客户书面确认，标注里一并挂出来
-    label: e.kind === 'physical' && e.label ? `${e.label} · ${BENCH_CHANNEL_PENDING}` : undefined,
+    // 物理连接边标通道名；那套通道映射尚未经客户书面确认，标注里一并挂出来。
+    // ⚠️ 本函数是**模块级**（无 hook），故用 translate + initialLocale 口径（同 context.ts 的 ctxT）
+    label:
+      e.kind === 'physical' && e.label
+        ? `${e.label} · ${translate(BENCH_CHANNEL_PENDING, initialLocale())}`
+        : undefined,
     labelBgPadding: [4, 2] as [number, number],
     labelBgBorderRadius: 6,
     style: {

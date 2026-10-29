@@ -273,7 +273,7 @@ class ContentSafetyService:
         """
         if not text:
             return SafetyVerdict()
-        model = settings.CONTENT_SAFETY_LLM_MODEL or settings.AGENT_CHAT_DEFAULT_MODEL
+        model = settings.CONTENT_SAFETY_LLM_MODEL or settings.agent_default_model
         prompt = _CLASSIFY_PROMPT.format(
             taxonomy=_RISK_TAXONOMY,
             text=text[: settings.CONTENT_SAFETY_LLM_MAX_CHARS],

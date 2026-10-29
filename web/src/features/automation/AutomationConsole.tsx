@@ -427,19 +427,23 @@ export function AutomationConsole({
                       p.adopted ? 'border-l-p700 bg-ink-wash' : 'border-l-transparent',
                     )}
                   >
-                    <span className="min-w-0 flex-1 truncate text-[13px] text-t1">{p.name}</span>
+                    {/* 先翻译全名、再截掉括号注释（顺序不能反，否则命中不了词典 key） */}
+                    <span className="min-w-0 flex-1 truncate text-[13px] text-t1">
+                      {uiT(p.name).replace(/[（(].*$/, '').trim()}</span>
                     <span
                       className={cn(
                         'shrink-0 rounded-full px-1.5 py-[1px] text-[10px] font-medium',
                         SOURCE_CLS[p.source],
                       )}
                     >
-                      {p.source}
+                      {uiT(p.source)}
                     </span>
                     <span className="num shrink-0 text-[13px] font-semibold text-t1">
                       {p.display}
                       {p.unit ? (
-                        <span className="ml-0.5 text-[11px] font-normal text-t3">{p.unit}</span>
+                        /* 单位也过 uiT：中文单位（如「次」）需译成 times；V/RPM/s 等
+                           英文单位词典没有词条，translate 原样返回，不受影响。 */
+                        <span className="ml-0.5 text-[11px] font-normal text-t3">{uiT(p.unit)}</span>
                       ) : null}
                     </span>
                   </div>
@@ -477,10 +481,16 @@ export function AutomationConsole({
               right={
                 <span className="num text-[12px] text-t3">
                   {live.plan
-                    ? uiT("计划 {v1}s{v2}{v3}", { v1: live.plan.planned_duration_s, v2: live.plan.actual_duration_s != null
-                          ? ` · 实际 ${live.plan.actual_duration_s}s`
-                          : '', v3: live.plan.overrun ? '（已延期）' : '' })
+                    ? uiT("计划 {v1}s", { v1: live.plan.planned_duration_s })
                     : ''}
+                  {/* ⚠️ 「· 实际 {v1}s」必须**单独过一次 uiT**，不能当参数拼进外层模板：
+                      参数值不会被递归翻译成整句（它是数据），拼进去就会残留中文「实际」。
+                      key 必须与 catalog **逐字符一致**（不含前导空格），空格由 JSX 表达式间的
+                      空白提供。写法与 FanTrendView 保持一致。 */}
+                  {live.plan?.actual_duration_s != null
+                    ? ` ${uiT('· 实际 {v1}s', { v1: live.plan.actual_duration_s })}`
+                    : ''}
+                  {live.plan?.overrun ? uiT('（已延期）') : ''}
                 </span>
               }
             />
@@ -502,8 +512,8 @@ export function AutomationConsole({
                 chartMinH={140}
                 emptyHint={
                   cur?.id === 'run'
-                    ? '正在下发台架启动指令，拿到首批样本后这里会实时绘制占空比 / 电压 / 电流 / 转速曲线（缺测断线不补零）'
-                    : '台架尚未启动。本步骤之前不会产生任何曲线——这里只画真采到的数据。'
+                    ? uiT('正在下发台架启动指令，拿到首批样本后这里会实时绘制占空比 / 电压 / 电流 / 转速曲线（缺测断线不补零）')
+                    : uiT('台架尚未启动。本步骤之前不会产生任何曲线——这里只画真采到的数据。')
                 }
               />
             </div>
@@ -591,9 +601,9 @@ export function AutomationConsole({
                       <PlayCircle size={14} strokeWidth={1.9} className="shrink-0" />
                   <span className="min-w-0 flex-1 truncate text-[12.5px]">
                         {terminalStatus
-                          ? uiT("本轮已结束（{v1}）{v2}", { v1: uiT(TERMINAL_LABEL[terminalStatus]), v2: cur?.message ? ` · 末阶段：${cur.message}` : '' })
+                          ? uiT("本轮已结束（{v1}）{v2}", { v1: uiT(TERMINAL_LABEL[terminalStatus]), v2: cur?.message ? uiT(" · 末阶段：{v1}", { v1: uiT(cur.message) }) : '' })
                           : cur
-                            ? uiT("{v1} · {v2}", { v1: cur.name, v2: cur.message || '进行中' })
+                            ? uiT("{v1} · {v2}", { v1: uiT(cur.name), v2: cur.message ? uiT(cur.message) : uiT('进行中') })
                             : uiT('准备中…')}
                </span>
                       {/* 已采样本条数：让「跑到哪了」有个硬指标（0 条就是还没采到，不粉饰） */}
@@ -745,7 +755,7 @@ function ToolBlock({ tools }: { tools: AutomationToolState[] }) {
       <div className="min-h-[160px] flex-1 overflow-y-auto py-1">
         {tools.length ? (
           tools.map((t) => (
-            <Tooltip key={t.id} className="w-full" content={t.message ?? t.label}>
+            <Tooltip key={t.id} className="w-full" content={uiT(t.message ?? t.label)}>
               <div className="flex min-h-[32px] items-center gap-2 py-1 pr-3 pl-3">
                 <span
                   className={cn(
@@ -826,7 +836,7 @@ function LogStream({ logs }: { logs: AutomationLogEntry[] }) {
           logs.map((l) => (
             <div key={l.seq} className="automation-log-line mono flex gap-2 text-[11px] leading-[18px]">
               <span className="num shrink-0 text-white/30">{fmtClock(l.at)}</span>
-              <span className={cn('min-w-0 flex-1 break-words', LOG_CLS[l.level])}>{l.message}</span>
+              <span className={cn('min-w-0 flex-1 break-words', LOG_CLS[l.level])}>{uiT(l.message)}</span>
             </div>
           ))
         ) : (
@@ -932,7 +942,7 @@ function VerdictPanel({ stats, rows }: { stats: VerdictStats; rows: VerdictView[
       <div className="min-h-0 flex-1 overflow-y-auto py-1">
         {rows.length ? (
           rows.map((v) => (
-            <Tooltip key={v.reqId} className="w-full" content={`${v.reqId} · ${v.detail || v.name}`}>
+            <Tooltip key={v.reqId} className="w-full" content={uiT("{v1} · {v2}", { v1: v.reqId, v2: v.detail || v.name })}>
               <div
                 className={cn(
                   'mb-1 flex min-h-[32px] items-center gap-2 rounded-tps px-3 py-1',
@@ -951,14 +961,14 @@ function VerdictPanel({ stats, rows }: { stats: VerdictStats; rows: VerdictView[
                           : 'bg-t3/40',
                   )}
                 />
-                <span className="min-w-0 flex-1 truncate text-[13px] text-t1">{v.name}</span>
+                <span className="min-w-0 flex-1 truncate text-[13px] text-t1">{uiT(v.name)}</span>
                 <span
                   className={cn(
                     'num max-w-[45%] shrink-0 truncate text-[11.5px]',
                     v.tone === 'fail' ? 'text-alert' : 'text-t3',
                   )}
                 >
-                  {v.valueText}
+                  {uiT(v.valueText)}
                 </span>
               </div>
             </Tooltip>

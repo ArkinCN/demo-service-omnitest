@@ -1,14 +1,17 @@
 import { useT } from '../../../i18n'
 import { useEffect, useRef, useState } from 'react';
 import {
-  MODEL_OPTIONS,
+  FALLBACK_MODEL_OPTIONS,
   PERMISSION_OPTIONS,
+  type ModelOption,
   type PermissionLevel,
 } from '../types';
 
 interface Props {
   busy: boolean;
   model: string;
+  /** 可选模型列表，由宿主从后端拉取后传入（见 AgentChat 的 fetchModels）。 */
+  models?: ModelOption[];
   permission: PermissionLevel;
   autoRun: boolean;
   onModel: (v: string) => void;
@@ -41,6 +44,10 @@ export function Composer(props: Props) {
   const uiT = useT()
 
   const { busy, model, permission, autoRun } = props;
+  // 宿主未传（或拉取失败）时用兜底列表，保证下拉不空；正常路径下是后端真实列表。
+  // `uiT` 只对**词典里有的**显示名生效：后端 display_name 通常不在词典中，
+  // translate() 查不到会原样返回，属预期行为（模型名是数据、不是 UI 文案）。
+  const modelOptions = props.models && props.models.length > 0 ? props.models : FALLBACK_MODEL_OPTIONS;
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
   const [notice, setNotice] = useState('');
@@ -138,7 +145,7 @@ export function Composer(props: Props) {
             value={model}
             onChange={(e) => props.onModel(e.target.value)}
           >
-            {MODEL_OPTIONS.map((m) => (
+            {modelOptions.map((m) => (
               <option key={m.value} value={m.value}>
                 {uiT(m.label)}
               </option>

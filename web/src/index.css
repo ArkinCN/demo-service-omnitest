@@ -585,9 +585,7 @@
   （自动化运行时顶栏被 z-50 浮层遮住，两处都要有）；人测页面无 loop → 不受影响。
   =========================================================================== */
 
-/* 下线：绿色反向扫光（与 .automation-rail-flow 的方向相反）。
-   ⚠️ 2026-10-12 起**停用**：loop 相位下线改为 U 形折线（.flow-seg-u-sweep 接管）。
-   规则保留备查/他处复用，**不再有组件引用**——若未来清理，可连同 flow-seg-back-sweep 一并删除。 */
+/* 下线：绿色反向扫光（与 .automation-rail-flow 的方向相反） */
 .flow-seg-back {
   background: linear-gradient(90deg, var(--tp-p-200), var(--tp-p-700), var(--tp-p-200));
   background-size: 220% 100%;
@@ -602,9 +600,7 @@
   }
 }
 
-/* 下线箭头：绿色 + 轻发光，与 .flow-seg-arrow-rev（红）同一套反向平移 keyframes。
-   ⚠️ 2026-10-12 起**停用**：下箭头改 U 形 offset-path 版（.flow-seg-u-arrow），
-   本规则不再被引用（保留备查）。 */
+/* 下线箭头：绿色 + 轻发光，与 .flow-seg-arrow-rev（红）同一套反向平移 keyframes */
 .flow-seg-arrow-back {
   color: var(--p-500);
   filter: drop-shadow(0 0 3px rgba(77, 143, 109, 0.85));
@@ -614,80 +610,6 @@
 .flow-seg-arrow-back > svg {
   display: block;
   filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.9));
-}
-
-/* ===========================================================================
-   闭环下线 · U 形折线动效（2026-10-12 第三轮：按用户红线扩大 + 割裂修复）
-
-   形状与坐标见 FlowSegLink.tsx 的 FLOW_SEG_U_PATH（**盒内局部坐标**，viewBox
-   "0 0 184 56" 零平移；外层 translateX(-43×scale)+scale）；本节只管**沿路径的动效**：
-     · .flow-seg-u-sweep —— 流光段（stroke-dash 沿路径流动）：
-       路径全长 272 单位（44 + 184 + 44）。dasharray「亮 36 / 间隔 236」
-       （周期 = 272 = 恰好路径全长，同时只有一段光可见，比例与原 11/58 同量级）；
-       dashoffset **36 → -236**（扫程 = 36-(-236) = 272 = 恰好一个完整周期）
-       让光段从右端（调优运行）沿 U 形跑到左端（启动测试）。
-     · .flow-seg-u-arrow —— 箭头（offset-path 沿 U 形跑）：
-       路径内联在组件 style（offsetPath，与 SVG 同一常量、同一盒内坐标系——
-       2026-10-12 修「箭头左偏 43px 与折线割裂」见该常量 ⚠️ 注释）；
-       offset-distance 0%→100% = 从调优运行端跑到启动测试端；
-       opacity 18%/82% 淡入淡出与 .flow-arrow-scroll 同口径（防两端口硬切）；
-       offset-rotate: auto 180deg 由组件内联给出（ChevronLeft 图形方向补偿）。
-   ⚠️ 节奏：**1.8s/程**（2026-10-12 用户「速度放慢一倍」，原 0.9s；流光与箭头同步）。
-
-   ⚠️ 相位关系（2026-10-12 箭头相位修正：让箭头压在流光前进方向的头部，核心不变式，勿轻动）：
-     箭头中心恒在 s = 272×f；亮段占 **[s−36, s]** ——亮段整体位于箭头**身后**，
-     即**箭头压在流光前进方向的头部**、亮段像拖尾一样跟在箭尾后面。
-     根因：此前 keyframes 为 0 → -272 时，亮段占 [s, s+36]（在箭头前方），
-     箭头恰好钉死在亮段**尾缘**——用户截图指出「箭头在前进方向的尾巴」。
-     修正 = 亮段相位整体提前 36 单位（= 亮段长度）：36 → -236，扫程与节奏不变。
-     ⚠️ 两条动画必须**同周期同相位**（都 linear 1.8s；同时挂载即天然同步），
-        否则箭头与亮段会在途中彼此漂移、割裂复现。
-   =========================================================================== */
-
-.flow-seg-u-sweep {
-  stroke-dasharray: 36 236; /* 亮 36 + 间隔 236 = 272（路径全长），单光扫全程 */
-  /* 1.8s/程（2026-10-12 用户「速度放慢一倍」：0.9 → 1.8；与 .flow-seg-u-arrow 同步） */
-  animation: flow-u-sweep 1.8s linear infinite;
-}
-@keyframes flow-u-sweep {
-  /* dashoffset 递减 → 虚线图案沿路径**前进方向**（起点→终点）流动。
-     ⚠️ 相位起点 +36（非 0，2026-10-12 箭头相位修正）：亮段整体相对箭头
-     滞后 36 单位（= 亮段长度）→ 箭头恒处于流光**前进方向的头部**；
-     36 → -236 的扫程 = 272 = 恰好一个完整周期（与箭头 1.8s/程 同速）。 */
-  0% {
-    stroke-dashoffset: 36;
-  }
-  100% {
-    stroke-dashoffset: -236;
-  }
-}
-
-.flow-seg-u-arrow {
-  color: var(--p-500);
-  filter: drop-shadow(0 0 3px rgba(77, 143, 109, 0.85));
-  opacity: 0;
-  /* 1.8s/程（2026-10-12 用户「速度放慢一倍」：0.9 → 1.8；与流光同步） */
-  animation: flow-u-arrow 1.8s linear infinite;
-}
-.flow-seg-u-arrow > svg {
-  display: block;
-  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.9));
-}
-@keyframes flow-u-arrow {
-  0% {
-    offset-distance: 0%;
-    opacity: 0;
-  }
-  18% {
-    opacity: 1;
-  }
-  82% {
-    opacity: 1;
-  }
-  100% {
-    offset-distance: 100%;
-    opacity: 0;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -700,9 +622,7 @@
   .flow-seg-arrow-rev,
   .flow-seg-arrow-back,
   .flow-seg-return,
-  .flow-seg-back,
-  .flow-seg-u-sweep,
-  .flow-seg-u-arrow {
+  .flow-seg-back {
     animation: none;
   }
   /* 低动效偏好：箭头静态停在段中点，仍指示方向，不闪 */
@@ -711,11 +631,6 @@
   .flow-seg-arrow-back {
     opacity: 1;
     transform: translateX(calc(var(--fb-seg-travel, 24px) / 2));
-  }
-  /* U 形箭头：低动效下静止在**路径中点**（U 形横穿段中央），可见且指示方向 */
-  .flow-seg-u-arrow {
-    opacity: 1;
-    offset-distance: 50%;
   }
 }
 
@@ -849,9 +764,440 @@
 .config-stepper { border: 1px solid var(--tp-line); border-radius: 9px; padding: 4px; background: white; }
 
 html[lang='en'] .redline-confirm dt { width: 110px; flex-shrink: 0; }
-html[lang='en'] .ac-composer { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
-
 html[lang='en'] .knowledge-axis-panel { width: clamp(280px, 20vw, 344px) !important; }
 @media (max-width: 1799px) {
   html[lang='en'] .product-cascader-trigger { max-width: 200px; }
+}
+
+/* ============================================================================
+ * 窄屏自适应（2026-10-15 新增）
+ * ----------------------------------------------------------------------------
+ * 背景：本项目按「基准画布 1920×1080」设计，全站是「填满视口、不滚动」结构
+ *       （Shell 的 flex + min-h-0，以及各面板大量 overflow-hidden）。此前只有
+ *       **放大**方向的断点（min-[1536px]:）和一处英文紧凑断点（max-width:1799px），
+ *       窗口一旦被拉伸缩小：顶栏三块 shrink-0 互不相让、左栏 300px 下限顶死，
+ *       结果就是重叠与裁切。
+ *
+ * 目标：桌面 Web 窗口拉伸缩小 / 投屏到 1024×768 时，元素不重叠、不裁切、
+ *       功能项全部可见。**不做移动端适配**（不做触摸优化、不按 375px 设计）。
+ *
+ * 手段：纯 CSS 媒体查询 + CSS 变量，**不新增任何 window.resize 监听**。
+ *       唯一复用的既有 JS 是 useFlowBarScale 的 ResizeObserver（元素级，非 window）。
+ *
+ * ⚠️ 两条必须遵守的写法约束，改动本区块时别破坏：
+ *   ① 本区块**不套 @layer**（unlayered）。Tailwind 4 的 utilities 位于
+ *      @layer utilities，而无层级规则的优先级高于任何 @layer —— 这是这里能覆盖
+ *      h-[48px] / shrink-0 之类工具类的唯一原因，别好心把它包进 @layer。
+ *   ② 本区块必须留在文件**最末尾**：同优先级下靠「后出现者胜」压过上方旧规则。
+ *
+ * ⚠️ 第三条（最容易被踩）：**内联自定义属性优先级高于任何样式表规则**。
+ *   所以 FlowScreen 内联注入的是 `--flow-cols-wide`（宽屏口径）而不是
+ *   直接写 `--flow-cols`——若内联写 `--flow-cols`，下面所有断点都会被它压死。
+ * ========================================================================== */
+
+/* ── 骨架类 ①：主内容区栅格（消费方 FlowScreen） ──────────────────────────
+   列定义有两个来源，优先级从低到高：
+     CSS 兜底常量  <  JS 内联的 --flow-cols-wide（宽屏口径，含 autoRunning 让位）
+                                        <  本文件各断点里的 --flow-cols
+   为什么要绕这一层变量：列定义原来是内联 style，内联样式优先级高于任何样式表，
+   @media 覆盖不动（除非 !important，那会跟 Tailwind 的 utilities 打架）。
+   改成「内联只给宽屏口径、样式表负责消费」后，JS 的 autoRunning 分支一行未动，
+   而断点调整全部落在 CSS 里。 */
+.flow-split-grid {
+  grid-template-columns: var(--flow-cols, var(--flow-cols-wide, minmax(300px, 380px) minmax(0, 1fr)));
+  gap: var(--flow-gap, var(--flow-gap-wide, clamp(14px, 1.25vw, 24px)));
+}
+
+/* ── 骨架类 ②：顶栏主行（TopBar） ────────────────────────────────────────
+   原为 h-[var(--topbar-h,80px)] **固定高**：内容一旦换行就会被裁。
+   改成 min-height + height:auto 后，换行时容器自动增高，多出来的高度由
+   Shell 的 flex-col 转嫁给 .shell-main（它已是 flex-1 min-h-0，天然可缩）。
+   不设固定的 height，所以宽屏单行时渲染高度仍是 var(--topbar-h,80px)，观感不变。
+   align-content 只在多行时生效（单行 flex 容器上无副作用），用于让换行后的
+   多行整体在容器内居中。 */
+.topbar-main {
+  height: auto;
+  min-height: var(--topbar-h, 80px);
+  flex-wrap: wrap;
+  align-content: center;
+  row-gap: 8px;
+}
+
+/* ── 骨架类 ③：顶栏动作条 ────────────────────────────────────────────────
+   同 ②：h-[48px] → min-height，允许换行。
+   padding-block 是给换行后补一点上下余量；单行时内容高约 30px + 8px < 48px，
+   由 min-height 兜住，渲染高度与改动前一致。 */
+.topbar-actions {
+  height: auto;
+  min-height: 48px;
+  flex-wrap: wrap;
+  align-content: center;
+  row-gap: 6px;
+  padding-block: 4px;
+}
+
+/* ── 骨架类 ④：流程条槽位（TopBar 内 FlowStepper 的外层） ────────────────
+   这个类**只在 B2 断点里用到**（让它独占一行），此处只留说明、不留规则。
+   槽位自身的 min-width 由 JSX 决定：英文紧凑模式下是 min-w-[240px]
+   （给流程条留保底宽度），其余情况是 min-w-0（允许被压缩）。
+   ⚠️ 这里**不要**补 min-width:0 兜底：无层级规则会压过那两个工具类，
+   英文模式的 240px 保底会失效。 */
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * B1 · ≤1280px「压缩」——不动结构，只收紧左栏与列间距
+ * 动机：1366×768 的窄屏笔记本（含 Windows 125% 缩放的 1093 有效宽度）最常见。
+ * 此档仍保持左右并排，观感变化最小。
+ * 不生效时回退：>1280px 用 JS 注入的 --flow-cols-wide（原宽屏口径）。
+ * ──────────────────────────────────────────────────────────────────────── */
+@media (max-width: 1280px) {
+  .flow-split-grid:not(.flow-split-auto) {
+    --flow-cols: minmax(248px, 300px) minmax(0, 1fr);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * B2 · ≤1024px「换行」——顶栏改为两行
+ * 动机：投影仪最常见分辨率 1024×768（用户明确的投屏场景）。
+ * · 左栏进一步收窄到 216~264px；
+ * · 列间距收到 14px 下限（clamp 在 1024 宽时本就会算到 12.8→14，这里写死更可控）；
+ * · 顶栏流程条独占一整行：flex-basis:100% 强制换行 + order:2 排到最后。
+ *   否则品牌区 / 自动化按钮 / 流程条 / 右侧控件组四方会在同一行互相挤压变形
+ *   （它们全是 shrink-0，谁也不肯让）。
+ * 不生效时回退：1024~1280 区间走 B1 的并排收窄口径。
+ * ──────────────────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .flow-split-grid:not(.flow-split-auto) {
+    --flow-cols: minmax(216px, 264px) minmax(0, 1fr);
+    --flow-gap: 14px;
+  }
+
+  .topbar-stepper-slot {
+    flex-basis: 100%;
+    order: 2;
+  }
+
+  /* 流程条独占一行后，它与上一行之间靠 row-gap 收窄来省高度 */
+  .topbar-main {
+    row-gap: 4px;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * B3 · ≤860px「纵向堆叠」——左栏与右列上下排列
+ * 动机：窗口拉伸到极窄（拖到半个屏幕宽）时的兜底重排。
+ *
+ * ⚠️ 为什么用 minmax(0, Nfr) 行高而不是让它们自然流：
+ *    全站是「填满视口、不滚动」设计。若堆叠时改用自然高度，两栏总高必然
+ *    超出视口且无处可滚 → 直接被裁。给有界比例行高后，两行各占容器高的
+ *    5/13 与 8/13，**各自内部滚动**，容器级零裁切。
+ *
+ * ⚠️ :not(.flow-split-auto) 不能省：自动化全屏接管时左栏不渲染，
+ *    外层栅格只剩一个子元素，若还套两行模板，右列会被压进 5/13 那一行。
+ * ──────────────────────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .flow-split-grid:not(.flow-split-auto) {
+    --flow-cols: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 5fr) minmax(0, 8fr);
+  }
+
+  /* 左栏在堆叠档只拿到容器高的 5/13，而它的固定块（标题条 44 + 清单条 +
+     底部确认条 ≈ 88）会把「参数内容区」挤没，最坏情况底部确认按钮被
+     Panel 的 overflow-hidden 裁掉。此档把清单条上限从 152px 收到 72px，
+     让内容区仍能显示若干行、且底部按钮完整可见。 */
+  .flow-left-checklist {
+    max-height: 72px;
+  }
+
+  /* 面板卡片网格：堆叠档右列只有 8/13 高，卡片网格的行高下限
+     （220 + 140 = 360px，见 ResourcePanel.tsx 内联 gridTemplateRows 的注释）
+     必然撑破容器 —— **实测越出 118px，卡片下半截被裁**。
+     原设计是「宁可溢出也不把图表压没」，所以不动行高下限，改为让它能滚：
+     溢出部分可滚动查看，符合「不裁切」的验收口径。
+     ⚠️ 只在堆叠档放开：宽屏（内容放得下）保持 overflow-hidden 的原观感。 */
+  .panel-grid-scroll {
+    overflow-y: auto;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * 保底 · ≤720px —— 「绝不重叠、绝不裁切」
+ * 动机：窗口窄到这个程度已偏离投屏/演示场景，此处只求不出错。
+ * 做法：给内容区一个最小工作高度，低于它时由 .shell-main 自己纵向滚动，
+ *       而不是把面板压成一条缝（面板高低于 FlowScreen 的 PANEL_MIN_H 时，
+ *       其内容会被裁）。
+ * ⚠️ .shell-main 是 flex-1 的确定高容器，加上 overflow-y:auto 才能真的滚；
+ *    子元素的 min-height 会撑破它，从而触发滚动而不是裁切。
+ * ──────────────────────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .shell-main {
+    overflow-y: auto;
+  }
+
+  .shell-main > * {
+    min-height: 520px;
+  }
+
+  .flow-left-checklist {
+    max-height: 48px;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * 知识库页（不走 FlowScreen 栅格，需单独处理）
+ * 该页是三栏 flex：轴筛选(shrink-0) + 条目列表(flex-1 min-w-0) + 条目详情(shrink-0)，
+ * 左右两栏宽度写在**内联 style** 的 clamp 里，媒体查询覆盖不动。
+ * ──────────────────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  /* 顶条：原 h-[52px] 固定高，内容（面包屑 + 返回/新增按钮 + 右端三枚按钮）
+     在窄屏折行后会被固定高裁掉半行。改 min-height + 允许换行。 */
+  .kb-topbar {
+    height: auto;
+    min-height: 52px;
+    flex-wrap: wrap;
+    row-gap: 6px;
+    padding-block: 8px;
+  }
+
+  /* 中栏的三轴面包屑行：原 h-[30px] 固定高，同样会被折行裁掉。 */
+  .kb-filterbar {
+    height: auto;
+    min-height: 30px;
+    flex-wrap: wrap;
+    row-gap: 4px;
+    padding-block: 5px;
+  }
+
+  /* 左右两栏宽度：用 !important 压过内联 style（与上方 html[lang='en'] 那条
+     同一手法，项目既有先例）。不调的话中栏在 1024 宽只剩约 420px、860 宽只剩
+     约 250px —— 不会重叠，但投屏可读性很差。这里把两栏下限一起调低，
+     把空间还给中栏。
+     ⚠️ 轴筛选那条必须带 html[lang='en'] 前缀：英文模式有一条 (0,2,1) 权重的
+        !important 规则，只写 .knowledge-axis-panel 的 (0,1,0) 压不过它。 */
+  .knowledge-axis-panel,
+  html[lang='en'] .knowledge-axis-panel {
+    width: clamp(196px, 21vw, 248px) !important;
+  }
+
+  .knowledge-detail-panel {
+    width: clamp(232px, 25vw, 296px) !important;
+  }
+
+  /* 左栏参数行的控件宽度。左栏此档只有 216~264px，而参数行里：
+     · 名称列是 w-[40%] + min-w-0（本来就能缩，不必管）；
+     · 控件列是 shrink-0 的**写死宽度**：下拉 168px / 只读值 max 188px。
+     两者相加在 216px 宽下会顶出容器，被 Panel 的 overflow-hidden 裁掉右边一截。
+     按档收窄后，名称与数值都还能看清，且不再溢出。 */
+  .flow-param-select {
+    width: 132px;
+  }
+
+  .flow-param-value {
+    max-width: 148px;
+  }
+}
+
+/* Five-stage configuration hierarchy · 2026-10-27 v002 */
+.stage-purpose { margin-bottom: 14px; padding: 14px 12px; border-left: 4px solid var(--p-700); border-radius: 0 10px 10px 0; background: #edf4ef; }
+.stage-purpose > div { display: flex; align-items: center; gap: 10px; }
+.stage-purpose-index { color: var(--p-700); font: 600 11px 'IBM Plex Mono', monospace; background: var(--p-50); border-radius: 5px; padding: 5px 6px; white-space: nowrap; }
+.stage-purpose h3 { margin: 0; color: var(--tp-text); font-size: 21px; font-weight: 700; letter-spacing: -.02em; }
+.stage-purpose p { margin: 9px 0 0; font-size: 15px; font-weight: 500; line-height: 1.65; color: #294e3c; }
+.config-mode-bar { gap: 8px; }
+.unified-config-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.unified-config-tab { min-width: 0; align-items: stretch; flex-wrap: wrap; }
+.unified-config-tabs button { flex: 1; min-width: 0; justify-content: flex-start; font-weight: 700; font-size: 15px; border-radius: 8px; padding: 12px 9px; line-height: 1.45; }
+.unified-config-tabs > button:first-child { font-size: 12px; font-weight: 500; }
+.unified-config-tabs[data-single='true'] > .unified-config-tab button { font-size: 15px; }
+.unified-config-tabs button[aria-pressed='true'] { background: #e7f1eb; color: var(--p-700); border-color: #7caa92; box-shadow: inset 3px 0 var(--p-700); }
+.unified-config-tabs small { margin-left: auto; flex-shrink: 0; }
+.config-category-name { flex: 1; min-width: 0; text-align: left; }
+html[lang='en'] .unified-config-tabs button { font-size: 13px; gap: 4px; padding-inline: 6px; }
+.unified-config-group > header { background: #f8faf8; border-radius: 10px 10px 0 0; padding: 7px 9px; }
+.unified-config-group header span { display: none; }
+.unified-config-group h3 { font-size: 12px; font-weight: 500; color: var(--tp-text-2); }
+.config-show-category { padding: 10px; border: 1px solid var(--tp-line); border-radius: 8px; background: white; color: var(--p-700); font-size: 12px; cursor: pointer; }
+.stage-automation-label { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; line-height: 1.25; padding-block: 3px; }
+.stage-automation-label small { font-size: 10px; font-weight: 400; opacity: .8; }
+.topbar-main button:has(> .stage-automation-label), .topbar-main button:has(.stage-automation-label) { height: auto; min-height: 42px; }
+/* One category view: purpose and categories lead; source rows stay compact. */
+.config-overview { padding: 12px 12px; }
+.unified-config-tabs { gap: 7px; }
+.unified-config-fields { gap: 0; padding: 0 7px; }
+.unified-config-field { border: 0; border-radius: 0; background: transparent; border-bottom: 1px solid var(--tp-line-soft); }
+.unified-config-field:last-child { border-bottom: 0; }
+.unified-config-field > div { padding: 6px 2px; gap: 5px; }
+.unified-config-field .truncate { font-size: 12px; font-weight: 400; }
+.config-search-disclosure { font-size: 11px; color: var(--tp-text-2); }
+.config-search-disclosure summary { cursor: pointer; width: fit-content; }
+.config-search-disclosure .unified-config-search { margin-top: 8px; }
+.config-field-meta { padding-top: 4px; font-size: 10px; }
+.unified-config-tabs[data-single='true'] { display: flex; }
+.unified-config-tabs[data-single='true'] .unified-config-tab { flex: 1; flex-wrap: nowrap; }
+.unified-config-tabs[data-single='true'] .unified-config-tab > button { min-width: 115px; }
+
+/* Approved operation hierarchy · 2026-10-27 v004 */
+.stage-operation { margin-bottom: 14px; padding: 12px; border: 1px solid #cbded2; border-radius: 12px; background: #f1f7f3; }
+.stage-operation > header { display: grid; gap: 5px; margin-bottom: 10px; }
+.stage-operation h4 { margin: 0; font-size: 17px; line-height: 1.4; font-weight: 700; color: #214d37; }
+.stage-operation > header > span { font-size: 12px; color: #426452; }
+.stage-operation-status { margin: 0 0 9px; font-size: 13px; line-height: 1.65; color: #355542; }
+.stage-operation-link { display: block; margin-block: 8px; font-size: 13px; color: #275e41; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.stage-operation-link:disabled { opacity: .5; cursor: default; }
+.stage-operation-confirm { width: 100%; min-height: 46px; padding: 9px; border: 1.5px solid #326f4c; border-radius: 9px; background: white; color: #22583c; font-size: 16px; font-weight: 700; cursor: pointer; }
+.stage-operation-confirm:disabled { color: #52755f; background: #e6efe8; border-color: #b2c8b9; cursor: default; }
+.stage-operation-note { margin: 9px 0 0; font-size: 11px; line-height: 1.6; color: #61746a; }
+.stage-operation-fields { min-width: 0; border-radius: 8px; background: white; overflow: hidden; }
+.stage-operation-fields > div { flex-wrap: wrap; min-width: 0; padding: 8px; gap: 6px; border-bottom: 1px solid #e5ece7; }
+.stage-operation-fields > div:last-child { border-bottom: 0; }
+.stage-operation-fields .truncate { white-space: normal; overflow-wrap: anywhere; font-size: 12px; }
+.stage-operation-fields input { max-width: 100%; }
+.stage-operation-sequence { margin: 12px 0 0; padding-left: 18px; color: #586c60; font-size: 12px; line-height: 1.8; }
+.stage-details { margin-block: 10px; min-width: 0; }
+.stage-details > summary { padding: 10px 8px; background: #f7f9f7; border: 1px solid #e0e8e2; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: #3f5948; }
+.stage-details[open] > summary { margin-bottom: 10px; }
+.stage-operation-footer { flex-shrink: 0; padding: 12px; border-top: 1px solid #dce6de; background: white; }
+.stage-operation-footer > button { min-height: 44px; height: auto; padding: 10px 8px; white-space: normal; font-size: 15px; line-height: 1.45; }
+.stage-operation-footer > p { margin: 7px 0 0; color: #647269; font-size: 11px; line-height: 1.5; }
+.stage-operation-secondary { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 7px; }
+.stage-operation-secondary button { color: #3e654d; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+/* Model proposals are reviewed before they become editable draft values. */
+.config-suggestion-entry { margin-bottom: 14px; }
+.config-suggestion-entry > button { height: auto; min-height: 46px; padding: 10px 8px; white-space: normal; font-size: 15px; border-color: #8eaf9a; }
+.config-suggestion-entry > p { margin: 6px 0 0; font-size: 11px; line-height: 1.5; color: #587261; }
+.config-suggestion-demo { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; margin-top: 6px; }
+.config-suggestion-demo > button { font-size: 11px; min-height: 28px; color: #64766b; }
+.config-suggestion-demo > span { padding: 5px 8px; border-radius: 5px; background: #fff5df; color: #80581c; font-size: 11px; line-height: 1.5; }
+.config-suggestion-dialog {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  color: var(--tp-text);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.config-suggestion-dialog p { margin: 0; white-space: pre-wrap; }
+.config-suggestion-dialog svg { flex-shrink: 0; }
+.config-suggestion-overview {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #d7e3db;
+  border-radius: 10px;
+  background: #f6faf7;
+}
+.config-suggestion-overview-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  color: var(--p-700);
+}
+.config-suggestion-overview-heading h3,
+.config-suggestion-section-heading,
+.config-suggestion-state h3 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--tp-text);
+}
+.config-suggestion-overview-heading > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-left: auto;
+  max-width: 100%;
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid #b5ccbd;
+  border-radius: 7px;
+  background: white;
+  color: var(--p-700);
+  font-size: 12px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+.config-suggestion-overview-heading > button:hover:not(:disabled) { background: #e7f1eb; border-color: #7caa92; }
+.config-suggestion-meta { min-width: 0; color: #526b5c; font-size: 12px; overflow-wrap: anywhere; }
+.config-suggestion-counts { display: flex; flex-wrap: wrap; gap: 6px; }
+.config-suggestion-counts > span {
+  padding: 2px 8px;
+  border: 1px solid #d5e3d9;
+  border-radius: 6px;
+  background: white;
+  color: #395b46;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.config-suggestion-section-heading { display: flex; align-items: center; gap: 8px; }
+.config-suggestion-changes { display: grid; gap: 12px; min-width: 0; }
+.config-suggestion-change {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #d7e3db;
+  border-radius: 10px;
+  background: white;
+}
+.config-suggestion-change[data-selected='true'] { border-color: #6e9f81; background: #f0f7f2; box-shadow: inset 3px 0 #326f4c; }
+.config-suggestion-change-header { display: grid; gap: 12px; min-width: 0; }
+.config-suggestion-change-header > label { display: flex; align-items: flex-start; gap: 8px; min-width: 0; cursor: pointer; }
+.config-suggestion-change-header > label > input { width: 18px; height: 18px; margin: 2px 0 0; flex-shrink: 0; accent-color: #326f4c; cursor: pointer; }
+.config-suggestion-change-header > label > svg { margin-top: 3px; color: #426e53; }
+.config-suggestion-change-header > label > strong { min-width: 0; font-size: 14px; line-height: 1.6; font-weight: 600; }
+.config-suggestion-comparison { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 10px; min-width: 0; }
+.config-suggestion-comparison > svg { color: #638370; }
+.config-suggestion-value { display: grid; align-content: start; gap: 4px; min-width: 0; height: 100%; padding: 10px 12px; border: 1px solid #e0e7e2; border-radius: 8px; background: #f8faf8; white-space: pre-wrap; }
+.config-suggestion-value[data-side='after'] { border-color: #c5dbcd; background: #edf6ef; }
+.config-suggestion-value > span:first-child,
+.config-suggestion-value > small { color: #526b5c; font-size: 12px; line-height: 1.5; }
+.config-suggestion-value > strong { font-size: 14px; line-height: 1.6; font-weight: 600; color: #294e3c; }
+.config-suggestion-reason { display: grid; gap: 4px; min-width: 0; }
+.config-suggestion-reason > span,
+.config-suggestion-reason > strong { color: #526b5c; font-size: 12px; font-weight: 600; }
+.config-suggestion-evidence { min-width: 0; padding-top: 10px; border-top: 1px solid #e0e8e2; font-size: 12px; line-height: 1.6; color: #4d6456; }
+.config-suggestion-evidence > details + details { margin-top: 8px; }
+.config-suggestion-evidence > details > summary { width: fit-content; max-width: 100%; color: #335f44; font-weight: 600; cursor: pointer; }
+.config-suggestion-evidence > details > summary > span { display: inline; }
+.config-suggestion-evidence > details > summary > svg { display: inline; margin: 0 5px 0 2px; vertical-align: -3px; }
+.config-suggestion-evidence > details > p { margin-top: 8px; }
+.config-suggestion-evidence > details > p > strong { display: block; margin-bottom: 2px; color: #365542; }
+.config-suggestion-questions { display: grid; gap: 10px; min-width: 0; padding: 14px; border: 1px solid #e4d6af; border-radius: 10px; background: #fffbef; color: #66532c; }
+.config-suggestion-questions .config-suggestion-section-heading { color: #66532c; }
+.config-suggestion-questions > ol { margin: 0; padding-left: 24px; list-style: decimal outside; }
+.config-suggestion-questions > ol > li { padding-left: 3px; white-space: pre-wrap; }
+.config-suggestion-questions > ol > li + li { margin-top: 8px; }
+.config-suggestion-questions > ol > li::marker { color: #7a632f; font-weight: 600; }
+.config-suggestion-state { display: grid; justify-items: center; gap: 10px; min-width: 0; padding: 24px 14px; border: 1px solid #d7e3db; border-radius: 10px; background: #f8faf8; text-align: center; }
+.config-suggestion-state > svg { color: #426e53; }
+.config-suggestion-state > p { max-width: 60ch; color: #526b5c; }
+.config-suggestion-error { display: flex; align-items: flex-start; gap: 8px; min-width: 0; padding: 14px; border: 1px solid #ddbcb7; border-radius: 10px; background: #fff6f4; color: #864b43; }
+.config-suggestion-error > svg { margin-top: 3px; }
+.config-suggestion-error > p { min-width: 0; }
+.config-suggestion-footer { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; height: 100%; font-size: 12px; line-height: 1.5; }
+.config-suggestion-footer > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #526b5c; }
+.config-suggestion-footer > button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; min-height: 32px; max-height: 36px; padding: 5px 12px; border: 1px solid #b8cdbf; border-radius: 7px; background: white; color: #365542; font-size: 12px; line-height: 1.5; white-space: nowrap; cursor: pointer; }
+.config-suggestion-footer > button:nth-of-type(2) { border-color: #326f4c; background: #326f4c; color: white; font-weight: 600; }
+.config-suggestion-footer > button:hover:not(:disabled) { border-color: #326f4c; background: #edf4ef; }
+.config-suggestion-footer > button:nth-of-type(2):hover:not(:disabled) { background: #275a3d; border-color: #275a3d; }
+.config-suggestion-overview-heading > button:disabled,
+.config-suggestion-footer > button:disabled { opacity: .55; cursor: not-allowed; }
+.config-suggestion-dialog button:focus-visible,
+.config-suggestion-dialog input:focus-visible,
+.config-suggestion-evidence > details > summary:focus-visible,
+.config-suggestion-footer > button:focus-visible { outline: 2px solid #326f4c; outline-offset: 3px; }
+@media (max-width: 720px) {
+  .config-suggestion-comparison { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .config-suggestion-comparison > svg { justify-self: center; transform: rotate(90deg); }
+  .config-suggestion-value { height: auto; }
+  .config-suggestion-footer > button { padding-inline: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .config-suggestion-state .animate-spin { animation: none; }
 }

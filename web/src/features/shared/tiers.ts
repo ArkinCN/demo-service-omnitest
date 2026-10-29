@@ -7,11 +7,25 @@
    渲染组件 `TierTree` 在同目录的 bits.tsx。
    =========================================================================== */
 import { useAppStore } from '../../state/useAppStore'
+import { initialLocale } from '../../i18n/locale'
+
+/**
+ * 当前界面是否为英文（2026-10-14）。
+ *
+ * ⚠️ 命名用 `isEnglish` 而非 `useEnglish`：它**不是 React Hook**，
+ * 只是读 localStorage 的普通函数（本模块是纯函数模块，拿不到 hook）。
+ * 叫 `use*` 会让 `react-hooks/rules-of-hooks` 误判为「在非组件里调用 Hook」而报错。
+ */
+function isEnglish(): boolean {
+  return initialLocale() === 'en'
+}
 
 /** 三级子组：按条目 id 精确点名，不按数量硬切 */
 export interface TierSubSpec {
   id: string
   title: string
+  /** 英文标题（2026-10-14 第一期英文化新增，可选；缺失回退 `title`） */
+  title_en?: string
   items: string[]
 }
 
@@ -19,6 +33,8 @@ export interface TierSubSpec {
 export interface TierGroupSpec {
   id: string
   title: string
+  /** 英文标题（2026-10-14 第一期英文化新增，可选；缺失回退 `title`） */
+  title_en?: string
   members?: string[]
   items?: string[]
   subgroups?: TierSubSpec[]
@@ -28,6 +44,8 @@ export interface TierGroupSpec {
 export interface TierSpec {
   id: string
   title: string
+  /** 英文标题（2026-10-14 第一期英文化新增，可选；缺失回退 `title`） */
+  title_en?: string
   groups: TierGroupSpec[]
 }
 
@@ -49,10 +67,28 @@ export interface BuiltTier<T> {
   count: number
 }
 
-/** 从场景包某一段里读 `group_tiers`；没有这一段就返回空数组，调用方回落到旧版平铺 */
+/**
+ * 从场景包某一段里读 `group_tiers`；没有这一段就返回空数组，调用方回落到旧版平铺。
+ *
+ * 2026-10-14（第一期英文化）：英文界面下优先取各级 `title_en`，缺失回退中文 title。
+ * 只替换 title，`id` 与 `items/members` 等结构字段原样保留（它们是稳定标识，不能译）。
+ * 场景包没有 `title_en` 时行为与改动前完全一致。
+ */
 export function readTiers(section: unknown): TierSpec[] {
   const t = (section as { group_tiers?: unknown } | null | undefined)?.group_tiers
-  return Array.isArray(t) ? (t as TierSpec[]) : []
+  if (!Array.isArray(t)) return []
+  const specs = t as TierSpec[]
+  if (!isEnglish()) return specs
+  // 英文：浅拷贝一层，避免污染原始场景包对象（切回中文时要能恢复）
+  return specs.map((tier) => ({
+    ...tier,
+    title: tier.title_en || tier.title,
+    groups: (tier.groups ?? []).map((g) => ({
+      ...g,
+      title: g.title_en || g.title,
+      subgroups: g.subgroups?.map((s) => ({ ...s, title: s.title_en || s.title })),
+    })),
+  })) as TierSpec[]
 }
 
 /**

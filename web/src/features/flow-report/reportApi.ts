@@ -158,33 +158,18 @@ export async function templateStatus(): Promise<TemplateStatus> {
 }
 
 /** 上传客户模板（.xlsm），覆盖式。返回后端确认信息。 */
-export async function uploadTemplate(file: File): Promise<{ filename: string; bytes: number; note?: string; tool_ready?: boolean }> {
+export async function uploadTemplate(file: File): Promise<{ filename: string; bytes: number; note?: string }> {
   const fd = new FormData()
   fd.append('file', file)
   const resp = await fetch('/api/reports/template', { method: 'POST', body: fd })
-  let body: ApiBody<{ filename: string; bytes: number; note?: string; tool_ready?: boolean }> | null = null
+  let body: ApiBody<{ filename: string; bytes: number; note?: string }> | null = null
   try {
-    body = (await resp.json()) as ApiBody<{ filename: string; bytes: number; note?: string; tool_ready?: boolean }>
+    body = (await resp.json()) as ApiBody<{ filename: string; bytes: number; note?: string }>
   } catch {
     throw new Error(`HTTP ${resp.status}（响应不是 JSON）`)
   }
   if (!resp.ok || !body.success) throw new Error(body.message || `HTTP ${resp.status}`)
   return body.data
-}
-
-/**
- * 移除已上传的客户模板（2026-10-12 新增），恢复系统内置模板路径。
- *
- * 为什么需要：生成报告被 blocked 的提示写明「或删除已上传的客户模板以改用
- * 系统内置模板」，但此前界面上**没有这个入口**——补救不可达。本函数补上：
- * 移除后 generate_report 自动回到内置模板（产出即含趋势图/波形图的正式报告）。
- */
-export async function removeTemplate(): Promise<{ removed: string[]; count: number; note?: string }> {
-  const { data } = await call<{ removed: string[]; count: number; note?: string }>(
-    '/api/reports/template',
-    { method: 'DELETE' },
-  )
-  return data
 }
 
 /**

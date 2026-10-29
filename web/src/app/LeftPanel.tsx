@@ -1,5 +1,6 @@
 import { useT } from '../i18n'
-import { useEffect, useState, type ReactNode } from 'react'
+import { STAGE_PRESENTATION } from './configPresentation'
+import { useState, type ReactNode } from 'react'
 import { CheckCircle2, Lock, Sliders } from 'lucide-react'
 import {
   Badge,
@@ -44,7 +45,10 @@ function Checklist({
           {items.filter((i) => i.status === 'done').length} / {items.length}
         </span>
       </div>
-      <ul className="max-h-[152px] overflow-y-auto pb-1">
+      {/* 窄屏自适应（2026-10-15）：加 flow-left-checklist 钩子 —— 堆叠档（≤860px）
+          左栏只拿到容器高约 5/13，索引条上限由 index.css 从 152px 收到 72px
+          （≤720px 再收到 48px），避免固定块挤爆内容区、底部确认按钮被裁。 */}
+      <ul className="flow-left-checklist max-h-[152px] overflow-y-auto pb-1">
         {items.map((it) => (
           <li
             key={it.id}
@@ -160,7 +164,10 @@ function ParamRow({
         ) : item.kind === 'select' || item.kind === 'switch' ? (
           <Select
             size="sm"
-            className="w-[168px]"
+            // 窄屏自适应（2026-10-15）：加 flow-param-select 钩子 —— 左栏在 ≤1024px
+            // 只有 216~264px 宽，写死的 168px 会把参数名挤到只剩十几像素，
+            // 由 index.css 在该档收到 132px。
+            className="flow-param-select w-[168px]"
             label={item.name}
             options={(item.options ?? [String(value)]).map((o, i) => ({
               value: o,
@@ -171,9 +178,11 @@ function ParamRow({
             onChange={(v) => !locked && setParam(key, v)}
           />
         ) : (
+          // 窄屏自适应（2026-10-15）：flow-param-value —— 同 flow-param-select，
+          // 188px 的只读值在 216px 宽左栏里会顶出容器被 Panel 裁掉。
           <span
             className={cn(
-              'num max-w-[188px] truncate rounded-tps border px-1.5 py-1 text-[12px]',
+              'flow-param-value num max-w-[188px] truncate rounded-tps border px-1.5 py-1 text-[12px]',
               alert
                 ? 'border-alert/40 bg-white text-alert'
                 : value === '不适用'
@@ -364,18 +373,18 @@ export function LeftPanel({ flow, scene }: { flow: FlowId; scene: ScenePackage }
   )
 }
 
-/** Core and complete configuration share the same field presentation. */
-export function ConfigOverview({ quick, children, count }: { quick: ReactNode; children: ReactNode; count: number }) {
+/** Stage purpose followed by one category-based view of the source fields. */
+export function ConfigOverview({ flow, children, actions, assist }: { flow: FlowId; children: ReactNode; count: number; actions?: ReactNode; assist?: ReactNode }) {
+  // 2026-10-29：阶段标题/描述只存中文，英文统一由 catalog.ts 提供，不再在这里判 locale。
   const uiT = useT()
-
-  const [expanded, setExpanded] = useState(false)
-  const sceneId = useAppStore((state) => state.sceneId)
-  useEffect(() => setExpanded(false), [sceneId])
-  return <section className="config-overview" aria-label={uiT("本流程配置")}>
-    <div className="config-mode-bar"><div><strong>{uiT("配置工作区")}</strong><span>{count} {uiT(" 项 · 原始场景参数")}</span></div><div role="group" aria-label={uiT("配置显示模式")}>
-      <button type="button" aria-pressed={!expanded} onClick={() => setExpanded(false)}>{uiT("常用配置")}</button>
-      <button type="button" aria-pressed={expanded} onClick={() => setExpanded(true)}>{uiT("更多配置")}</button>
-    </div></div>
-    {expanded ? <div className="config-complete">{children}</div> : <div className="config-quick">{quick}</div>}
+  const stage = STAGE_PRESENTATION[flow]
+  return <section className="config-overview" data-flow={flow} aria-label={uiT('本阶段配置')}>
+    <header className="stage-purpose">
+      <div><span className="stage-purpose-index">{stage.index} / 05</span><h3>{uiT(stage.title)}</h3></div>
+      <p>{uiT(stage.description)}</p>
+    </header>
+    {assist}
+    {actions}
+    <div className="config-complete">{children}</div>
   </section>
 }

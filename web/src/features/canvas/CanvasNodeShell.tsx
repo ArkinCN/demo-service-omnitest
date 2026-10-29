@@ -23,7 +23,11 @@ export function NodeFacts({ facts }: { facts: NodeFact[] }) {
       {facts.slice(0, 3).map(([k, v]) => (
         <div key={k} className="flex items-baseline gap-2 text-[12px] leading-none">
           <span className="w-[42px] shrink-0 text-t3">{uiT(k)}</span>
-          <span className="num truncate text-t2">{['类型', '输出', '归属'].includes(k) ? uiT(v) : v}</span>
+          {/* ⚠️ 值一律过 uiT（2026-10-15 改）。
+              原先写的是 `['类型','输出','归属'].includes(k) ? uiT(v) : v` —— 只译这三个 key，
+              导致 `['台架', '涵道逆风台架 · SK-20251218QPBB']` 这类**数据值**在英文界面下漏翻。
+              现在两层词典（含机翻兜底）已就位，未命中的值 uiT 会原样返回，全量包裹是安全的。 */}
+          <span className="num truncate text-t2">{uiT(v)}</span>
         </div>
       ))}
     </div>

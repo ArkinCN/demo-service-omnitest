@@ -73,15 +73,6 @@ export function useFanTrend(): UseFanTrend {
   // 避免「poll 内部 stopPolling 清掉 timer 后，finally 又 schedule 一轮」的复活 bug。
   const activeRef = useRef(false)
   const aliveRef = useRef(true)
-  // phase 的 ref 镜像：beginNow 的防重判定要读最新 phase，
-  // 但它自己被包在 useCallback 里，直接依赖 phase 会每次重建回调。
-  const phaseRef = useRef<FanPhase>('idle')
-
-  /** 同时更新 state 与 ref，保持两者同步（所有 setPhase 走这里）。 */
-  const setPhaseBoth = useCallback((next: FanPhase) => {
-    phaseRef.current = next
-    setPhase(next)
-  }, [])
 
   const stopPolling = useCallback(() => {
     activeRef.current = false
@@ -119,34 +110,14 @@ export function useFanTrend(): UseFanTrend {
       setPlan(st)
       // 以后端权威 terminal 字段判断终态（不硬编码 status 字符串）
       if (st.terminal) {
-        setPhaseBoth(st.status === 'failed' ? 'error' : 'done')
+        setPhase(st.status === 'failed' ? 'error' : 'done')
         if (st.error) setError(st.error)
-        // 本轮已终态 → 清掉 runId 残留：留着的后果是「新一轮点不动」
-        // （beginNow 防重）与「旧轮次被继续轮询导致每秒 2 次 404」。
-        runIdRef.current = null
-        setRunId(null)
         stopPolling()
       } else if (st.status === 'stopping') {
-        setPhaseBoth('stopping')
+        setPhase('stopping')
       }
     } catch (e) {
       if (!aliveRef.current) return
-      // 404 = 该 runId 在后端已不存在（上一轮早已结束、或后端重启丢了内存态）。
-      // 这是**轮询对象失效**，不是「本轮采集失败」——直接把后端消息弹到界面上
-      // 会让用户在跑新一轮时看到上一轮的「运行不存在」红字，纯属噪声
-      //（2026-10-11 实测：旧轮次轮询不停止，每秒 2 次 × 97 次）。
-      // 故：停轮询 + 静默回到 idle，不把 404 当成采集错误上报。
-      const status = (e as { status?: number }).status
-      if (status === 404 || /运行不存在|not found/i.test((e as Error).message)) {
-        stopPolling()
-        runIdRef.current = null
-        setRunId(null)
-        setPhaseBoth('idle')
-        setError('')
-        return
-      }
-      // 其余错误（网络抖动、5xx 等）照旧如实显示，但不打断轮询：
-      // 单次瞬时失败不该让整轮采集停摆。
       setError((e as Error).message)
     } finally {
       pollingRef.current = false
@@ -188,16 +159,12 @@ export function useFanTrend(): UseFanTrend {
   /** 直接启动：不弹确认卡（调用方须确保已过红线闸门）。 */
   const beginNow = useCallback(
     (gate?: FanTestGate) => {
-      // 防重：仅在「本轮**真的还在跑**」时拦截。
-      // ⚠️ 原来写成 `if (runIdRef.current) return`（只看有没有 runId）——上一轮
-      //   结束后 runId 仍留在 ref 里，于是：① 新一轮点不动；② 旧 runId 继续被
-      //   轮询，后端已无此轮 → 每秒 2 次 404（2026-10-11 实测 97 次）。
-      // 现在按 phase 判定，并顺手清掉上一轮的残留 runId，让新轮次能正常起。
-      if (phaseRef.current === 'running' || phaseRef.current === 'stopping') return
+      // 防重：已在运行中或已有 runId 时不重复启动
+      if (runIdRef.current) return
       setError('')
       setSamples([])
       cursorRef.current = 0
-      setPhaseBoth('running')
+      setPhase('running')
       void (async () => {
         try {
           const p = await startFanTest({ gate })
@@ -206,30 +173,30 @@ export function useFanTrend(): UseFanTrend {
           setPlan(p)
           startPolling()
         } catch (e) {
-          setPhaseBoth('error')
+          setPhase('error')
           setError((e as Error).message)
         }
       })()
     },
-    [startPolling, setPhaseBoth],
+    [startPolling],
   )
 
   /** 直接停止：不弹确认卡。 */
   const stopNow = useCallback(() => {
     const curRunId = runIdRef.current
     if (!curRunId) return
-    setPhaseBoth('stopping')
+    setPhase('stopping')
     void (async () => {
       try {
         await stopFanTest(curRunId)
         // 继续轮询直到终态
         await poll()
       } catch (e) {
-        setPhaseBoth('error')
+        setPhase('error')
         setError((e as Error).message)
       }
     })()
-  }, [poll, setPhaseBoth])
+  }, [poll])
 
   const requestStart = useCallback(() => {
     // 启动是被测电机的红线动作：先弹确认卡，人点确认才执行（复用全局确认卡）

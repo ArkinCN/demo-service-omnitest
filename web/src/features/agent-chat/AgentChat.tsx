@@ -5,19 +5,22 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import './agent-chat.css';
 import { mockAdapter, type AgentAdapter, type AgentEvent } from './api';
 import {
+  FALLBACK_MODEL_OPTIONS,
   type ChatItem,
   type EvidenceItem,
   type ExperienceDraft,
+  type ModelOption,
   type PermissionLevel,
   type Verdict,
 } from './types';
+import { fetchModels } from './models';
 import { Composer } from './components/Composer';
 import { EvidencePanel } from './components/EvidencePanel';
 import { ExperienceModal } from './components/ExperienceModal';
 import { Markdown } from './components/Markdown';
 import { ToolCallCard } from './components/ToolCallCard';
 import { VerdictCard } from './components/VerdictCard';
-import { readStoredChat, writeStoredChat } from './persist';
+import { readStoredChat, writeStoredChat, clearStoredChat } from './persist';
 import { useAppStore } from '../../state/useAppStore';
 
 export interface AgentChatProps {
@@ -141,7 +144,7 @@ export function AgentChat(props: AgentChatProps) {
     autoStartReady = true,
     evidenceOpenOnMount = false,
     operator = '当前操作员',
-    defaultModel = 'deepseek-v4-pro',
+    defaultModel = useAppStore.getState().model,
     // 保留入参以不破坏调用方接口；2026-10-10 起权限改由全局 store 驱动，此值仅作说明。
     defaultPermission: _defaultPermission,
     onSaveExperience,
@@ -174,6 +177,15 @@ export function AgentChat(props: AgentChatProps) {
   const [busy, setBusy] = useState(false);
   const [model, setModel] = useState(defaultModel);
   /**
+   * 可选模型列表：挂载时从后端拉（2026-10-14 起**不再硬编码**）。
+   *
+   * 初值用兜底列表（deepseek-v4.1-flash），保证首帧下拉就有内容、不闪空；
+   * 拉到后端真实列表后整体替换，并把默认选中项对齐到**后端第一条**
+   * （后端按 sort_order 排序，首条即主模型）。拉取失败则保留兜底项，
+   * 用户仍能发请求，不会因模型列表拿不到而卡死。
+   */
+  const [models, setModels] = useState<ModelOption[]>(FALLBACK_MODEL_OPTIONS);
+  /**
    * 权限档位**全局化**（2026-10-10 权限切换修复）。
    *
    * 此前它是本组件内部 state，且没有一路传到后端 → 切档只改 UI 高亮，
@@ -189,6 +201,40 @@ export function AgentChat(props: AgentChatProps) {
   const [expDraft, setExpDraft] = useState<ExperienceDraft | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
+
+  /**
+   * 挂载时拉一次后端可用模型列表（2026-10-14）。
+   *
+   * 为什么用 defaultModel 作函数依赖的「一次性」effect：
+   * - 只有真后端适配器（dsh）才需要列表——脚本回放（mock）不调后端，
+   *   但它同样可以展示后端列表，这里不做区分，统一拉取；
+   * - 拉取失败只 console.warn，**不回退报错弹窗**：下拉保留兜底项，
+   *   发请求仍走默认模型，不让「拿不到列表」升级成「助手不可用」。
+   * - 严格模式下 React 会双跑 effect，用 AbortController 取消上一轮。
+   */
+  useEffect(() => {
+    const ac = new AbortController();
+    let cancelled = false;
+    fetchModels(ac.signal)
+      .then((list) => {
+        if (cancelled || list.length === 0) return;
+        setModels(list);
+        // 默认选中对齐后端首条（sort_order 最小 = 主模型）；
+        // 仅当当前选中值不在新列表里时才改，避免打断用户已选中的项。
+        setModel((cur) =>
+          list.some((m) => m.value === cur) ? cur : list[0].value,
+        );
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        console.warn('[agent-chat] 拉取模型列表失败，沿用兜底候选：', e);
+      });
+    return () => {
+      cancelled = true;
+      ac.abort();
+    };
+  }, []);
+
   /** 等待人工确认的改动类动作：callId → resolve */
   const confirmWaiters = useRef(new Map<string, (ok: boolean) => void>());
   /** 已作出的确认决定：callId → 是否放行 + 确认人。事件与点击的先后顺序都靠它兜住。 */
@@ -355,6 +401,27 @@ export function AgentChat(props: AgentChatProps) {
       });
     }
   }, []);
+
+  /**
+   * 清空当前会话（2026-10-14 用户需求）：消息流 + 依据抽屉 + localStorage 落盘一起清。
+   *
+   * 为什么三处都要清：
+   *   - `items` / `evidence` 是内存态，不清则界面照旧；
+   *   - `clearStoredChat` 删 localStorage，不清则刷新/切页/收起再打开会把旧对话读回来。
+   *
+   * 注意执行顺序：**先删落盘、再清内存**。因为下面这个 400ms 防抖的自动落盘 effect
+   * 会在 items/evidence 变化后把最新值写回，清完内存正好把空数组写回去（等于落盘仍是
+   * 干净的）；反过来先清内存也可能被同一次 tick 的旧闭包写脏。两处配合才是稳的。
+   *
+   * 忙态时不放行：正在流式输出时清空会让后续事件往空列表里追加，产生"半截回答"。
+   */
+  const clearConversation = useCallback(() => {
+    if (busy) return;
+    if (persistKey) clearStoredChat(persistKey);
+    setItems([]);
+    setEvidence([]);
+    setShownEvidenceIds(null);
+  }, [busy, persistKey]);
 
   /**
    * 注入给适配器的人工确认闸门。
@@ -563,6 +630,19 @@ export function AgentChat(props: AgentChatProps) {
         >
           {uiT("依据 ")}{evidence.length}
         </button>
+        {/*
+          清空对话（2026-10-14 用户需求）：消息流 + 依据 + 落盘一起清。
+          与「沉淀为经验」「依据」同排；对话为空或正在执行时禁用，避免空点与半截回答。
+        */}
+        <button
+          type="button"
+          className="ac-iconbtn"
+          onClick={clearConversation}
+          disabled={busy || (items.length === 0 && evidence.length === 0)}
+          title={uiT("清空当前对话（消息与依据一并清除）")}
+        >
+          {uiT("清空对话")}
+        </button>
         {/* 宿主要求折叠时给一枚收起键；与上面两枚同排，所以不会重叠 */}
         {onCollapse ? (
           <button
@@ -627,6 +707,7 @@ export function AgentChat(props: AgentChatProps) {
       <Composer
         busy={busy}
         model={model}
+        models={models}
         permission={permission}
         autoRun={autoRun}
         onModel={setModel}

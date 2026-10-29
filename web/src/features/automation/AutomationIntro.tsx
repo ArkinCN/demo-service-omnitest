@@ -56,24 +56,37 @@ export function AutomationIntro({
   const gateTotal = gateIds ? gateIds.length : 0
   const willAck = gateIds ? Math.max(0, gateTotal - gateAcked) : 0
 
+  // ⚠️ 所有 title/body 都必须过 uiT()，否则英文界面下会漏翻成中文。
+  // 带动态数值的写「中文原文 + {v1}/{v2} 占位」，与 catalog.ts 词条一一对应。
   const notes: { title: string; body: string }[] = [
     {
-      title: '参数怎么选',
-      body: `按「上次采纳值 → 初始化快照 → 场景包文档值」回落。判定不达标时自动采纳推荐参数、写回并回到第 3 步重测，最多 ${TUNE_RETRIES} 轮。`,
+      title: uiT('参数怎么选'),
+      body: uiT(
+        '按「上次采纳值 → 初始化快照 → 场景包文档值」回落。判定不达标时自动采纳推荐参数、写回并回到第 3 步重测，最多 {v1} 轮。',
+        { v1: TUNE_RETRIES },
+      ),
     },
     {
       title: gateIds
-        ? `将代为确认 ${willAck} 条安全闸门（共 ${gateTotal} 条）`
-        : '安全闸门',
+        ? uiT('将代为确认 {v1} 条安全闸门（共 {v2} 条）', { v1: willAck, v2: gateTotal })
+        : uiT('安全闸门'),
       body: gateIds
-        ? `已确认 ${gateAcked} 条，还差 ${willAck} 条。点开始即授权代确认，操作者记 automation，逐条写入执行日志可审计。`
-        : '场景包尚未加载完成，无法统计闸门条数；若到开始时仍未加载，后端闸门校验会拒绝启动（原因会原样显示）。',
+        ? uiT(
+            '已确认 {v1} 条，还差 {v2} 条。点开始即授权代确认，操作者记 automation，逐条写入执行日志可审计。',
+            { v1: gateAcked, v2: willAck },
+          )
+        : uiT(
+            '场景包尚未加载完成，无法统计闸门条数；若到开始时仍未加载，后端闸门校验会拒绝启动（原因会原样显示）。',
+          ),
     },
     {
-      title: '会真下发设备启动',
+      title: uiT('会真下发设备启动'),
       // 全程时长不写死分钟数：它随调优轮次变，改成由 TUNE_RETRIES 派生的采集轮数，
       // 免得改了上限而耗时说明还停在旧口径（原来写「约 1~3 分钟」是按 3 轮估的）。
-      body: `风扇会真的转起来。点开始前请确认现场无人接触旋转件、急停回路可用。一轮采集约 45~50 秒；调优重测最多 ${TUNE_RETRIES} 轮，全程采集轮数不超过 ${TUNE_RETRIES + 1} 轮。`,
+      body: uiT(
+        '风扇会真的转起来。点开始前请确认现场无人接触旋转件、急停回路可用。一轮采集约 45~50 秒；调优重测最多 {v1} 轮，全程采集轮数不超过 {v2} 轮。',
+        { v1: TUNE_RETRIES, v2: TUNE_RETRIES + 1 },
+      ),
     },
   ]
   const NOTE_ICON: LucideIcon[] = [Sliders, ShieldCheck, Timer]
@@ -107,7 +120,7 @@ export function AutomationIntro({
               </span>
               <span className="shrink-0 text-[13px] font-medium text-t1">{uiT(f.label)}</span>
               <span className="min-w-0 flex-1 truncate text-[12px] text-t3">
-                {STAGE_HINT[f.id] ?? ''}
+                {uiT(STAGE_HINT[f.id] ?? '')}
               </span>
             </li>
           ))}

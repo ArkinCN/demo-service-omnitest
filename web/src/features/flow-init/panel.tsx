@@ -1,3 +1,4 @@
+import { ConfigSuggestionButton } from '../config-suggestions/ConfigSuggestionButton'
 import { useT } from '../../i18n'
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
@@ -43,6 +44,7 @@ import { paramKey, useAppStore } from '../../state/useAppStore'
 import {
   fileName,
   getPack,
+  headerFieldName,
   sizeText,
   sourceLine,
   statusOf,
@@ -369,19 +371,24 @@ function FieldRow({ f }: { f: RawHeaderField }) {
   const key = paramKey('init', 'rp', 'header', f.key)
   const v = useAppStore((s) => s.overrides[key])
   const setParam = useAppStore((s) => s.setParam)
+  // 字段显示名随界面语言（2026-10-15）：中文界面下 `simp(headerFieldName(f))` 与原来的
+  // `simp(f.name)` 逐字相同；英文界面下取场景包平行英文名，缺失回退中文原文。
+  const nm = simp(headerFieldName(f))
   return (
     <div className="flex min-h-[36px] items-center gap-2 px-4 py-1 transition-colors hover:bg-p50/60">
-      <Tooltip className="min-w-0" content={uiT("{v1} · 报告模板取值位 {v2}；本项在流程 5 只带入不重填。", { v1: simp(f.name), v2: f.value_slot || '—' })}>
+      <Tooltip className="min-w-0" content={uiT("{v1} · 报告模板取值位 {v2}；本项在流程 5 只带入不重填。", { v1: nm, v2: f.value_slot || '—' })}>
         <span className="flex min-w-0 items-center gap-1.5">
           <SourceTag source={v ? '人工' : '建议'} />
-          <span className="cursor-help truncate text-[13px] font-medium text-t1">{uiT(simp(f.name)) === simp(f.name) ? short(simp(f.name), 7) : uiT(simp(f.name))}</span>
+          {/* 7 字截断只对中文短名有意义；英文名截到 7 个字符只剩 `Custome…`，
+              英文时原样交给 CSS truncate + Tooltip */}
+          <span className="cursor-help truncate text-[13px] font-medium text-t1">{uiT(nm) === nm ? (/[\u3400-\u9fff]/.test(nm) ? short(nm, 7) : nm) : uiT(nm)}</span>
         </span>
       </Tooltip>
       <span className="ml-auto shrink-0">
         <Input
           value={String(v ?? '')}
           onChange={(e) => setParam(key, e.target.value)}
-          aria-label={uiT(simp(f.name))}
+          aria-label={uiT(nm)}
           placeholder={uiT("待填")}
           className="h-[26px] w-[142px] text-[12.5px]"
         />
@@ -392,8 +399,9 @@ function FieldRow({ f }: { f: RawHeaderField }) {
 
 function IlkRow({ i }: { i: RawInterlock }) {
   const uiT = useT()
+  // tooltip 内容是场景包数据文本，需包 uiT 才能在英文界面下译出
   return (
-    <Tooltip className="w-full" content={`${i.id} ${i.name} · ${i.action}`}>
+    <Tooltip className="w-full" content={`${i.id} ${uiT(i.name)} · ${uiT(i.action)}`}>
       <div className="flex min-h-[32px] w-full cursor-help items-center gap-2 px-4 py-1">
         <Lock size={12} strokeWidth={1.9} className="shrink-0 text-t3" />
         <span className="truncate text-[12.5px] text-t1">{uiT(i.name) === i.name ? short(i.name, 10) : uiT(i.name)}</span>
@@ -772,16 +780,6 @@ export function InitLeftPanel() {
   ].filter((t) => t.groups.length > 0)
   /** 左栏菜单项数。**这是按钮与提示唯一使用的数字**（用户拍板：以菜单为准） */
   const total = tiers.reduce((n, t) => n + t.count, 0)
-  /** 「常用配置」卡片：取前 3 个可编辑属性作快捷入口（与「更多配置」同一套 renderLeaf 渲染） */
-  const quickAttrs = attrs
-    .filter(
-      (a) =>
-        !a.not_applicable &&
-        a.editable !== false &&
-        (a.options?.length ||
-          (typeof a.value === 'number' && String(a.value).length <= 7 && (a.unit ?? '').length <= 4)),
-    )
-    .slice(0, 3)
 
 
   return (
@@ -822,18 +820,9 @@ export function InitLeftPanel() {
           两条并排会让人不知道该按哪个。产品名仍显示在顶部标题与上面那行里。 */}
 
       <div className="fade-b min-h-0 flex-1 overflow-y-auto pb-2">
-        <ConfigOverview
+        <ConfigOverview flow="init" assist={<ConfigSuggestionButton stage="init" pending={locking} />}
           key={pack.scene.id}
           count={total}
-          quick={
-            <>
-              {quickAttrs.map((a) => (
-                <div className="config-quick-card" key={a.key}>
-                  {renderLeaf({ k: 'attr', id: a.key, g: a.group, a })}
-                </div>
-              ))}
-            </>
-          }
         >
           <UnifiedConfigPanel
             flow="init"
@@ -1063,7 +1052,7 @@ function DocIntake({ full }: { full?: boolean }) {
           <Tooltip
             key={d.doc.id}
             className="w-full"
-            content={`${d.doc.title}（${d.doc.id}）· ${sizeText(d.doc.size_bytes)}\n${d.doc.path}`}
+            content={`${uiT(d.doc.title)}（${d.doc.id}）· ${sizeText(d.doc.size_bytes)}\n${d.doc.path}`}
           >
             <div className="flex w-full cursor-help items-center gap-2.5 border-b border-line-soft py-[7px] last:border-b-0">
               <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-tpx bg-p50 text-p700">
@@ -1252,7 +1241,7 @@ function ProjectTree({ full }: { full?: boolean }) {
               })()
             )}
           </span>
-          <Tooltip content={raw.doc ? `${raw.doc.title}\n${raw.doc.path}` : label}>
+          <Tooltip content={raw.doc ? `${uiT(raw.doc.title)}\n${raw.doc.path}` : uiT(label)}>
             <span className={cn('cursor-help truncate', isDir ? 'font-medium text-t1' : 'text-t2')}>
               {label}
             </span>
@@ -1362,11 +1351,11 @@ function InterlockRing({ full }: { full?: boolean }) {
           {items.map((i) => (
             <li key={i.id} className="flex items-center gap-2 border-b border-line-soft py-1 last:border-b-0">
               <span className="num shrink-0 text-[12px] text-t3">{i.id}</span>
-              <Tooltip content={i.action}>
-                <span className="cursor-help truncate text-[12.5px] text-t1">{i.name}</span>
+              <Tooltip content={uiT(i.action)}>
+                <span className="cursor-help truncate text-[12.5px] text-t1">{uiT(i.name)}</span>
               </Tooltip>
               <Badge tone="neutral" className="ml-auto">
-                {i.type}
+                {uiT(i.type)}
               </Badge>
             </li>
           ))}

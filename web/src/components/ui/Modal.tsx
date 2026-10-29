@@ -48,7 +48,14 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        style={{ width }}
+        /*
+         * 窄屏自适应（2026-10-15）：补 maxWidth。
+         * 原来只有内联 width（调用方给的，如 1220px），在 ≤1024px 的投屏 / 小窗口下
+         * 会横向溢出屏幕 —— 外层遮罩只有 p-10 的 40px 内边距，拦不住它。
+         * 加 maxWidth:100% 后：宽屏仍是原宽（宽度由 width 决定，maxWidth 不生效），
+         * 窄屏自动收到容器可用宽度。高度侧早有 max-h-[min(80vh,100%)] 兜着，只差宽度。
+         */
+        style={{ width, maxWidth: '100%' }}
         onClick={(e) => e.stopPropagation()}
         className="animate-pop flex max-h-[min(80vh,100%)] flex-col overflow-hidden rounded-tp border border-line bg-surface shadow-tp2"
       >
@@ -105,7 +112,9 @@ export function Drawer({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        style={{ width }}
+        /* 窄屏自适应（2026-10-15）：同 Modal，补 maxWidth —— 抽屉默认 420px，
+           在更窄的窗口里会横向溢出（它从右侧滑出，溢出部分既看不见也点不到）。 */
+        style={{ width, maxWidth: '100%' }}
         onClick={(e) => e.stopPropagation()}
         className={cn(
           'flex h-full flex-col bg-surface shadow-tp2',

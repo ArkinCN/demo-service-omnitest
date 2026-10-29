@@ -53,9 +53,9 @@ WORKDIR /srv/omnitest/c/backend
 
 # 先装依赖，利用镜像层缓存
 COPY requirements.txt .
-# ⚠️ requirements.txt 有两处缺口，均在此补装（不改客户锁定的 requirements.txt）：
+# 容器专用及尚未列入 requirements.txt 的依赖在此补装：
 #   1. gunicorn  —— 部署要求用 gunicorn 起服务，requirements 里只有 uvicorn。
-#   2. openpyxl  —— services/report_workbook.py 用它生成 xlsm 报告。
+#      openpyxl 已列入 requirements.txt，直接启动和镜像使用相同版本。
 #   3. pymupdf   —— 源码有 import pymupdf（PDF 处理），requirements 未列。
 #
 # ⚠️ 硬件依赖（2026-10-10 部署方案 A 新增）：装进**同一个** python 环境，
@@ -73,7 +73,6 @@ COPY requirements.txt .
 #      ⚠️ 改动时须与 hardware/py/requirements.txt 保持同步（此处刻意不装 libusb-package，见上）。
 RUN pip install --no-cache-dir -r requirements.txt \
         gunicorn==21.2.0 \
-        openpyxl==3.1.5 \
         pymupdf==1.24.14 \
         "pyserial>=3.5" \
         "pyvisa>=1.15" \
