@@ -11,12 +11,17 @@
 import type { Stage } from './protocol'
 
 /**
- * 该功能固定使用的模型 id。
+ * 关于「用哪个模型」——**此处不设常量**（2026-10-29 移除原 `SUGGESTION_MODEL_ID`）。
  *
- * 交付口径：**只认这一个模型，不自动替换**——渠道没提供时前端直接报错，
- * 避免用户以为结果来自别的模型。
+ * 原实现把模型 id 写死成 `'deepseek-flash'`。但网关的 model_id 是由后端 `.env` 的
+ * `MOTORDEBUG_LLM_MODEL` **派生**的（`vendor/model` → 末段，例如
+ * `deepseek/deepseek-v4.1-flash-1017` → `deepseek-v4.1-flash-1017`），
+ * 前端写死必然漂移：一旦 .env 换模型，按钮就报「当前渠道未提供 deepseek-flash」。
+ *
+ * 现口径：由调用方取 `/api/agent/models` 列表的**首项**（后端按 sort_order 升序返回，
+ * 首项即平台主模型）。仍然「只用这一个、不随机挑、失败时不静默换别的模型」，
+ * 只是这个 id 由后端决定，不再硬编码。
  */
-export const SUGGESTION_MODEL_ID = 'deepseek-flash'
 
 /** 演示字段的匹配方式：`exact` 完全相等；`suffix` 以该串结尾（字段 id 含分组前缀时用） */
 type MatchKind = 'exact' | 'suffix'

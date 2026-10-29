@@ -8,7 +8,6 @@ import { fetchModels } from '../agent-chat/models'
 import { applyChanges, assertEditable, snapshotFor } from './context'
 import { fingerprint, validateProposal, type Change, type Proposal, type Snapshot, type Stage } from './protocol'
 import { SuggestionProposalView } from './SuggestionProposalView'
-import { SUGGESTION_MODEL_ID } from './config'
 import { createDemoChanges } from './demo'
 
 /**
@@ -91,8 +90,11 @@ export function ConfigSuggestionButton({ stage, getSelection, updateSelection, p
       if (DEMO_DRAFT_ENABLED && demoLoaded) snapshot.evidence.push({ id: 'demo:deliberate-draft', title: uiT('人为偏差演示'), text: 'This stage previously loaded a synthetic draft with deliberately changed settings or an omitted test. Current values may already be corrected. Review the current editable values against the scenario-package references and criteria; propose only remaining supported repairs. These are demo inputs, not measurements or device recommendations.' })
       const models = await fetchModels(abort.signal)
       if (!models.length) throw new Error(uiT('当前没有可用的大模型。'))
-      const model = models.find(item => item.value === SUGGESTION_MODEL_ID)?.value
-      if (!model) throw new Error(uiT(`当前渠道未提供 {v1}，请配置该模型；不会改用其他模型。`, { v1: SUGGESTION_MODEL_ID }))
+      // 模型 id 由后端 .env 的 MOTORDEBUG_LLM_MODEL 派生，前端不能写死
+      // （写死过 'deepseek-flash'，换模型后按钮直接报「当前渠道未提供」）。
+      // 列表按 sort_order 升序，首项即平台主模型：固定用它，不随机挑，
+      // 失败时不静默换别的模型（否则用户会误以为结果来自所选模型）。
+      const model = models[0].value
       guard()
       const response = await fetch('/api/agent/config-suggestions', {
         method: 'POST', signal: abort.signal, headers: { 'Content-Type': 'application/json' },

@@ -1,9 +1,6 @@
 import { requirementIdOf, validValue, type Change, type EditableField, type Snapshot } from './protocol.ts'
 import { DEMO_FIELD_RULES, type DemoFieldRule } from './config.ts'
 
-/** 保持既有导入路径不变（组件与单测都从这里取），常量本身定义在 config.ts。 */
-export { SUGGESTION_MODEL_ID } from './config.ts'
-
 /**
  * 演示差异的理由文案：必须自证是合成数据，避免被误当成模型建议或设备推荐值。
  * 该字符串会随变更一起进入演示草稿，改动前先确认单测（demo.test）里的匹配断言。
