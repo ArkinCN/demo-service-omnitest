@@ -23,6 +23,10 @@ FROM node:22-slim AS web-build
 # ⚠️ 构建期变量：不设时前端会退化成 mock 后端（features/copilot/backend.ts 的默认值是 'mock'），
 #    助手对话、权限档位、写工具确认都会变成假的。必须在这里注入 dsh。
 ENV VITE_AGENT_BACKEND=dsh
+# 门户这套是**演示环境**（无持久卷、数据每次重建归零、不接真机），
+# 因此打开「载入待修正示例」按钮，否则演示时无法一键造出可纠正的草稿。
+# 开发态本来就默认可见（import.meta.env.DEV），这里只是把生产构建也放开。
+ENV VITE_ENABLE_DEMO_DRAFT=true
 
 WORKDIR /build
 # 先拷锁文件装依赖，利用镜像层缓存
@@ -38,6 +42,10 @@ FROM python:3.11-slim-bookworm
 ENV TZ=Asia/Shanghai \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
+    # 容器内默认 locale 是 POSIX，Python 会以 ASCII 编码 stdout，
+    # 打印中文日志/脚本输出会抛 UnicodeEncodeError（部署后注入脚本正好会打印中文）。
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8 \
     PIP_NO_CACHE_DIR=1 \
     PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/ \
     PIP_TRUSTED_HOST=mirrors.aliyun.com \
@@ -56,8 +64,15 @@ ENV TZ=Asia/Shanghai \
     JWT_SECRET_KEY=PYvU95VbOQLbs-RpIClOEGI-upK1gZoMGKXprDn8DF8C1N5uJ71Huh5VfTDQdYIw \
     # 无持久卷：SQLite 落在镜像内 .deploy/，容器重建即归零（已确认的演示期取舍）
     DATABASE_URL=sqlite:///.deploy/motordebug.db \
-    # 大模型：演示用 key，建议在模型平台单独申请「限额」key 替换，降低泄露损失
-    MOTORDEBUG_LLM_API_KEY=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 \
+    # ⚠️ 模型 key **故意完全不设**：本仓库是公开的，密钥不能进代码/镜像。
+    #    ⚠️ 注意：这里**不能**写成 `MOTORDEBUG_LLM_API_KEY=`（空值）。
+    #    空值会作为**进程环境变量**存在，而 pydantic-settings 的环境变量优先级
+    #    高于 .env 文件 —— 结果就是部署后往容器内 .env 里写的 key 永远读不到，
+    #    /api/agent/models 一直是空数组（实测踩过）。
+    #    正确做法：此变量完全缺席，由部署后写入容器内 .env 提供（见文件末尾说明）。
+    #    未注入时：内置渠道 seed 跳过 → /api/agent/models 返回空 →
+    #    建议按钮如实提示「当前没有可用的大模型」，不会静默用假数据。
+
     MOTORDEBUG_LLM_BASE_URL=https://openrouter.ai/api \
     MOTORDEBUG_LLM_MODEL=deepseek/deepseek-v4.1-flash-1017 \
     MOTORDEBUG_LLM_FAST_MODEL= \
@@ -119,3 +134,24 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
 
 # gunicorn.conf.py：bind=0.0.0.0:5100、workers=1、preload_app=True
 CMD ["gunicorn", "-c", "gunicorn.conf.py", "app.main:app"]
+
+# ============================================================================
+# 部署后注入大模型 key（密钥不进仓库、不进镜像；门户无 env 注入能力）
+#
+# 一条命令（容器名按门户表单，示例为 omnitest-demo）：
+#   docker exec omnitest-demo sh -c \
+#     'printf "\nMOTORDEBUG_LLM_API_KEY=%s\n" "sk-or-v1-xxxx" >> /srv/omnitest/c/backend/.env'
+#   docker restart omnitest-demo
+#
+# 为什么要重启：Settings 在进程启动时读取一次环境变量/`.env`，写入后必须让进程重新加载；
+# 重启后启动 seed 检测到 key，会自动建渠道与 model_pricing 行，建议功能随即可用。
+#
+# 验证（应返回模型 id）：
+#   docker exec omnitest-demo python -c "import urllib.request;print(urllib.request.urlopen('http://127.0.0.1:5100/api/agent/models').read().decode()[:200])"
+#
+# ⚠️ 只把 key 写进数据库、不改 .env 是**不够**的（实测仍 502）：部分链路在启动阶段
+#    就要用到 key（seed / 内容安全兜底），必须让进程环境里也有。
+# ⚠️ 容器重建（重新部署）后数据归零，需重新执行上面两条命令；这是「无持久卷」的必然代价。
+# ⚠️ AUTH_DISABLED=true 时所有管理接口无鉴权，门户端口切勿直接对公网开放，
+#    建议安全组/防火墙只放行内网来源。
+# ============================================================================
