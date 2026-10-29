@@ -10,11 +10,12 @@ from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from app.core import paths
 from app.core.config import settings
 
 '''
@@ -265,16 +266,46 @@ app.mount("/uploads", StaticFiles(directory=str(uploads_path)), name="uploads")
 logger.info(f"Static files mounted: /uploads -> {uploads_path}")
 
 
-# Root endpoint
-@app.get("/", tags=["Root"], include_in_schema=False)
-def read_root():
-    return {"status": "ok"}
-
-
 # Health check endpoint
+# ⚠️ 必须保持免鉴权且最先注册：门户的健康检查（约 8 秒窗口）与镜像自带的
+#    HEALTHCHECK 都打这个地址，任何前置依赖（数据库、模型）都不能挡住它。
 @app.get("/health", tags=["Health"], include_in_schema=False)
 def health_check():
     return {"status": "healthy"}
+
+
+# ── 前端静态托管（2026-10-29 单容器改造）────────────────────────────────────
+# 背景：门户（AI Cube Hub）只允许一个容器、不读 docker-compose.yml、只注入 TZ，
+# 因此去掉 nginx，改由 FastAPI 直接托管 Vite 构建产物：
+#   · /assets/*   → 构建产物里的静态资源（文件名带 hash，可长缓存）
+#   · 其余 GET     → 先按路径找同名文件，找不到回退 index.html（前端路由 /init、/run …）
+#   · /api、/uploads 不参与回退：接口 404 必须如实 404，不能伪装成 200 的 HTML
+# 目录沿用 app/core/paths.py 的 c/web/dist 契约；本地开发没有 dist 时自动跳过，
+# 保持原有的 {"status":"ok"} 根路由，vite dev server 照常工作。
+_SPA_DIST = paths.C_DIR / "web" / "dist"
+
+if (_SPA_DIST / "index.html").is_file():
+    _spa_assets = _SPA_DIST / "assets"
+    if _spa_assets.is_dir():
+        app.mount("/assets", StaticFiles(directory=str(_spa_assets)), name="spa-assets")
+
+    @app.get("/{spa_path:path}", include_in_schema=False)
+    def spa_fallback(spa_path: str):
+        """静态文件优先，其次回退 index.html；接口前缀一律 404。"""
+        if spa_path.startswith(("api/", "uploads/")):
+            return JSONResponse(status_code=404, content={"detail": "Not Found"})
+        if spa_path:
+            candidate = (_SPA_DIST / spa_path).resolve()
+            # 防目录穿越：只允许 dist 目录内的真实文件
+            if candidate.is_file() and _SPA_DIST.resolve() in candidate.parents:
+                return FileResponse(candidate)
+        return FileResponse(_SPA_DIST / "index.html")
+
+    logger.info(f"SPA static files mounted: {_SPA_DIST}")
+else:
+    @app.get("/", tags=["Root"], include_in_schema=False)
+    def read_root():
+        return {"status": "ok"}
 
 
 if __name__ == "__main__":
