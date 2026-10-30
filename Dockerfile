@@ -125,6 +125,14 @@ COPY --from=web-build /build/dist /srv/omnitest/c/web/dist
 COPY web/public /srv/omnitest/c/web/public
 COPY data /srv/omnitest/c/data
 
+# 知识库初始数据：列表接口读的是**数据库表** kb_entries（不是 web/public/kb 那些 JSON，
+# 那些只是检索语料）。容器每次都是全新 SQLite，不预灌的话「知识库」页面永远是空的
+# （实测 0 条）。场景包在 web/public/scenes（已 COPY 进镜像），脚本幂等、重复执行会跳过。
+# 注意：建表发生在应用启动时，构建期必须先 init_db()，否则报 no such table: kb_entries。
+# 现测：导入 2 个场景包共 187 条。
+RUN python -c "from app.db.session import init_db; init_db()" \
+    && python scripts/import_kb_from_scenes.py
+
 EXPOSE 5100
 
 # 门户不传 healthcheck，只有镜像自带才会被判 unhealthy 并自动重启（自愈）。
