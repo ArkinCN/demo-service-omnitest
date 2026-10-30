@@ -77,6 +77,9 @@ ENV TZ=Asia/Shanghai \
     MOTORDEBUG_LLM_MODEL=deepseek/deepseek-v4.1-flash-1017 \
     MOTORDEBUG_LLM_FAST_MODEL= \
     KB_BACKEND=local \
+    # 硬件采集子进程用的解释器：显式钉死，避免 fan_executor 探测到另一个没装
+    # pyserial/pyvisa 的解释器而静默失败（与 backend/Dockerfile 口径一致）。
+    FAN_PYTHON=/usr/local/bin/python \
     SERVER_BASE_URL=http://127.0.0.1:5100 \
     DOWNLOAD_PUBLIC_BASE_URL=http://127.0.0.1:5100 \
     # LDAP 四项在 config.py 里是**无默认值的必填项**（缺一个 Settings() 就抛
@@ -124,6 +127,11 @@ RUN mkdir -p uploads/avatars uploads/kb uploads/kb_vector uploads/reports .deplo
 COPY --from=web-build /build/dist /srv/omnitest/c/web/dist
 COPY web/public /srv/omnitest/c/web/public
 COPY data /srv/omnitest/c/data
+
+# 硬件采集脚本（5.8MB）。后端 fan_executor 用 parents[3]/hardware/py 定位入口，
+# 在容器里就是 /srv/omnitest/c/hardware/py；不 COPY 会在「启动检测」时报
+# 风扇实验配置无效：[Errno 2] No such file or directory: .../hardware/py/runtime.py
+COPY hardware /srv/omnitest/c/hardware
 
 # 知识库初始数据：列表接口读的是**数据库表** kb_entries（不是 web/public/kb 那些 JSON，
 # 那些只是检索语料）。容器每次都是全新 SQLite，不预灌的话「知识库」页面永远是空的
